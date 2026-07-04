@@ -1,43 +1,62 @@
 # Slot Machines
 
-Three-reel slot machines on the **Slot Machines** floor.
+Three-reel slot machines on the **Slot Machines** floor — modeled after the games found at MGM Mandalay Bay, from penny slots to linked progressives.
 
 ## Machines
 
-| Machine | Min bet | Max bet |
-|---------|---------|---------|
-| Mandalay Fortune | $5 | $50 |
-| High Roller | $25 | $500 |
+| Machine | Min bet | Max bet | Type |
+|---------|---------|---------|------|
+| Mandalay Fortune | $5 | $50 | Classic |
+| High Roller | $25 | $500 | High limit |
+| **Megabucks** | $1 | $3 | Wide-area progressive |
+| Wheel of Fortune | $1 | $25 | Video slot |
+| Blazin' 7s | $1 | $25 | Classic progressive |
+| Buffalo Gold | $1 | $50 | Video slot |
+| Monte Carlo | $1 | $5 | Linked progressive |
+| Super Spin | $1 | $5 | Linked progressive |
+| Triple Red Hot 7s | $1 | $25 | Classic |
+| Double Jackpot | $1 | $25 | Video slot |
+| Spooky Link | $1 | $25 | Themed video |
+| Wizard of Oz — I'll Get You My Pretty | $1 | $25 | Themed video |
+| Emerald Guardian | $1 | $25 | Themed video |
+| Tiger and Dragon — Super Bonus | $1 | $50 | Themed video |
 
-Max bet is capped by your current chip balance. High Roller requires at least $25 to play.
+Max bet is capped by your current chip balance. Progressive machines display the current jackpot in the machine picker.
 
 ## Game flow
 
 ```
-Slot Machines → Mandalay Fortune Slots → Pick machine → Spin loop → Leave
+Slot Machines → Mandalay Bay Slots → Pick machine → Spin loop → Leave
 ```
 
-1. Select a machine
-2. Paytable is displayed
+1. Select a machine from the full floor lineup
+2. Paytable and jackpot (if progressive) are displayed
 3. Enter spin amount (or `0` to leave)
 4. Reels spin with secure weighted RNG
 5. Payout applied immediately
 6. Choose to spin again or leave
 
-## Symbols & weights
+## Progressive jackpots
 
-Symbols are drawn from a weighted pool (rarer = higher payout potential):
+Three machines feed linked progressive pools:
 
-| Symbol | Display | Weight |
-|--------|---------|--------|
-| 7 | `7` | 1 |
-| Diamond | `💎` | 2 |
-| BAR | `BAR` | 3 |
-| Bell | `🔔` | 4 |
-| Cherry | `🍒` | 6 |
-| Lemon | `🍋` | 8 |
+| Pool | Machines | Seed | Qualification |
+|------|----------|------|---------------|
+| Megabucks | Megabucks | 250,000 chips | Three 💵 at max bet ($3) |
+| Mandalay linked | Monte Carlo, Super Spin | 50,000 chips | Three 👑 or ⭐ at max bet ($5) |
 
-## Paytable
+Each qualifying spin contributes a small percentage of the bet to the pool. Jackpots persist in your save slot.
+
+## Megabucks
+
+The flagship wide-area progressive at Mandalay Bay and across MGM properties:
+
+- **Bet range:** $1–$3 per spin (penny-slot style)
+- **Jackpot trigger:** Three Megabucks symbols (💵 💵 💵) on the payline
+- **Qualification:** Must bet the **maximum** ($3) to be eligible for the progressive
+- **Base pays:** Triple 7s (80x), BAR×3 (20x), and partial Megabuck matches
+
+## Mandalay Fortune (classic paytable)
 
 | Result | Multiplier |
 |--------|------------|
@@ -49,21 +68,18 @@ Symbols are drawn from a weighted pool (rarer = higher payout potential):
 | 🍒 — 🍒 (first two) | 2x |
 | 🍒 (first reel only) | 1x (bet returned) |
 
-### Examples
-
-- $10 bet, three 7s → win $1,000
-- $25 bet, two cherries → win $50 (net +$25)
-- $5 bet, one cherry → win $5 (push, net $0)
+Each machine has its own symbols, weights, and paytable. See the in-game paytable when you sit down at a machine.
 
 ## RNG
 
-Each reel independently selects a symbol via `secrets.SystemRandom()` from the weighted pool. Outcomes are not manipulated.
+Each reel independently selects a symbol via `secrets.SystemRandom()` (CLI) or `crypto.getRandomValues()` (browser) from the weighted pool. Outcomes are not manipulated.
 
 ## ASCII mode
 
-With `--ascii`, emoji symbols render as three-letter codes (CER, BEL, DIA, etc.).
+With `--ascii`, emoji symbols render as three-letter codes (CER, BEL, MEG, etc.).
 
 ## Implementation
 
-- `mandalay_bay/activities/slots.py` — activity, paytable, spin logic
+- `mandalay_bay/activities/slots.py` — machine catalog, paytables, progressive logic
+- `docs/js/slots.js` — browser mirror (keep in sync)
 - Tests: `tests/test_casino_activities.py`

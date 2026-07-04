@@ -68,7 +68,7 @@ In-game help: **Casino Guide** (lobby option 7).
 | Floor | Activity | Min bet |
 |-------|----------|---------|
 | Table Games | Blackjack (solo or AI table) | 10 chips |
-| Slot Machines | Mandalay Fortune & High Roller | 5 chips |
+| Slot Machines | Mandalay Bay slots (14 machines incl. Megabucks) | 1 chip |
 | Sports Book | Moneyline & spread | 10 chips |
 
 Lobby: **Cashier**, **Player Stats**, **Save Game**, **Casino Guide**, **Leave Casino**.

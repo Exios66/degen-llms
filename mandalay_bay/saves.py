@@ -209,6 +209,7 @@ def session_to_dict(session: PlayerSession) -> dict:
         "use_unicode": session.use_unicode,
         "wallet": {"balance": session.wallet.balance, "transactions": txs},
         "activity_stats": stats,
+        "progressive_pools": dict(session.progressive_pools),
     }
 
 
@@ -246,6 +247,7 @@ def session_from_dict(data: dict) -> PlayerSession:
         activity_stats=stats,
         slot_id=data.get("slot_id"),
         slot_label=data.get("slot_label", ""),
+        progressive_pools=dict(data.get("progressive_pools", {})),
     )
 
 

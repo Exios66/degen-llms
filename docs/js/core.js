@@ -155,6 +155,7 @@ export class PlayerSession {
     this.slotLabel = slotLabel;
     this.sportsbookData = null;
     this.rpg = null;
+    this.progressivePools = {};
   }
 
   statFor(activity) {
@@ -190,6 +191,7 @@ export class PlayerSession {
       useUnicode: this.useUnicode,
       activityStats: this.activityStats,
       sportsbook: this.sportsbookData ?? null,
+      progressivePools: this.progressivePools ?? {},
     };
     if (this.rpg) payload.rpg = this.rpg;
     return payload;
@@ -207,6 +209,7 @@ export class PlayerSession {
     s.wallet = ChipWallet.fromJSON(data.wallet ?? { balance: 1000, transactions: [] });
     s.activityStats = data.activityStats ?? {};
     s.sportsbookData = data.sportsbook ?? null;
+    s.progressivePools = data.progressivePools ?? {};
     s.rpg = data.rpg ? { ...defaultRpgState(), ...data.rpg } : null;
     return s;
   }
@@ -404,10 +407,10 @@ export const ACTIVITIES = {
   },
   slots: {
     id: "slots",
-    name: "Mandalay Fortune Slots",
+    name: "Mandalay Bay Slots",
     floor: "Slot Machines",
-    minBet: 5,
-    description: "Three-reel slots with weighted symbols and classic paylines.",
+    minBet: 1,
+    description: "Nearly 1,000 reel games from penny slots to high-limit progressives.",
   },
   sportsbook: {
     id: "sportsbook",

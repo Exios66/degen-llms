@@ -145,16 +145,32 @@ When you leave, chips sync to your casino wallet and a session net is shown.
 
 ```
 Slot Machines:
-  1) Mandalay Fortune Slots — Three-reel slots... (min 5 chips)
+  1) Mandalay Bay Slots — Full floor lineup (min 1 chip)
   0) Back
 ```
 
 ### Machine selection
 
-| Machine | Bet range |
-|---------|-----------|
-| Mandalay Fortune | $5 – $50 |
-| High Roller | $25 – $500 |
+Fourteen machines modeled after the Mandalay Bay casino floor:
+
+| Machine | Bet range | Notes |
+|---------|-----------|-------|
+| Mandalay Fortune | $5 – $50 | Classic three-reel |
+| High Roller | $25 – $500 | High-limit room |
+| **Megabucks** | $1 – $3 | Wide-area progressive |
+| Wheel of Fortune | $1 – $25 | Bonus wheel theme |
+| Blazin' 7s | $1 – $25 | Flaming sevens |
+| Buffalo Gold | $1 – $50 | Stampede theme |
+| Monte Carlo | $1 – $5 | Linked progressive |
+| Super Spin | $1 – $5 | Linked progressive |
+| Triple Red Hot 7s | $1 – $25 | Red-hot triple 7s |
+| Double Jackpot | $1 – $25 | Two-tier jackpots |
+| Spooky Link | $1 – $25 | Mo Mummy / Yo Yeti theme |
+| Wizard of Oz | $1 – $25 | Hold & Spin theme |
+| Emerald Guardian | $1 – $25 | Dragon guardian theme |
+| Tiger and Dragon | $1 – $50 | Super bonus theme |
+
+Progressive jackpots (Megabucks, Monte Carlo, Super Spin) grow with every spin and persist in your save. **Max bet is required** to qualify for the jackpot on progressive machines.
 
 If your balance is below a machine's minimum, you cannot play that machine.
 

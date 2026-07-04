@@ -1,6 +1,7 @@
 import {
   CASINO_NAME, ACTIVITIES, FLOOR_ORDER, fmtChips, signedChips,
-  saveSession, loadSession, clearSession, PlayerSession,
+  saveSlot, loadSlot, createSlot, deleteSlot, listSlots, recentSlots, formatSaveTime,
+  PlayerSession,
 } from "./core.js";
 import { MACHINES, spinReels, displaySymbol, calculatePayout, PAYTABLE_TEXT } from "./slots.js";
 import { SportsbookState, fmtOdds } from "./sportsbook.js";
@@ -8,7 +9,7 @@ import { BlackjackGame, defaultConfig, Action } from "./blackjack/game.js";
 
 const app = document.getElementById("app");
 
-let session = loadSession() ?? new PlayerSession();
+let session = new PlayerSession();
 let sportsbook = new SportsbookState();
 let blackjackGame = null;
 let blackjackSessionNet = 0;
@@ -16,7 +17,7 @@ let slotsState = { machine: null, sessionNet: 0, spins: 0 };
 let viewStack = [];
 
 function persist() {
-  saveSession(session);
+  if (session.slotId != null) saveSlot(session);
 }
 
 function el(tag, attrs = {}, children = []) {
@@ -67,7 +68,11 @@ function menu(options, title, onSelect) {
 }
 
 function settingsBar() {
+  const saveLabel = session.slotId != null
+    ? (session.slotLabel || `Slot ${session.slotId}`)
+    : "No save";
   return el("div", { className: "settings-bar" }, [
+    el("span", { className: "dim", textContent: `Save: ${saveLabel}` }),
     el("label", {}, [
       el("input", {
         type: "checkbox",
@@ -86,17 +91,13 @@ function settingsBar() {
     ]),
     el("button", {
       className: "btn",
-      textContent: "Reset session",
+      textContent: "Change save",
       onclick: () => {
-        if (confirm("Reset all progress and start fresh with $1,000?")) {
-          clearSession();
-          session = new PlayerSession({ playerName: session.playerName });
-          sportsbook = new SportsbookState();
-          blackjackGame = null;
-          viewStack = ["hub"];
-          persist();
-          render();
-        }
+        persist();
+        sportsbook = new SportsbookState();
+        blackjackGame = null;
+        viewStack = [{ name: "save-picker", data: {} }];
+        render();
       },
     }),
   ]);
@@ -134,13 +135,155 @@ function renderTable(snapshot) {
   return container;
 }
 
+function renderSavePicker() {
+  const recent = recentSlots();
+  const allSlots = listSlots();
+  const container = el("div", { className: "panel" }, [
+    banner("Save Library"),
+    el("p", { className: "subtitle", textContent: "Select a save slot to continue, or create a new visit:" }),
+  ]);
+
+  if (recent.length) {
+    container.appendChild(el("p", { className: "subtitle", textContent: "Recent Saves" }));
+    const recentList = el("div", { className: "stats-grid" });
+    for (const slot of recent) {
+      recentList.appendChild(el("div", {
+        className: "stat-row dim",
+        textContent: `Slot ${slot.slotId}: ${slot.label} — ${slot.playerName} — ${fmtChips(slot.balance)} (last: ${formatSaveTime(slot.updatedAt)})`,
+      }));
+    }
+    container.appendChild(recentList);
+  }
+
+  const menuList = el("ul", { className: "menu-list" });
+  allSlots.forEach((slot, i) => {
+    const label = slot.occupied
+      ? `Load Slot ${slot.slotId} — ${slot.playerName} (${fmtChips(slot.balance)})`
+      : `New save in Slot ${slot.slotId} (empty)`;
+    menuList.appendChild(el("li", {}, [
+      el("button", {
+        className: "menu-btn",
+        innerHTML: `<span class="num">${i + 1})</span> ${label}`,
+        onclick: () => handleSlotChoice(slot),
+      }),
+    ]));
+  });
+
+  const deleteIdx = allSlots.length;
+  menuList.appendChild(el("li", {}, [
+    el("button", {
+      className: "menu-btn",
+      innerHTML: `<span class="num">${deleteIdx + 1})</span> Delete a save`,
+      onclick: () => pushView("save-delete"),
+    }),
+  ]));
+
+  container.appendChild(el("p", { className: "subtitle", textContent: "Save slots:" }));
+  container.appendChild(menuList);
+  container.appendChild(el("p", { className: "footer-note", textContent: "Your most recent saves appear at the top of the library." }));
+  return container;
+
+  function handleSlotChoice(slot) {
+    if (slot.occupied) {
+      const loaded = loadSlot(slot.slotId);
+      if (!loaded) { alert(`Could not load Slot ${slot.slotId}.`); return; }
+      session = loaded;
+      sportsbook = new SportsbookState();
+      blackjackGame = null;
+      viewStack = [{ name: "hub", data: {} }];
+      render();
+      return;
+    }
+    pushView("save-create", { slotId: slot.slotId });
+  }
+}
+
+function renderSaveCreate({ slotId }) {
+  const nameInput = el("input", { type: "text", value: "Guest" });
+  const labelInput = el("input", { type: "text", value: `Slot ${slotId}` });
+  const chipsInput = el("input", { type: "number", min: "100", max: "1000000", value: "1000" });
+
+  return el("div", { className: "panel" }, [
+    banner(`New Save — Slot ${slotId}`),
+    el("div", { className: "form-row" }, [el("label", { textContent: "Player name" }), nameInput]),
+    el("div", { className: "form-row" }, [el("label", { textContent: "Save label" }), labelInput]),
+    el("div", { className: "form-row" }, [el("label", { textContent: "Starting chips" }), chipsInput]),
+    el("div", { className: "action-bar" }, [
+      el("button", {
+        className: "btn primary",
+        textContent: "Create & enter casino",
+        onclick: () => {
+          session = createSlot(slotId, {
+            playerName: nameInput.value.trim() || "Guest",
+            label: labelInput.value.trim() || `Slot ${slotId}`,
+            chips: parseInt(chipsInput.value, 10) || 1000,
+            useColor: session.useColor,
+            useUnicode: session.useUnicode,
+          });
+          sportsbook = new SportsbookState();
+          blackjackGame = null;
+          viewStack = [{ name: "hub", data: {} }];
+          render();
+        },
+      }),
+      el("button", {
+        className: "btn",
+        textContent: "Back",
+        onclick: () => { viewStack = [{ name: "save-picker", data: {} }]; render(); },
+      }),
+    ]),
+  ]);
+}
+
+function renderSaveDelete() {
+  const occupied = listSlots().filter((s) => s.occupied);
+  if (!occupied.length) {
+    return el("div", { className: "panel" }, [
+      banner("Delete Save"),
+      el("p", { className: "error", textContent: "No saves to delete." }),
+      el("div", { className: "action-bar" }, [
+        el("button", { className: "btn", textContent: "Back", onclick: () => { popView(); render(); } }),
+      ]),
+    ]);
+  }
+
+  const menuList = el("ul", { className: "menu-list" });
+  occupied.forEach((slot, i) => {
+    menuList.appendChild(el("li", {}, [
+      el("button", {
+        className: "menu-btn",
+        innerHTML: `<span class="num">${i + 1})</span> Slot ${slot.slotId} — ${slot.playerName} (${fmtChips(slot.balance)})`,
+        onclick: () => {
+          if (confirm(`Delete Slot ${slot.slotId}? This cannot be undone.`)) {
+            deleteSlot(slot.slotId);
+            if (session.slotId === slot.slotId) session = new PlayerSession();
+            render();
+          }
+        },
+      }),
+    ]);
+  });
+
+  return el("div", { className: "panel" }, [
+    banner("Delete Save"),
+    el("p", { className: "subtitle", textContent: "Choose a save to delete:" }),
+    menuList,
+    el("div", { className: "action-bar" }, [
+      el("button", { className: "btn", textContent: "Back", onclick: () => { popView(); render(); } }),
+    ]),
+  ]);
+}
+
 function renderHub() {
-  const floors = [...FLOOR_ORDER, "Cashier", "Player Stats", "Leave Casino"];
+  const floors = [...FLOOR_ORDER, "Cashier", "Player Stats", "Save Game", "Leave Casino"];
   const options = floors.map((f) => (FLOOR_ORDER.includes(f) ? `Explore ${f}` : f));
 
   const wrap = el("div", {}, [
     settingsBar(),
     banner(CASINO_NAME),
+    session.slotId != null
+      ? el("p", { className: "dim", textContent: `Save: ${session.slotLabel || `Slot ${session.slotId}`}` })
+      : null,
     el("p", { className: "welcome-line", textContent: `Welcome, ${session.playerName}` }),
     chipLine(),
     el("div", { className: "panel" }, [
@@ -174,6 +317,13 @@ function renderHub() {
       pushView("cashier");
     } else if (choice === FLOOR_ORDER.length + 2) {
       pushView("stats");
+    } else if (choice === FLOOR_ORDER.length + 3) {
+      if (session.slotId != null) {
+        persist();
+        alert(`Game saved to ${session.slotLabel || `Slot ${session.slotId}`}.`);
+      } else {
+        alert("No save slot active.");
+      }
     } else {
       pushView("leave");
     }
@@ -343,8 +493,9 @@ function renderLeave() {
         className: "btn danger",
         textContent: "Leave",
         onclick: () => {
+          persist();
           alert(`Thanks for visiting ${CASINO_NAME}. Final balance: ${fmtChips(session.wallet.balance)}`);
-          viewStack = ["hub"];
+          viewStack = [{ name: "save-picker", data: {} }];
           render();
         },
       }),
@@ -826,6 +977,9 @@ function popView() {
 }
 
 const RENDERERS = {
+  "save-picker": renderSavePicker,
+  "save-create": renderSaveCreate,
+  "save-delete": renderSaveDelete,
   hub: renderHub,
   floor: renderFloor,
   cashier: renderCashier,
@@ -851,19 +1005,7 @@ function render() {
   app.appendChild(fn(current.data));
 }
 
-function initPlayerName() {
-  const saved = loadSession();
-  if (saved) {
-    session = saved;
-    return;
-  }
-  const name = prompt("Welcome to The Mandalay Bay!\nEnter your player name:", "Guest");
-  if (name && name.trim()) session.playerName = name.trim();
-  persist();
-}
-
-viewStack = [{ name: "hub", data: {} }];
-initPlayerName();
+viewStack = [{ name: "save-picker", data: {} }];
 render();
 
 document.addEventListener("keydown", (e) => {

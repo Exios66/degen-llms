@@ -123,12 +123,21 @@ export class ActivityStats {
 }
 
 export class PlayerSession {
-  constructor({ playerName = "Guest", chips = 1000, useColor = true, useUnicode = true } = {}) {
+  constructor({
+    playerName = "Guest",
+    chips = 1000,
+    useColor = true,
+    useUnicode = true,
+    slotId = null,
+    slotLabel = "",
+  } = {}) {
     this.playerName = playerName;
     this.wallet = new ChipWallet(chips);
     this.useColor = useColor;
     this.useUnicode = useUnicode;
     this.activityStats = {};
+    this.slotId = slotId;
+    this.slotLabel = slotLabel;
   }
 
   statFor(activity) {
@@ -150,7 +159,10 @@ export class PlayerSession {
 
   toJSON() {
     return {
+      version: 1,
       playerName: this.playerName,
+      slotId: this.slotId,
+      slotLabel: this.slotLabel,
       wallet: this.wallet.toJSON(),
       useColor: this.useColor,
       useUnicode: this.useUnicode,
@@ -164,6 +176,8 @@ export class PlayerSession {
       chips: data.wallet?.balance ?? 1000,
       useColor: data.useColor ?? true,
       useUnicode: data.useUnicode ?? true,
+      slotId: data.slotId ?? null,
+      slotLabel: data.slotLabel ?? "",
     });
     s.wallet = ChipWallet.fromJSON(data.wallet ?? { balance: 1000, transactions: [] });
     s.activityStats = data.activityStats ?? {};
@@ -171,28 +185,175 @@ export class PlayerSession {
   }
 }
 
-const STORAGE_KEY = "mandalay-bay-session";
+export const MAX_SLOTS = 5;
+const LIBRARY_KEY = "mandalay-bay-library";
 
-export function saveSession(session) {
+function emptyLibrary() {
+  return { recent: [], summaries: {}, slots: {} };
+}
+
+export function loadLibrary() {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(session.toJSON()));
+    const raw = localStorage.getItem(LIBRARY_KEY);
+    if (raw) return { ...emptyLibrary(), ...JSON.parse(raw) };
+  } catch {
+    /* ignore corrupt data */
+  }
+  migrateLegacySession();
+  try {
+    const raw = localStorage.getItem(LIBRARY_KEY);
+    if (raw) return { ...emptyLibrary(), ...JSON.parse(raw) };
+  } catch {
+    /* ignore */
+  }
+  return emptyLibrary();
+}
+
+function migrateLegacySession() {
+  const LEGACY = "mandalay-bay-session";
+  const raw = localStorage.getItem(LEGACY);
+  if (!raw) return;
+  try {
+    const data = JSON.parse(raw);
+    const lib = emptyLibrary();
+    lib.slots["1"] = { ...data, slotId: 1, slotLabel: data.slotLabel ?? "Slot 1" };
+    lib.summaries["1"] = {
+      label: "Slot 1",
+      playerName: data.playerName ?? "Guest",
+      balance: data.wallet?.balance ?? 1000,
+      updatedAt: new Date().toISOString(),
+    };
+    lib.recent = [1];
+    writeLibrary(lib);
+    localStorage.removeItem(LEGACY);
+  } catch {
+    /* ignore */
+  }
+}
+
+function writeLibrary(lib) {
+  try {
+    localStorage.setItem(LIBRARY_KEY, JSON.stringify(lib));
   } catch {
     /* ignore quota errors */
   }
 }
 
-export function loadSession() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return PlayerSession.fromJSON(JSON.parse(raw));
-  } catch {
-    /* ignore corrupt data */
+function touchRecent(lib, slotId) {
+  lib.recent = lib.recent.filter((id) => id !== slotId);
+  lib.recent.unshift(slotId);
+  lib.recent = lib.recent.slice(0, MAX_SLOTS);
+}
+
+function updateSummary(lib, session) {
+  if (session.slotId == null) return;
+  lib.summaries[String(session.slotId)] = {
+    label: session.slotLabel || `Slot ${session.slotId}`,
+    playerName: session.playerName,
+    balance: session.wallet.balance,
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+export function listSlots() {
+  const lib = loadLibrary();
+  const slots = [];
+  for (let id = 1; id <= MAX_SLOTS; id++) {
+    const key = String(id);
+    const occupied = Boolean(lib.slots[key]);
+    const meta = lib.summaries[key] ?? {};
+    slots.push({
+      slotId: id,
+      label: occupied ? (meta.label ?? `Slot ${id}`) : `Slot ${id} (empty)`,
+      playerName: meta.playerName ?? "",
+      balance: meta.balance ?? 0,
+      updatedAt: meta.updatedAt ?? null,
+      occupied,
+    });
   }
+  return slots;
+}
+
+export function recentSlots() {
+  const lib = loadLibrary();
+  const byId = Object.fromEntries(listSlots().filter((s) => s.occupied).map((s) => [s.slotId, s]));
+  const ordered = [];
+  for (const id of lib.recent) {
+    if (byId[id]) ordered.push(byId[id]);
+  }
+  for (const slot of listSlots()) {
+    if (slot.occupied && !lib.recent.includes(slot.slotId)) ordered.push(slot);
+  }
+  return ordered;
+}
+
+export function loadSlot(slotId) {
+  const lib = loadLibrary();
+  const raw = lib.slots[String(slotId)];
+  if (!raw) return null;
+  const session = PlayerSession.fromJSON(raw);
+  session.slotId = slotId;
+  touchRecent(lib, slotId);
+  writeLibrary(lib);
+  return session;
+}
+
+export function saveSlot(session) {
+  if (session.slotId == null) return;
+  const lib = loadLibrary();
+  lib.slots[String(session.slotId)] = session.toJSON();
+  updateSummary(lib, session);
+  touchRecent(lib, session.slotId);
+  writeLibrary(lib);
+}
+
+export function deleteSlot(slotId) {
+  const lib = loadLibrary();
+  delete lib.slots[String(slotId)];
+  delete lib.summaries[String(slotId)];
+  lib.recent = lib.recent.filter((id) => id !== slotId);
+  writeLibrary(lib);
+}
+
+export function createSlot(slotId, { playerName = "Guest", chips = 1000, label = "", useColor = true, useUnicode = true } = {}) {
+  const session = new PlayerSession({
+    playerName,
+    chips,
+    useColor,
+    useUnicode,
+    slotId,
+    slotLabel: label || `Slot ${slotId}`,
+  });
+  saveSlot(session);
+  return session;
+}
+
+export function formatSaveTime(iso) {
+  if (!iso) return "never";
+  try {
+    return new Date(iso).toLocaleString();
+  } catch {
+    return "unknown";
+  }
+}
+
+/** @deprecated use saveSlot(session) */
+export function saveSession(session) {
+  saveSlot(session);
+}
+
+/** @deprecated */
+export function loadSession() {
+  const recent = recentSlots();
+  if (recent.length) return loadSlot(recent[0].slotId);
   return null;
 }
 
+/** @deprecated */
 export function clearSession() {
-  localStorage.removeItem(STORAGE_KEY);
+  const lib = loadLibrary();
+  localStorage.removeItem(LIBRARY_KEY);
+  return lib;
 }
 
 export const ACTIVITIES = {

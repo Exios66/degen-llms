@@ -27,4 +27,5 @@ jobs:
         with:
           folder: docs
           branch: gh-pages
+          target-folder: docs
           commit-message: "Deploy GitHub Pages from main@${{ github.sha }}"

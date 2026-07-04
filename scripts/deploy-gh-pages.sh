@@ -27,17 +27,18 @@ else
 fi
 
 find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
-cp -r "$STAGING/docs/." .
+mkdir -p docs
+cp -r "$STAGING/docs/." docs/
 
 git add -A
 if git diff --cached --quiet; then
   echo "gh-pages already up to date with origin/$SOURCE_BRANCH docs/"
 else
-  git commit -m "Sync gh-pages with docs/ from $SOURCE_BRANCH"
+  git commit -m "Sync gh-pages/docs/ from $SOURCE_BRANCH"
 fi
 
 git push -u origin gh-pages
 
 git checkout "$SOURCE_BRANCH" 2>/dev/null || git checkout main
 
-echo "Deployed docs/ from $SOURCE_BRANCH to gh-pages branch."
+echo "Deployed docs/ from $SOURCE_BRANCH to gh-pages branch (docs/ subfolder)."

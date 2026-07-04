@@ -25,7 +25,9 @@ The same **The Mandalay Bay** experience is available as a web app styled like t
 
 The site lives in the [`docs/`](docs/) folder and is published from the **`gh-pages`** branch. Pushes to `main` that change `docs/` automatically redeploy via GitHub Actions.
 
-**Enable Pages (one-time):** Repository **Settings → Pages → Build and deployment → Source: Deploy from a branch → Branch: `gh-pages` → Folder: `/ (root)` → Save.**
+**Enable Pages (one-time):** Repository **Settings → Pages → Build and deployment → Source: Deploy from a branch → Branch: `gh-pages` → Folder: `/docs` → Save.**
+
+Custom error screens live in `docs/` (`404.html`, `maintenance.html`, `offline.html`) and deploy with the site.
 
 Manual deploy: `./scripts/deploy-gh-pages.sh`
 

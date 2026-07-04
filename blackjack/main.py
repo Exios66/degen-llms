@@ -120,6 +120,8 @@ def run_game(config: GameConfig, *, max_rounds: int | None = None) -> None:
     shoe = Shoe(num_decks=config.num_decks, verbose_shuffle=config.verbose_shuffle)
     table = Table.from_config(config, display, shoe)
     human = table.human()
+    if max_rounds is not None:
+        human._prompt_bet = lambda _bankroll, cfg: cfg.min_bet  # noqa: SLF001
     rounds_played = 0
 
     display.banner("BLACKJACK")

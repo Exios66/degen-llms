@@ -1,0 +1,26 @@
+[project]
+name = "mandalay-bay"
+version = "1.0.0"
+description = "The Mandalay Bay — digital casino CLI with blackjack, slots, and sports book"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+
+[project.scripts]
+mandalay-bay = "mandalay_bay.main:main"
+blackjack = "blackjack.main:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["blackjack*", "mandalay_bay*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]

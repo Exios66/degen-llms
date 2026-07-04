@@ -12,8 +12,15 @@ Main lobby options:
   3) Sports Book     — Moneyline and spread wagering
   4) Cashier         — Buy chips, cash out, view ledger
   5) Player Stats    — Visits, bets, net winnings per activity
-  6) Casino Guide    — This help screen
-  7) Leave Casino    — Exit with your remaining chips
+  6) Save Game       — Write progress to your save slot
+  7) Casino Guide    — Rules and controls reference
+  8) Leave Casino    — Auto-saves and exits
+
+Save system:
+  • Pick or create a save slot when entering the casino
+  • Up to 5 slots; most recently played appear first in the library
+  • Progress auto-saves when leaving or after each activity
+  • CLI: --list-saves, --slot N, --slot N --new
 
 Navigation tips:
   • Press 0 at sub-menus to return to the previous screen
@@ -82,10 +89,26 @@ CHIP ECONOMY
 • Full audit trail available at the Cashier ledger
 """
 
+SAVES_HELP = """
+SAVE SLOTS & LIBRARY
+====================
+• 5 save slots; most recently played listed first
+• Saved data: player name, chips, stats, transaction ledger
+• Auto-save: after each activity and when leaving the casino
+• Manual save: lobby option "Save Game"
+
+CLI:
+  python3 -m mandalay_bay --list-saves
+  python3 -m mandalay_bay --slot 2
+  python3 -m mandalay_bay --slot 3 --new --name "Ace" --chips 2000
+  python3 -m mandalay_bay --save-dir ./my_saves
+"""
+
 SECTIONS = {
     "overview": CASINO_OVERVIEW,
     "blackjack": BLACKJACK_HELP,
     "slots": SLOTS_HELP,
     "sportsbook": SPORTSBOOK_HELP,
     "chips": CHIP_ECONOMY_HELP,
+    "saves": SAVES_HELP,
 }

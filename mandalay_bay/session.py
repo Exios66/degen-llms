@@ -21,6 +21,10 @@ class PlayerSession:
     use_color: bool = True
     use_unicode: bool = True
     activity_stats: dict[str, ActivityStats] = field(default_factory=dict)
+    slot_id: int = 0
+    slot_label: str = ""
+    created_at: str = ""
+    updated_at: str = ""
 
     def stat_for(self, activity: str) -> ActivityStats:
         if activity not in self.activity_stats:
@@ -34,3 +38,7 @@ class PlayerSession:
         stats = self.stat_for(activity)
         stats.hands_or_bets += bets
         stats.net_winnings += net
+
+    @property
+    def has_save_slot(self) -> bool:
+        return self.slot_id > 0

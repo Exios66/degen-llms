@@ -44,8 +44,9 @@ Choose your adventure:
   3) Explore Sports Book
   4) Cashier
   5) Player Stats
-  6) Casino Guide
-  7) Leave Casino
+  6) Save Game
+  7) Casino Guide
+  8) Leave Casino
 ```
 
 | Option | Action |
@@ -53,12 +54,34 @@ Choose your adventure:
 | 1–3 | Enter a casino floor and pick an activity |
 | 4 | Buy/cash out chips, view ledger |
 | 5 | Session statistics per activity |
-| 6 | In-game rules and controls reference |
-| 7 | Exit the casino (confirmation required) |
+| 6 | Manual save to your slot |
+| 7 | In-game rules and controls reference |
+| 8 | Auto-save and exit (confirmation required) |
+
+Progress **auto-saves** after each floor activity and when leaving.
 
 ### Low balance notice
 
 If your balance drops below **$50**, a warning appears suggesting a Cashier visit.
+
+---
+
+## Save library (entry screen)
+
+Before the casino floor, you manage save slots:
+
+```
+Save options:
+  1) Load a save slot
+  2) Create new save in empty slot
+  3) Delete a save slot
+  4) Refresh library
+  5) Exit without playing
+```
+
+Most recently played saves appear first. Up to **5 slots** total.
+
+See [Save Slots](saves.md) for CLI usage (`--slot`, `--new`, `--list-saves`).
 
 ---
 

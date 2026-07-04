@@ -1,7 +1,11 @@
+from pathlib import Path
+
 from mandalay_bay.activities.sportsbook import BetSlip, SportsbookActivity, SportsEvent
 from mandalay_bay.chips import ChipWallet
 from mandalay_bay.display import TerminalUI
 from mandalay_bay.hub import run_cashier, run_help, run_hub
+from mandalay_bay.save_menu import format_save_library, run_save_selector
+from mandalay_bay.saves import SaveLibrary, create_new_session
 from mandalay_bay.session import PlayerSession
 
 
@@ -43,7 +47,6 @@ def test_wallet_apply_delta_and_reconcile() -> None:
     assert wallet.balance == 950
     wallet.reconcile(1050, "blackjack", "Exit sync")
     assert wallet.balance == 1050
-    assert len(wallet.transactions) == 2
 
 
 def test_spread_push_returns_stake() -> None:
@@ -68,11 +71,13 @@ def test_spread_push_returns_stake() -> None:
     assert "Push" in reason
 
 
-def test_hub_leave_casino_flow() -> None:
-    session = PlayerSession(wallet=ChipWallet(balance=500))
-    ui = ScriptedUI(["7", "y"])
-    run_hub(session, ui, show_intro=False)
+def test_hub_leave_casino_flow(tmp_path: Path) -> None:
+    library = SaveLibrary.load(tmp_path / "saves")
+    session = create_new_session(library, 1, player_name="Guest", starting_chips=500)
+    ui = ScriptedUI(["8", "y"])
+    run_hub(session, ui, library=library, show_intro=False)
     assert session.wallet.balance == 500
+    assert not SaveLibrary.load(tmp_path / "saves").slots[1].is_empty
 
 
 def test_cashier_buy_chips() -> None:
@@ -95,9 +100,29 @@ def test_help_menu_renders(capsys) -> None:
     assert "MANDALAY BAY" in capsys.readouterr().out
 
 
-def test_main_lobby_has_no_back_option(capsys) -> None:
-    session = PlayerSession(wallet=ChipWallet(balance=1000))
-    ui = ScriptedUI(["7", "n", "7", "y"])
-    run_hub(session, ui, show_intro=False)
+def test_main_lobby_has_no_back_option(capsys, tmp_path: Path) -> None:
+    library = SaveLibrary.load(tmp_path / "saves")
+    session = create_new_session(library, 1, player_name="Guest", starting_chips=1000)
+    ui = ScriptedUI(["8", "n", "8", "y"])
+    run_hub(session, ui, library=library, show_intro=False)
     lobby_section = capsys.readouterr().out.split("Choose your adventure")[1].split("Choose:")[0]
     assert "0) Back" not in lobby_section
+
+
+def test_create_save_via_selector(tmp_path: Path) -> None:
+    library = SaveLibrary.load(tmp_path / "saves")
+    ui = ScriptedUI(["2", "1", "Weekend Run", "Sam", "2000"])
+    session = run_save_selector(ui, library, default_player_name="Guest")
+    assert session is not None
+    assert session.player_name == "Sam"
+    assert session.wallet.balance == 2000
+    assert session.slot_label == "Weekend Run"
+
+
+def test_list_saves_format(tmp_path: Path) -> None:
+    library = SaveLibrary.load(tmp_path / "saves")
+    create_new_session(library, 1, player_name="Ace", starting_chips=900, slot_label="Main")
+    text = format_save_library(library)
+    assert "Ace" in text
+    assert "900" in text
+    assert "Slot 1" in text

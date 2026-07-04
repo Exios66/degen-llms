@@ -9,6 +9,7 @@ Complete documentation for the digital casino CLI.
 | [Getting Started](getting-started.md) | Installation, launch, first visit |
 | [Player Guide](player-guide.md) | Full navigation, menus, dialog flows, UX |
 | [Chip Economy](chip-economy.md) | Wallet, ledger, buy-ins, cash-outs |
+| [Save Slots](saves.md) | Save library, load/create, CLI saves |
 | [Blackjack](blackjack.md) | Table rules, controls, casino & standalone modes |
 | [Slot Machines](slots.md) | Machines, paytable, spin flow |
 | [Sports Book](sportsbook.md) | Events, moneyline, spread, settlement |

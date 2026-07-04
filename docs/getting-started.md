@@ -29,14 +29,19 @@ mandalay-bay
 python3 -m mandalay_bay
 ```
 
-You arrive at **The Mandalay Bay** with **$1,000** in chips by default.
+You begin at the **Save Library** to load an existing save or create a new one (5 slots). Default starting balance for new saves is **$1,000**.
 
 ### Command-line options
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `--chips N` | 1000 | Starting chip balance |
-| `--name "Name"` | Guest | Player name on your card |
+| `--chips N` | 1000 | Starting chips for **new** saves |
+| `--name "Name"` | Guest | Default player name for new saves |
+| `--slot N` | — | Load save slot 1–5 directly |
+| `--new` | off | Create new save (with `--slot`) |
+| `--save-label "Label"` | — | Label for `--slot --new` |
+| `--list-saves` | off | Print save library and exit |
+| `--save-dir PATH` | ~/.local/share/... | Custom save directory |
 | `--no-color` | off | Disable ANSI terminal colors |
 | `--ascii` | off | ASCII card/symbol rendering |
 | `--no-intro` | off | Skip the welcome screen |
@@ -44,8 +49,10 @@ You arrive at **The Mandalay Bay** with **$1,000** in chips by default.
 Examples:
 
 ```bash
-python3 -m mandalay_bay --chips 5000 --name "High Roller"
-python3 -m mandalay_bay --no-color --ascii --no-intro
+python3 -m mandalay_bay --list-saves
+python3 -m mandalay_bay --slot 2
+python3 -m mandalay_bay --slot 1 --new --name "Ace" --chips 5000 --save-label "High Roller"
+python3 -m mandalay_bay --save-dir ./my_saves
 ```
 
 ## Standalone blackjack
@@ -62,13 +69,15 @@ When played inside The Mandalay Bay, blackjack shares your casino chip wallet.
 
 ## First visit walkthrough
 
-1. **Welcome screen** — overview of the floor and your starting chips
-2. **Main lobby** — choose an activity or visit the Cashier
-3. **Explore a floor** — e.g. Table Games → Blackjack
-4. **Play** — wager chips; wins and losses update your wallet automatically
-5. **Return** — press `0` at sub-menus to go back to the lobby
-6. **Cashier** — buy more chips or review your transaction ledger
-7. **Leave** — exit when done; your final balance is displayed
+1. **Save Library** — load a slot, create a new save, or delete old ones
+2. **Welcome screen** — overview of the floor and your chips
+3. **Main lobby** — choose an activity or visit the Cashier
+4. **Explore a floor** — e.g. Table Games → Blackjack
+5. **Play** — wager chips; progress auto-saves when you return to the lobby
+6. **Save Game** — manual save from the lobby (option 6)
+7. **Leave** — auto-saves and exits (option 8)
+
+See [Save Slots](saves.md) for full save system documentation.
 
 ## Running tests
 

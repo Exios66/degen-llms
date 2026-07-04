@@ -17,6 +17,22 @@ python3 -m blackjack
 python3 -m pytest -v
 ```
 
+### Play in your browser (GitHub Pages)
+
+The same **The Mandalay Bay** experience is available as a web app styled like the terminal CLI:
+
+**https://exios66.github.io/degen-llms/**
+
+The site lives in the [`docs/`](docs/) folder and is published from the **`gh-pages`** branch. All floor activities work in the browser:
+
+- Table Games (blackjack — quick hand or custom table with bots)
+- Slot Machines (Mandalay Fortune & High Roller)
+- Sports Book (moneyline & spread)
+- Cashier (buy/cash out, transaction ledger)
+- Player Stats (visits, bets, net winnings)
+
+Session progress is saved in your browser via `localStorage`. Open `docs/index.html` locally for offline play.
+
 ## The Mandalay Bay
 
 Welcome to the floor. One chip wallet powers every activity:

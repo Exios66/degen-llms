@@ -20,9 +20,17 @@ python3 -m pytest -v
 
 The web app in [`docs/`](docs/) mirrors the terminal experience. Session progress saves per slot in your browser via `localStorage`.
 
-- Deploy: pushes to `main` that change `docs/` auto-redeploy via GitHub Actions
-- Manual deploy: `./scripts/deploy-gh-pages.sh`
-- Enable Pages: **Settings → Pages → Branch: `gh-pages` → Folder: `/ (root)`**
+The site source lives in the [`docs/`](docs/) folder on the **`gh-pages`** branch. GitHub Pages uses the default branch publisher (no custom deploy workflow).
+
+**Enable Pages (one-time):** Repository **Settings → Pages → Build and deployment → Source: Deploy from a branch → Branch: `gh-pages` → Folder: `/docs` → Save.**
+
+After editing `docs/` on `main`, sync to `gh-pages` and push:
+
+```bash
+./scripts/deploy-gh-pages.sh
+```
+
+Custom error screens live in `docs/` (`404.html`, `maintenance.html`, `offline.html`) and deploy with the site.
 
 ## Documentation
 

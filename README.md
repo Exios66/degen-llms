@@ -23,7 +23,13 @@ The same **The Mandalay Bay** experience is available as a web app styled like t
 
 **https://exios66.github.io/degen-llms/**
 
-The site lives in the [`docs/`](docs/) folder and is published from the **`gh-pages`** branch. All floor activities work in the browser:
+The site lives in the [`docs/`](docs/) folder and is published from the **`gh-pages`** branch. Pushes to `main` that change `docs/` automatically redeploy via GitHub Actions.
+
+**Enable Pages (one-time):** Repository **Settings → Pages → Build and deployment → Source: Deploy from a branch → Branch: `gh-pages` → Folder: `/ (root)` → Save.**
+
+Manual deploy: `./scripts/deploy-gh-pages.sh`
+
+All floor activities work in the browser:
 
 - Table Games (blackjack — quick hand or custom table with bots)
 - Slot Machines (Mandalay Fortune & High Roller)

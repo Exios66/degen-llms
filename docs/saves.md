@@ -7,14 +7,14 @@ The Mandalay Bay persists your progress across sessions using a **save library**
 Default path:
 
 ```
-~/.local/share/mandalay-bay/saves/
+~/.mandalay_bay/saves/
 ├── library.json      # Index + recent-play order
-├── slot_01.json
-├── slot_02.json
+├── slot_1.json
+├── slot_2.json
 ...
 ```
 
-Override with `--save-dir /path/to/saves`.
+Override with `--save-dir /path/to/saves` or the `MANDALAY_BAY_SAVE_DIR` environment variable.
 
 ## Entering the casino
 
@@ -82,7 +82,7 @@ Skips the save library menu and loads slot 2 immediately.
 ### Create a new save in a slot
 
 ```bash
-python3 -m mandalay_bay --slot 3 --new --name "Lucky" --chips 2500 --save-label "Vegas Trip"
+python3 -m mandalay_bay --slot 3 --new-save --name "Lucky" --chips 2500 --save-label "Vegas Trip"
 ```
 
 Creates (or overwrites with confirmation) a new game in slot 3.
@@ -109,7 +109,7 @@ Lobby option **6) Save Game** writes progress immediately without leaving.
 
 ## File format
 
-Save files use JSON (version 1). The library index tracks metadata for quick listing; full session data lives in `slot_XX.json`.
+Save files use JSON (version 1). The library index tracks metadata for quick listing; full session data lives in `slot_N.json` (where N is 1–5).
 
 ## Tips
 

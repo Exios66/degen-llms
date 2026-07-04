@@ -1,0 +1,74 @@
+{
+  "chip_chandler_intro": {
+    "speaker": "Chip Chandler",
+    "text": "Welcome to The Mandalay Bay! I'm Chip Chandler, guest services. Walk north to the casino floor — Dealer Dana runs Table 7.",
+    "next": "chip_chandler_tips"
+  },
+  "chip_chandler_tips": {
+    "speaker": "Chip Chandler",
+    "text": "Your chip balance carries everywhere on the floor. Talk to NPCs with E or Enter. Good luck — the house is patient.",
+    "setFlag": "met_chip_chandler",
+    "choices": [
+      { "label": "Any secrets?", "next": "chip_chandler_secret" },
+      { "label": "Thanks!", "next": "chip_chandler_bye" }
+    ]
+  },
+  "chip_chandler_secret": {
+    "speaker": "Chip Chandler",
+    "text": "Between us? The gold carpet tiles near the plants sometimes hide stories. Also — Tina by the slot aisle saw something weird last night.",
+    "setFlag": "hint_plants",
+    "next": "chip_chandler_bye"
+  },
+  "chip_chandler_bye": {
+    "speaker": "Chip Chandler",
+    "text": "Enjoy your stay. Press E anytime you see the golden arrow!",
+    "setFlag": "tutorial_complete"
+  },
+  "dealer_dana_greet": {
+    "speaker": "Dealer Dana",
+    "text": "Evening. Table 7 is open — six decks, H17, 3:2 blackjack. Minimum ten chips.",
+    "choices": [
+      {
+        "label": "Deal me in!",
+        "encounter": "blackjack",
+        "setFlag": "played_blackjack"
+      },
+      {
+        "label": "Just watching for now.",
+        "next": "dealer_dana_watch"
+      }
+    ]
+  },
+  "dealer_dana_watch": {
+    "speaker": "Dealer Dana",
+    "text": "Smart. The felt remembers every hand. Come back when you're ready — I'll be here.",
+    "setFlag": "dealer_dana_seen"
+  },
+  "dealer_dana_return": {
+    "speaker": "Dealer Dana",
+    "text": "Back for another round? The shoe doesn't judge.",
+    "choices": [
+      { "label": "Let's play.", "encounter": "blackjack" },
+      { "label": "Not yet.", "next": "dealer_dana_watch" }
+    ]
+  },
+  "tourist_tina": {
+    "speaker": "Tourist Tina",
+    "text": "I came for the wave pool but ended up at the blackjack pit. Vegas, right?",
+    "choices": [
+      { "label": "First time here?", "next": "tourist_tina_first" },
+      { "label": "Good luck!", "next": "tourist_tina_bye" }
+    ]
+  },
+  "tourist_tina_first": {
+    "speaker": "Tourist Tina",
+    "text": "Third! I heard there's a secret behind the north wall tiles. Probably nonsense. Probably.",
+    "setFlag": "hint_north_wall",
+    "next": "tourist_tina_bye"
+  },
+  "tourist_tina_bye": {
+    "speaker": "Tourist Tina",
+    "text": "If you find the shark aquarium, tell me — I got lost twice already!",
+    "setFlag": "met_tina"
+  }
+}

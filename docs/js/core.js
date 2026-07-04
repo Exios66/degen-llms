@@ -1,4 +1,19 @@
 export const CASINO_NAME = "The Mandalay Bay";
+export const SAVE_VERSION = 2;
+
+/** Default RPG overworld state for pixel mode (Phase 1+). */
+export function defaultRpgState(overrides = {}) {
+  return {
+    mapId: "main_resort",
+    x: 15,
+    y: 26,
+    playerSprite: "weekend_warrior",
+    quests: {},
+    flags: {},
+    playTimeMinutes: 0,
+    ...overrides,
+  };
+}
 
 export const TransactionKind = {
   BUY_IN: "buy_in",
@@ -139,6 +154,7 @@ export class PlayerSession {
     this.slotId = slotId;
     this.slotLabel = slotLabel;
     this.sportsbookData = null;
+    this.rpg = null;
     this.rpgData = null;
   }
 
@@ -159,9 +175,14 @@ export class PlayerSession {
     stats.netWinnings += net;
   }
 
+  ensureRpgState() {
+    if (!this.rpg) this.rpg = defaultRpgState();
+    return this.rpg;
+  }
+
   toJSON() {
-    return {
-      version: 1,
+    const payload = {
+      version: SAVE_VERSION,
       playerName: this.playerName,
       slotId: this.slotId,
       slotLabel: this.slotLabel,
@@ -172,6 +193,8 @@ export class PlayerSession {
       sportsbook: this.sportsbookData ?? null,
       rpgData: this.rpgData ?? null,
     };
+    if (this.rpg) payload.rpg = this.rpg;
+    return payload;
   }
 
   static fromJSON(data) {
@@ -186,6 +209,7 @@ export class PlayerSession {
     s.wallet = ChipWallet.fromJSON(data.wallet ?? { balance: 1000, transactions: [] });
     s.activityStats = data.activityStats ?? {};
     s.sportsbookData = data.sportsbook ?? null;
+    s.rpg = data.rpg ? { ...defaultRpgState(), ...data.rpg } : null;
     s.rpgData = data.rpgData ?? null;
     return s;
   }

@@ -41,6 +41,7 @@ Occupied slots show player name, chip balance, and last played time. **Most rece
 | Activity stats (visits, net) | Yes |
 | Save label & slot number | Yes |
 | Display preferences | Yes |
+| RPG position & quest flags ([pixel mode](rpg/GDD.md)) | Yes, when present |
 | Open sports book tickets | No (settle before saving) |
 
 ## Auto-save

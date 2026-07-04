@@ -18,6 +18,14 @@ python3 -m pytest -v
 
 **https://exios66.github.io/degen-llms/**
 
+### Pixel RPG mode (Phase 1)
+
+Explore the resort in a **16-bit JRPG–style overworld** — walk the lobby, talk to NPCs, and sit at the blackjack table:
+
+**https://exios66.github.io/degen-llms/rpg/**
+
+Shares the same save slots and chip wallet as the terminal web app. See [`docs/rpg/GDD.md`](docs/rpg/GDD.md) for the full design doc and expansion roadmap.
+
 The web app in [`docs/`](docs/) mirrors the terminal experience. Session progress saves per slot in your browser via `localStorage`.
 
 The site source lives in the [`docs/`](docs/) folder on the **`gh-pages`** branch. GitHub Pages uses the default branch publisher (no custom deploy workflow).

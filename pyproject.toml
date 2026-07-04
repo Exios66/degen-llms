@@ -1,0 +1,22 @@
+[project]
+name = "blackjack-cli"
+version = "1.0.0"
+description = "Casino-faithful blackjack CLI with secure RNG and simulated table players"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+
+[project.scripts]
+blackjack = "blackjack.main:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["blackjack*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

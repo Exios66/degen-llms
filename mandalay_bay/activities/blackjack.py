@@ -4,6 +4,7 @@ from dataclasses import replace
 
 from blackjack.config import GameConfig, make_bot_names
 from mandalay_bay.activities.base import Activity, ActivityInfo
+from mandalay_bay.dealers import announce_dealer, pick_quip
 from mandalay_bay.session import PlayerSession
 
 
@@ -22,6 +23,7 @@ class BlackjackActivity(Activity):
         session.record_visit(self.info.id)
         ui.banner(f"{self.info.floor} — {self.info.name}")
         ui.chip_line(session.wallet.balance)
+        dealer = announce_dealer(session, ui, self.info.id)
 
         if not self.can_enter(session):
             ui.error(f"You need at least {self.info.min_bet} chips to sit down.")

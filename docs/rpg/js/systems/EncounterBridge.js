@@ -1,5 +1,6 @@
 import { BlackjackGame, Action } from "../../../js/blackjack/game.js";
 import { fmtChips } from "../../../js/core.js";
+import { pickQuip } from "../../../js/dealers.js";
 
 /**
  * DOM overlay that wraps the shared BlackjackGame engine for RPG encounters.
@@ -17,6 +18,9 @@ export class BlackjackOverlay {
     this.game = null;
     this.sessionNet = 0;
     this._active = false;
+    this.dealerProfile = null;
+    this.dealerName = "Dealer";
+    this._settlementQuipShown = false;
   }
 
   isActive() {
@@ -24,13 +28,16 @@ export class BlackjackOverlay {
   }
 
   /**
-   * @param {{ dealerName?: string, minBet?: number }} options
+   * @param {{ dealerName?: string, dealerProfile?: import("../../../js/dealers.js").DealerProfile, minBet?: number }} options
    * @returns {Promise<{ net: number }>}
    */
   open(options = {}) {
     if (this._active) return Promise.resolve({ net: 0 });
     this._active = true;
     this.sessionNet = 0;
+    this.dealerProfile = options.dealerProfile ?? null;
+    this.dealerName = options.dealerName ?? this.dealerProfile?.name ?? "Dealer";
+    this._settlementQuipShown = false;
     this.session.recordVisit("blackjack");
     this.root.hidden = false;
 
@@ -52,6 +59,7 @@ export class BlackjackOverlay {
       }
     );
     this.game.beginRound();
+    this._injectDealerQuip("deal");
 
     return new Promise((resolve) => {
       this._resolve = resolve;
@@ -70,12 +78,22 @@ export class BlackjackOverlay {
     this.root.hidden = true;
     this.root.innerHTML = "";
     this._active = false;
+    this.dealerProfile = null;
+    this.dealerName = "Dealer";
     const net = this.sessionNet;
     this.sessionNet = 0;
     const resolve = this._resolve;
     this._resolve = null;
     if (resolve) resolve({ net });
     this.hooks.onClose?.({ net });
+  }
+
+  _injectDealerQuip(kind) {
+    if (!this.dealerProfile || !this.game) return;
+    const text = pickQuip(this.dealerProfile, kind);
+    if (text) {
+      this.game.messages.push({ type: "dim", text: `${this.dealerName}: "${text}"` });
+    }
   }
 
   _render() {
@@ -87,8 +105,15 @@ export class BlackjackOverlay {
     panel.className = "blackjack-panel";
 
     const title = document.createElement("h2");
-    title.textContent = "BLACKJACK — Table 7";
+    title.textContent = `BLACKJACK — Table 7 · ${this.dealerName}`;
     panel.appendChild(title);
+
+    if (this.dealerProfile?.tagline) {
+      const tag = document.createElement("p");
+      tag.className = "bj-dealer-tagline";
+      tag.textContent = this.dealerProfile.tagline;
+      panel.appendChild(tag);
+    }
 
     const chipLine = document.createElement("p");
     chipLine.className = "bj-chip-line";
@@ -132,7 +157,7 @@ export class BlackjackOverlay {
       const dealerRow = document.createElement("div");
       dealerRow.className = "bj-dealer";
       const cards = snapshot.dealer.cards.map((c) => (c ? c.label(this.session.useUnicode) : "??")).join(" ");
-      dealerRow.textContent = `Dealer: ${cards} (${snapshot.dealer.value})`;
+      dealerRow.textContent = `${this.dealerName}: ${cards} (${snapshot.dealer.value})`;
       table.appendChild(dealerRow);
     }
 
@@ -220,6 +245,16 @@ export class BlackjackOverlay {
     }
 
     if (game.phase === "complete" && !game.roundOverEarly) {
+      const net = game.humanNet;
+      if (this.dealerProfile && !this._settlementQuipShown) {
+        const quipKind = net > 0 ? "win" : net < 0 ? "lose" : "push";
+        const quipLine = document.createElement("div");
+        quipLine.className = "dim";
+        quipLine.textContent = `${this.dealerName}: "${pickQuip(this.dealerProfile, quipKind)}"`;
+        log.appendChild(quipLine);
+        this._settlementQuipShown = true;
+      }
+
       for (const line of game.resultLines) {
         const div = document.createElement("div");
         div.className = line.includes("+") ? "success" : line.includes("-") ? "error" : "";
@@ -234,6 +269,8 @@ export class BlackjackOverlay {
         again.onclick = () => {
           this.sessionNet += game.humanNet;
           game.beginRound();
+          this._settlementQuipShown = false;
+          this._injectDealerQuip("deal");
           this._render();
         };
         actions.appendChild(again);
@@ -279,7 +316,8 @@ export class EncounterBridge {
 
   async _startBlackjack(context) {
     const result = await this.blackjack.open({
-      dealerName: context.dealerName ?? "Dealer Dana",
+      dealerName: context.dealerName ?? "Dealer",
+      dealerProfile: context.dealerProfile ?? null,
       minBet: 10,
     });
     this.onPersist();

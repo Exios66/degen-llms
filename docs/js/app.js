@@ -20,6 +20,7 @@ import { HoldemTable, BettingAction } from "./holdem/game.js";
 import { HAND_CLASS_NAMES } from "./holdem/hand_eval.js";
 import { BET_TYPES, spinWheel, wheelColor, resolveBet } from "./roulette.js";
 import { generateRace, simulateRace, settleTicket, fmtOdds as fmtRaceOdds } from "./horse_racing.js";
+import { getSessionDealer, pickQuip } from "./dealers.js";
 
 const app = document.getElementById("app");
 
@@ -31,6 +32,7 @@ let slotsState = { machine: null, sessionNet: 0, spins: 0 };
 let holdemState = null;
 let rouletteState = { sessionNet: 0, spins: 0 };
 let horseRacingState = { card: null, pending: [], sessionNet: 0, races: 0 };
+let activeTableDealer = null;
 let viewStack = [];
 let statusMessage = null;
 
@@ -96,6 +98,16 @@ function banner(title) {
 
 function chipLine() {
   return el("p", { className: "chip-line", textContent: `Chips: ${fmtChips(session.wallet.balance)}` });
+}
+
+function dealerPanel(gameId) {
+  const dealer = getSessionDealer(session, gameId);
+  activeTableDealer = dealer;
+  return el("div", { className: "dealer-panel" }, [
+    el("p", { className: "subtitle", textContent: `On duty: ${dealer.name}` }),
+    el("p", { className: "dim", textContent: dealer.tagline }),
+    el("p", { className: "dim", textContent: `"${pickQuip(dealer, "greeting")}"` }),
+  ]);
 }
 
 function menu(options, title, onSelect, { showCasinoBanner = true } = {}) {
@@ -215,7 +227,7 @@ function renderTable(snapshot) {
     const cards = d.cards.map((c) => formatCardLabel(c)).join(" ");
     container.appendChild(el("div", {
       className: "dealer-line",
-      innerHTML: `Dealer: ${cards} (${d.value})`,
+      innerHTML: `${activeTableDealer?.name ?? "Dealer"}: ${cards} (${d.value})`,
     }));
   }
   return container;
@@ -958,6 +970,7 @@ function renderBlackjackMenu() {
   return el("div", {}, [
     banner("Table Games — Blackjack"),
     chipLine(),
+    dealerPanel("blackjack"),
     menu(["Quick hand (solo, table minimums)", "Custom table setup"], "Choose your table:", (choice) => {
       if (choice === 0) { goBack(); return; }
       if (choice === 1) {
@@ -1055,6 +1068,7 @@ function renderHoldemMenu() {
   return el("div", { className: "panel" }, [
     banner("Texas Hold'em"),
     chipLine(),
+    dealerPanel("holdem"),
     el("p", { className: "subtitle", textContent: "Hand rankings (UCI/Kaggle poker-hands dataset CLASS 0–9):" }),
     ranksEl,
     el("div", { className: "form-row" }, [
@@ -1236,6 +1250,7 @@ function renderRoulette() {
   return el("div", { className: "panel" }, [
     banner("Mandalay Roulette"),
     chipLine(),
+    dealerPanel("roulette"),
     el("div", { className: "form-row" }, [el("label", { textContent: "Bet type" }), betSelect]),
     straightRow,
     el("div", { className: "form-row" }, [el("label", { textContent: "Wager" }), amountInput]),
@@ -1252,12 +1267,16 @@ function renderRoulette() {
           if (!session.wallet.debit(amount, "roulette", `Roulette ${bet.kind}`)) {
             resultEl.className = "error"; resultEl.textContent = "Insufficient chips."; return;
           }
+          resultEl.className = "dim";
+          const dealer = activeTableDealer ?? getSessionDealer(session, "roulette");
+          resultEl.textContent = `${dealer.name}: "${pickQuip(dealer, "deal")}"`;
           const number = spinWheel();
           const straightPick = bet.kind === "straight" ? parseInt(straightInput.value, 10) : null;
           const { win, reason } = resolveBet(bet, amount, number, straightPick);
           rouletteState.spins += 1;
-          resultEl.className = "success";
-          resultEl.textContent = `Ball lands on ${number} (${wheelColor(number)}) — ${reason}`;
+          resultEl.className = win > 0 ? "success" : "dim";
+          const quip = pickQuip(dealer, win > 0 ? "win" : "lose");
+          resultEl.textContent = `Ball lands on ${number} (${wheelColor(number)}) — ${reason}. ${dealer.name}: "${quip}"`;
           if (win > 0) {
             session.wallet.credit(win, "roulette", reason);
             rouletteState.sessionNet += win - amount;
@@ -1315,6 +1334,7 @@ function renderHorseRacing() {
   return el("div", { className: "panel" }, [
     banner("Mandalay Racing"),
     chipLine(),
+    dealerPanel("horse_racing"),
     el("p", { className: "subtitle", textContent: card.label }),
     board,
     pendingEl,
@@ -1431,6 +1451,12 @@ function startBlackjack(config) {
     }
   );
   blackjackGame.beginRound();
+  if (activeTableDealer) {
+    blackjackGame.messages.push({
+      type: "dim",
+      text: `${activeTableDealer.name}: "${pickQuip(activeTableDealer, "deal")}"`,
+    });
+  }
   pushView("blackjack-play");
 }
 
@@ -1546,7 +1572,10 @@ function renderBlackjackPlay() {
   }
 
   return el("div", { className: "panel" }, [
-    banner("BLACKJACK"),
+    banner(activeTableDealer ? `BLACKJACK — ${activeTableDealer.name}` : "BLACKJACK"),
+    activeTableDealer
+      ? el("p", { className: "dim", textContent: activeTableDealer.tagline })
+      : null,
     chipEl,
     statusEl,
     tableEl,

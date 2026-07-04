@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 from blackjack.rng import SECURE_RANDOM
 from mandalay_bay.activities.base import Activity, ActivityInfo
+from mandalay_bay.dealers import announce_dealer, pick_quip
 from mandalay_bay.session import PlayerSession
 
 RED_NUMBERS = {
@@ -67,6 +68,7 @@ class RouletteActivity(Activity):
         session.record_visit(self.info.id)
         ui.banner(f"{self.info.floor} — {self.info.name}")
         ui.chip_line(session.wallet.balance)
+        dealer = announce_dealer(session, ui, self.info.id)
 
         if not self.can_enter(session):
             ui.error(f"Minimum bet is {self.info.min_bet} chips.")
@@ -101,6 +103,7 @@ class RouletteActivity(Activity):
                 continue
 
             number = spin_wheel()
+            ui.dim(f'  {dealer.name}: "{pick_quip(dealer, "deal")}"')
             win, reason = resolve_bet(bet_type, amount, number, straight_pick)
             spins += 1
             color = "green" if number == 0 else ("red" if number in RED_NUMBERS else "black")
@@ -109,9 +112,11 @@ class RouletteActivity(Activity):
                 session.wallet.credit(win, self.info.id, reason)
                 session_net += win - amount
                 ui.success(f"{reason} — Won {win:,} chips!")
+                ui.dim(f'  {dealer.name}: "{pick_quip(dealer, "win")}"')
             else:
                 session_net -= amount
                 ui.dim(reason)
+                ui.dim(f'  {dealer.name}: "{pick_quip(dealer, "lose")}"')
 
             if not ui.prompt_yes_no("Spin again?", default=True):
                 break

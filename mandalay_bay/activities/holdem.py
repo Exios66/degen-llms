@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from mandalay_bay.activities.base import Activity, ActivityInfo
+from mandalay_bay.dealers import announce_dealer, pick_quip
 from mandalay_bay.session import PlayerSession
 from poker.hand_eval import HAND_CLASS_NAMES
 from poker.holdem import BettingAction, HoldemTable, human_net_change
@@ -19,6 +20,7 @@ class HoldemActivity(Activity):
         session.record_visit(self.info.id)
         ui.banner(f"{self.info.floor} — {self.info.name}")
         ui.chip_line(session.wallet.balance)
+        dealer = announce_dealer(session, ui, self.info.id)
 
         if not self.can_enter(session):
             ui.error(f"Minimum buy-in is {self.info.min_bet} chips.")
@@ -96,6 +98,11 @@ class HoldemActivity(Activity):
             if table.showdown_scores:
                 for name, score in table.showdown_scores:
                     ui.print(f"  {name}: {score.name}")
+            if table.last_message and table.human.name in table.last_message:
+                if "wins" in table.last_message.lower():
+                    ui.dim(f'  {dealer.name}: "{pick_quip(dealer, "win")}"')
+                elif "fold" in table.last_message.lower():
+                    ui.dim(f'  {dealer.name}: "{pick_quip(dealer, "lose")}"')
 
         cash = table.human.stack
         session.wallet.credit(cash, self.info.id, "Cash out from Hold'em table")

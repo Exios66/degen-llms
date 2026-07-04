@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 from blackjack.rng import SECURE_RANDOM, fisher_yates_shuffle
 from mandalay_bay.activities.base import Activity, ActivityInfo
+from mandalay_bay.dealers import announce_dealer, pick_quip
 from mandalay_bay.session import PlayerSession
 
 HORSE_NAMES = [
@@ -89,6 +90,7 @@ class HorseRacingActivity(Activity):
         session.record_visit(self.info.id)
         ui.banner(f"{self.info.floor} — {self.info.name}")
         ui.chip_line(session.wallet.balance)
+        dealer = announce_dealer(session, ui, self.info.id)
 
         if not self.can_enter(session):
             ui.error(f"Minimum wager is {self.info.min_bet} chips.")
@@ -150,6 +152,7 @@ class HorseRacingActivity(Activity):
                     ui.error("No open tickets.")
                     continue
                 card.results = _simulate_race(card)
+                ui.dim(f'  {dealer.name}: "{pick_quip(dealer, "deal")}"')
                 ui.print("\nFINISH ORDER:")
                 for pos, num in enumerate(card.results, 1):
                     horse = next(h for h in card.horses if h.number == num)
@@ -172,9 +175,11 @@ class HorseRacingActivity(Activity):
                         session.wallet.credit(payout, self.info.id, f"{slip['bet_type']} #{slip['horse']}")
                         session_net += payout - slip["amount"]
                         ui.success(f"  WIN #{slip['horse']} {slip['bet_type']}: +{payout - slip['amount']:,}")
+                        ui.dim(f'  {dealer.name}: "{pick_quip(dealer, "win")}"')
                     else:
                         session_net -= slip["amount"]
                         ui.dim(f"  LOSE #{slip['horse']} {slip['bet_type']}: -{slip['amount']:,}")
+                        ui.dim(f'  {dealer.name}: "{pick_quip(dealer, "lose")}"')
                 pending.clear()
             elif choice == 3:
                 card = _generate_race()

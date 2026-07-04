@@ -345,7 +345,7 @@ function renderSaveDelete() {
           }
         },
       }),
-    ]);
+    ]));
   });
 
   return el("div", { className: "panel" }, [

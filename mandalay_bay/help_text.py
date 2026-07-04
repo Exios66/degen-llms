@@ -8,7 +8,7 @@ Visit the Cashier to buy more chips or review your transaction history.
 
 Main lobby options:
   1) Table Games     — Blackjack (solo or with AI players)
-  2) Slot Machines   — Mandalay Fortune & High Roller reels
+  2) Slot Machines   — Mandalay Bay slots (Megabucks, Wheel of Fortune, and more)
   3) Sports Book     — Moneyline and spread wagering
   4) Cashier         — Buy chips, cash out, view ledger
   5) Player Stats    — Visits, bets, net winnings per activity
@@ -45,18 +45,26 @@ Rules (default):
 """
 
 SLOTS_HELP = """
-SLOT MACHINES — PAYTABLE
-========================
-Mandalay Fortune:  5–50 chips per spin
-High Roller:       25–500 chips per spin (requires sufficient balance)
+SLOT MACHINES — MANDALAY BAY FLOOR
+===================================
+Penny slots to high-limit progressives — pick any machine on the floor.
 
-  7-7-7       100x bet
-  💎💎💎       50x bet
-  🔔🔔🔔       25x bet
-  BAR×3       15x bet
-  🍒🍒🍒       10x bet
-  Two cherries 2x bet
-  One cherry   Bet returned (push)
+Classic & high limit:
+  Mandalay Fortune     5–50 chips per spin
+  High Roller          25–500 chips per spin
+
+Progressives (max bet required for jackpot):
+  Megabucks            1–3 chips   — Three 💵 at max bet wins the pool
+  Monte Carlo          1–5 chips   — Linked progressive (👑 x3)
+  Super Spin           1–5 chips   — Linked progressive (⭐ x3)
+
+Popular video & themed slots:
+  Wheel of Fortune, Blazin' 7s, Buffalo Gold, Triple Red Hot 7s,
+  Double Jackpot, Spooky Link, Wizard of Oz, Emerald Guardian,
+  Tiger and Dragon — Super Bonus
+
+Each machine has its own symbols and paytable (shown when you sit down).
+Progressive jackpots grow with every spin and persist in your save slot.
 
 Enter 0 as spin amount to leave the machine.
 """

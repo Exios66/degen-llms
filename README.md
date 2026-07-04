@@ -23,9 +23,9 @@ The same **The Mandalay Bay** experience is available as a web app styled like t
 
 **https://exios66.github.io/degen-llms/**
 
-The site lives in the [`docs/`](docs/) folder and is published from the **`gh-pages`** branch. Pushes to `main` that change `docs/` automatically redeploy via GitHub Actions.
+The site source lives in [`docs/`](docs/) on `main` and is published via the **`gh-pages`** branch (files deployed to `gh-pages/docs/`). Pushes to `main` that change `docs/` automatically redeploy via GitHub Actions.
 
-**Enable Pages (one-time):** Repository **Settings → Pages → Build and deployment → Source: Deploy from a branch → Branch: `gh-pages` → Folder: `/ (root)` → Save.**
+**Pages source:** branch `gh-pages`, folder `/docs` (matches repo Settings → Pages).
 
 Manual deploy: `./scripts/deploy-gh-pages.sh`
 

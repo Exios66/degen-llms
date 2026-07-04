@@ -10,6 +10,8 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 concurrency:
   group: gh-pages-deploy
@@ -22,9 +24,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Deploy docs/ to gh-pages branch
+      - name: Deploy docs/ to gh-pages branch (docs/ subfolder)
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           folder: docs
           branch: gh-pages
+          target-folder: docs
+          clean: true
           commit-message: "Deploy GitHub Pages from main@${{ github.sha }}"

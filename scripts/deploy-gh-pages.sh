@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Sync docs/ from main to the gh-pages branch for GitHub Pages hosting.
+# Sync docs/ from main into gh-pages/docs/ for GitHub Pages hosting.
+# Pages is configured: branch gh-pages, path /docs
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -27,17 +28,18 @@ else
 fi
 
 find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
-cp -r "$STAGING/docs/." .
+mkdir -p docs
+cp -r "$STAGING/docs/." docs/
 
 git add -A
 if git diff --cached --quiet; then
   echo "gh-pages already up to date with origin/$SOURCE_BRANCH docs/"
 else
-  git commit -m "Sync gh-pages with docs/ from $SOURCE_BRANCH"
+  git commit -m "Sync gh-pages/docs/ from $SOURCE_BRANCH"
 fi
 
 git push -u origin gh-pages
 
 git checkout "$SOURCE_BRANCH" 2>/dev/null || git checkout main
 
-echo "Deployed docs/ from $SOURCE_BRANCH to gh-pages branch."
+echo "Deployed docs/ to gh-pages/docs/ (GitHub Pages source path)."

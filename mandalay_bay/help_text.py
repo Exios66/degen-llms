@@ -7,14 +7,15 @@ Explore the casino floor freely. Your chip wallet follows you everywhere.
 Visit the Cashier to buy more chips or review your transaction history.
 
 Main lobby options:
-  1) Table Games     — Blackjack (solo or with AI players)
+  1) Table Games     — Blackjack, Texas Hold'em, Roulette
   2) Slot Machines   — Mandalay Bay slots (Megabucks, Wheel of Fortune, and more)
   3) Sports Book     — Moneyline and spread wagering
-  4) Cashier         — Buy chips, cash out, view ledger
-  5) Player Stats    — Visits, bets, net winnings per activity
-  6) Save Game       — Write progress to your save slot
-  7) Casino Guide    — Rules and controls reference
-  8) Leave Casino    — Auto-saves and exits
+  4) Racing Pavilion — Thoroughbred win / place / show
+  5) Cashier         — Buy chips, cash out, view ledger
+  6) Player Stats    — Visits, bets, net winnings per activity
+  7) Save Game       — Write progress to your save slot
+  8) Casino Guide    — Rules and controls reference
+  9) Leave Casino    — Auto-saves and exits
 
 Save system:
   • Pick or create a save slot when entering the casino
@@ -86,6 +87,48 @@ American odds examples:
 Open tickets are listed in the Sports Book menu header.
 """
 
+HOLDEM_HELP = """
+TEXAS HOLD'EM — RULES & HAND RANKINGS
+=====================================
+Hand categories follow the UCI / Kaggle poker-hands dataset (CLASS 0–9):
+  0 High card   1 One pair      2 Two pair       3 Three of a kind
+  4 Straight    5 Flush         6 Full house     7 Four of a kind
+  8 Straight flush   9 Royal flush
+
+Gameplay:
+  • Buy in at the table; blinds post automatically each hand
+  • Pre-flop → flop → turn → river betting rounds
+  • Actions: fold, check, call, raise (minimum raise = big blind)
+  • Best five-card hand from your two hole cards + five community cards
+  • Play vs AI opponents until you leave or bust
+"""
+
+ROULETTE_HELP = """
+MANDALAY ROULETTE — EUROPEAN WHEEL
+==================================
+Single-zero wheel: 0 (green) plus 1–36.
+
+Bet types:
+  • Straight (35:1) — pick one number 0–36
+  • Red / Black, Odd / Even, 1–18 / 19–36 (1:1)
+  • Dozens 1–12, 13–24, 25–36 (2:1)
+
+Zero wins only on straight-up bets; all outside bets lose on 0.
+"""
+
+HORSE_RACING_HELP = """
+MANDALAY RACING — WIN / PLACE / SHOW
+====================================
+Each race card lists 5–6 horses with morning-line odds.
+
+  Win   — horse must finish 1st (pays by odds)
+  Place — horse finishes 1st or 2nd (pays 2× wager)
+  Show  — horse finishes 1st, 2nd, or 3rd (pays 2× wager)
+
+Place tickets, run the race to simulate results, then settle.
+Refresh the card for a new field anytime.
+"""
+
 CHIP_ECONOMY_HELP = """
 CHIP ECONOMY
 ============
@@ -119,8 +162,11 @@ Browser: localStorage per slot at https://exios66.github.io/degen-llms/
 SECTIONS = {
     "overview": CASINO_OVERVIEW,
     "blackjack": BLACKJACK_HELP,
+    "holdem": HOLDEM_HELP,
+    "roulette": ROULETTE_HELP,
     "slots": SLOTS_HELP,
     "sportsbook": SPORTSBOOK_HELP,
+    "horse_racing": HORSE_RACING_HELP,
     "chips": CHIP_ECONOMY_HELP,
     "saves": SAVES_HELP,
 }

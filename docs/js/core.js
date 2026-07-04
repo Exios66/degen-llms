@@ -405,6 +405,20 @@ export const ACTIVITIES = {
     minBet: 10,
     description: "Classic 21 with solo or full-table play. 3:2 blackjack, split, double, insurance.",
   },
+  holdem: {
+    id: "holdem",
+    name: "Texas Hold'em",
+    floor: "Table Games",
+    minBet: 10,
+    description: "Full Hold'em vs AI opponents — pre-flop through showdown with UCI hand rankings.",
+  },
+  roulette: {
+    id: "roulette",
+    name: "Mandalay Roulette",
+    floor: "Table Games",
+    minBet: 5,
+    description: "European single-zero wheel — straights, colors, dozens, and even-money bets.",
+  },
   slots: {
     id: "slots",
     name: "Mandalay Bay Slots",
@@ -419,6 +433,13 @@ export const ACTIVITIES = {
     minBet: 10,
     description: "Wager on simulated live events — moneyline and spread betting.",
   },
+  horse_racing: {
+    id: "horse_racing",
+    name: "Mandalay Racing",
+    floor: "Racing Pavilion",
+    minBet: 5,
+    description: "Simulated thoroughbred racing — win, place, and show wagers.",
+  },
 };
 
-export const FLOOR_ORDER = ["Table Games", "Slot Machines", "Sports Book"];
+export const FLOOR_ORDER = ["Table Games", "Slot Machines", "Sports Book", "Racing Pavilion"];

@@ -357,9 +357,27 @@ export function clearSession() {
 }
 
 export const ACTIVITIES = {
-  blackjack: { id: "blackjack", name: "Blackjack", floor: "Table Games", minBet: 10 },
-  slots: { id: "slots", name: "Mandalay Fortune Slots", floor: "Slot Machines", minBet: 5 },
-  sportsbook: { id: "sportsbook", name: "Mandalay Sports Book", floor: "Sports Book", minBet: 10 },
+  blackjack: {
+    id: "blackjack",
+    name: "Blackjack",
+    floor: "Table Games",
+    minBet: 10,
+    description: "Classic 21 with solo or full-table play. 3:2 blackjack, split, double, insurance.",
+  },
+  slots: {
+    id: "slots",
+    name: "Mandalay Fortune Slots",
+    floor: "Slot Machines",
+    minBet: 5,
+    description: "Three-reel slots with weighted symbols and classic paylines.",
+  },
+  sportsbook: {
+    id: "sportsbook",
+    name: "Mandalay Sports Book",
+    floor: "Sports Book",
+    minBet: 10,
+    description: "Wager on simulated live events — moneyline and spread betting.",
+  },
 };
 
 export const FLOOR_ORDER = ["Table Games", "Slot Machines", "Sports Book"];

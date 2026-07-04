@@ -87,6 +87,23 @@ python3 -m pytest -v
 
 See [Testing](testing.md) for details.
 
+## GitHub Pages (web casino)
+
+The browser casino and pixel RPG live in [`docs/`](.) and publish to **https://exios66.github.io/degen-llms/** via the `gh-pages` branch.
+
+**One-time setup:** Repository **Settings → Pages → Deploy from a branch → `gh-pages` → `/docs`**.
+
+**Deploy after editing `docs/` on `main`:**
+
+```bash
+./scripts/deploy-gh-pages.sh
+```
+
+Pushes to `main` that change `docs/**` also trigger [`.github/workflows/deploy-gh-pages.yml`](../.github/workflows/deploy-gh-pages.yml) automatically.
+
+- Terminal casino: `/` ( [`index.html`](index.html) )
+- Pixel RPG: [`/rpg/`](rpg/index.html)
+
 ## Next steps
 
 - Read the [Player Guide](player-guide.md) for every menu and dialog

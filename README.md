@@ -28,15 +28,17 @@ Shares the same save slots and chip wallet as the terminal web app. See [`docs/r
 
 The web app in [`docs/`](docs/) mirrors the terminal experience. Session progress saves per slot in your browser via `localStorage`.
 
-The site source lives in the [`docs/`](docs/) folder on the **`gh-pages`** branch. GitHub Pages uses the default branch publisher (no custom deploy workflow).
+The site source lives in the [`docs/`](docs/) folder on the **`gh-pages`** branch. GitHub Pages serves the **`gh-pages`** branch **`/docs`** folder at the site URL.
 
 **Enable Pages (one-time):** Repository **Settings → Pages → Build and deployment → Source: Deploy from a branch → Branch: `gh-pages` → Folder: `/docs` → Save.**
 
-After editing `docs/` on `main`, sync to `gh-pages` and push:
+**Deploy manually** after editing `docs/` on `main`:
 
 ```bash
 ./scripts/deploy-gh-pages.sh
 ```
+
+**Automatic deploy:** pushes to `main` that change `docs/**` run [`.github/workflows/deploy-gh-pages.yml`](.github/workflows/deploy-gh-pages.yml) (JamesIves action → `gh-pages` branch `/docs` folder).
 
 Custom error screens live in `docs/` (`404.html`, `maintenance.html`, `offline.html`) and deploy with the site.
 

@@ -3,7 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="The Mandalay Bay — a choose-your-adventure digital casino. Blackjack, slots, and sports book with a unified chip economy.">
+  <meta name="description" content="The Mandalay Bay — a choose-your-adventure digital casino. Play blackjack, slots, and the sports book in your browser with a unified chip economy.">
+  <meta name="theme-color" content="#0a0e14">
+  <meta property="og:title" content="The Mandalay Bay — Digital Casino">
+  <meta property="og:description" content="Blackjack, slots, and sports book — terminal-style digital casino in your browser.">
+  <meta property="og:type" content="website">
   <title>The Mandalay Bay — Digital Casino</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -14,10 +18,19 @@
 <body>
   <div id="app" aria-live="polite">
     <noscript>
-      <p style="color:#39c5cf;font-family:monospace;padding:2rem;text-align:center;">
-        The Mandalay Bay requires JavaScript. Enable it to play blackjack, slots, and the sports book in your browser.
-      </p>
+      <div class="loading-screen">
+        <div class="banner"><h1>The Mandalay Bay</h1></div>
+        <p style="color:#f07178;font-family:monospace;padding:1rem;text-align:center;">
+          JavaScript is required. Enable it to play blackjack, slots, and the sports book.
+        </p>
+      </div>
     </noscript>
+    <div class="loading-screen" id="boot-loader">
+      <div class="banner"><h1>The Mandalay Bay</h1></div>
+      <p class="subtitle">Digital Casino</p>
+      <p class="dim loading-pulse">Opening the floor&hellip;</p>
+      <p class="footer-note">Blackjack &middot; Slots &middot; Sports Book</p>
+    </div>
   </div>
   <script type="module" src="js/app.js"></script>
 </body>

@@ -1,7 +1,7 @@
 import {
   CASINO_NAME, ACTIVITIES, FLOOR_ORDER, fmtChips, signedChips,
   saveSlot, loadSlot, createSlot, deleteSlot, listSlots, recentSlots, formatSaveTime,
-  PlayerSession,
+  createGuestSession, PlayerSession,
 } from "./core.js";
 import { MACHINES, spinReels, displaySymbol, calculatePayout, PAYTABLE_TEXT } from "./slots.js";
 import { SportsbookState, fmtOdds } from "./sportsbook.js";
@@ -15,9 +15,46 @@ let blackjackGame = null;
 let blackjackSessionNet = 0;
 let slotsState = { machine: null, sessionNet: 0, spins: 0 };
 let viewStack = [];
+let statusMessage = null;
+
+function syncSportsbookToSession() {
+  if (session.slotId != null) {
+    session.sportsbookData = sportsbook.toJSON();
+  }
+}
+
+function resetSportsbookFromSession() {
+  sportsbook = SportsbookState.fromJSON(session.sportsbookData);
+}
 
 function persist() {
+  syncSportsbookToSession();
   if (session.slotId != null) saveSlot(session);
+}
+
+function showStatus(text, type = "success") {
+  statusMessage = { text, type };
+  render();
+}
+
+function clearStatus() {
+  statusMessage = null;
+}
+
+function statusBanner() {
+  if (!statusMessage) return null;
+  return el("div", {
+    className: `status-banner ${statusMessage.type}`,
+    role: "status",
+  }, [
+    el("span", { textContent: statusMessage.text }),
+    el("button", {
+      className: "status-dismiss",
+      textContent: "×",
+      "aria-label": "Dismiss",
+      onclick: () => { clearStatus(); render(); },
+    }),
+  ]);
 }
 
 function el(tag, attrs = {}, children = []) {
@@ -44,7 +81,7 @@ function chipLine() {
   return el("p", { className: "chip-line", textContent: `Chips: ${fmtChips(session.wallet.balance)}` });
 }
 
-function menu(options, title, onSelect) {
+function menu(options, title, onSelect, { showCasinoBanner = true } = {}) {
   const items = options.map((opt, i) =>
     el("li", {}, [
       el("button", {
@@ -61,10 +98,32 @@ function menu(options, title, onSelect) {
       onclick: () => onSelect(0),
     }),
   ]));
-  const frag = [banner(CASINO_NAME)];
+  const frag = [];
+  if (showCasinoBanner) frag.push(banner(CASINO_NAME));
   if (title) frag.push(el("p", { className: "subtitle", textContent: title }));
   frag.push(el("ul", { className: "menu-list" }, items));
   return el("div", { className: "panel" }, frag);
+}
+
+function enterCasino(nextSession) {
+  session = nextSession;
+  resetSportsbookFromSession();
+  blackjackGame = null;
+  blackjackSessionNet = 0;
+  slotsState = { machine: null, sessionNet: 0, spins: 0 };
+  viewStack = [{ name: "hub", data: {} }];
+  clearStatus();
+  render();
+}
+
+function returnToSavePicker() {
+  persist();
+  sportsbook = new SportsbookState();
+  blackjackGame = null;
+  session = new PlayerSession();
+  viewStack = [{ name: "save-picker", data: {} }];
+  clearStatus();
+  render();
 }
 
 function settingsBar() {
@@ -93,11 +152,12 @@ function settingsBar() {
       className: "btn",
       textContent: "Change save",
       onclick: () => {
-        persist();
-        sportsbook = new SportsbookState();
-        blackjackGame = null;
-        viewStack = [{ name: "save-picker", data: {} }];
-        render();
+        if (blackjackGame) {
+          if (!confirm("Leave the blackjack table and return to the save library?")) return;
+          finishBlackjack(true);
+          return;
+        }
+        returnToSavePicker();
       },
     }),
   ]);
@@ -138,13 +198,19 @@ function renderTable(snapshot) {
 function renderSavePicker() {
   const recent = recentSlots();
   const allSlots = listSlots();
-  const container = el("div", { className: "panel" }, [
-    banner("Save Library"),
-    el("p", { className: "subtitle", textContent: "Select a save slot to continue, or create a new visit:" }),
+  const container = el("div", {}, [
+    statusBanner(),
+    el("div", { className: "panel" }, [
+      banner(CASINO_NAME),
+      el("p", { className: "subtitle", textContent: "Save Library" }),
+      el("p", { className: "dim", textContent: "Select a save slot to continue, create a new visit, or play as a guest:" }),
+    ]),
   ]);
 
+  const panel = container.querySelector(".panel");
+
   if (recent.length) {
-    container.appendChild(el("p", { className: "subtitle", textContent: "Recent Saves" }));
+    panel.appendChild(el("p", { className: "subtitle", textContent: "Recent Saves" }));
     const recentList = el("div", { className: "stats-grid" });
     for (const slot of recent) {
       recentList.appendChild(el("div", {
@@ -152,7 +218,7 @@ function renderSavePicker() {
         textContent: `Slot ${slot.slotId}: ${slot.label} — ${slot.playerName} — ${fmtChips(slot.balance)} (last: ${formatSaveTime(slot.updatedAt)})`,
       }));
     }
-    container.appendChild(recentList);
+    panel.appendChild(recentList);
   }
 
   const menuList = el("ul", { className: "menu-list" });
@@ -169,7 +235,17 @@ function renderSavePicker() {
     ]));
   });
 
-  const deleteIdx = allSlots.length;
+  const guestIdx = allSlots.length;
+  const deleteIdx = allSlots.length + 1;
+  const exitIdx = allSlots.length + 2;
+
+  menuList.appendChild(el("li", {}, [
+    el("button", {
+      className: "menu-btn",
+      innerHTML: `<span class="num">${guestIdx + 1})</span> Play without saving (guest visit)`,
+      onclick: () => enterCasino(createGuestSession()),
+    }),
+  ]));
   menuList.appendChild(el("li", {}, [
     el("button", {
       className: "menu-btn",
@@ -177,21 +253,32 @@ function renderSavePicker() {
       onclick: () => pushView("save-delete"),
     }),
   ]));
+  menuList.appendChild(el("li", {}, [
+    el("button", {
+      className: "menu-btn back",
+      innerHTML: `<span class="num">${exitIdx + 1})</span> Exit without playing`,
+      onclick: () => {
+        app.innerHTML = "";
+        app.appendChild(el("div", { className: "loading-screen" }, [
+          banner(CASINO_NAME),
+          el("p", { className: "subtitle", textContent: "See you next time" }),
+          el("p", { className: "dim", textContent: "Reload the page to return to the save library." }),
+          el("p", { className: "footer-note", textContent: `${CASINO_NAME} — digital casino` }),
+        ]));
+      },
+    }),
+  ]));
 
-  container.appendChild(el("p", { className: "subtitle", textContent: "Save slots:" }));
-  container.appendChild(menuList);
-  container.appendChild(el("p", { className: "footer-note", textContent: "Your most recent saves appear at the top of the library." }));
+  panel.appendChild(el("p", { className: "subtitle", textContent: "Save slots:" }));
+  panel.appendChild(menuList);
+  panel.appendChild(el("p", { className: "footer-note", textContent: "Your most recent saves appear at the top of the library." }));
   return container;
 
   function handleSlotChoice(slot) {
     if (slot.occupied) {
       const loaded = loadSlot(slot.slotId);
-      if (!loaded) { alert(`Could not load Slot ${slot.slotId}.`); return; }
-      session = loaded;
-      sportsbook = new SportsbookState();
-      blackjackGame = null;
-      viewStack = [{ name: "hub", data: {} }];
-      render();
+      if (!loaded) { showStatus(`Could not load Slot ${slot.slotId}.`, "error"); return; }
+      enterCasino(loaded);
       return;
     }
     pushView("save-create", { slotId: slot.slotId });
@@ -220,16 +307,13 @@ function renderSaveCreate({ slotId }) {
             useColor: session.useColor,
             useUnicode: session.useUnicode,
           });
-          sportsbook = new SportsbookState();
-          blackjackGame = null;
-          viewStack = [{ name: "hub", data: {} }];
-          render();
+          enterCasino(session);
         },
       }),
       el("button", {
         className: "btn",
         textContent: "Back",
-        onclick: () => { viewStack = [{ name: "save-picker", data: {} }]; render(); },
+        onclick: () => { popToView("save-picker"); render(); },
       }),
     ]),
   ]);
@@ -279,13 +363,24 @@ function renderHub() {
   const options = floors.map((f) => (FLOOR_ORDER.includes(f) ? `Explore ${f}` : f));
 
   const wrap = el("div", {}, [
+    statusBanner(),
     settingsBar(),
     banner(CASINO_NAME),
     session.slotId != null
       ? el("p", { className: "dim", textContent: `Save: ${session.slotLabel || `Slot ${session.slotId}`}` })
-      : null,
+      : el("p", { className: "dim", textContent: "Guest visit — progress is not saved" }),
     el("p", { className: "welcome-line", textContent: `Welcome, ${session.playerName}` }),
     chipLine(),
+    el("div", { className: "hub-features panel" }, [
+      el("p", { className: "subtitle", textContent: "On the floor today:" }),
+      ...FLOOR_ORDER.map((floor) => {
+        const acts = Object.values(ACTIVITIES).filter((a) => a.floor === floor);
+        return el("div", {
+          className: "hub-feature",
+          innerHTML: `<strong>${floor}</strong> — ${acts.map((a) => a.name).join(", ")}`,
+        });
+      }),
+    ]),
     el("div", { className: "panel" }, [
       el("p", { className: "subtitle", textContent: "Choose your adventure:" }),
       el("ul", { className: "menu-list" }, [
@@ -305,12 +400,20 @@ function renderHub() {
         ]),
       ]),
     ]),
-    el("p", { className: "footer-note", textContent: "Play in your browser — session saved locally" }),
+    el("p", { className: "footer-note", textContent: session.slotId != null ? "Play in your browser — session saved locally" : "Guest mode — use Save Game or pick a slot to persist progress" }),
   ]);
   return wrap;
 
   function handleChoice(choice) {
-    if (choice === 0) return;
+    if (choice === 0) {
+      if (blackjackGame) {
+        if (!confirm("Leave the blackjack table and return to the save library?")) return;
+        finishBlackjack(true);
+        return;
+      }
+      returnToSavePicker();
+      return;
+    }
     if (choice <= FLOOR_ORDER.length) {
       pushView("floor", { floor: FLOOR_ORDER[choice - 1] });
     } else if (choice === FLOOR_ORDER.length + 1) {
@@ -320,9 +423,9 @@ function renderHub() {
     } else if (choice === FLOOR_ORDER.length + 3) {
       if (session.slotId != null) {
         persist();
-        alert(`Game saved to ${session.slotLabel || `Slot ${session.slotId}`}.`);
+        showStatus(`Game saved to ${session.slotLabel || `Slot ${session.slotId}`}.`);
       } else {
-        alert("No save slot active.");
+        showStatus("No save slot active — pick a slot at entry or play as guest.", "error");
       }
     } else {
       pushView("leave");
@@ -360,8 +463,12 @@ function renderFloor({ floor }) {
   ]);
 
   function handleChoice(choice) {
-    if (choice === 0) { popView(); return; }
+    if (choice === 0) { popView(); persist(); return; }
     const act = activities[choice - 1];
+    if (session.wallet.balance < act.minBet) {
+      showStatus(`You need at least ${act.minBet} chips to enter ${act.name}.`, "error");
+      return;
+    }
     if (act.id === "blackjack") pushView("blackjack-menu");
     else if (act.id === "slots") pushView("slots-menu");
     else if (act.id === "sportsbook") pushView("sportsbook");
@@ -369,32 +476,30 @@ function renderFloor({ floor }) {
 }
 
 function renderCashier() {
-  const content = el("div", {}, [
+  return el("div", {}, [
+    statusBanner(),
     banner("Cashier"),
     chipLine(),
+    menu(
+      ["Buy chips ($500 bundle)", "Buy custom amount", "Cash out chips", "View transaction ledger"],
+      "Chip window:",
+      (choice) => {
+        if (choice === 0) { popView(); persist(); return; }
+        if (choice === 1) {
+          session.wallet.buyIn(500);
+          persist();
+          showStatus(`Purchased ${fmtChips(500)}. Balance: ${fmtChips(session.wallet.balance)}`);
+        } else if (choice === 2) {
+          pushView("cashier-buy");
+        } else if (choice === 3) {
+          pushView("cashier-cashout");
+        } else if (choice === 4) {
+          pushView("cashier-ledger");
+        }
+      },
+      { showCasinoBanner: false },
+    ),
   ]);
-
-  const panel = menu(
-    ["Buy chips ($500 bundle)", "Buy custom amount", "Cash out chips", "View transaction ledger"],
-    "Chip window:",
-    (choice) => {
-      if (choice === 0) { popView(); return; }
-      if (choice === 1) {
-        session.wallet.buyIn(500);
-        persist();
-        alert(`Purchased ${fmtChips(500)}. Balance: ${fmtChips(session.wallet.balance)}`);
-        render();
-      } else if (choice === 2) {
-        pushView("cashier-buy");
-      } else if (choice === 3) {
-        pushView("cashier-cashout");
-      } else if (choice === 4) {
-        pushView("cashier-ledger");
-      }
-    }
-  );
-  content.appendChild(panel);
-  return content;
 }
 
 function renderCashierBuy() {
@@ -412,7 +517,7 @@ function renderCashierBuy() {
           if (amount < 50 || amount > 100000) { alert("Enter $50–$100,000"); return; }
           session.wallet.buyIn(amount);
           persist();
-          alert(`Purchased ${fmtChips(amount)}. Balance: ${fmtChips(session.wallet.balance)}`);
+          showStatus(`Purchased ${fmtChips(amount)}. Balance: ${fmtChips(session.wallet.balance)}`);
           popView();
           render();
         },
@@ -438,10 +543,10 @@ function renderCashierCashout() {
           const amount = parseInt(input.value, 10);
           if (session.wallet.cashOut(amount)) {
             persist();
-            alert(`Cashed out ${fmtChips(amount)}. Balance: ${fmtChips(session.wallet.balance)}`);
+            showStatus(`Cashed out ${fmtChips(amount)}. Balance: ${fmtChips(session.wallet.balance)}`);
             popView();
             render();
-          } else alert("Cash out failed.");
+          } else showStatus("Cash out failed.", "error");
         },
       }),
       el("button", { className: "btn", textContent: "Back", onclick: () => { popView(); render(); } }),
@@ -515,9 +620,8 @@ function renderLeave() {
         textContent: "Leave",
         onclick: () => {
           persist();
-          alert(`Thanks for visiting ${CASINO_NAME}. Final balance: ${fmtChips(session.wallet.balance)}`);
-          viewStack = [{ name: "save-picker", data: {} }];
-          render();
+          showStatus(`Thanks for visiting ${CASINO_NAME}. Final balance: ${fmtChips(session.wallet.balance)}`);
+          returnToSavePicker();
         },
       }),
       el("button", { className: "btn", textContent: "Stay", onclick: () => { popView(); render(); } }),
@@ -526,6 +630,16 @@ function renderLeave() {
 }
 
 function renderSlotsMenu() {
+  const act = ACTIVITIES.slots;
+  if (session.wallet.balance < act.minBet) {
+    return el("div", { className: "panel" }, [
+      banner("Slot Machines"),
+      el("p", { className: "error", textContent: `You need at least ${act.minBet} chips to play.` }),
+      el("div", { className: "action-bar" }, [
+        el("button", { className: "btn", textContent: "Back", onclick: () => { popView(); render(); } }),
+      ]),
+    ]);
+  }
   session.recordVisit("slots");
   persist();
   const options = MACHINES.map((m) => m.name);
@@ -613,6 +727,16 @@ function renderSlotsPlay() {
 }
 
 function renderSportsbook() {
+  const act = ACTIVITIES.sportsbook;
+  if (session.wallet.balance < act.minBet && !sportsbook.pending.length) {
+    return el("div", { className: "panel" }, [
+      banner("Sports Book"),
+      el("p", { className: "error", textContent: `You need at least ${act.minBet} chips to wager.` }),
+      el("div", { className: "action-bar" }, [
+        el("button", { className: "btn", textContent: "Back", onclick: () => { popView(); render(); } }),
+      ]),
+    ]);
+  }
   session.recordVisit("sportsbook");
   persist();
 
@@ -713,7 +837,7 @@ function renderSportsbookWager() {
           }
           sportsbook.addTicket({ event, betType, pick, amount, odds });
           persist();
-          alert(`Ticket placed: ${amount.toLocaleString()} chips on ${pick}. Select 'Settle all open bets' when ready.`);
+          showStatus(`Ticket placed: ${amount.toLocaleString()} chips on ${pick}. Settle when ready.`);
           popView();
           render();
         },
@@ -758,6 +882,16 @@ function renderSportsbookSettle() {
 }
 
 function renderBlackjackMenu() {
+  const act = ACTIVITIES.blackjack;
+  if (session.wallet.balance < act.minBet) {
+    return el("div", { className: "panel" }, [
+      banner("Table Games — Blackjack"),
+      el("p", { className: "error", textContent: `You need at least ${act.minBet} chips to sit down.` }),
+      el("div", { className: "action-bar" }, [
+        el("button", { className: "btn", textContent: "Back", onclick: () => { popView(); render(); } }),
+      ]),
+    ]);
+  }
   session.recordVisit("blackjack");
   persist();
   return el("div", {}, [
@@ -893,9 +1027,16 @@ function renderBlackjackPlay() {
       textContent: "Deal",
       onclick: () => {
         const amount = parseInt(betInput.value, 10);
-        game.placeHumanBet(amount);
+        if (amount === 0) {
+          finishBlackjack(true);
+          return;
+        }
+        if (!game.placeHumanBet(amount)) {
+          showStatus(`Enter a bet between ${game.config.minBet} and ${Math.min(game.config.maxBet, game.human().bankroll)}.`, "error");
+          return;
+        }
         if (game.roundOverEarly) {
-          finishBlackjack();
+          finishBlackjack(true);
           return;
         }
         render();
@@ -973,19 +1114,27 @@ function renderBlackjackPlay() {
   ]);
 }
 
-function finishBlackjack() {
+function finishBlackjack(silent = false) {
   if (blackjackGame) {
     if (blackjackGame.phase === "complete" && !blackjackGame.roundOverEarly) {
       blackjackSessionNet += blackjackGame.humanNet;
     }
     session.recordResult("blackjack", blackjackSessionNet);
     persist();
-    alert(`Leaving table. Session net: ${blackjackSessionNet >= 0 ? "+" : ""}${blackjackSessionNet.toLocaleString()} chips`);
+    if (!silent) {
+      showStatus(`Leaving table. Session net: ${blackjackSessionNet >= 0 ? "+" : ""}${blackjackSessionNet.toLocaleString()} chips`);
+    }
     blackjackGame = null;
     blackjackSessionNet = 0;
   }
-  while (viewStack.length && viewStack[viewStack.length - 1] !== "hub") popView();
+  popToView("hub");
   render();
+}
+
+function popToView(name) {
+  while (viewStack.length > 1 && viewStack[viewStack.length - 1].name !== name) {
+    viewStack.pop();
+  }
 }
 
 function pushView(name, data = {}) {
@@ -1064,11 +1213,46 @@ function render() {
 
 viewStack = [{ name: "save-picker", data: {} }];
 
+function applyLaunchParams() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("guest") === "1") {
+    enterCasino(createGuestSession({
+      playerName: params.get("name") || "Guest",
+      chips: Math.max(0, parseInt(params.get("chips") || "1000", 10)),
+    }));
+    return true;
+  }
+  const slotParam = params.get("slot");
+  if (slotParam) {
+    const slotId = parseInt(slotParam, 10);
+    if (slotId >= 1 && slotId <= 5) {
+      if (params.get("new") === "1") {
+        pushView("save-create", { slotId });
+        return true;
+      }
+      const loaded = loadSlot(slotId);
+      if (loaded) {
+        enterCasino(loaded);
+        return true;
+      }
+      pushView("save-create", { slotId });
+      return true;
+    }
+  }
+  return false;
+}
+
 if (!navigator.onLine) {
   window.addEventListener("online", () => render(), { once: true });
 }
 
-render();
+window.addEventListener("beforeunload", () => {
+  if (session.slotId != null) persist();
+});
+
+if (!applyLaunchParams()) {
+  render();
+}
 
 document.addEventListener("keydown", (e) => {
   if (!blackjackGame?.pendingAction) return;

@@ -89,17 +89,19 @@ See [Testing](testing.md) for details.
 
 ## GitHub Pages (web casino)
 
-The browser casino and pixel RPG live in [`docs/`](.) and publish to **https://exios66.github.io/degen-llms/** via the `gh-pages` branch.
+The browser casino and pixel RPG live in [`docs/`](.) and publish to **https://exios66.github.io/degen-llms/** via GitHub Actions.
 
-**One-time setup:** Repository **Settings → Pages → Deploy from a branch → `gh-pages` → `/docs`**.
+**One-time setup:** Repository **Settings → Pages → Source: GitHub Actions**.
 
-**Deploy after editing `docs/` on `main`:**
+**Automatic deploy:** pushes to `main` that change `docs/**` run [`.github/workflows/deploy-gh-pages.yml`](../.github/workflows/deploy-gh-pages.yml).
+
+**Manual fallback** (branch mirror):
 
 ```bash
 ./scripts/deploy-gh-pages.sh
 ```
 
-Pushes to `main` that change `docs/**` also trigger [`.github/workflows/deploy-gh-pages.yml`](../.github/workflows/deploy-gh-pages.yml) automatically.
+Only needed when Pages is configured for branch deploy (`gh-pages` / `/docs`) instead of GitHub Actions.
 
 - Terminal casino: `/` ( [`index.html`](index.html) )
 - Pixel RPG: [`/rpg/`](rpg/index.html)

@@ -9,23 +9,49 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
 
 concurrency:
-  group: gh-pages-deploy
-  cancel-in-progress: false
+  group: pages
+  cancel-in-progress: true
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Deploy docs/ to gh-pages branch
-        uses: JamesIves/github-pages-deploy-action@v4
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          folder: docs
-          branch: gh-pages
-          target-folder: docs
-          commit-message: "Deploy GitHub Pages from main@${{ github.sha }}"
+          path: docs
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+        with:
+          timeout: 900000
+          error_count: 15
+          reporting_interval: 10000
+
+      - name: Wait before retry
+        if: failure() && steps.deployment.outcome == 'failure'
+        run: sleep 60
+
+      - name: Retry deploy (transient Pages failures)
+        if: failure() && steps.deployment.outcome == 'failure'
+        id: deployment-retry
+        uses: actions/deploy-pages@v4
+        with:
+          timeout: 900000
+          error_count: 15
+          reporting_interval: 10000

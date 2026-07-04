@@ -1,10 +1,20 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from mandalay_bay import CASINO_NAME
 from mandalay_bay.activities.registry import ACTIVITIES_BY_ID, ALL_ACTIVITIES, FLOOR_ORDER
 from mandalay_bay.chips import ChipTransaction
 from mandalay_bay.display import TerminalUI, fmt_chips
 from mandalay_bay.session import PlayerSession
+
+if TYPE_CHECKING:
+    from mandalay_bay.saves import SaveLibrary
+
+
+def _autosave(session: PlayerSession, library: SaveLibrary | None) -> None:
+    if library is not None and session.slot_id is not None:
+        library.save_slot(session)
 
 
 def run_cashier(session: PlayerSession, ui: TerminalUI) -> None:
@@ -85,15 +95,17 @@ def run_floor(session: PlayerSession, ui: TerminalUI, floor: str) -> None:
     activities[choice - 1].run(session, ui)
 
 
-def run_hub(session: PlayerSession, ui: TerminalUI) -> None:
+def run_hub(session: PlayerSession, ui: TerminalUI, *, library=None) -> None:
     while True:
         ui.print()
         ui.banner(CASINO_NAME)
+        if session.slot_id is not None:
+            ui.dim(f"Save: {session.slot_label or f'Slot {session.slot_id}'}")
         ui.print(f"Welcome, {session.player_name}")
         ui.chip_line(session.wallet.balance)
         ui.print()
 
-        floors = FLOOR_ORDER + ["Cashier", "Player Stats", "Leave Casino"]
+        floors = FLOOR_ORDER + ["Cashier", "Player Stats", "Save Game", "Leave Casino"]
         choice = ui.menu_choice(
             [f"Explore {f}" if f in FLOOR_ORDER else f for f in floors],
             title="Choose your adventure:",
@@ -102,11 +114,21 @@ def run_hub(session: PlayerSession, ui: TerminalUI) -> None:
             continue
         if choice <= len(FLOOR_ORDER):
             run_floor(session, ui, FLOOR_ORDER[choice - 1])
+            _autosave(session, library)
         elif choice == len(FLOOR_ORDER) + 1:
             run_cashier(session, ui)
+            _autosave(session, library)
         elif choice == len(FLOOR_ORDER) + 2:
             run_stats(session, ui)
+        elif choice == len(FLOOR_ORDER) + 3:
+            if library is not None and session.slot_id is not None:
+                library.save_slot(session)
+                ui.success(f"Game saved to {session.slot_label or f'Slot {session.slot_id}'}.")
+            else:
+                ui.dim("No save slot active (use --no-save or pick a slot at entry).")
+            ui.pause()
         else:
             if ui.prompt_yes_no("Leave The Mandalay Bay?", default=False):
+                _autosave(session, library)
                 ui.print(f"\nThanks for visiting {CASINO_NAME}. Final balance: {fmt_chips(session.wallet.balance)}")
                 break

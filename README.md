@@ -17,6 +17,23 @@ python3 -m blackjack
 python3 -m pytest -v
 ```
 
+### Play in your browser (GitHub Pages)
+
+The same **The Mandalay Bay** experience is available as a web app styled like the terminal CLI:
+
+**https://exios66.github.io/degen-llms/**
+
+The site lives in the [`docs/`](docs/) folder and is published from the **`gh-pages`** branch. All floor activities work in the browser:
+
+- Table Games (blackjack — quick hand or custom table with bots)
+- Slot Machines (Mandalay Fortune & High Roller)
+- Sports Book (moneyline & spread)
+- Cashier (buy/cash out, transaction ledger)
+- Player Stats (visits, bets, net winnings)
+- **Save Library** (5 slots — select, create, load, delete; recent saves tracked)
+
+Session progress is saved per slot in your browser via `localStorage`. Open `docs/index.html` locally for offline play.
+
 ## The Mandalay Bay
 
 Welcome to the floor. One chip wallet powers every activity:
@@ -48,6 +65,7 @@ Choose your adventure:
 
 - **Cashier** — buy chips, cash out, view transaction ledger
 - **Player Stats** — visits, bets, and net winnings per activity
+- **Save Game** — write current progress to your active save slot
 - **Chip economy** — all wagers debit/credit one shared wallet with full audit trail
 
 ### Command-line options
@@ -55,14 +73,37 @@ Choose your adventure:
 ```bash
 python3 -m mandalay_bay --chips 2500 --name "High Roller"
 python3 -m mandalay_bay --no-color --ascii
+
+# Load save slot 2 directly
+python3 -m mandalay_bay --slot 2
+
+# Create a new save in slot 3
+python3 -m mandalay_bay --slot 3 --new-save --name "Alice"
+
+# Play without saving (ephemeral session)
+python3 -m mandalay_bay --no-save
 ```
 
 | Flag | Purpose |
 |------|---------|
-| `--chips` | Starting balance (default 1000) |
-| `--name` | Player name |
+| `--chips` | Starting balance for **new** saves (default 1000) |
+| `--name` | Default player name for **new** saves |
+| `--slot` | Load save slot 1–5 directly (skip picker) |
+| `--new-save` | With `--slot`, create a new save in that slot |
+| `--no-save` | Ephemeral session — no save library |
 | `--no-color` | Disable ANSI colors |
 | `--ascii` | ASCII symbols instead of Unicode |
+
+### Save library
+
+When you launch the casino, you enter the **Save Library** first:
+
+- **5 save slots** — load an existing visit or create a new one in an empty slot
+- **Recent saves** — your most recently played slots appear at the top
+- **Auto-save** — progress saves after floor activities, when leaving, and via **Save Game** on the hub menu
+- **Storage** — saves live in `~/.mandalay_bay/saves/` (override with `MANDALAY_BAY_SAVE_DIR`)
+
+Each save stores your chip wallet, transaction ledger, activity stats, and player name.
 
 ## Blackjack (Table Games)
 

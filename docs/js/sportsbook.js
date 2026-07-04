@@ -59,10 +59,15 @@ function generateEvent() {
 }
 
 export class SportsbookState {
-  constructor() {
+  constructor(data = null) {
     this.events = [];
     this.pending = [];
-    this.refreshBoard(true);
+    if (data) {
+      this.events = data.events ?? [];
+      this.pending = data.pending ?? [];
+    } else {
+      this.refreshBoard(true);
+    }
   }
 
   refreshBoard(force = false) {
@@ -92,6 +97,24 @@ export class SportsbookState {
     const count = this.pending.length;
     this.pending = [];
     return { results, count };
+  }
+
+  toJSON() {
+    return {
+      events: this.events.map((e) => ({ ...e })),
+      pending: this.pending.map((s) => ({
+        event: { ...s.event },
+        betType: s.betType,
+        pick: s.pick,
+        amount: s.amount,
+        odds: s.odds,
+      })),
+    };
+  }
+
+  static fromJSON(data) {
+    if (!data) return new SportsbookState();
+    return new SportsbookState(data);
   }
 }
 

@@ -138,6 +138,7 @@ export class PlayerSession {
     this.activityStats = {};
     this.slotId = slotId;
     this.slotLabel = slotLabel;
+    this.sportsbookData = null;
   }
 
   statFor(activity) {
@@ -167,6 +168,7 @@ export class PlayerSession {
       useColor: this.useColor,
       useUnicode: this.useUnicode,
       activityStats: this.activityStats,
+      sportsbook: this.sportsbookData ?? null,
     };
   }
 
@@ -181,6 +183,7 @@ export class PlayerSession {
     });
     s.wallet = ChipWallet.fromJSON(data.wallet ?? { balance: 1000, transactions: [] });
     s.activityStats = data.activityStats ?? {};
+    s.sportsbookData = data.sportsbook ?? null;
     return s;
   }
 }
@@ -354,6 +357,17 @@ export function clearSession() {
   const lib = loadLibrary();
   localStorage.removeItem(LIBRARY_KEY);
   return lib;
+}
+
+export function createGuestSession({ playerName = "Guest", chips = 1000, useColor = true, useUnicode = true } = {}) {
+  return new PlayerSession({
+    playerName,
+    chips,
+    useColor,
+    useUnicode,
+    slotId: null,
+    slotLabel: "Guest visit (no save)",
+  });
 }
 
 export const ACTIVITIES = {

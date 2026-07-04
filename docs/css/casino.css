@@ -83,6 +83,16 @@ body {
   color: var(--green);
 }
 
+.jackpot-win {
+  color: var(--gold, #ffd700);
+  font-weight: 700;
+}
+
+.jackpot-line {
+  color: var(--gold, #ffd700);
+  font-weight: 600;
+}
+
 .error {
   color: var(--red);
 }

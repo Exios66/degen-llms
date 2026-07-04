@@ -18,6 +18,14 @@ python3 -m pytest -v
 
 **https://exios66.github.io/degen-llms/**
 
+### Pixel RPG mode (Phase 1)
+
+Explore the resort in a **16-bit JRPG–style overworld** — walk the lobby, talk to NPCs, and sit at the blackjack table:
+
+**https://exios66.github.io/degen-llms/rpg/**
+
+Shares the same save slots and chip wallet as the terminal web app. See [`docs/rpg/GDD.md`](docs/rpg/GDD.md) for the full design doc and expansion roadmap.
+
 The web app in [`docs/`](docs/) mirrors the terminal experience. Session progress saves per slot in your browser via `localStorage`.
 
 The site source lives in the [`docs/`](docs/) folder on the **`gh-pages`** branch. GitHub Pages uses the default branch publisher (no custom deploy workflow).
@@ -60,7 +68,7 @@ In-game help: **Casino Guide** (lobby option 7).
 | Floor | Activity | Min bet |
 |-------|----------|---------|
 | Table Games | Blackjack (solo or AI table) | 10 chips |
-| Slot Machines | Mandalay Fortune & High Roller | 5 chips |
+| Slot Machines | Mandalay Bay slots (14 machines incl. Megabucks) | 1 chip |
 | Sports Book | Moneyline & spread | 10 chips |
 
 Lobby: **Cashier**, **Player Stats**, **Save Game**, **Casino Guide**, **Leave Casino**.

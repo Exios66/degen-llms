@@ -21,6 +21,7 @@ Complete documentation for the digital casino CLI.
 | [Architecture](architecture.md) | Packages, data flow, activity system |
 | [Adding Activities](adding-activities.md) | How to plug in new games |
 | [Testing](testing.md) | Running tests, writing integration tests |
+| [Pixel RPG GDD](rpg/GDD.md) | Phase 1 pixel RPG design & expansion roadmap |
 
 ## Quick reference
 

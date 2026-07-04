@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="description" content="The Mandalay Bay — pixel RPG casino adventure. Explore the resort, talk to NPCs, and play blackjack.">
+  <meta name="theme-color" content="#0a0812">
+  <title>The Mandalay Bay — Pixel RPG</title>
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/rpg.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "phaser": "https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.esm.js"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="game-shell">
+    <div id="phaser-root"></div>
+    <div id="hud" aria-live="polite"></div>
+    <div id="dialogue-overlay" hidden aria-live="polite"></div>
+    <div id="blackjack-overlay" hidden aria-live="polite"></div>
+    <div id="title-overlay" aria-live="polite"></div>
+  </div>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

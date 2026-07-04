@@ -1,55 +1,88 @@
 # degen-llms
 
-**The Mandalay Bay** — a choose-your-adventure digital casino CLI with **save slots**, unified chip economy, blackjack, slots, and sports book.
+**The Mandalay Bay** — a choose-your-adventure digital casino with unified chip economy, save slots, blackjack, slots, and sports book. Available as a **CLI**, **web app** (GitHub Pages), or standalone blackjack.
 
 ## Quick start
+
+Requires **Python 3.11+** (stdlib only at runtime).
 
 ```bash
 python3 -m mandalay_bay                  # Save library → casino floor
 python3 -m mandalay_bay --list-saves     # View save slots
-python3 -m mandalay_bay --slot 1 --new   # New game in slot 1
+python3 -m mandalay_bay --slot 1 --new-save --name "Ace"
+python3 -m blackjack                     # Standalone blackjack
 python3 -m pytest -v
 ```
 
+## Play in your browser (GitHub Pages)
+
+**https://exios66.github.io/degen-llms/**
+
+The web app in [`docs/`](docs/) mirrors the terminal experience. Session progress saves per slot in your browser via `localStorage`.
+
+- Deploy: pushes to `main` that change `docs/` auto-redeploy via GitHub Actions
+- Manual deploy: `./scripts/deploy-gh-pages.sh`
+- Enable Pages: **Settings → Pages → Branch: `gh-pages` → Folder: `/ (root)`**
+
 ## Documentation
 
-Full docs in [`docs/`](docs/README.md) — highlights:
+Full docs in [`docs/`](docs/README.md):
 
 | Guide | Description |
 |-------|-------------|
 | [Player Guide](docs/player-guide.md) | Every menu, dialog, and shortcut |
-| [Save Slots](docs/saves.md) | **Load, create, and manage saves via CLI** |
+| [Save Slots](docs/saves.md) | Load, create, and manage saves |
 | [Getting Started](docs/getting-started.md) | Install, launch, CLI flags |
 | [Chip Economy](docs/chip-economy.md) | Wallet & ledger |
 | [Architecture](docs/architecture.md) | Developer overview |
 
+In-game help: **Casino Guide** (lobby option 7).
+
 ## Save system
 
 - **5 save slots** with most-recent-first library ordering
-- Interactive picker on launch, or direct CLI: `--slot N`, `--slot N --new`
+- Interactive picker on launch, or direct CLI: `--slot N`, `--slot N --new-save`
+- Ephemeral play: `--no-save`
 - Auto-save on leave, after activities, and on Ctrl+C
-- Default location: `~/.local/share/mandalay-bay/saves/`
+- CLI storage: `~/.mandalay_bay/saves/` (override with `--save-dir` or `MANDALAY_BAY_SAVE_DIR`)
+- Browser storage: `localStorage` per slot
 
 ## The casino floor
 
 | Floor | Activity | Min bet |
 |-------|----------|---------|
-| Table Games | Blackjack | 10 chips |
+| Table Games | Blackjack (solo or AI table) | 10 chips |
 | Slot Machines | Mandalay Fortune & High Roller | 5 chips |
 | Sports Book | Moneyline & spread | 10 chips |
 
-Lobby also includes **Cashier**, **Player Stats**, **Save Game**, **Casino Guide**, and **Leave Casino**.
+Lobby: **Cashier**, **Player Stats**, **Save Game**, **Casino Guide**, **Leave Casino**.
 
 ## Command-line options
 
 ```bash
-python3 -m mandalay_bay --slot 2                    # Load slot 2
-python3 -m mandalay_bay --slot 3 --new --name Ace   # New save in slot 3
-python3 -m mandalay_bay --save-dir ./backups        # Custom save path
-python3 -m mandalay_bay --chips 2500 --no-color
+python3 -m mandalay_bay --slot 2
+python3 -m mandalay_bay --slot 3 --new-save --name "Ace" --chips 2500
+python3 -m mandalay_bay --no-save --chips 5000
+python3 -m mandalay_bay --save-dir ./backups --list-saves
+python3 -m mandalay_bay --no-color --ascii --no-intro
+python3 -m blackjack --quick --bots 3 --rounds 10
 ```
+
+| Flag | Purpose |
+|------|---------|
+| `--slot` | Load save slot 1–5 directly |
+| `--new-save` / `--new` | Create new save in `--slot` |
+| `--no-save` | Ephemeral session (no persistence) |
+| `--list-saves` | Print save library and exit |
+| `--save-dir` | Custom save directory |
+| `--chips` | Starting chips for new saves |
+| `--name` | Default player name |
+| `--no-color` / `--ascii` / `--no-intro` | Display options |
+
+## RNG & legitimacy
+
+All random outcomes use OS-backed CSPRNG (`secrets.SystemRandom()` in Python, `crypto.getRandomValues()` in the browser). No outcome manipulation.
 
 ## License
 
 MIT — see [LICENSE](LICENSE).
-

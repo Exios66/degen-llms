@@ -1,14 +1,23 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from mandalay_bay import CASINO_NAME
 from mandalay_bay.activities.registry import ACTIVITIES_BY_ID, ALL_ACTIVITIES, FLOOR_ORDER
 from mandalay_bay.chips import ChipTransaction
 from mandalay_bay.display import TerminalUI, fmt_chips
 from mandalay_bay.help_text import SECTIONS
-from mandalay_bay.saves import SaveLibrary, save_session
 from mandalay_bay.session import PlayerSession
 
+if TYPE_CHECKING:
+    from mandalay_bay.saves import SaveLibrary
+
 LOW_BALANCE_THRESHOLD = 50
+
+
+def _autosave(session: PlayerSession, library: SaveLibrary | None) -> None:
+    if library is not None and session.has_save_slot:
+        library.save_slot(session)
 
 
 def show_welcome(session: PlayerSession, ui: TerminalUI) -> None:
@@ -121,7 +130,12 @@ def run_stats(session: PlayerSession, ui: TerminalUI) -> None:
     ui.pause()
 
 
-def run_floor(session: PlayerSession, ui: TerminalUI, floor: str, library: SaveLibrary | None = None) -> None:
+def run_floor(
+    session: PlayerSession,
+    ui: TerminalUI,
+    floor: str,
+    library: SaveLibrary | None = None,
+) -> None:
     activities = [a for a in ALL_ACTIVITIES if a.info.floor == floor]
     if not activities:
         ui.error("Nothing open on this floor.")
@@ -132,9 +146,8 @@ def run_floor(session: PlayerSession, ui: TerminalUI, floor: str, library: SaveL
     choice = ui.menu_choice(options, title=f"{floor}:")
     if choice == 0:
         return
-        activities[choice - 1].run(session, ui)
-        if library and session.has_save_slot:
-            save_session(library, session)
+    activities[choice - 1].run(session, ui)
+    _autosave(session, library)
 
 
 def _save_game(session: PlayerSession, ui: TerminalUI, library: SaveLibrary | None) -> None:
@@ -142,7 +155,7 @@ def _save_game(session: PlayerSession, ui: TerminalUI, library: SaveLibrary | No
         ui.error("No save slot assigned to this session.")
         ui.pause()
         return
-    save_session(library, session)
+    library.save_slot(session)
     ui.success(
         f"Saved slot {session.slot_id} ({session.slot_label}) — "
         f"{fmt_chips(session.wallet.balance)}"
@@ -192,6 +205,7 @@ def run_hub(
             run_floor(session, ui, FLOOR_ORDER[choice - 1], library)
         elif choice == floor_count + 1:
             run_cashier(session, ui)
+            _autosave(session, library)
         elif choice == floor_count + 2:
             run_stats(session, ui)
         elif choice == floor_count + 3:
@@ -200,8 +214,8 @@ def run_hub(
             run_help(ui)
         else:
             if ui.prompt_yes_no("Leave The Mandalay Bay?", default=False):
-                if library and session.has_save_slot:
-                    save_session(library, session)
+                _autosave(session, library)
+                if session.has_save_slot:
                     ui.success(f"Progress saved to slot {session.slot_id}.")
                 ui.print(f"\nThanks for visiting {CASINO_NAME}. Final balance: {fmt_chips(session.wallet.balance)}")
                 break

@@ -88,6 +88,10 @@ class ChipWallet:
         """Align wallet balance with an external source (e.g. table rail)."""
         self.apply_delta(expected_balance - self.balance, activity, description)
 
+    def sync_balance(self, new_balance: int, activity: str, description: str) -> None:
+        """Legacy alias for reconcile."""
+        self.reconcile(new_balance, activity, description)
+
     @property
     def net_session(self) -> int:
         return sum(

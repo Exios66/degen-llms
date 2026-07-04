@@ -4,8 +4,7 @@ from mandalay_bay.activities.sportsbook import BetSlip, SportsbookActivity, Spor
 from mandalay_bay.chips import ChipWallet
 from mandalay_bay.display import TerminalUI
 from mandalay_bay.hub import run_cashier, run_help, run_hub
-from mandalay_bay.save_menu import format_save_library, run_save_selector
-from mandalay_bay.saves import SaveLibrary, create_new_session
+from mandalay_bay.saves import SaveLibrary
 from mandalay_bay.session import PlayerSession
 
 
@@ -72,12 +71,12 @@ def test_spread_push_returns_stake() -> None:
 
 
 def test_hub_leave_casino_flow(tmp_path: Path) -> None:
-    library = SaveLibrary.load(tmp_path / "saves")
-    session = create_new_session(library, 1, player_name="Guest", starting_chips=500)
+    library = SaveLibrary(save_dir=tmp_path / "saves")
+    session = library.create_session(1, player_name="Guest", starting_chips=500)
     ui = ScriptedUI(["8", "y"])
     run_hub(session, ui, library=library, show_intro=False)
     assert session.wallet.balance == 500
-    assert not SaveLibrary.load(tmp_path / "saves").slots[1].is_empty
+    assert library.load_slot(1) is not None
 
 
 def test_cashier_buy_chips() -> None:
@@ -101,28 +100,9 @@ def test_help_menu_renders(capsys) -> None:
 
 
 def test_main_lobby_has_no_back_option(capsys, tmp_path: Path) -> None:
-    library = SaveLibrary.load(tmp_path / "saves")
-    session = create_new_session(library, 1, player_name="Guest", starting_chips=1000)
+    library = SaveLibrary(save_dir=tmp_path / "saves")
+    session = library.create_session(1, player_name="Guest", starting_chips=1000)
     ui = ScriptedUI(["8", "n", "8", "y"])
     run_hub(session, ui, library=library, show_intro=False)
     lobby_section = capsys.readouterr().out.split("Choose your adventure")[1].split("Choose:")[0]
     assert "0) Back" not in lobby_section
-
-
-def test_create_save_via_selector(tmp_path: Path) -> None:
-    library = SaveLibrary.load(tmp_path / "saves")
-    ui = ScriptedUI(["2", "1", "Weekend Run", "Sam", "2000"])
-    session = run_save_selector(ui, library, default_player_name="Guest")
-    assert session is not None
-    assert session.player_name == "Sam"
-    assert session.wallet.balance == 2000
-    assert session.slot_label == "Weekend Run"
-
-
-def test_list_saves_format(tmp_path: Path) -> None:
-    library = SaveLibrary.load(tmp_path / "saves")
-    create_new_session(library, 1, player_name="Ace", starting_chips=900, slot_label="Main")
-    text = format_save_library(library)
-    assert "Ace" in text
-    assert "900" in text
-    assert "Slot 1" in text

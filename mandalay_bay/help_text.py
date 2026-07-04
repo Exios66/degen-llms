@@ -100,8 +100,12 @@ SAVE SLOTS & LIBRARY
 CLI:
   python3 -m mandalay_bay --list-saves
   python3 -m mandalay_bay --slot 2
-  python3 -m mandalay_bay --slot 3 --new --name "Ace" --chips 2000
+  python3 -m mandalay_bay --slot 3 --new-save --name "Ace" --chips 2000
+  python3 -m mandalay_bay --no-save
   python3 -m mandalay_bay --save-dir ./my_saves
+
+Storage: ~/.mandalay_bay/saves/ (override with MANDALAY_BAY_SAVE_DIR or --save-dir)
+Browser: localStorage per slot at https://exios66.github.io/degen-llms/
 """
 
 SECTIONS = {

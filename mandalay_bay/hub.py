@@ -39,8 +39,11 @@ def run_help(ui: TerminalUI) -> None:
         [
             "Overview & navigation",
             "Blackjack rules & controls",
+            "Texas Hold'em guide",
+            "Roulette guide",
             "Slot machine paytable",
             "Sports book guide",
+            "Horse racing guide",
             "Chip economy",
             "Save slots & library",
             "View all sections",
@@ -49,7 +52,7 @@ def run_help(ui: TerminalUI) -> None:
     )
     if choice == 0:
         return
-    if choice == 7:
+    if choice == 10:
         for section in SECTIONS.values():
             ui.print(section)
     else:

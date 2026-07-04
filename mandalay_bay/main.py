@@ -18,6 +18,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--name", type=str, default="Guest", help="Player name")
     parser.add_argument("--no-color", action="store_true", help="Disable ANSI colors")
     parser.add_argument("--ascii", action="store_true", help="ASCII symbols instead of Unicode")
+    parser.add_argument("--no-intro", action="store_true", help="Skip welcome screen")
     return parser
 
 
@@ -34,7 +35,7 @@ def main(argv: list[str] | None = None) -> None:
     ui = TerminalUI(use_color=session.use_color)
 
     try:
-        run_hub(session, ui)
+        run_hub(session, ui, show_intro=not args.no_intro)
     except KeyboardInterrupt:
         print(f"\n\nLeaving {CASINO_NAME}. Balance: ${session.wallet.balance:,}")
         sys.exit(0)

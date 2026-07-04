@@ -4,7 +4,45 @@ from mandalay_bay import CASINO_NAME
 from mandalay_bay.activities.registry import ACTIVITIES_BY_ID, ALL_ACTIVITIES, FLOOR_ORDER
 from mandalay_bay.chips import ChipTransaction
 from mandalay_bay.display import TerminalUI, fmt_chips
+from mandalay_bay.help_text import SECTIONS
 from mandalay_bay.session import PlayerSession
+
+LOW_BALANCE_THRESHOLD = 50
+
+
+def show_welcome(session: PlayerSession, ui: TerminalUI) -> None:
+    ui.banner(CASINO_NAME)
+    ui.print("Welcome to the floor — a choose-your-adventure digital casino.")
+    ui.print(f"Your player card: {session.player_name}")
+    ui.chip_line(session.wallet.balance)
+    ui.print("\nExplore table games, slots, and the sports book.")
+    ui.print("Your chips travel with you. Visit the Cashier anytime.")
+    ui.dim("Tip: Select 'Casino Guide' from the lobby for rules and controls.")
+    ui.pause()
+
+
+def run_help(ui: TerminalUI) -> None:
+    ui.banner("Casino Guide")
+    choice = ui.menu_choice(
+        [
+            "Overview & navigation",
+            "Blackjack rules & controls",
+            "Slot machine paytable",
+            "Sports book guide",
+            "Chip economy",
+            "View all sections",
+        ],
+        title="What would you like to read?",
+    )
+    if choice == 0:
+        return
+    if choice == 6:
+        for section in SECTIONS.values():
+            ui.print(section)
+    else:
+        keys = list(SECTIONS.keys())
+        ui.print(SECTIONS[keys[choice - 1]])
+    ui.pause()
 
 
 def run_cashier(session: PlayerSession, ui: TerminalUI) -> None:
@@ -29,11 +67,19 @@ def run_cashier(session: PlayerSession, ui: TerminalUI) -> None:
         session.wallet.buy_in(amount)
         ui.success(f"Purchased {fmt_chips(amount)}. Balance: {fmt_chips(session.wallet.balance)}")
     elif choice == 3:
-        amount = ui.prompt_int("Amount to cash out", 1, session.wallet.balance, default=session.wallet.balance)
-        if session.wallet.cash_out(amount):
-            ui.success(f"Cashed out {fmt_chips(amount)}. Balance: {fmt_chips(session.wallet.balance)}")
+        if session.wallet.balance <= 0:
+            ui.error("You have no chips to cash out.")
         else:
-            ui.error("Cash out failed.")
+            amount = ui.prompt_int(
+                "Amount to cash out",
+                1,
+                session.wallet.balance,
+                default=session.wallet.balance,
+            )
+            if session.wallet.cash_out(amount):
+                ui.success(f"Cashed out {fmt_chips(amount)}. Balance: {fmt_chips(session.wallet.balance)}")
+            else:
+                ui.error("Cash out failed.")
     elif choice == 4:
         _show_ledger(session, ui)
     ui.pause()
@@ -85,27 +131,44 @@ def run_floor(session: PlayerSession, ui: TerminalUI, floor: str) -> None:
     activities[choice - 1].run(session, ui)
 
 
-def run_hub(session: PlayerSession, ui: TerminalUI) -> None:
+def _maybe_low_balance_notice(session: PlayerSession, ui: TerminalUI) -> None:
+    if 0 < session.wallet.balance < LOW_BALANCE_THRESHOLD:
+        ui.error(f"Low balance ({fmt_chips(session.wallet.balance)}). Visit the Cashier to buy chips.")
+
+
+def run_hub(session: PlayerSession, ui: TerminalUI, *, show_intro: bool = True) -> None:
+    if show_intro:
+        show_welcome(session, ui)
+
     while True:
         ui.print()
         ui.banner(CASINO_NAME)
         ui.print(f"Welcome, {session.player_name}")
         ui.chip_line(session.wallet.balance)
+        _maybe_low_balance_notice(session, ui)
         ui.print()
 
-        floors = FLOOR_ORDER + ["Cashier", "Player Stats", "Leave Casino"]
+        lobby_options = (
+            [f"Explore {floor}" for floor in FLOOR_ORDER]
+            + ["Cashier", "Player Stats", "Casino Guide", "Leave Casino"]
+        )
         choice = ui.menu_choice(
-            [f"Explore {f}" if f in FLOOR_ORDER else f for f in floors],
+            lobby_options,
             title="Choose your adventure:",
+            allow_back=False,
         )
         if choice == 0:
             continue
-        if choice <= len(FLOOR_ORDER):
+
+        floor_count = len(FLOOR_ORDER)
+        if choice <= floor_count:
             run_floor(session, ui, FLOOR_ORDER[choice - 1])
-        elif choice == len(FLOOR_ORDER) + 1:
+        elif choice == floor_count + 1:
             run_cashier(session, ui)
-        elif choice == len(FLOOR_ORDER) + 2:
+        elif choice == floor_count + 2:
             run_stats(session, ui)
+        elif choice == floor_count + 3:
+            run_help(ui)
         else:
             if ui.prompt_yes_no("Leave The Mandalay Bay?", default=False):
                 ui.print(f"\nThanks for visiting {CASINO_NAME}. Final balance: {fmt_chips(session.wallet.balance)}")

@@ -76,14 +76,17 @@ class ChipWallet:
         self._record(TransactionKind.CASH_OUT, -amount, "cashier", f"Cashed out ${amount:,} in chips")
         return True
 
-    def sync_balance(self, new_balance: int, activity: str, description: str) -> None:
-        delta = new_balance - self.balance
-        if delta > 0:
-            self.credit(delta, activity, description)
-        elif delta < 0:
-            if not self.debit(-delta, activity, description):
-                self.balance = new_balance
-                self._record(TransactionKind.WAGER, delta, activity, description)
+    def apply_delta(self, delta: int, activity: str, description: str) -> None:
+        """Apply a net chip change and record it in the ledger."""
+        if delta == 0:
+            return
+        self.balance += delta
+        kind = TransactionKind.WIN if delta > 0 else TransactionKind.WAGER
+        self._record(kind, delta, activity, description)
+
+    def reconcile(self, expected_balance: int, activity: str, description: str) -> None:
+        """Align wallet balance with an external source (e.g. table rail)."""
+        self.apply_delta(expected_balance - self.balance, activity, description)
 
     @property
     def net_session(self) -> int:

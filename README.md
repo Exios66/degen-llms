@@ -7,117 +7,58 @@
 Requires **Python 3.11+** (stdlib only at runtime).
 
 ```bash
-# Enter the full casino
 python3 -m mandalay_bay
-
-# Standalone blackjack (original mode)
-python3 -m blackjack
-
-# Run tests
 python3 -m pytest -v
 ```
 
-## The Mandalay Bay
+## Documentation
 
-Welcome to the floor. One chip wallet powers every activity:
+Full documentation is in the [`docs/`](docs/README.md) directory:
 
-| Area | Activity | Min bet |
-|------|----------|---------|
-| **Table Games** | Blackjack (solo or full table with AI players) | 10 chips |
-| **Slot Machines** | Mandalay Fortune & High Roller slots | 5 chips |
-| **Sports Book** | Moneyline & spread on simulated live events | 10 chips |
+| Guide | Description |
+|-------|-------------|
+| [Getting Started](docs/getting-started.md) | Install, launch, first visit |
+| [Player Guide](docs/player-guide.md) | **Complete navigation, menus & dialog reference** |
+| [Chip Economy](docs/chip-economy.md) | Wallet, ledger, buy-ins |
+| [Blackjack](docs/blackjack.md) | Rules, controls, standalone mode |
+| [Slot Machines](docs/slots.md) | Paytable, machines |
+| [Sports Book](docs/sportsbook.md) | Moneyline, spread, settlement |
+| [Architecture](docs/architecture.md) | Developer overview |
+| [Adding Activities](docs/adding-activities.md) | Plug in new games |
+| [Testing](docs/testing.md) | Test suite guide |
 
-### Casino navigation
+In-game help: select **Casino Guide** (option 6) from the main lobby.
 
-```
-══════════════════════════════════
-  The Mandalay Bay
-══════════════════════════════════
-Welcome, Guest
-Chips: $1,000
+## The casino floor
 
-Choose your adventure:
-  1) Explore Table Games
-  2) Explore Slot Machines
-  3) Explore Sports Book
-  4) Cashier
-  5) Player Stats
-  6) Leave Casino
-  0) Back
-```
+| Floor | Activity | Min bet |
+|-------|----------|---------|
+| **Table Games** | Blackjack (solo or AI table) | 10 chips |
+| **Slot Machines** | Mandalay Fortune & High Roller | 5 chips |
+| **Sports Book** | Moneyline & spread wagering | 10 chips |
 
-- **Cashier** — buy chips, cash out, view transaction ledger
-- **Player Stats** — visits, bets, and net winnings per activity
-- **Chip economy** — all wagers debit/credit one shared wallet with full audit trail
+Plus **Cashier**, **Player Stats**, and **Casino Guide** from the main lobby.
 
-### Command-line options
+## Command-line options
 
 ```bash
 python3 -m mandalay_bay --chips 2500 --name "High Roller"
-python3 -m mandalay_bay --no-color --ascii
+python3 -m mandalay_bay --no-color --ascii --no-intro
+python3 -m blackjack --quick --bots 3    # Standalone blackjack
 ```
 
-| Flag | Purpose |
-|------|---------|
-| `--chips` | Starting balance (default 1000) |
-| `--name` | Player name |
-| `--no-color` | Disable ANSI colors |
-| `--ascii` | ASCII symbols instead of Unicode |
-
-## Blackjack (Table Games)
-
-Full Vegas-style rules: 6-deck shoe, H17, 3:2 blackjack, split/double/insurance/surrender, secure Fisher–Yates shuffle via `secrets.SystemRandom()`.
-
-When played inside The Mandalay Bay, your chip wallet is synced after every hand. Standalone mode remains available:
-
-```bash
-python3 -m blackjack --quick --bots 3 --seat 2
-```
-
-## Slot Machines
-
-Three-reel slots with weighted symbols and a classic paytable:
-
-| Result | Payout |
-|--------|--------|
-| 7-7-7 | 100x |
-| 💎💎💎 | 50x |
-| 🔔🔔🔔 | 25x |
-| BAR×3 | 15x |
-| 🍒🍒🍒 | 10x |
-| Two cherries | 2x |
-| One cherry | Bet returned |
-
-## Sports Book
-
-Simulated events across NFL, NBA, MLB, and Soccer with moneyline and spread lines. Place tickets, then settle for randomly generated final scores (secure RNG).
-
-## Architecture
+## Project structure
 
 ```
-mandalay_bay/           # Casino hub & chip economy
-  hub.py                # Floor navigation / choose-your-adventure
-  chips.py              # Unified ChipWallet + ledger
-  session.py            # Player session & per-activity stats
-  activities/
-    blackjack.py        # Table game wrapper
-    slots.py            # Slot machines
-    sportsbook.py       # Sports wagering
-blackjack/              # Full blackjack engine
-tests/                  # pytest suite
+mandalay_bay/     Casino hub, chip economy, activities
+blackjack/        Full blackjack engine
+docs/             Complete documentation
+tests/            pytest suite (35+ tests)
 ```
-
-Activities implement a common `Activity` interface — new games (roulette, poker, etc.) plug in via the registry without changing the hub.
 
 ## RNG & legitimacy
 
-All random outcomes use `secrets.SystemRandom()` (OS CSPRNG):
-
-- Blackjack shoe shuffles
-- Slot reel spins (weighted symbol pool)
-- Sports event lines and final scores
-
-No outcome manipulation; payouts follow stated rules and paytables.
+All random outcomes use `secrets.SystemRandom()` (OS CSPRNG). No outcome manipulation.
 
 ## License
 

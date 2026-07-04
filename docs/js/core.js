@@ -155,6 +155,7 @@ export class PlayerSession {
     this.slotLabel = slotLabel;
     this.sportsbookData = null;
     this.rpg = null;
+    this.rpgData = null;
     this.progressivePools = {};
   }
 
@@ -191,6 +192,7 @@ export class PlayerSession {
       useUnicode: this.useUnicode,
       activityStats: this.activityStats,
       sportsbook: this.sportsbookData ?? null,
+      rpgData: this.rpgData ?? null,
       progressivePools: this.progressivePools ?? {},
     };
     if (this.rpg) payload.rpg = this.rpg;
@@ -211,8 +213,26 @@ export class PlayerSession {
     s.sportsbookData = data.sportsbook ?? null;
     s.progressivePools = data.progressivePools ?? {};
     s.rpg = data.rpg ? { ...defaultRpgState(), ...data.rpg } : null;
+    s.rpgData = data.rpgData ?? null;
     return s;
   }
+}
+
+export const DEFAULT_RPG_DATA = {
+  location: "main_lobby",
+  flags: {},
+};
+
+export function ensureRpgData(session) {
+  if (!session.rpgData) {
+    session.rpgData = { ...DEFAULT_RPG_DATA, flags: {} };
+  } else {
+    session.rpgData = {
+      location: session.rpgData.location ?? DEFAULT_RPG_DATA.location,
+      flags: { ...session.rpgData.flags },
+    };
+  }
+  return session.rpgData;
 }
 
 export const MAX_SLOTS = 5;

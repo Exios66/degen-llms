@@ -85,7 +85,11 @@ class SportsbookActivity(Activity):
                 )
 
             choice = ui.menu_choice(
-                ["Place a wager", "Settle all open bets (simulate results)", "Refresh lines"],
+                [
+                    f"Place a wager ({len(self._pending)} open ticket(s))" if self._pending else "Place a wager",
+                    f"Settle all open bets ({len(self._pending)} ticket(s))" if self._pending else "Settle all open bets (simulate results)",
+                    "Refresh lines",
+                ],
                 title="Sports Book:",
             )
             if choice == 0:
@@ -222,10 +226,13 @@ class SportsbookActivity(Activity):
 
         margin = event.home_score - event.away_score
         if slip.pick == event.home:
-            covered = margin + event.spread > 0 or (margin + event.spread == 0 and slip.odds < 0)
+            adjusted = margin + event.spread
         else:
-            covered = (-margin) - event.spread > 0 or ((-margin) - event.spread == 0 and slip.odds < 0)
-        if covered:
+            adjusted = (-margin) + (-event.spread)
+
+        if adjusted == 0:
+            return True, slip.amount, "Push — stake returned"
+        if adjusted > 0:
             profit = self._profit(slip.amount, slip.odds)
             return True, slip.amount + profit, f"{slip.pick} covered the spread"
         return False, 0, f"{slip.pick} did not cover"

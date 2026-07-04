@@ -2,27 +2,9 @@ from __future__ import annotations
 
 from dataclasses import replace
 
-from blackjack.cards import Shoe
 from blackjack.config import GameConfig, make_bot_names
-from blackjack.display import Display
-from blackjack.table import Table
 from mandalay_bay.activities.base import Activity, ActivityInfo
 from mandalay_bay.session import PlayerSession
-
-
-def _prompt_int(prompt: str, low: int, high: int, default: int) -> int:
-    while True:
-        raw = input(f"{prompt} [{default}]: ").strip()
-        if not raw:
-            return default
-        try:
-            value = int(raw)
-        except ValueError:
-            print("Enter a number.")
-            continue
-        if low <= value <= high:
-            return value
-        print(f"Enter a value between {low} and {high}.")
 
 
 class BlackjackActivity(Activity):
@@ -43,6 +25,7 @@ class BlackjackActivity(Activity):
 
         if not self.can_enter(session):
             ui.error(f"You need at least {self.info.min_bet} chips to sit down.")
+            ui.dim("Visit the Cashier to buy more chips.")
             ui.pause()
             return
 
@@ -57,12 +40,12 @@ class BlackjackActivity(Activity):
             config = GameConfig(
                 starting_bankroll=session.wallet.balance,
                 min_bet=self.info.min_bet,
-                max_bet=min(100, session.wallet.balance),
+                max_bet=min(100, max(self.info.min_bet, session.wallet.balance)),
                 use_color=session.use_color,
                 use_unicode=session.use_unicode,
             )
         else:
-            config = self._custom_wizard(session)
+            config = self._custom_wizard(session, ui)
 
         config = replace(
             config,
@@ -77,29 +60,33 @@ class BlackjackActivity(Activity):
         ui.chip_line(session.wallet.balance)
         ui.pause()
 
-    def _custom_wizard(self, session: PlayerSession) -> GameConfig:
-        print("\n--- Table Setup ---")
-        mode = input("Mode: (1) solo  (2) table with bots [1]: ").strip() or "1"
+    def _custom_wizard(self, session: PlayerSession, ui) -> GameConfig:
+        ui.print("\n--- Table Setup ---")
+        mode = ui.menu_choice(["Solo vs dealer", "Full table with AI players"], title="Table mode:")
+        if mode == 0:
+            mode = 1
         bankroll = session.wallet.balance
-        min_bet = _prompt_int("Minimum bet", 1, bankroll, 10)
-        max_bet = _prompt_int("Maximum bet", min_bet, bankroll, min(100, bankroll))
-        num_decks = _prompt_int("Decks in shoe (1-8)", 1, 8, 6)
-        if mode == "2":
-            num_bots = _prompt_int("Simulated players (1-6)", 1, 6, 2)
+        min_bet = ui.prompt_int("Minimum bet", 1, bankroll, default=min(10, bankroll))
+        max_bet = ui.prompt_int("Maximum bet", min_bet, bankroll, default=min(100, bankroll))
+        num_decks = ui.prompt_int("Decks in shoe (1-8)", 1, 8, default=6)
+        if mode == 2:
+            num_bots = ui.prompt_int("Simulated players (1-6)", 1, 6, default=2)
             total = num_bots + 1
-            human_seat = _prompt_int(f"Your seat (1-{total})", 1, total, min(2, total))
+            human_seat = ui.prompt_int(f"Your seat (1-{total})", 1, total, default=min(2, total))
             bot_names = make_bot_names(num_bots)
         else:
             num_bots = 0
             human_seat = 1
             bot_names = []
-        dealer = input("Dealer: (1) H17  (2) S17 [1]: ").strip() or "1"
+        dealer = ui.menu_choice(["Dealer hits soft 17 (H17)", "Dealer stands on soft 17 (S17)"], title="Dealer rule:")
+        if dealer == 0:
+            dealer = 1
         return GameConfig(
             starting_bankroll=bankroll,
             min_bet=min_bet,
             max_bet=max_bet,
             num_decks=num_decks,
-            dealer_hits_soft_17=dealer != "2",
+            dealer_hits_soft_17=dealer == 1,
             num_bots=num_bots,
             human_seat=human_seat,
             bot_names=bot_names,

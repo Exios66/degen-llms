@@ -91,9 +91,14 @@ class SlotsActivity(Activity):
             return
 
         if machine == 1:
-            min_bet, max_bet = 5, 50
+            min_bet, max_bet = 5, min(50, session.wallet.balance)
         else:
             min_bet, max_bet = 25, min(500, session.wallet.balance)
+
+        if max_bet < min_bet:
+            ui.error(f"This machine requires at least {min_bet} chips per spin.")
+            ui.pause()
+            return
 
         ui.print(f"\nPaytable: 7-7-7 = 100x | 💎💎💎 = 50x | 🔔🔔🔔 = 25x | BAR x3 = 15x")
         ui.print("Two cherries = 2x | One cherry = bet returned\n")

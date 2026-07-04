@@ -36,3 +36,7 @@ class PlayerSession:
         stats = self.stat_for(activity)
         stats.hands_or_bets += bets
         stats.net_winnings += net
+
+    @property
+    def has_save_slot(self) -> bool:
+        return self.slot_id is not None

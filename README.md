@@ -1,27 +1,24 @@
 # degen-llms
 
-**The Mandalay Bay** — a choose-your-adventure digital casino CLI. Explore the floor, build your chip stack across blackjack tables, slot machines, and the sports book, all backed by a unified chip economy and secure OS RNG.
+**The Mandalay Bay** — a choose-your-adventure digital casino with unified chip economy, save slots, blackjack, slots, and sports book. Available as a **CLI**, **web app** (GitHub Pages), or standalone blackjack.
 
 ## Quick start
 
 Requires **Python 3.11+** (stdlib only at runtime).
 
 ```bash
-# Enter the full casino
-python3 -m mandalay_bay
-
-# Standalone blackjack (original mode)
-python3 -m blackjack
-
-# Run tests
+python3 -m mandalay_bay                  # Save library → casino floor
+python3 -m mandalay_bay --list-saves     # View save slots
+python3 -m mandalay_bay --slot 1 --new-save --name "Ace"
+python3 -m blackjack                     # Standalone blackjack
 python3 -m pytest -v
 ```
 
-### Play in your browser (GitHub Pages)
-
-The same **The Mandalay Bay** experience is available as a web app styled like the terminal CLI:
+## Play in your browser (GitHub Pages)
 
 **https://exios66.github.io/degen-llms/**
+
+The web app in [`docs/`](docs/) mirrors the terminal experience. Session progress saves per slot in your browser via `localStorage`.
 
 The site source lives in the [`docs/`](docs/) folder on the **`gh-pages`** branch. GitHub Pages uses the default branch publisher (no custom deploy workflow).
 
@@ -35,142 +32,64 @@ After editing `docs/` on `main`, sync to `gh-pages` and push:
 
 Custom error screens live in `docs/` (`404.html`, `maintenance.html`, `offline.html`) and deploy with the site.
 
-All floor activities work in the browser:
+## Documentation
 
-- Table Games (blackjack — quick hand or custom table with bots)
-- Slot Machines (Mandalay Fortune & High Roller)
-- Sports Book (moneyline & spread)
-- Cashier (buy/cash out, transaction ledger)
-- Player Stats (visits, bets, net winnings)
-- **Save Library** (5 slots — select, create, load, delete; recent saves tracked)
+Full docs in [`docs/`](docs/README.md):
 
-Session progress is saved per slot in your browser via `localStorage`. Open `docs/index.html` locally for offline play.
+| Guide | Description |
+|-------|-------------|
+| [Player Guide](docs/player-guide.md) | Every menu, dialog, and shortcut |
+| [Save Slots](docs/saves.md) | Load, create, and manage saves |
+| [Getting Started](docs/getting-started.md) | Install, launch, CLI flags |
+| [Chip Economy](docs/chip-economy.md) | Wallet & ledger |
+| [Architecture](docs/architecture.md) | Developer overview |
 
-## The Mandalay Bay
+In-game help: **Casino Guide** (lobby option 7).
 
-Welcome to the floor. One chip wallet powers every activity:
+## Save system
 
-| Area | Activity | Min bet |
-|------|----------|---------|
-| **Table Games** | Blackjack (solo or full table with AI players) | 10 chips |
-| **Slot Machines** | Mandalay Fortune & High Roller slots | 5 chips |
-| **Sports Book** | Moneyline & spread on simulated live events | 10 chips |
+- **5 save slots** with most-recent-first library ordering
+- Interactive picker on launch, or direct CLI: `--slot N`, `--slot N --new-save`
+- Ephemeral play: `--no-save`
+- Auto-save on leave, after activities, and on Ctrl+C
+- CLI storage: `~/.mandalay_bay/saves/` (override with `--save-dir` or `MANDALAY_BAY_SAVE_DIR`)
+- Browser storage: `localStorage` per slot
 
-### Casino navigation
+## The casino floor
 
-```
-══════════════════════════════════
-  The Mandalay Bay
-══════════════════════════════════
-Welcome, Guest
-Chips: $1,000
+| Floor | Activity | Min bet |
+|-------|----------|---------|
+| Table Games | Blackjack (solo or AI table) | 10 chips |
+| Slot Machines | Mandalay Fortune & High Roller | 5 chips |
+| Sports Book | Moneyline & spread | 10 chips |
 
-Choose your adventure:
-  1) Explore Table Games
-  2) Explore Slot Machines
-  3) Explore Sports Book
-  4) Cashier
-  5) Player Stats
-  6) Leave Casino
-  0) Back
-```
+Lobby: **Cashier**, **Player Stats**, **Save Game**, **Casino Guide**, **Leave Casino**.
 
-- **Cashier** — buy chips, cash out, view transaction ledger
-- **Player Stats** — visits, bets, and net winnings per activity
-- **Save Game** — write current progress to your active save slot
-- **Chip economy** — all wagers debit/credit one shared wallet with full audit trail
-
-### Command-line options
+## Command-line options
 
 ```bash
-python3 -m mandalay_bay --chips 2500 --name "High Roller"
-python3 -m mandalay_bay --no-color --ascii
-
-# Load save slot 2 directly
 python3 -m mandalay_bay --slot 2
-
-# Create a new save in slot 3
-python3 -m mandalay_bay --slot 3 --new-save --name "Alice"
-
-# Play without saving (ephemeral session)
-python3 -m mandalay_bay --no-save
+python3 -m mandalay_bay --slot 3 --new-save --name "Ace" --chips 2500
+python3 -m mandalay_bay --no-save --chips 5000
+python3 -m mandalay_bay --save-dir ./backups --list-saves
+python3 -m mandalay_bay --no-color --ascii --no-intro
+python3 -m blackjack --quick --bots 3 --rounds 10
 ```
 
 | Flag | Purpose |
 |------|---------|
-| `--chips` | Starting balance for **new** saves (default 1000) |
-| `--name` | Default player name for **new** saves |
-| `--slot` | Load save slot 1–5 directly (skip picker) |
-| `--new-save` | With `--slot`, create a new save in that slot |
-| `--no-save` | Ephemeral session — no save library |
-| `--no-color` | Disable ANSI colors |
-| `--ascii` | ASCII symbols instead of Unicode |
-
-### Save library
-
-When you launch the casino, you enter the **Save Library** first:
-
-- **5 save slots** — load an existing visit or create a new one in an empty slot
-- **Recent saves** — your most recently played slots appear at the top
-- **Auto-save** — progress saves after floor activities, when leaving, and via **Save Game** on the hub menu
-- **Storage** — saves live in `~/.mandalay_bay/saves/` (override with `MANDALAY_BAY_SAVE_DIR`)
-
-Each save stores your chip wallet, transaction ledger, activity stats, and player name.
-
-## Blackjack (Table Games)
-
-Full Vegas-style rules: 6-deck shoe, H17, 3:2 blackjack, split/double/insurance/surrender, secure Fisher–Yates shuffle via `secrets.SystemRandom()`.
-
-When played inside The Mandalay Bay, your chip wallet is synced after every hand. Standalone mode remains available:
-
-```bash
-python3 -m blackjack --quick --bots 3 --seat 2
-```
-
-## Slot Machines
-
-Three-reel slots with weighted symbols and a classic paytable:
-
-| Result | Payout |
-|--------|--------|
-| 7-7-7 | 100x |
-| 💎💎💎 | 50x |
-| 🔔🔔🔔 | 25x |
-| BAR×3 | 15x |
-| 🍒🍒🍒 | 10x |
-| Two cherries | 2x |
-| One cherry | Bet returned |
-
-## Sports Book
-
-Simulated events across NFL, NBA, MLB, and Soccer with moneyline and spread lines. Place tickets, then settle for randomly generated final scores (secure RNG).
-
-## Architecture
-
-```
-mandalay_bay/           # Casino hub & chip economy
-  hub.py                # Floor navigation / choose-your-adventure
-  chips.py              # Unified ChipWallet + ledger
-  session.py            # Player session & per-activity stats
-  activities/
-    blackjack.py        # Table game wrapper
-    slots.py            # Slot machines
-    sportsbook.py       # Sports wagering
-blackjack/              # Full blackjack engine
-tests/                  # pytest suite
-```
-
-Activities implement a common `Activity` interface — new games (roulette, poker, etc.) plug in via the registry without changing the hub.
+| `--slot` | Load save slot 1–5 directly |
+| `--new-save` / `--new` | Create new save in `--slot` |
+| `--no-save` | Ephemeral session (no persistence) |
+| `--list-saves` | Print save library and exit |
+| `--save-dir` | Custom save directory |
+| `--chips` | Starting chips for new saves |
+| `--name` | Default player name |
+| `--no-color` / `--ascii` / `--no-intro` | Display options |
 
 ## RNG & legitimacy
 
-All random outcomes use `secrets.SystemRandom()` (OS CSPRNG):
-
-- Blackjack shoe shuffles
-- Slot reel spins (weighted symbol pool)
-- Sports event lines and final scores
-
-No outcome manipulation; payouts follow stated rules and paytables.
+All random outcomes use OS-backed CSPRNG (`secrets.SystemRandom()` in Python, `crypto.getRandomValues()` in the browser). No outcome manipulation.
 
 ## License
 

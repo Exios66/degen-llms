@@ -332,19 +332,40 @@ function renderHub() {
 
 function renderFloor({ floor }) {
   const activities = Object.values(ACTIVITIES).filter((a) => a.floor === floor);
-  const options = activities.map((a) => `${a.name} — min ${a.minBet} chips`);
+  const items = activities.map((a, i) => el("li", {}, [
+    el("button", {
+      className: "menu-btn",
+      onclick: () => handleChoice(i + 1),
+      innerHTML: [
+        `<span class="num">${i + 1})</span> ${a.name} — min ${a.minBet} chips`,
+        a.description ? `<br><span class="dim" style="padding-left:1.75rem;font-size:0.85rem;">${a.description}</span>` : "",
+      ].join(""),
+    }),
+  ]));
+  items.push(el("li", {}, [
+    el("button", {
+      className: "menu-btn back",
+      innerHTML: '<span class="num">0)</span> Back',
+      onclick: () => handleChoice(0),
+    }),
+  ]));
 
   return el("div", {}, [
     banner(`${floor}`),
     chipLine(),
-    menu(options, `${floor}:`, (choice) => {
-      if (choice === 0) { popView(); return; }
-      const act = activities[choice - 1];
-      if (act.id === "blackjack") pushView("blackjack-menu");
-      else if (act.id === "slots") pushView("slots-menu");
-      else if (act.id === "sportsbook") pushView("sportsbook");
-    }),
+    el("div", { className: "panel" }, [
+      el("p", { className: "subtitle", textContent: `${floor}:` }),
+      el("ul", { className: "menu-list" }, items),
+    ]),
   ]);
+
+  function handleChoice(choice) {
+    if (choice === 0) { popView(); return; }
+    const act = activities[choice - 1];
+    if (act.id === "blackjack") pushView("blackjack-menu");
+    else if (act.id === "slots") pushView("slots-menu");
+    else if (act.id === "sportsbook") pushView("sportsbook");
+  }
 }
 
 function renderCashier() {
@@ -976,6 +997,37 @@ function popView() {
   if (viewStack.length > 1) viewStack.pop();
 }
 
+function renderNotFound({ requestedView } = {}) {
+  const label = requestedView ? `"${requestedView}"` : "this screen";
+  return el("div", { className: "error-screen panel" }, [
+    banner(CASINO_NAME),
+    el("pre", {
+      className: "error-ascii",
+      textContent: `╔══════════════════════════════════════╗
+║         THE MANDALAY BAY             ║
+║      ░░░  WRONG FLOOR  ░░░           ║
+╚══════════════════════════════════════╝`,
+    }),
+    el("p", { className: "error-code", textContent: "404 — TABLE CLOSED" }),
+    el("p", { className: "error-slots", textContent: "🎰 7️⃣ ❓" }),
+    el("p", {
+      className: "error-message",
+      innerHTML: `This table isn't on the floor.<br>Screen ${label} is not available at The Mandalay Bay.`,
+    }),
+    el("div", { className: "error-actions" }, [
+      el("button", {
+        className: "btn primary",
+        textContent: "Return to Casino Floor",
+        onclick: () => {
+          viewStack = [{ name: session.slotId != null ? "hub" : "save-picker", data: {} }];
+          render();
+        },
+      }),
+    ]),
+    el("p", { className: "footer-note", textContent: "Play in your browser — session saved locally" }),
+  ]);
+}
+
 const RENDERERS = {
   "save-picker": renderSavePicker,
   "save-create": renderSaveCreate,
@@ -996,16 +1048,26 @@ const RENDERERS = {
   "blackjack-menu": renderBlackjackMenu,
   "blackjack-custom": renderBlackjackCustom,
   "blackjack-play": renderBlackjackPlay,
+  "not-found": renderNotFound,
 };
 
 function render() {
   const current = viewStack[viewStack.length - 1] ?? { name: "hub", data: {} };
-  const fn = RENDERERS[current.name] ?? renderHub;
+  const fn = RENDERERS[current.name];
   app.innerHTML = "";
-  app.appendChild(fn(current.data));
+  if (fn) {
+    app.appendChild(fn(current.data));
+    return;
+  }
+  app.appendChild(renderNotFound({ requestedView: current.name }));
 }
 
 viewStack = [{ name: "save-picker", data: {} }];
+
+if (!navigator.onLine) {
+  window.addEventListener("online", () => render(), { once: true });
+}
+
 render();
 
 document.addEventListener("keydown", (e) => {

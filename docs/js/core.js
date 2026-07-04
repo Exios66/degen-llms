@@ -139,6 +139,7 @@ export class PlayerSession {
     this.slotId = slotId;
     this.slotLabel = slotLabel;
     this.sportsbookData = null;
+    this.rpgData = null;
   }
 
   statFor(activity) {
@@ -169,6 +170,7 @@ export class PlayerSession {
       useUnicode: this.useUnicode,
       activityStats: this.activityStats,
       sportsbook: this.sportsbookData ?? null,
+      rpgData: this.rpgData ?? null,
     };
   }
 
@@ -184,8 +186,26 @@ export class PlayerSession {
     s.wallet = ChipWallet.fromJSON(data.wallet ?? { balance: 1000, transactions: [] });
     s.activityStats = data.activityStats ?? {};
     s.sportsbookData = data.sportsbook ?? null;
+    s.rpgData = data.rpgData ?? null;
     return s;
   }
+}
+
+export const DEFAULT_RPG_DATA = {
+  location: "main_lobby",
+  flags: {},
+};
+
+export function ensureRpgData(session) {
+  if (!session.rpgData) {
+    session.rpgData = { ...DEFAULT_RPG_DATA, flags: {} };
+  } else {
+    session.rpgData = {
+      location: session.rpgData.location ?? DEFAULT_RPG_DATA.location,
+      flags: { ...session.rpgData.flags },
+    };
+  }
+  return session.rpgData;
 }
 
 export const MAX_SLOTS = 5;

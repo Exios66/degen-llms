@@ -1,0 +1,234 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #0a1628;
+  color: #c8d3f5;
+  font-family: "JetBrains Mono", monospace;
+  overflow: hidden;
+}
+
+#game-container {
+  width: 100vw;
+  height: 100vh;
+}
+
+#game-container canvas {
+  display: block;
+  margin: 0 auto;
+}
+
+.hud {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+  padding: 0.6rem 1rem;
+  background: rgba(10, 22, 40, 0.92);
+  border-bottom: 1px solid #2a3f5f;
+  font-size: 0.85rem;
+}
+
+.hud-title {
+  font-weight: 700;
+  color: #7dcfff;
+}
+
+.hud-dim {
+  color: #6c7a89;
+}
+
+.hud-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.hud-btn,
+.overlay-btn,
+.choice-btn {
+  font-family: inherit;
+  font-size: 0.8rem;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid #3d5a80;
+  border-radius: 4px;
+  background: #1a2740;
+  color: #c8d3f5;
+  cursor: pointer;
+}
+
+.hud-btn:hover,
+.overlay-btn:hover,
+.choice-btn:hover {
+  background: #243552;
+}
+
+.hud-btn.primary,
+.overlay-btn.primary {
+  background: #2d6a4f;
+  border-color: #40916c;
+}
+
+.hud-btn.primary:hover,
+.overlay-btn.primary:hover {
+  background: #40916c;
+}
+
+#ui-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+}
+
+#ui-overlay > * {
+  pointer-events: auto;
+}
+
+.overlay-panel {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(520px, 92vw);
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 1.25rem;
+  background: rgba(16, 28, 48, 0.97);
+  border: 1px solid #3d5a80;
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.overlay-panel h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+  color: #7dcfff;
+}
+
+.overlay-panel .speaker {
+  color: #f9e2af;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.overlay-panel .text {
+  line-height: 1.5;
+  margin-bottom: 1rem;
+}
+
+.choices {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.choice-btn {
+  text-align: left;
+  width: 100%;
+}
+
+.save-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem;
+}
+
+.save-list li {
+  margin-bottom: 0.4rem;
+}
+
+.save-list button {
+  width: 100%;
+  text-align: left;
+}
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.form-row input {
+  font-family: inherit;
+  padding: 0.4rem;
+  background: #0a1628;
+  border: 1px solid #3d5a80;
+  color: #c8d3f5;
+  border-radius: 4px;
+}
+
+.action-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.status-msg {
+  position: fixed;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  padding: 0.5rem 1rem;
+  background: rgba(45, 106, 79, 0.95);
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.status-msg.error {
+  background: rgba(180, 60, 60, 0.95);
+}
+
+.blackjack-overlay .table-display {
+  font-size: 0.8rem;
+  line-height: 1.6;
+  margin: 0.75rem 0;
+  padding: 0.5rem;
+  background: #0a1628;
+  border-radius: 4px;
+}
+
+.blackjack-overlay .seat-line.highlight {
+  color: #7dcfff;
+}
+
+.blackjack-overlay .dealer-line {
+  color: #f9e2af;
+  margin-top: 0.5rem;
+}
+
+.blackjack-overlay .log-area {
+  max-height: 120px;
+  overflow-y: auto;
+  font-size: 0.75rem;
+  color: #6c7a89;
+  margin-bottom: 0.5rem;
+}
+
+.blackjack-overlay .log-area .success {
+  color: #a6e3a1;
+}
+
+.blackjack-overlay .log-area .error {
+  color: #f38ba8;
+}
+
+.blackjack-overlay .card-red {
+  color: #f38ba8;
+}
+
+.hidden {
+  display: none !important;
+}

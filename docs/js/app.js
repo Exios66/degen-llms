@@ -359,7 +359,7 @@ function renderSaveDelete() {
 }
 
 function renderHub() {
-  const floors = [...FLOOR_ORDER, "Cashier", "Player Stats", "Save Game", "Leave Casino"];
+  const floors = [...FLOOR_ORDER, "Cashier", "Player Stats", "Save Game", "Explore Resort (RPG)", "Leave Casino"];
   const options = floors.map((f) => (FLOOR_ORDER.includes(f) ? `Explore ${f}` : f));
 
   const wrap = el("div", {}, [
@@ -427,6 +427,11 @@ function renderHub() {
       } else {
         showStatus("No save slot active — pick a slot at entry or play as guest.", "error");
       }
+    } else if (choice === FLOOR_ORDER.length + 4) {
+      const rpgUrl = session.slotId != null
+        ? `./rpg/?slot=${session.slotId}`
+        : "./rpg/?guest=1";
+      window.location.href = rpgUrl;
     } else {
       pushView("leave");
     }

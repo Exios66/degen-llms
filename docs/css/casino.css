@@ -821,6 +821,29 @@ body {
   background: rgba(232, 197, 71, 0.16);
 }
 
+.world-cycle-banner,
+.world-cycle-hud {
+  margin: 0.75rem 0;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid rgba(232, 197, 71, 0.2);
+  border-radius: 4px;
+}
+
+.world-cycle-hud {
+  background: rgba(232, 197, 71, 0.05);
+}
+
+.world-cycle-banner.resort-time-2,
+.world-cycle-hud.resort-time-2 {
+  border-color: rgba(180, 80, 255, 0.25);
+}
+
+.world-cycle-banner.resort-time-3,
+.world-cycle-hud.resort-time-3 {
+  border-color: rgba(40, 120, 200, 0.3);
+  background: rgba(40, 120, 200, 0.06);
+}
+
 .resort-completion-panel {
   margin: 1rem 0;
   padding: 0.75rem;

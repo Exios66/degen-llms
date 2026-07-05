@@ -3,6 +3,7 @@ import { ensureHotel, isNetPositive, getRoomType } from "./hotel.js";
 import { resortRequirementsMet, hintForEvent } from "./resort-bridge.js";
 import { tierIndex } from "./rewards-perks.js";
 import { tierForWagered } from "./rewards.js";
+import { getWorldPhase } from "./world-cycle.js";
 
 /** @typedef {{ ok: boolean, message: string, unlock?: string }} AmenityResult */
 
@@ -401,13 +402,20 @@ export function filterRoomDecisions(session, hotel) {
 }
 
 export function getResortTimeOfDay(hotel) {
-  const slot = (hotel.resortTime ?? 0) % 4;
-  return { slot, label: RESORT_TIME_LABELS[slot] };
+  void hotel;
+  return { slot: 0, label: "Use session for world phase" };
+}
+
+/** @param {import("./core.js").PlayerSession} session */
+export function getSessionResortPhase(session) {
+  const phase = getWorldPhase(session);
+  return { slot: phase.id, label: phase.label };
 }
 
 export function advanceResortTime(hotel, steps = 1) {
-  hotel.resortTime = ((hotel.resortTime ?? 0) + steps) % 4;
-  return getResortTimeOfDay(hotel);
+  void hotel;
+  void steps;
+  return { slot: 0, label: "Time advances with the real-world clock (2h = 1 day)" };
 }
 
 function eventRequirementsMet(session, hotel, event) {
@@ -441,7 +449,6 @@ function afterAmenityAction(session) {
   const hotel = ensureHotel(session);
   const ra = ensureRoomAmenities(hotel);
   ra.amenityActions += 1;
-  advanceResortTime(hotel);
   return tryUnlockEvents(session);
 }
 
@@ -467,7 +474,7 @@ export function tuneTvChannel(session, channelId) {
   }
   const unlocked = afterAmenityAction(session);
   let message = `${channel.label}\n${channel.description}\n${channel.flavor}`;
-  const time = getResortTimeOfDay(hotel);
+  const time = getSessionResortPhase(session);
   message += `\n(${time.label})`;
   if (unlocked.length) {
     message += `\n\n✦ Unlocked: ${unlocked.map((e) => e.label).join(", ")}`;
@@ -538,7 +545,7 @@ export function makeRoomDecision(session, decisionId) {
   let message = `${decision.label}\n${decision.flavor}`;
   if (decisionId === "balcony" || decisionId === "telescope_balcony") {
     const room = getRoomType(hotel);
-    const time = getResortTimeOfDay(hotel);
+    const time = getSessionResortPhase(session);
     message += `\n${room.label} · ${time.label} — the Strip ${time.slot >= 2 ? "blazes" : "shimmers"}.`;
   }
   if (unlocked.length) {

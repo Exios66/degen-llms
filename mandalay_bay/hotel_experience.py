@@ -16,6 +16,7 @@ from mandalay_bay.hotel import (
     express_checkout,
     extend_stay,
     find_reservation,
+    find_reservation_at_desk,
     get_room_type,
     hallway_choice,
     is_net_positive,
@@ -27,6 +28,7 @@ from mandalay_bay.hotel import (
     upgrade_room,
     wake_up_call,
 )
+from mandalay_bay.world_cycle import settle_hotel_overdue
 from mandalay_bay.session import PlayerSession
 
 
@@ -81,7 +83,9 @@ def run_front_desk(session: PlayerSession, ui: TerminalUI) -> None:
         ui.print(f"Conf {hotel.reservation_code} · {get_room_type(hotel)['label']}")
         choice = ui.menu_choice(
             [
-                "Locate reservation",
+                "Locate reservation (phone — see MGM Rewards)",
+                "Confirm reservation (desk terminal)",
+                "Settle overdue resort charges",
                 "Upgrade to Panorama Suite",
                 "Upgrade to Chairman Penthouse",
                 "Extend stay (+1 night)",
@@ -102,27 +106,35 @@ def run_front_desk(session: PlayerSession, ui: TerminalUI) -> None:
             if result.clue:
                 ui.success(result.clue)
         elif choice == 2:
-            res = upgrade_room(session, "suite")
-            ui.success(res.message) if res.ok else ui.error(res.message)
+            result = find_reservation_at_desk(session)
+            ui.print(result.hint)
+            if result.clue:
+                ui.success(result.clue)
         elif choice == 3:
-            res = upgrade_room(session, "penthouse")
+            res = settle_hotel_overdue(session)
             ui.success(res.message) if res.ok else ui.error(res.message)
         elif choice == 4:
-            res = extend_stay(session, 1)
+            res = upgrade_room(session, "suite")
             ui.success(res.message) if res.ok else ui.error(res.message)
         elif choice == 5:
-            res = review_folio(session)
-            ui.success(res.message)
+            res = upgrade_room(session, "penthouse")
+            ui.success(res.message) if res.ok else ui.error(res.message)
         elif choice == 6:
-            res = late_checkout(session)
+            res = extend_stay(session, 1)
             ui.success(res.message) if res.ok else ui.error(res.message)
         elif choice == 7:
-            res = express_checkout(session)
-            ui.success(res.message) if res.ok else ui.error(res.message)
+            res = review_folio(session)
+            ui.success(res.message)
         elif choice == 8:
-            res = checkout_stay(session)
+            res = late_checkout(session)
             ui.success(res.message) if res.ok else ui.error(res.message)
         elif choice == 9:
+            res = express_checkout(session)
+            ui.success(res.message) if res.ok else ui.error(res.message)
+        elif choice == 10:
+            res = checkout_stay(session)
+            ui.success(res.message) if res.ok else ui.error(res.message)
+        elif choice == 11:
             run_guest_directory(session, ui)
         ui.pause()
 

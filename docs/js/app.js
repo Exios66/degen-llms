@@ -1,7 +1,7 @@
 import {
   CASINO_NAME, ACTIVITIES, FLOOR_ORDER, fmtChips, signedChips,
   saveSlot, loadSlot, createSlot, deleteSlot, listSlots, recentSlots, formatSaveTime,
-  createGuestSession, PlayerSession,
+  createGuestSession, PlayerSession, loadActiveProfile,
 } from "./core.js";
 import {
   MACHINES,
@@ -2318,6 +2318,28 @@ function applyLaunchParams() {
   return false;
 }
 
+function hideBootLoader() {
+  const loader = document.getElementById("boot-loader");
+  if (loader) loader.remove();
+}
+
+if (!applyLaunchParams()) {
+  const remembered = loadActiveProfile();
+  if (remembered) {
+    hideBootLoader();
+    enterCasino(remembered);
+    loadBundledHorseNames();
+  } else {
+    loadBundledHorseNames().finally(() => {
+      hideBootLoader();
+      render();
+    });
+  }
+} else {
+  hideBootLoader();
+  loadBundledHorseNames();
+}
+
 if (!navigator.onLine) {
   window.addEventListener("online", () => render(), { once: true });
 }
@@ -2325,12 +2347,6 @@ if (!navigator.onLine) {
 window.addEventListener("beforeunload", () => {
   if (session.slotId != null) persist();
 });
-
-if (!applyLaunchParams()) {
-  loadBundledHorseNames().finally(() => render());
-} else {
-  loadBundledHorseNames();
-}
 
 document.addEventListener("keydown", (e) => {
   if (e.key === "p" || e.key === "P") {

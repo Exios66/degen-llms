@@ -19,7 +19,8 @@ import { HoldemTable, BettingAction } from "./holdem/game.js";
 import { HAND_CLASS_NAMES } from "./holdem/hand_eval.js";
 import { BET_TYPES, spinWheel, wheelColor, resolveBet, RED_NUMBERS } from "./roulette.js";
 import { generateRace, simulateRace, settleTicket, fmtOdds as fmtRaceOdds, loadBundledHorseNames, parseHorseNamesCSV, setCustomHorseNames, getHorseNamePool } from "./horse_racing.js";
-import { createHorseSpriteCanvas, getHorseSprite } from "./horse-sprites.js";
+import { createHorseSpriteCanvas, getHorseSprite, getJockeySilks } from "./horse-sprites.js";
+import { createRaceTrackView, createRacePreview } from "./horse-race-track.js";
 import { getSessionDealer, pickQuip } from "./dealers.js";
 import { RewardsPhone } from "./RewardsPhone.js";
 import { buildHotelRenderers } from "./hotel-ui.js";
@@ -288,7 +289,13 @@ function horsePaddockCard(horse, { selected = false, onClick = null } = {}) {
   const card = el("div", {
     className: `horse-paddock-card${selected ? " horse-paddock-card--selected" : ""}`,
   }, [
-    createHorseSpriteCanvas(horse.spriteId, { size: 80, animate: true, animation: "idle" }),
+    createHorseSpriteCanvas(horse.spriteId, {
+      size: 80,
+      animate: true,
+      animation: "idle",
+      horseNumber: horse.number,
+      withJockey: true,
+    }),
     el("div", { className: "horse-paddock-num", textContent: `#${horse.number}` }),
     el("div", { className: "horse-paddock-name", textContent: horse.name }),
     el("div", { className: "horse-paddock-sprite-label", textContent: spriteMeta.label }),
@@ -1789,6 +1796,8 @@ function renderHorseRacing() {
     dealerPanel("horse_racing"),
     el("p", { className: "subtitle", textContent: card.label }),
     el("p", { className: "racing-roster-note dim", textContent: `${poolLabel} — study the paddock before you wager.` }),
+    el("p", { className: "racing-paddock-label", textContent: "Race Track — Post Parade" }),
+    createRacePreview(card),
     el("p", { className: "racing-paddock-label", textContent: "Paddock" }),
     renderHorsePaddock(card.horses),
     pendingEl,
@@ -1882,48 +1891,76 @@ function renderHorseRacingWager() {
 }
 
 function renderHorseRacingSettle() {
-  const log = el("div", { className: "log-area" });
+  const body = el("div", { className: "race-settle-body" });
+
   if (!horseRacingState.pending.length) {
-    log.appendChild(el("p", { className: "error", textContent: "No open tickets." }));
+    body.appendChild(el("p", { className: "error", textContent: "No open tickets." }));
   } else {
-    const results = simulateRace(horseRacingState.card);
-    log.appendChild(el("p", { className: "subtitle", textContent: "FINISH ORDER" }));
-    const finishLine = el("div", { className: "racing-finish-line" });
-    results.forEach((num, i) => {
-      const h = horseRacingState.card.horses.find((x) => x.number === num);
-      finishLine.appendChild(el("div", { className: "racing-finish-entry" }, [
-        el("span", { className: "racing-finish-pos", textContent: `${i + 1}.` }),
-        createHorseSpriteCanvas(h.spriteId, { size: 64, frame: i % 4, animation: "trot" }),
-        el("span", { className: "racing-finish-name", textContent: `#${num} ${h.name}` }),
-      ]));
-    });
-    log.appendChild(finishLine);
-    results.forEach((num, i) => {
-      const h = horseRacingState.card.horses.find((x) => x.number === num);
-      log.appendChild(el("div", { className: "line", textContent: `${i + 1}. #${num} ${h.name}` }));
+    const card = horseRacingState.card;
+    const results = simulateRace(card);
+    const slips = [...horseRacingState.pending];
+    const resultsPanel = el("div", { className: "race-results-panel is-hidden" });
+    const log = el("div", { className: "log-area" });
+
+    const track = createRaceTrackView({
+      card,
+      results,
+      slips,
+      raceNumber: horseRacingState.races + 1,
+      autoRun: true,
+      onComplete: () => {
+        log.appendChild(el("p", { className: "subtitle", textContent: "FINISH ORDER" }));
+        const finishLine = el("div", { className: "racing-finish-line" });
+        results.forEach((num, i) => {
+          const h = card.horses.find((x) => x.number === num);
+          const silks = getJockeySilks(num);
+          finishLine.appendChild(el("div", { className: "racing-finish-entry" }, [
+            el("span", { className: "racing-finish-pos", textContent: `${i + 1}.` }),
+            createHorseSpriteCanvas(h.spriteId, {
+              size: 64,
+              frame: i % 4,
+              animation: "trot",
+              horseNumber: num,
+              withJockey: true,
+            }),
+            el("span", { className: "racing-finish-name", textContent: `#${num} ${h.name}` }),
+            el("span", { className: "racing-finish-silks dim", textContent: silks.name }),
+          ]));
+        });
+        log.appendChild(finishLine);
+        results.forEach((num, i) => {
+          const h = card.horses.find((x) => x.number === num);
+          log.appendChild(el("div", { className: "line", textContent: `${i + 1}. #${num} ${h.name}` }));
+        });
+
+        for (const slip of slips) {
+          const r = settleTicket(slip, results);
+          if (r.won) {
+            session.wallet.credit(r.payout, "horse_racing", r.reason);
+            horseRacingState.sessionNet += r.net;
+            log.appendChild(el("div", { className: "line success", textContent: `WIN: ${r.reason} (${signedChips(r.net)})` }));
+          } else {
+            horseRacingState.sessionNet += r.net;
+            log.appendChild(el("div", { className: "line error", textContent: `LOSE: ${r.reason} (${signedChips(r.net)})` }));
+          }
+        }
+        horseRacingState.races += 1;
+        horseRacingState.pending = [];
+        session.recordResult("horse_racing", horseRacingState.sessionNet, horseRacingState.races);
+        persist();
+        resultsPanel.classList.remove("is-hidden");
+      },
     });
 
-    for (const slip of horseRacingState.pending) {
-      const r = settleTicket(slip, results);
-      if (r.won) {
-        session.wallet.credit(r.payout, "horse_racing", r.reason);
-        horseRacingState.sessionNet += r.net;
-        log.appendChild(el("div", { className: "line success", textContent: `WIN: ${r.reason} (${signedChips(r.net)})` }));
-      } else {
-        horseRacingState.sessionNet += r.net;
-        log.appendChild(el("div", { className: "line error", textContent: `LOSE: ${r.reason} (${signedChips(r.net)})` }));
-      }
-    }
-    horseRacingState.races += 1;
-    horseRacingState.pending = [];
-    session.recordResult("horse_racing", horseRacingState.sessionNet, horseRacingState.races);
-    persist();
+    body.appendChild(track);
+    body.appendChild(resultsPanel);
+    resultsPanel.appendChild(log);
   }
 
   return el("div", { className: "panel racing-pavilion" }, [
     banner("Race Results"),
     chipLine(),
-    log,
+    body,
     el("div", { className: "action-bar" }, [
       el("button", { className: "btn", textContent: "Back", onclick: () => goBack() }),
     ]),

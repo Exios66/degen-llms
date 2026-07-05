@@ -10,7 +10,7 @@ SOURCE_BRANCH="${SOURCE_BRANCH:-main}"
 TARGET_BRANCH="${TARGET_BRANCH:-gh-pages}"
 LOG_FILE="${LOG_FILE:-logs/gh-pages-sync.log}"
 SITE_URL="${SITE_URL:-https://exios66.github.io/degen-llms/}"
-TRIGGER="${GITHUB_EVENT_NAME:-manual}"
+TRIGGER="${SYNC_TRIGGER:-${GITHUB_EVENT_NAME:-manual_run}}"
 
 git config user.name "${GIT_USER_NAME:-github-actions[bot]}"
 git config user.email "${GIT_USER_EMAIL:-github-actions[bot]@users.noreply.github.com}"

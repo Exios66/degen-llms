@@ -5,6 +5,7 @@ The file `gh-pages-sync.log` records every **Deploy GitHub Pages** workflow run:
 - **push** — when `docs/` or the deploy workflow changes on `main`
 - **schedule** — hourly check (`0 * * * *` UTC)
 - **workflow_dispatch** — manual run from the Actions tab
+- **manual_run** — explicit local or agent invocation (`/sync-gh-pages` skill, `./scripts/sync-gh-pages.sh`)
 
 Each line is pipe-delimited:
 

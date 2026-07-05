@@ -8,12 +8,11 @@ import {
   spinReels,
   displaySymbol,
   calculatePayout,
-  formatPaytableText,
-  formatMachineLabel,
   contributeToProgressive,
   tryJackpot,
   progressivePool,
 } from "./slots.js";
+import { getMachineUI, paytableEntries, SLOT_CATEGORIES } from "./slots-ui.js";
 import { SportsbookState, fmtOdds } from "./sportsbook.js";
 import { BlackjackGame, defaultConfig, Action } from "./blackjack/game.js";
 import { HoldemTable, BettingAction } from "./holdem/game.js";
@@ -28,7 +27,7 @@ let session = new PlayerSession();
 let sportsbook = new SportsbookState();
 let blackjackGame = null;
 let blackjackSessionNet = 0;
-let slotsState = { machine: null, sessionNet: 0, spins: 0 };
+let slotsState = { machine: null, sessionNet: 0, spins: 0, spinning: false, lastWin: false, lastReels: null, lastMessage: null };
 let holdemState = null;
 let rouletteState = { sessionNet: 0, spins: 0, lastNumber: null, spinning: false };
 let horseRacingState = { card: null, pending: [], sessionNet: 0, races: 0 };
@@ -189,6 +188,82 @@ function machineLog(lines, { max = 12, lineClass = "dim" } = {}) {
   return log;
 }
 
+function slotMachineCard(machine, onSelect) {
+  const ui = getMachineUI(machine);
+  const meta = [el("span", { className: "slot-machine-card-bet", textContent: `${machine.minBet}–${machine.maxBet} chips` })];
+  if (machine.progressive && machine.progressivePoolId) {
+    meta.push(el("span", {
+      className: "slot-machine-card-jackpot",
+      textContent: `JP ${progressivePool(session, machine.progressivePoolId, machine.progressiveSeed).toLocaleString()}`,
+    }));
+  }
+  return el("button", {
+    type: "button",
+    className: `slot-machine-card ${ui.themeClass}`,
+    onclick: onSelect,
+  }, [
+    el("div", { className: "slot-machine-card-header" }, [
+      el("span", { className: "slot-machine-card-icon", textContent: ui.icon }),
+      el("span", { className: "slot-machine-card-badge", textContent: ui.badge }),
+    ]),
+    el("p", { className: "slot-machine-card-name", textContent: machine.name }),
+    el("p", { className: "slot-machine-card-tagline", textContent: machine.tagline }),
+    el("div", { className: "slot-machine-card-meta" }, meta),
+    el("p", { className: "slot-machine-card-playstyle", textContent: ui.playstyle }),
+  ]);
+}
+
+function slotPaytablePanel(machine) {
+  const rows = paytableEntries(machine).map((entry) =>
+    el("div", {
+      className: `slot-paytable-row${entry.progressive ? " slot-paytable-row--jackpot" : ""}`,
+    }, [
+      el("span", { textContent: entry.label }),
+      el("span", {
+        className: "slot-paytable-mult",
+        textContent: entry.progressive ? `PROGRESSIVE (${entry.note})` : `${entry.mult}x`,
+      }),
+    ])
+  );
+  return el("div", { className: "slot-paytable-panel" }, [
+    el("div", { className: "slot-paytable-title", textContent: "Paytable" }),
+    el("div", { className: "slot-paytable-grid" }, rows),
+  ]);
+}
+
+function slotReelWindow(machine, reels, { spinning = false, win = false } = {}) {
+  const ui = getMachineUI(machine);
+  const symbols = reels?.length === 3
+    ? reels.map((r) => displaySymbol(r, session.useUnicode))
+    : ["—", "—", "—"];
+  const windowEl = el("div", {
+    className: `slot-reel-window slot-reel-window--${ui.reelFrame}${win ? " slot-reel-window--win" : ""}${spinning ? " slot-reel--spinning" : ""}`,
+  });
+  for (const sym of symbols) {
+    windowEl.appendChild(el("div", { className: "slot-reel" }, [
+      el("span", { className: "slot-reel-symbol", textContent: sym }),
+    ]));
+  }
+  return windowEl;
+}
+
+function slotCabinet(machine, { screenChildren = [], baseChildren = [] }) {
+  const ui = getMachineUI(machine);
+  const badges = [
+    el("span", { className: "slot-cabinet-badge", textContent: ui.category }),
+    el("span", { className: "slot-cabinet-badge", textContent: ui.badge }),
+  ];
+  return el("div", { className: `slot-cabinet ${ui.themeClass}` }, [
+    el("div", { className: "slot-cabinet-topper" }, [
+      el("div", { className: "slot-cabinet-name", textContent: `${ui.icon}  ${machine.name}` }),
+      machine.tagline ? el("p", { className: "slot-cabinet-tagline", textContent: machine.tagline }) : null,
+      el("div", { className: "slot-cabinet-badges" }, badges),
+    ]),
+    el("div", { className: "slot-cabinet-screen" }, screenChildren.filter(Boolean)),
+    el("div", { className: "slot-cabinet-base" }, baseChildren.filter(Boolean)),
+  ]);
+}
+
 function menu(options, title, onSelect, { showCasinoBanner = true } = {}) {
   const items = options.map((opt, i) =>
     el("li", {}, [
@@ -218,7 +293,7 @@ function enterCasino(nextSession) {
   resetSportsbookFromSession();
   blackjackGame = null;
   blackjackSessionNet = 0;
-  slotsState = { machine: null, sessionNet: 0, spins: 0 };
+  slotsState = { machine: null, sessionNet: 0, spins: 0, spinning: false, lastWin: false, lastReels: null, lastMessage: null };
   holdemState = null;
   rouletteState = { sessionNet: 0, spins: 0, lastNumber: null, spinning: false };
   horseRacingState = { card: null, pending: [], sessionNet: 0, races: 0 };
@@ -858,17 +933,36 @@ function renderSlotsMenu() {
   }
   session.recordVisit("slots");
   persist();
-  const options = MACHINES.map((m) => formatMachineLabel(m, session));
-  return el("div", {}, [
+
+  const floor = el("div", { className: "slot-floor" }, [
     banner("Slot Machines — Mandalay Bay"),
-    el("p", { className: "dim", textContent: "Penny slots to high-limit progressives — pick your machine." }),
     chipLine(),
-    menu(options, "Pick a machine:", (choice) => {
-      if (choice === 0) { goBack(); return; }
-      slotsState = { machine: MACHINES[choice - 1], sessionNet: 0, spins: 0 };
-      pushView("slots-play");
+    el("p", {
+      className: "slot-floor-intro",
+      textContent: "Penny slots to high-limit progressives — each machine has its own cabinet theme and playstyle.",
     }),
   ]);
+
+  for (const cat of SLOT_CATEGORIES) {
+    const machines = MACHINES.filter((m) => getMachineUI(m).category === cat.id);
+    if (!machines.length) continue;
+    const section = el("div", { className: "slot-category" }, [
+      el("h3", { className: "slot-category-title", textContent: cat.label }),
+      el("div", { className: "slot-machine-grid" }, machines.map((m) =>
+        slotMachineCard(m, () => {
+          slotsState = { machine: m, sessionNet: 0, spins: 0, spinning: false, lastWin: false, lastReels: null, lastMessage: null };
+          pushView("slots-play");
+        })
+      )),
+    ]);
+    floor.appendChild(section);
+  }
+
+  floor.appendChild(el("div", { className: "action-bar", style: "margin-top:1.5rem;" }, [
+    el("button", { className: "btn", textContent: "Back to floor", onclick: () => goBack() }),
+  ]));
+
+  return floor;
 }
 
 function renderSlotsPlay() {
@@ -877,91 +971,113 @@ function renderSlotsPlay() {
   const betInput = el("input", {
     type: "number", min: String(machine.minBet), max: String(maxBet), value: String(machine.minBet),
   });
-  const reelsEl = el("div", { className: "reels", textContent: "— — —" });
-  const msgEl = el("p", { className: "dim", textContent: "Place your bet and spin." });
-  const summaryEl = el("p", { textContent: "" });
-  const jackpotEl = el("p", {
-    className: "jackpot-line",
-    textContent: machine.progressive && machine.progressivePoolId
-      ? `Progressive jackpot: ${progressivePool(session, machine.progressivePoolId, machine.progressiveSeed).toLocaleString()} chips`
-      : "",
+  const msgEl = el("p", {
+    className: `slot-result ${slotsState.lastMessage?.type ?? "dim"}`,
+    textContent: slotsState.spinning
+      ? "Spinning…"
+      : (slotsState.lastMessage?.text ?? "Place your bet and spin."),
   });
+  const summaryEl = el("p", {
+    className: "dim",
+    textContent: slotsState.spins ? `Session: ${signedChips(slotsState.sessionNet)} over ${slotsState.spins} spin(s)` : "",
+  });
+
+  const reelsEl = slotReelWindow(machine, slotsState.lastReels, {
+    spinning: slotsState.spinning,
+    win: slotsState.lastWin,
+  });
+
+  const jackpotEl = machine.progressive && machine.progressivePoolId
+    ? el("div", {
+      className: "slot-jackpot-ticker",
+      textContent: `★ PROGRESSIVE ${progressivePool(session, machine.progressivePoolId, machine.progressiveSeed).toLocaleString()} ★`,
+    })
+    : null;
+
+  const maxBetNote = machine.jackpotRequiresMaxBet
+    ? el("p", { className: "dim", textContent: `Max bet (${machine.maxBet} chips) required for progressive jackpot.` })
+    : null;
 
   function doSpin() {
     const bet = parseInt(betInput.value, 10);
     if (bet === 0) {
       session.recordResult("slots", slotsState.sessionNet, slotsState.spins);
       persist();
-      summaryEl.textContent = `Slots session: ${slotsState.sessionNet >= 0 ? "+" : ""}${slotsState.sessionNet.toLocaleString()} chips over ${slotsState.spins} spin(s)`;
       popView();
       render();
       return;
     }
-    if (bet < machine.minBet) { msgEl.className = "error"; msgEl.textContent = `Minimum spin is ${machine.minBet}.`; return; }
+    if (bet < machine.minBet) {
+      msgEl.className = "slot-result error";
+      msgEl.textContent = `Minimum spin is ${machine.minBet}.`;
+      return;
+    }
     if (!session.wallet.debit(bet, "slots", `${machine.name} spin ${fmtChips(bet)}`)) {
-      msgEl.className = "error"; msgEl.textContent = "Insufficient chips."; return;
+      msgEl.className = "slot-result error";
+      msgEl.textContent = "Insufficient chips.";
+      return;
     }
-    contributeToProgressive(session, machine, bet);
-    const reels = spinReels(machine);
-    const shown = reels.map((r) => displaySymbol(r, session.useUnicode)).join(" | ");
-    reelsEl.textContent = shown;
-    const jackpotAmount = tryJackpot(session, machine, reels, bet);
-    const { win, reason } = calculatePayout(reels, bet, machine, jackpotAmount);
-    slotsState.spins += 1;
-    if (win > 0) {
-      session.wallet.credit(win, "slots", reason);
-      slotsState.sessionNet += win - bet;
-      msgEl.className = jackpotAmount != null ? "jackpot-win" : "success";
-      msgEl.textContent = `${reason}${jackpotAmount == null ? ` — Won ${win.toLocaleString()} chips!` : ""}`;
-    } else {
-      slotsState.sessionNet -= bet;
-      msgEl.className = "dim";
-      msgEl.textContent = "No win this spin.";
-    }
-    if (machine.progressive && machine.progressivePoolId) {
-      jackpotEl.textContent = `Progressive jackpot: ${progressivePool(session, machine.progressivePoolId, machine.progressiveSeed).toLocaleString()} chips`;
-    }
-    persist();
-    chipDisplay.textContent = `Chips: ${fmtChips(session.wallet.balance)}`;
+
+    slotsState.spinning = true;
+    slotsState.lastWin = false;
+    render();
+
+    setTimeout(() => {
+      contributeToProgressive(session, machine, bet);
+      const reels = spinReels(machine);
+      const jackpotAmount = tryJackpot(session, machine, reels, bet);
+      const { win, reason } = calculatePayout(reels, bet, machine, jackpotAmount);
+      slotsState.spins += 1;
+      slotsState.spinning = false;
+      slotsState.lastReels = reels;
+      slotsState.lastWin = win > 0;
+
+      if (win > 0) {
+        session.wallet.credit(win, "slots", reason);
+        slotsState.sessionNet += win - bet;
+        slotsState.lastMessage = {
+          text: `${reason}${jackpotAmount == null ? ` — Won ${win.toLocaleString()} chips!` : ""}`,
+          type: jackpotAmount != null ? "jackpot-win" : "success",
+        };
+      } else {
+        slotsState.sessionNet -= bet;
+        slotsState.lastMessage = { text: "No win this spin.", type: "dim" };
+      }
+      persist();
+      render();
+    }, 500);
   }
 
-  const chipDisplay = el("p", { className: "chip-line", textContent: `Chips: ${fmtChips(session.wallet.balance)}` });
-  const paytableEl = el("p", { className: "dim", textContent: formatPaytableText(machine) });
-  const taglineEl = machine.tagline
-    ? el("p", { className: "dim", textContent: machine.tagline })
-    : null;
-  const maxBetNote = machine.jackpotRequiresMaxBet
-    ? el("p", { className: "dim", textContent: `Max bet (${machine.maxBet} chips) required to qualify for the progressive jackpot.` })
-    : null;
-
-  return el("div", { className: "panel" }, [
-    banner(`Slot Machines — ${machine.name}`),
-    chipDisplay,
-    taglineEl,
-    jackpotEl,
-    maxBetNote,
-    paytableEl,
-    reelsEl,
-    msgEl,
-    el("div", { className: "form-row" }, [
-      el("label", { textContent: `Spin amount (${machine.minBet}-${maxBet}, 0 to leave)` }),
-      betInput,
-    ]),
-    el("div", { className: "action-bar" }, [
-      el("button", { className: "btn primary", textContent: "Spin", onclick: doSpin }),
-      el("button", {
-        className: "btn",
-        textContent: "Leave machine",
-        onclick: () => {
-          session.recordResult("slots", slotsState.sessionNet, slotsState.spins);
-          persist();
-          popView();
-          render();
-        },
-      }),
-    ]),
-    summaryEl,
-  ]);
+  return slotCabinet(machine, {
+    screenChildren: [
+      jackpotEl,
+      maxBetNote,
+      slotPaytablePanel(machine),
+      reelsEl,
+      msgEl,
+      summaryEl,
+    ],
+    baseChildren: [
+      el("p", { className: "chip-line", textContent: `Chips: ${fmtChips(session.wallet.balance)}` }),
+      el("div", { className: "form-row" }, [
+        el("label", { textContent: `Spin amount (${machine.minBet}–${maxBet}, 0 to leave)` }),
+        betInput,
+      ]),
+      el("div", { className: "action-bar" }, [
+        el("button", { className: "btn primary", textContent: "Spin", onclick: doSpin, disabled: slotsState.spinning }),
+        el("button", {
+          className: "btn",
+          textContent: "Leave machine",
+          onclick: () => {
+            session.recordResult("slots", slotsState.sessionNet, slotsState.spins);
+            persist();
+            popView();
+            render();
+          },
+        }),
+      ]),
+    ],
+  });
 }
 
 function renderSportsbook() {

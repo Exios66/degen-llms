@@ -128,7 +128,8 @@ function drawRunner(ctx, runner, x, laneTop, animFrame) {
   drawHorseAndJockeyAt(ctx, runner.spriteId, x, y, {
     scale: HORSE_SCALE,
     frame: animFrame,
-    animation: "trot",
+    animation: "walk",
+    direction: "right",
     horseNumber: runner.number,
     jockeySilks: runner.silks,
   });
@@ -223,7 +224,7 @@ export function createRaceTrackView({
 
   function renderFrame(elapsed) {
     const scroll = elapsed * 0.04;
-    const animFrame = Math.floor(elapsed / 80) % 4;
+    const animFrame = Math.floor(elapsed / 80) % 3;
 
     ctx.clearRect(0, 0, TRACK_W, canvasH);
     drawTrackScene(ctx, TRACK_W, canvasH, laneCount, scroll);

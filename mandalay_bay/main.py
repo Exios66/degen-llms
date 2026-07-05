@@ -8,6 +8,7 @@ from mandalay_bay import CASINO_NAME
 from mandalay_bay.chips import ChipWallet
 from mandalay_bay.display import TerminalUI
 from mandalay_bay.hub import run_hub
+from mandalay_bay.casino_time import format_casino_time_in_game
 from mandalay_bay.saves import SaveLibrary, default_save_dir, run_save_picker
 from mandalay_bay.session import PlayerSession
 
@@ -41,7 +42,7 @@ def format_save_library(library: SaveLibrary) -> str:
     for entry in library.recent_slots():
         lines.append(
             f"  Slot {entry.slot_id}: {entry.label} — {entry.player_name}, "
-            f"{entry.balance:,} chips"
+            f"{entry.balance:,} chips · {format_casino_time_in_game(entry.casino_time_ms)}"
         )
     for slot in library.list_slots():
         if not slot.occupied and slot.slot_id not in {e.slot_id for e in library.recent_slots()}:

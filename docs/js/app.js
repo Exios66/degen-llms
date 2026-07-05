@@ -1,8 +1,9 @@
 import {
   CASINO_NAME, ACTIVITIES, FLOOR_ORDER, fmtChips, signedChips,
   saveSlot, loadSlot, createSlot, deleteSlot, listSlots, recentSlots, formatSaveTime,
-  createGuestSession, PlayerSession,
+  createGuestSession, PlayerSession, formatCasinoTimeInGame, formatCasinoTimeLabel, getCasinoTimeMs,
 } from "./core.js";
+import { startCasinoClock, stopCasinoClock } from "./casino-time.js";
 import { applyIntoxicationEffects } from "./intoxication-effects.js";
 import {
   MACHINES,
@@ -53,6 +54,29 @@ let currentStakeTier = null;
 let activeTableDealer = null;
 let viewStack = [];
 let statusMessage = null;
+let casinoTimeTicker = null;
+
+function isInCasinoView() {
+  return viewStack.some((v) => v.name !== "save-picker" && v.name !== "save-create" && v.name !== "save-delete");
+}
+
+function startCasinoTimeTicker() {
+  stopCasinoTimeTicker();
+  casinoTimeTicker = window.setInterval(() => {
+    if (!isInCasinoView() || session.slotId == null) return;
+    const timeEl = document.getElementById("casino-time-tracker");
+    if (timeEl) {
+      timeEl.textContent = formatCasinoTimeLabel(getCasinoTimeMs(session));
+    }
+  }, 30000);
+}
+
+function stopCasinoTimeTicker() {
+  if (casinoTimeTicker != null) {
+    window.clearInterval(casinoTimeTicker);
+    casinoTimeTicker = null;
+  }
+}
 
 function syncSportsbookToSession() {
   if (session.slotId != null) {
@@ -368,6 +392,8 @@ function enterCasino(nextSession) {
   horseRacingState = { card: null, pending: [], sessionNet: 0, races: 0 };
   viewStack = [{ name: "hub", data: {} }];
   clearStatus();
+  if (session.slotId != null) startCasinoClock();
+  startCasinoTimeTicker();
   mountRewardsPhone();
   applyIntoxicationEffects(session);
   render();
@@ -375,6 +401,8 @@ function enterCasino(nextSession) {
 
 function returnToSavePicker() {
   persist();
+  stopCasinoClock();
+  stopCasinoTimeTicker();
   rewardsPhone?.close();
   sportsbook = new SportsbookState();
   blackjackGame = null;
@@ -389,8 +417,17 @@ function settingsBar() {
   const saveLabel = session.slotId != null
     ? (session.slotLabel || `Slot ${session.slotId}`)
     : "No save";
-  return el("div", { className: "settings-bar" }, [
+  const children = [
     el("span", { className: "dim", textContent: `Save: ${saveLabel}` }),
+  ];
+  if (session.slotId != null) {
+    children.push(el("span", {
+      id: "casino-time-tracker",
+      className: "dim",
+      textContent: formatCasinoTimeLabel(getCasinoTimeMs(session)),
+    }));
+  }
+  children.push(
     el("label", {}, [
       el("input", {
         type: "checkbox",
@@ -424,7 +461,8 @@ function settingsBar() {
         returnToSavePicker();
       },
     }),
-  ]);
+  );
+  return el("div", { className: "settings-bar" }, children);
 }
 
 function formatCardLabel(card) {
@@ -565,7 +603,7 @@ function renderSavePicker() {
     for (const slot of recent) {
       recentList.appendChild(el("div", {
         className: "stat-row dim",
-        textContent: `Slot ${slot.slotId}: ${slot.label} — ${slot.playerName} — ${fmtChips(slot.balance)} (last: ${formatSaveTime(slot.updatedAt)})`,
+        textContent: `Slot ${slot.slotId}: ${slot.label} — ${slot.playerName} — ${fmtChips(slot.balance)} · ${formatCasinoTimeInGame(slot.casinoTimeMs)} (last: ${formatSaveTime(slot.updatedAt)})`,
       }));
     }
     panel.appendChild(recentList);
@@ -574,7 +612,7 @@ function renderSavePicker() {
   const menuList = el("ul", { className: "menu-list" });
   allSlots.forEach((slot, i) => {
     const label = slot.occupied
-      ? `Load Slot ${slot.slotId} — ${slot.playerName} (${fmtChips(slot.balance)})`
+      ? `Load Slot ${slot.slotId} — ${slot.playerName} (${fmtChips(slot.balance)}) · ${formatCasinoTimeInGame(slot.casinoTimeMs)}`
       : `New save in Slot ${slot.slotId} (empty)`;
     menuList.appendChild(el("li", {}, [
       el("button", {
@@ -1275,6 +1313,9 @@ function renderStats() {
     banner("Player Stats"),
     el("p", { textContent: `Player: ${session.playerName}` }),
     chipLine(),
+    session.slotId != null
+      ? el("p", { className: "dim", textContent: formatCasinoTimeLabel(getCasinoTimeMs(session)) })
+      : null,
     el("p", { textContent: `Session net (excl. buy-ins): ${session.wallet.netSession >= 0 ? "+" : ""}${session.wallet.netSession.toLocaleString()} chips` }),
     rows.length ? el("div", { className: "stats-grid" }, rows) : el("p", { className: "dim", textContent: "No activity history yet." }),
     el("div", { className: "action-bar" }, [

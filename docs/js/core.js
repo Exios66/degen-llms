@@ -12,9 +12,17 @@ import {
   readCacheLibrary,
   setActiveSlotId,
 } from "./profileCache.js";
+import {
+  flushCasinoTime,
+  formatCasinoTimeInGame,
+  formatCasinoTimeLabel,
+  getCasinoTimeMs,
+} from "./casino-time.js";
 
 export const CASINO_NAME = "The Mandalay Bay";
-export const SAVE_VERSION = 6;
+export const SAVE_VERSION = 7;
+
+export { formatCasinoTimeInGame, formatCasinoTimeLabel, getCasinoTimeMs };
 
 /** Default RPG overworld state for pixel mode (Phase 1+). */
 export function defaultRpgState(overrides = {}) {
@@ -183,6 +191,7 @@ export class PlayerSession {
     this.horseRacingSpriteOffset = 0;
     this.bank = null;
     this.staffOverrides = null;
+    this.casinoTimeMs = 0;
   }
 
   statFor(activity) {
@@ -225,6 +234,7 @@ export class PlayerSession {
       horseRacingSpriteOffset: this.horseRacingSpriteOffset ?? 0,
       bank: this.bank?.toJSON?.() ?? null,
       staffOverrides: this.staffOverrides ?? null,
+      casinoTimeMs: this.casinoTimeMs ?? 0,
     };
     if (this.rpg) payload.rpg = this.rpg;
     if (this.rewards) payload.rewards = this.rewards;
@@ -262,6 +272,7 @@ export class PlayerSession {
     attachBankToSession(s, data);
     attachStaffOverridesToSession(s, data);
     attachIntoxicationToSession(s, data);
+    s.casinoTimeMs = data.casinoTimeMs ?? 0;
     return s;
   }
 }
@@ -365,6 +376,7 @@ function updateSummary(lib, session) {
     playerName: session.playerName,
     balance: session.wallet.balance,
     updatedAt: new Date().toISOString(),
+    casinoTimeMs: session.casinoTimeMs ?? 0,
   };
 }
 
@@ -381,6 +393,7 @@ export function listSlots() {
       playerName: meta.playerName ?? "",
       balance: meta.balance ?? 0,
       updatedAt: meta.updatedAt ?? null,
+      casinoTimeMs: meta.casinoTimeMs ?? 0,
       occupied,
     });
   }
@@ -414,6 +427,7 @@ export function loadSlot(slotId) {
 
 export function saveSlot(session) {
   if (session.slotId == null) return;
+  flushCasinoTime(session);
   const lib = loadLibrary();
   lib.slots[String(session.slotId)] = session.toJSON();
   updateSummary(lib, session);

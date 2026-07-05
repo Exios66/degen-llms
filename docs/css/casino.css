@@ -14,6 +14,18 @@
   --card-red: #f07178;
   --card-black: #e6e1cf;
   --font-mono: "JetBrains Mono", "Fira Code", "Cascadia Code", "SF Mono", Consolas, monospace;
+  --felt: #1a5c3a;
+  --felt-dark: #0d3d28;
+  --felt-light: #247a4f;
+  --gold: #ffd700;
+  --gold-dim: #c9a800;
+  --chrome: #3a4555;
+  --chrome-light: #5a6a7f;
+  --chrome-dark: #1a2230;
+  --machine-glow: rgba(255, 215, 0, 0.35);
+  --roulette-red: #c41e3a;
+  --roulette-black: #1a1a2e;
+  --roulette-green: #0d6b3a;
 }
 
 *,
@@ -41,7 +53,7 @@ body {
 }
 
 #app {
-  max-width: 900px;
+  max-width: 960px;
   margin: 0 auto;
   padding: 1.5rem 1rem 3rem;
 }
@@ -552,6 +564,687 @@ body {
   text-transform: uppercase;
 }
 
+/* ── Video casino machine cabinet (bar-top multi-game aesthetic) ── */
+
+.video-machine {
+  --machine-accent: var(--gold);
+  --machine-felt: var(--felt);
+  max-width: 820px;
+  margin: 1rem auto;
+  background: linear-gradient(180deg, var(--chrome-light) 0%, var(--chrome) 8%, var(--chrome-dark) 100%);
+  border: 3px solid var(--chrome-dark);
+  border-radius: 12px;
+  box-shadow:
+    0 0 0 2px var(--chrome),
+    0 8px 32px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+.video-machine--blackjack { --machine-accent: var(--gold); --machine-felt: var(--felt); }
+.video-machine--holdem { --machine-accent: #5eb8ff; --machine-felt: #1a4a5c; }
+.video-machine--roulette { --machine-accent: var(--red); --machine-felt: #3a1520; }
+
+.machine-cabinet-top {
+  background: linear-gradient(180deg, #2a3545 0%, var(--chrome-dark) 100%);
+  padding: 0.6rem 1rem 0.5rem;
+  border-bottom: 2px solid var(--chrome);
+  text-align: center;
+}
+
+.machine-marquee {
+  color: var(--machine-accent);
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  text-shadow:
+    0 0 8px var(--machine-glow),
+    0 0 16px rgba(255, 215, 0, 0.15);
+  animation: marquee-glow 2.4s ease-in-out infinite;
+}
+
+@keyframes marquee-glow {
+  0%, 100% { opacity: 0.85; }
+  50% { opacity: 1; }
+}
+
+.machine-brand {
+  color: var(--dim);
+  font-size: 0.65rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  margin-top: 0.2rem;
+}
+
+.machine-screen {
+  margin: 0.75rem;
+  padding: 0.5rem;
+  background: #080c10;
+  border: 3px inset var(--chrome-dark);
+  border-radius: 6px;
+  box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.8);
+}
+
+.machine-screen-inner {
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(57, 197, 207, 0.04) 0%, transparent 50%),
+    #0a0e14;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 1rem 1.1rem;
+  min-height: 200px;
+}
+
+.video-machine .panel {
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0.5rem 0;
+}
+
+.machine-screen-label {
+  color: var(--machine-accent);
+  font-weight: 600;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 0.5rem 0;
+}
+
+.machine-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  background: var(--chrome-dark);
+  border-top: 2px solid var(--chrome);
+}
+
+.machine-footer .chip-line {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.machine-led {
+  color: var(--machine-accent);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.5rem;
+  border: 1px solid var(--machine-accent);
+  border-radius: 2px;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.machine-controls {
+  padding: 0.75rem 1rem;
+  background: linear-gradient(180deg, var(--chrome) 0%, var(--chrome-dark) 100%);
+  border-top: 1px solid var(--chrome-light);
+}
+
+.machine-controls .action-bar {
+  margin: 0;
+}
+
+.machine-controls .btn {
+  background: linear-gradient(180deg, #2a3545 0%, #1a2230 100%);
+  border-color: var(--chrome-light);
+  color: var(--text);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  box-shadow: 0 2px 0 var(--chrome-dark);
+}
+
+.machine-controls .btn:hover,
+.machine-controls .btn:focus-visible {
+  background: linear-gradient(180deg, #3a4a5f 0%, #2a3545 100%);
+  border-color: var(--machine-accent);
+  color: var(--machine-accent);
+}
+
+.machine-controls .btn.primary {
+  background: linear-gradient(180deg, rgba(255, 215, 0, 0.25) 0%, rgba(255, 215, 0, 0.08) 100%);
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.video-machine--holdem .machine-controls .btn.primary {
+  background: linear-gradient(180deg, rgba(94, 184, 255, 0.25) 0%, rgba(94, 184, 255, 0.08) 100%);
+  border-color: #5eb8ff;
+  color: #5eb8ff;
+}
+
+.video-machine--roulette .machine-controls .btn.primary {
+  background: linear-gradient(180deg, rgba(240, 113, 120, 0.25) 0%, rgba(240, 113, 120, 0.08) 100%);
+  border-color: var(--red);
+  color: var(--red);
+}
+
+.dealer-panel {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--machine-accent);
+  border-radius: 3px;
+  padding: 0.65rem 0.85rem;
+  margin: 0.75rem 0;
+}
+
+.dealer-panel .subtitle {
+  margin: 0 0 0.25rem;
+  color: var(--machine-accent);
+  font-size: 0.9rem;
+}
+
+.dealer-panel .dim {
+  margin: 0.15rem 0;
+  font-size: 0.82rem;
+}
+
+.machine-status {
+  color: var(--dim);
+  font-size: 0.82rem;
+  margin: 0.35rem 0;
+  padding: 0.35rem 0.5rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 2px;
+}
+
+.machine-log {
+  background: #060a0e;
+  border: 1px inset var(--chrome-dark);
+  border-radius: 3px;
+  padding: 0.6rem 0.75rem;
+  max-height: 140px;
+  overflow-y: auto;
+  font-size: 0.78rem;
+  margin: 0.75rem 0;
+}
+
+.machine-log .line {
+  margin: 0.15rem 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* ── Felt table surfaces ── */
+
+.felt-table {
+  background:
+    radial-gradient(ellipse at 50% 30%, var(--felt-light) 0%, var(--machine-felt) 55%, var(--felt-dark) 100%);
+  border: 3px solid var(--felt-dark);
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 0.75rem 0;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+/* ── Card chips (video poker / video blackjack tile style) ── */
+
+.card-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.card-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.4rem;
+  height: 3.2rem;
+  padding: 0.2rem 0.35rem;
+  background: linear-gradient(145deg, #f8f4e8 0%, #e8e0d0 100%);
+  border: 1px solid #b8b0a0;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #1a1a2e;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.35);
+}
+
+.card-chip--red {
+  color: var(--roulette-red);
+}
+
+.card-chip--black {
+  color: #1a1a2e;
+}
+
+.card-chip--hidden {
+  background: linear-gradient(145deg, #2a3545 0%, #1a2230 100%);
+  color: var(--cyan);
+  border-color: var(--chrome);
+  font-size: 0.8rem;
+}
+
+.card-chip--empty {
+  background: transparent;
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  box-shadow: none;
+  color: transparent;
+}
+
+/* ── Blackjack table layout ── */
+
+.bj-table-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.bj-dealer-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.15);
+}
+
+.bj-role-label {
+  color: var(--gold);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  min-width: 4.5rem;
+}
+
+.bj-hand-value {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.bj-seats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.bj-seat {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.5rem;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.bj-seat--active {
+  background: rgba(255, 215, 0, 0.12);
+  border: 1px solid rgba(255, 215, 0, 0.35);
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.15);
+}
+
+.bj-seat-info {
+  min-width: 8rem;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.bj-seat-name {
+  color: #fff;
+  font-weight: 600;
+}
+
+.bj-seat-meta {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.72rem;
+}
+
+.bj-seat-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 0.1rem 0.35rem;
+  border-radius: 2px;
+  margin-left: 0.25rem;
+}
+
+.bj-seat-badge--bust { background: var(--red); color: #fff; }
+.bj-seat-badge--bj { background: var(--gold); color: #1a1a2e; }
+.bj-seat-badge--surrender { background: var(--dim); color: #fff; }
+
+/* ── Texas Hold'em table layout ── */
+
+.holdem-table-layout {
+  position: relative;
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.holdem-pot {
+  color: var(--gold);
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.75rem;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.holdem-board {
+  display: flex;
+  gap: 0.35rem;
+  padding: 0.5rem;
+}
+
+.holdem-street {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.holdem-players {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.5rem;
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.holdem-seat {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  padding: 0.45rem 0.55rem;
+  font-size: 0.75rem;
+}
+
+.holdem-seat--you {
+  border-color: rgba(94, 184, 255, 0.4);
+}
+
+.holdem-seat--active {
+  border-color: var(--gold);
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.2);
+  background: rgba(255, 215, 0, 0.08);
+}
+
+.holdem-seat--folded {
+  opacity: 0.45;
+}
+
+.holdem-seat-name {
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 0.2rem;
+}
+
+.holdem-seat-stack {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.68rem;
+}
+
+.holdem-hole-cards {
+  margin-top: 0.3rem;
+}
+
+.holdem-hole-cards .card-chip {
+  min-width: 2rem;
+  height: 2.6rem;
+  font-size: 0.8rem;
+}
+
+.holdem-rank-ref {
+  font-size: 0.72rem;
+  line-height: 1.5;
+  columns: 2;
+  column-gap: 1rem;
+}
+
+/* ── Roulette machine display ── */
+
+.roulette-display {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 0.75rem;
+  margin: 0.75rem 0;
+}
+
+.roulette-wheel-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.roulette-wheel-wrap {
+  position: relative;
+  width: 160px;
+  height: 160px;
+}
+
+.roulette-wheel {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    var(--roulette-green) 0deg 9.7deg,
+    var(--roulette-red) 9.7deg 19.4deg,
+    var(--roulette-black) 19.4deg 29.1deg,
+    var(--roulette-red) 29.1deg 38.8deg,
+    var(--roulette-black) 38.8deg 48.5deg,
+    var(--roulette-red) 48.5deg 58.2deg,
+    var(--roulette-black) 58.2deg 67.9deg,
+    var(--roulette-red) 67.9deg 77.6deg,
+    var(--roulette-black) 77.6deg 87.3deg,
+    var(--roulette-red) 87.3deg 97deg,
+    var(--roulette-black) 97deg 106.7deg,
+    var(--roulette-red) 106.7deg 116.4deg,
+    var(--roulette-black) 116.4deg 126.1deg,
+    var(--roulette-red) 126.1deg 135.8deg,
+    var(--roulette-black) 135.8deg 145.5deg,
+    var(--roulette-red) 145.5deg 155.2deg,
+    var(--roulette-black) 155.2deg 164.9deg,
+    var(--roulette-red) 164.9deg 174.6deg,
+    var(--roulette-black) 174.6deg 184.3deg,
+    var(--roulette-red) 184.3deg 194deg,
+    var(--roulette-black) 194deg 203.7deg,
+    var(--roulette-red) 203.7deg 213.4deg,
+    var(--roulette-black) 213.4deg 223.1deg,
+    var(--roulette-red) 223.1deg 232.8deg,
+    var(--roulette-black) 232.8deg 242.5deg,
+    var(--roulette-red) 242.5deg 252.2deg,
+    var(--roulette-black) 252.2deg 261.9deg,
+    var(--roulette-red) 261.9deg 271.6deg,
+    var(--roulette-black) 271.6deg 281.3deg,
+    var(--roulette-red) 281.3deg 291deg,
+    var(--roulette-black) 291deg 300.7deg,
+    var(--roulette-red) 300.7deg 310.4deg,
+    var(--roulette-black) 310.4deg 320.1deg,
+    var(--roulette-red) 320.1deg 329.8deg,
+    var(--roulette-black) 329.8deg 339.5deg,
+    var(--roulette-red) 339.5deg 349.2deg,
+    var(--roulette-black) 349.2deg 360deg
+  );
+  border: 4px solid var(--gold-dim);
+  box-shadow:
+    inset 0 0 20px rgba(0, 0, 0, 0.5),
+    0 0 12px rgba(255, 215, 0, 0.2);
+  transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+.roulette-wheel--spinning {
+  animation: wheel-spin 1.2s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+@keyframes wheel-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(1080deg); }
+}
+
+.roulette-wheel-pointer {
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 14px solid var(--gold);
+  z-index: 2;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+}
+
+.roulette-result-ball {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: #fff;
+  border: 3px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  z-index: 1;
+}
+
+.roulette-result-ball--red { background: var(--roulette-red); }
+.roulette-result-ball--black { background: var(--roulette-black); }
+.roulette-result-ball--green { background: var(--roulette-green); }
+
+.roulette-result-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.roulette-bet-mat {
+  background: var(--machine-felt);
+  border: 2px solid var(--felt-dark);
+  border-radius: 4px;
+  padding: 0.4rem;
+  font-size: 0.7rem;
+}
+
+.roulette-mat-zero {
+  text-align: center;
+  margin-bottom: 0.3rem;
+}
+
+.roulette-mat-zero button,
+.roulette-mat-cell button {
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+  padding: 0.25rem 0;
+  width: 100%;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+
+.roulette-mat-zero button {
+  background: var(--roulette-green);
+  color: #fff;
+}
+
+.roulette-mat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+}
+
+.roulette-mat-cell button {
+  color: #fff;
+}
+
+.roulette-mat-cell--red button { background: var(--roulette-red); }
+.roulette-mat-cell--black button { background: var(--roulette-black); }
+
+.roulette-mat-zero button:hover,
+.roulette-mat-cell button:hover,
+.roulette-mat-zero button.selected,
+.roulette-mat-cell button.selected {
+  box-shadow: 0 0 8px var(--gold);
+  border-color: var(--gold);
+}
+
+.roulette-outside-bets {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.3rem;
+  margin-top: 0.5rem;
+}
+
+.roulette-outside-bets .form-row {
+  margin: 0;
+}
+
+.roulette-outside-bets select {
+  max-width: 100%;
+  font-size: 0.78rem;
+}
+
+.roulette-session {
+  color: var(--dim);
+  font-size: 0.82rem;
+  margin: 0.5rem 0;
+}
+
+.machine-game-nav {
+  display: flex;
+  gap: 0.35rem;
+  margin: 0.5rem 0 0.75rem;
+  justify-content: center;
+}
+
+.machine-game-tab {
+  font-family: inherit;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.3rem 0.6rem;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--chrome);
+  border-radius: 3px;
+  color: var(--dim);
+  cursor: default;
+}
+
+.machine-game-tab--active {
+  color: var(--machine-accent);
+  border-color: var(--machine-accent);
+  background: rgba(255, 215, 0, 0.08);
+}
+
+.video-machine--holdem .machine-game-tab--active {
+  background: rgba(94, 184, 255, 0.08);
+}
+
+.video-machine--roulette .machine-game-tab--active {
+  background: rgba(240, 113, 120, 0.08);
+}
+
 @media (max-width: 600px) {
   #app {
     padding: 1rem 0.75rem 2rem;
@@ -577,5 +1270,42 @@ body {
 
   .error-ascii {
     font-size: 0.65rem;
+  }
+
+  .video-machine {
+    margin: 0.5rem 0;
+    border-radius: 8px;
+  }
+
+  .machine-screen {
+    margin: 0.5rem;
+    padding: 0.35rem;
+  }
+
+  .machine-screen-inner {
+    padding: 0.75rem;
+  }
+
+  .card-chip {
+    min-width: 2rem;
+    height: 2.8rem;
+    font-size: 0.85rem;
+  }
+
+  .roulette-display {
+    grid-template-columns: 1fr;
+  }
+
+  .roulette-wheel-wrap {
+    width: 130px;
+    height: 130px;
+  }
+
+  .holdem-rank-ref {
+    columns: 1;
+  }
+
+  .machine-controls .btn {
+    width: 100%;
   }
 }

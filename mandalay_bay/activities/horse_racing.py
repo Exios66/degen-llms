@@ -6,6 +6,7 @@ from blackjack.rng import SECURE_RANDOM, fisher_yates_shuffle
 from mandalay_bay.activities.base import Activity, ActivityInfo
 from mandalay_bay.dealers import announce_dealer, pick_quip
 from mandalay_bay.session import PlayerSession
+from mandalay_bay.stakes import effective_table_stakes, pick_stake_tier
 
 HORSE_NAMES = [
     "Midnight Runner", "Desert Wind", "Golden Mane", "Silver Streak",
@@ -97,6 +98,14 @@ class HorseRacingActivity(Activity):
             ui.pause()
             return
 
+        tier = pick_stake_tier(session, ui, title="Choose stake tier:")
+        if tier is None:
+            return
+        ui.dim(tier.description)
+        wager_min, wager_max = effective_table_stakes(
+            tier, session.wallet.balance, activity_min=self.info.min_bet
+        )
+
         card = _generate_race()
         pending: list[dict] = []
         session_net = 0
@@ -130,10 +139,10 @@ class HorseRacingActivity(Activity):
                     continue
                 bet_types = ["win", "place", "show"]
                 amount = ui.prompt_int(
-                    f"Wager ({self.info.min_bet}-{session.wallet.balance})",
-                    self.info.min_bet,
-                    session.wallet.balance,
-                    default=self.info.min_bet,
+                    f"Wager ({wager_min}-{wager_max})",
+                    wager_min,
+                    wager_max,
+                    default=wager_min,
                 )
                 horse = card.horses[pick - 1]
                 if not session.wallet.debit(amount, self.info.id, f"{bet_types[bet_choice - 1]} on #{horse.number}"):

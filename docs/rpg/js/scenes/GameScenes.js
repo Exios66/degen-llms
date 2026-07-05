@@ -1,8 +1,9 @@
 import Phaser from "phaser";
 import { createGameTextures } from "../systems/TextureFactory.js";
 import {
-  TILE_SIZE, MAP_WIDTH, MAP_HEIGHT, buildMapLayers, NPCS, SPAWN_DEFAULT,
+  TILE_SIZE, MAP_WIDTH, MAP_HEIGHT, buildMapLayers, NPCS, SPAWN_DEFAULT, TILE,
 } from "../systems/MapData.js";
+import { getOnDutyDealer, dealerShiftSeed } from "../../../js/dealers.js";
 
 export class OverworldScene extends Phaser.Scene {
   constructor() {
@@ -37,8 +38,9 @@ export class OverworldScene extends Phaser.Scene {
           this.add.image(x * TILE_SIZE + TILE_SIZE / 2, y * TILE_SIZE + TILE_SIZE / 2, `tile_${tile}`)
         );
         if (decor[y][x]) {
+          const decorKey = decor[y][x] === TILE.BAR ? "decor_bar" : "decor_plant";
           this.groundLayer.add(
-            this.add.image(x * TILE_SIZE + TILE_SIZE / 2, y * TILE_SIZE + TILE_SIZE / 2, "decor_plant")
+            this.add.image(x * TILE_SIZE + TILE_SIZE / 2, y * TILE_SIZE + TILE_SIZE / 2, decorKey)
           );
         }
       }
@@ -56,7 +58,7 @@ export class OverworldScene extends Phaser.Scene {
     this.physics.world.setBounds(0, 0, MAP_WIDTH * TILE_SIZE, MAP_HEIGHT * TILE_SIZE);
 
     this.npcSprites = new Map();
-    this.npcLabels = [];
+    this.npcLabels = new Map();
     for (const npc of NPCS) {
       const sprite = this.add.sprite(
         npc.x * TILE_SIZE + TILE_SIZE / 2,
@@ -66,12 +68,18 @@ export class OverworldScene extends Phaser.Scene {
       sprite.setData("npc", npc);
       this.npcSprites.set(npc.id, sprite);
 
-      const label = this.add.text(sprite.x, sprite.y - 14, npc.name.split(" ")[0], {
+      const displayName = this._resolveNpcDisplayName(npc);
+      const label = this.add.text(sprite.x, sprite.y - 14, displayName.split(" ")[0], {
         fontFamily: "Press Start 2P",
         fontSize: "6px",
         color: "#e8c547",
       }).setOrigin(0.5);
-      this.npcLabels.push(label);
+      this.npcLabels.set(npc.id, label);
+
+      if (npc.zone) {
+        const dealer = this._dealerForZone(npc.zone);
+        sprite.setTexture(dealer.sprite);
+      }
     }
 
     this.interactIcon = this.add.image(0, 0, "interact_icon").setVisible(false).setDepth(100);
@@ -222,13 +230,35 @@ export class OverworldScene extends Phaser.Scene {
     }
   }
 
+  _dealerForZone(zone) {
+    return getOnDutyDealer(zone, dealerShiftSeed(this.session, zone));
+  }
+
+  _resolveNpcDisplayName(npc) {
+    if (npc.zone) {
+      return this._dealerForZone(npc.zone).name;
+    }
+    return npc.name;
+  }
+
+  _resolveDealerDialogueId(dealerId, baseKind) {
+    const returnId = `${dealerId}_return`;
+    const greetId = `${dealerId}_greet`;
+    if (baseKind === "return" && this.dialogues[returnId]) return returnId;
+    return this.dialogues[greetId] ? greetId : greetId;
+  }
+
   async _tryInteract() {
     if (!this.nearbyNpc) return;
     const npc = this.nearbyNpc;
     let dialogueId = npc.dialogueId;
+    let activeDealer = null;
 
-    if (npc.id === "dealer_dana" && this.saveAdapter.hasFlag("played_blackjack")) {
-      dialogueId = "dealer_dana_return";
+    if (npc.zone) {
+      activeDealer = this._dealerForZone(npc.zone);
+      const playedFlag = npc.zone === "blackjack" ? "played_blackjack" : `played_${npc.zone}`;
+      const kind = this.saveAdapter.hasFlag(playedFlag) ? "return" : "greet";
+      dialogueId = this._resolveDealerDialogueId(activeDealer.id, kind);
     }
 
     this.canMove = false;
@@ -237,17 +267,23 @@ export class OverworldScene extends Phaser.Scene {
     const result = await this.dialogue.start(dialogueId);
 
     if (result.encounter) {
-      await this._runEncounter(result.encounter, npc);
+      const encounterNpc = activeDealer
+        ? { ...npc, name: activeDealer.name, dealerId: activeDealer.id }
+        : npc;
+      await this._runEncounter(result.encounter, encounterNpc, activeDealer);
     }
 
     this.canMove = true;
     this.onHudUpdate?.();
   }
 
-  async _runEncounter(encounterId, npc) {
+  async _runEncounter(encounterId, npc, dealerProfile = null) {
     this.scene.pause();
     this.canMove = false;
-    await this.encounters.start(encounterId, { dealerName: npc.name });
+    await this.encounters.start(encounterId, {
+      dealerName: npc.name,
+      dealerProfile: dealerProfile ?? null,
+    });
     this.scene.resume();
     this.canMove = true;
     this.saveAdapter.persist();

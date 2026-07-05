@@ -11,16 +11,21 @@ from mandalay_bay.guest_directory import (
     sign_guest_directory,
 )
 from mandalay_bay.hotel import (
+    checkout_stay,
     ensure_hotel,
+    express_checkout,
     extend_stay,
     find_reservation,
     get_room_type,
     hallway_choice,
     is_net_positive,
+    late_checkout,
     reservation_hint,
     reset_hallway,
+    review_folio,
     session_net_chips,
     upgrade_room,
+    wake_up_call,
 )
 from mandalay_bay.session import PlayerSession
 
@@ -80,6 +85,10 @@ def run_front_desk(session: PlayerSession, ui: TerminalUI) -> None:
                 "Upgrade to Panorama Suite",
                 "Upgrade to Chairman Penthouse",
                 "Extend stay (+1 night)",
+                "Review folio (checkout preview)",
+                "Late checkout (+2 hours)",
+                "Express checkout (Pearl+)",
+                "Standard checkout",
                 "Guest Directory — sign the lobby book",
                 "Back",
             ],
@@ -102,6 +111,18 @@ def run_front_desk(session: PlayerSession, ui: TerminalUI) -> None:
             res = extend_stay(session, 1)
             ui.success(res.message) if res.ok else ui.error(res.message)
         elif choice == 5:
+            res = review_folio(session)
+            ui.success(res.message)
+        elif choice == 6:
+            res = late_checkout(session)
+            ui.success(res.message) if res.ok else ui.error(res.message)
+        elif choice == 7:
+            res = express_checkout(session)
+            ui.success(res.message) if res.ok else ui.error(res.message)
+        elif choice == 8:
+            res = checkout_stay(session)
+            ui.success(res.message) if res.ok else ui.error(res.message)
+        elif choice == 9:
             run_guest_directory(session, ui)
         ui.pause()
 

@@ -9,8 +9,14 @@ degen-llms/
 │   ├── hub.py             # Lobby navigation
 │   ├── chips.py           # ChipWallet & ledger
 │   ├── session.py         # PlayerSession & stats
-│   ├── display.py         # TerminalUI
-│   ├── help_text.py       # In-game help content
+│   ├── hotel.py           # Hotel state, hallway, checkout lifecycle
+│   ├── hotel_experience.py
+│   ├── room_amenities.py  # In-room TV, minibar, phone, events
+│   ├── pool_complex.py    # 11-acre pool zones & events
+│   ├── resort_bridge.py   # Cross-system event requirements
+│   ├── resort_completion.py
+│   ├── casino_amenities.py
+│   ├── rewards.py / rewards_perks.py
 │   └── activities/
 │       ├── base.py        # Activity ABC
 │       ├── registry.py    # Activity catalog
@@ -23,7 +29,14 @@ degen-llms/
 │   ├── rules.py           # Action legality
 │   ├── runner.py          # Casino wallet integration
 │   └── ...
-├── docs/                  # Documentation
+├── docs/                  # Documentation & web terminal (GitHub Pages)
+│   ├── js/
+│   │   ├── hotel.js / hotel-ui.js
+│   │   ├── room-amenities.js
+│   │   ├── pool-complex.js
+│   │   ├── resort-bridge.js / resort-completion.js
+│   │   └── casino-amenities.js
+│   └── rpg/               # Phaser overworld (main_resort, hotel_tower, mandalay_beach)
 └── tests/                 # pytest suite
 ```
 

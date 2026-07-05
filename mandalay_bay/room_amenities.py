@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from mandalay_bay.hotel import RoomAmenitiesState, ensure_hotel, fmt_chips, is_net_positive
+from mandalay_bay.resort_bridge import get_session_tier_index, resort_requirements_met
 from mandalay_bay.session import PlayerSession
 
 TV_CHANNELS = {
@@ -30,7 +31,7 @@ TV_CHANNELS = {
     },
     "steve_harvey": {
         "label": "Channel 88 — Steve Harvey Race Replay",
-        "description": "Steve Harvey calls a photo finish with theatrical certainty — Family Feud energy on a racetrack.",
+        "description": "Steve Harvey calls a photo finish with theatrical certainty.",
         "flavor": "And the winner is— Results pending. Survey says… bet the long shot!",
         "requires_net_positive": True,
     },
@@ -38,6 +39,17 @@ TV_CHANNELS = {
         "label": "Channel 203 — Untranslated Cinema",
         "description": "A French noir at 2 AM. No subtitles.",
         "flavor": "The protagonist also made bad decisions in a hotel room.",
+    },
+    "arena_boxing": {
+        "label": "Channel 22 — ULTRA Arena Fight Replay",
+        "description": "Last night's championship bout loops in slow motion.",
+        "flavor": "Michelob ULTRA Arena — punches echo louder than slots.",
+    },
+    "house_of_blues": {
+        "label": "Channel 55 — House of Blues Live",
+        "description": "Blues riffs drift from the venue next door.",
+        "flavor": "Gold tier gets priority line.",
+        "min_tier_index": 2,
     },
 }
 
@@ -66,13 +78,56 @@ PHONE_CALLS = {
         "destination": "Unknown international prefix",
         "flavor": "Buckingham Palace, good evening.",
     },
+    "house_of_blues": {
+        "label": "Call House of Blues box office",
+        "destination": "Mandalay Bay music venue",
+        "flavor": "Gold members get the priority line.",
+        "min_tier_index": 2,
+    },
+    "spa_concierge": {
+        "label": "Call spa concierge",
+        "destination": "Spa & Salon",
+        "flavor": "Platinum comp upgrade available.",
+        "min_tier_index": 3,
+    },
+    "foundation_room": {
+        "label": "Call Foundation Room direct line",
+        "destination": "Noir lounge",
+        "flavor": "Penthouse key works as membership card.",
+        "room_types": ["penthouse"],
+        "min_tier_index": 4,
+    },
+    "delano_tower": {
+        "label": "Call Delano sister property",
+        "destination": "Delano Las Vegas",
+        "flavor": "Wrong tower, darling.",
+    },
 }
 
 ROOM_DECISIONS = {
-    "do_not_disturb": {"label": "Hang the Do Not Disturb sign", "flavor": "Privacy secured. The pool party will find you anyway."},
+    "do_not_disturb": {"label": "Hang the Do Not Disturb sign", "flavor": "Privacy secured."},
     "balcony": {"label": "Step onto the balcony", "flavor": "The Strip glitters below."},
     "room_service": {"label": "Order room service", "flavor": "A burger arrives in forty-five minutes.", "price": 35},
     "tip_maid": {"label": "Leave a chip tip for housekeeping", "flavor": "Tomorrow's towels will be fluffier.", "price": 25},
+    "sky_bridge_walk": {"label": "Walk Mandalay Place sky bridge", "flavor": "Luxor's pyramid glows through the glass."},
+    "suite_living_room": {
+        "label": "Retreat to the suite living room",
+        "flavor": "Separate TV, separate minibar judgment.",
+        "room_types": ["suite", "penthouse"],
+    },
+    "telescope_balcony": {
+        "label": "Use the penthouse telescope",
+        "flavor": "Read the tote board from floor 62.",
+        "room_types": ["penthouse"],
+    },
+    "butler_turn_down": {
+        "label": "Request butler turn-down service",
+        "flavor": "Chocolate on the pillow.",
+        "room_types": ["penthouse"],
+    },
+    "spa_day": {"label": "Book spa day via room tablet", "flavor": "Hot stone massage scheduled.", "min_tier_index": 3},
+    "wedding_chapel": {"label": "Accidentally book a wedding chapel tour", "flavor": "The chapel sends a brochure."},
+    "wake_up_call": {"label": "Schedule wake-up call roulette", "flavor": "Steve Harvey OR Shark Reef feed."},
 }
 
 ROOM_EVENTS = {
@@ -94,7 +149,7 @@ ROOM_EVENTS = {
     "pool_party_vip": {
         "label": "Pool Party VIP",
         "narrative": "Concierge sends a wristband via bellhop.",
-        "requires": {"calls": ["concierge"], "minibar": ["champagne_split"]},
+        "requires": {"calls": ["concierge"], "minibar": ["champagne_split"], "pool_zones": ["beach_rave"]},
     },
     "what_happens": {
         "label": "What Happens in Vegas…",
@@ -113,7 +168,7 @@ ROOM_EVENTS = {
     },
     "buckingham_moment": {
         "label": "Wrong Number, Right Palace",
-        "narrative": "Nobody believes you at the bar. The bartender comped your drink anyway.",
+        "narrative": "Nobody believes you at the bar.",
         "requires": {"calls": ["random_foreign"]},
     },
     "steve_harvey_hotline": {
@@ -121,7 +176,54 @@ ROOM_EVENTS = {
         "narrative": "Steve loops on TV while Pete picks up. Your horse hits.",
         "requires": {"channels": ["steve_harvey"], "calls": ["bookie"], "net_positive": True},
     },
+    "fight_night_suite": {
+        "label": "Fight Night Suite",
+        "narrative": "ULTRA Arena replay, Pete on speakerphone, suite windows rattling.",
+        "requires": {"channels": ["arena_boxing"], "calls": ["bookie"], "room_types": ["suite", "penthouse"]},
+    },
+    "foundation_after_dark": {
+        "label": "Foundation After Dark",
+        "narrative": "Noir velvet rope, penthouse champagne.",
+        "requires": {
+            "calls": ["foundation_room"],
+            "minibar": ["champagne_split"],
+            "min_tier_index": 4,
+            "room_types": ["penthouse"],
+        },
+    },
+    "sky_bridge_haul": {
+        "label": "Sky Bridge Haul",
+        "narrative": "LUSH bath bomb, Strip balcony, spa recovery.",
+        "requires": {"decisions": ["sky_bridge_walk", "balcony"], "shopping_items": ["lush_bath_bomb"]},
+    },
+    "eleven_acres_hangover": {
+        "label": "Eleven Acres Hangover",
+        "narrative": "Every pool zone yesterday. Brunch with sunglasses today.",
+        "requires": {"pool_events": ["eleven_acres"], "events": ["hangover_brunch"]},
+    },
+    "chapel_wrong_turn": {
+        "label": "Chapel Wrong Turn",
+        "narrative": "Wrong number, wedding brochure, chapel tour.",
+        "requires": {"calls": ["random_foreign"], "decisions": ["wedding_chapel"]},
+    },
+    "convention_survival": {
+        "label": "Convention Survival",
+        "narrative": "Synergy keynote, energy drink, DND sign.",
+        "requires": {"channels": ["news"], "minibar": ["energy_drink"], "decisions": ["do_not_disturb"]},
+    },
+    "butler_turn_down": {
+        "label": "Butler Turn-Down Legend",
+        "narrative": "Chocolate, curtains, penthouse folio novella.",
+        "requires": {"decisions": ["butler_turn_down"], "room_types": ["penthouse"]},
+    },
+    "telescope_strip": {
+        "label": "Telescope Strip Sweep",
+        "narrative": "Floor 62 optics on the sportsbook tote.",
+        "requires": {"decisions": ["telescope_balcony"], "room_types": ["penthouse"]},
+    },
 }
+
+RESORT_TIME_LABELS = ["Dawn over the bay", "Midday chlorination", "Neon dusk", "2 AM clarity"]
 
 
 @dataclass
@@ -141,6 +243,26 @@ def _has_all(haystack: list[str], needles: list[str]) -> bool:
     return all(n in haystack for n in needles)
 
 
+def _amenity_allowed(session: PlayerSession, hotel, item: dict) -> bool:
+    if item.get("requires_net_positive") and not is_net_positive(session):
+        return False
+    if "min_tier_index" in item and get_session_tier_index(session) < item["min_tier_index"]:
+        return False
+    if "room_types" in item and hotel.room_type not in item["room_types"]:
+        return False
+    return True
+
+
+def get_resort_time_of_day(hotel) -> dict:
+    slot = getattr(hotel, "resort_time", 0) % 4
+    return {"slot": slot, "label": RESORT_TIME_LABELS[slot]}
+
+
+def advance_resort_time(hotel, steps: int = 1) -> dict:
+    hotel.resort_time = (getattr(hotel, "resort_time", 0) + steps) % 4
+    return get_resort_time_of_day(hotel)
+
+
 def _requirements_met(session: PlayerSession, hotel, event: dict) -> bool:
     ra = ensure_room_amenities(hotel)
     req = event["requires"]
@@ -152,11 +274,11 @@ def _requirements_met(session: PlayerSession, hotel, event: dict) -> bool:
         return False
     if "decisions" in req and not _has_all(ra.decisions, req["decisions"]):
         return False
-    if "room_types" in req and hotel.room_type not in req["room_types"]:
-        return False
     if "events" in req and not _has_all(ra.unlocked_events, req["events"]):
         return False
     if req.get("net_positive") and not is_net_positive(session):
+        return False
+    if not resort_requirements_met(session, req, hotel=hotel, room_amenities=ra):
         return False
     return True
 
@@ -176,6 +298,14 @@ def _try_unlock_events(session: PlayerSession) -> list[dict]:
     return unlocked
 
 
+def _after_amenity_action(session: PlayerSession) -> list[dict]:
+    hotel = ensure_hotel(session)
+    ra = ensure_room_amenities(hotel)
+    ra.amenity_actions = getattr(ra, "amenity_actions", 0) + 1
+    advance_resort_time(hotel)
+    return _try_unlock_events(session)
+
+
 def _unlock_suffix(unlocked: list[dict]) -> str:
     if not unlocked:
         return ""
@@ -183,20 +313,31 @@ def _unlock_suffix(unlocked: list[dict]) -> str:
     return f"\n\nUnlocked: {labels}"
 
 
+def _gate_message(item: dict) -> str:
+    if item.get("requires_net_positive"):
+        return "Premium channel locked until you're net-positive on the floor."
+    if "min_tier_index" in item:
+        return f"Requires MGM Rewards tier {item['min_tier_index'] + 1} or higher."
+    if "room_types" in item:
+        return f"Available in {' / '.join(item['room_types'])} only."
+    return "Not available."
+
+
 def tune_tv_channel(session: PlayerSession, channel_id: str) -> AmenityResult:
     channel = TV_CHANNELS.get(channel_id)
     if not channel:
         return AmenityResult(False, "Static. No signal.")
-    if channel.get("requires_net_positive") and not is_net_positive(session):
-        return AmenityResult(False, "Premium channel locked until you're net-positive on the floor.")
     hotel = ensure_hotel(session)
+    if not _amenity_allowed(session, hotel, channel):
+        return AmenityResult(False, _gate_message(channel))
     ra = ensure_room_amenities(hotel)
     ra.tv_channel = channel_id
     if channel_id not in ra.channels_watched:
         ra.channels_watched.append(channel_id)
-    unlocked = _try_unlock_events(session)
+    unlocked = _after_amenity_action(session)
+    time_label = get_resort_time_of_day(hotel)["label"]
     message = (
-        f"{channel['label']}\n{channel['description']}\n{channel['flavor']}"
+        f"{channel['label']}\n{channel['description']}\n{channel['flavor']}\n({time_label})"
         f"{_unlock_suffix(unlocked)}"
     )
     unlock = unlocked[0]["label"] if unlocked else None
@@ -213,7 +354,7 @@ def purchase_minibar_item(session: PlayerSession, item_id: str) -> AmenityResult
         return AmenityResult(False, f"Need {fmt_chips(item['price'])} — the minibar doesn't accept IOUs.")
     ra.minibar_purchases.append(item_id)
     ra.minibar_tab += item["price"]
-    unlocked = _try_unlock_events(session)
+    unlocked = _after_amenity_action(session)
     message = (
         f"{item['label']} — {fmt_chips(item['price'])} charged to the room.\n{item['flavor']}"
         f"{_unlock_suffix(unlocked)}"
@@ -226,10 +367,12 @@ def make_phone_call(session: PlayerSession, call_id: str) -> AmenityResult:
     if not call:
         return AmenityResult(False, "Dead line. Try again.")
     hotel = ensure_hotel(session)
+    if not _amenity_allowed(session, hotel, call):
+        return AmenityResult(False, _gate_message(call))
     ra = ensure_room_amenities(hotel)
     if call_id not in ra.phone_calls:
         ra.phone_calls.append(call_id)
-    unlocked = _try_unlock_events(session)
+    unlocked = _after_amenity_action(session)
     message = (
         f"{call['label']} → {call['destination']}\n{call['flavor']}\n"
         f"(Unlimited foreign calls — the hotel absorbs the guilt.)"
@@ -243,20 +386,24 @@ def make_room_decision(session: PlayerSession, decision_id: str) -> AmenityResul
     if not decision:
         return AmenityResult(False, "Indecision is also a choice.")
     hotel = ensure_hotel(session)
+    if not _amenity_allowed(session, hotel, decision):
+        return AmenityResult(False, _gate_message(decision))
     ra = ensure_room_amenities(hotel)
     price = decision.get("price")
     if price and not session.wallet.debit(price, "hotel", decision["label"]):
         return AmenityResult(False, f"Need {fmt_chips(price)}.")
     if decision_id not in ra.decisions:
         ra.decisions.append(decision_id)
-    unlocked = _try_unlock_events(session)
+    if decision_id == "wake_up_call":
+        ra.wake_up_scheduled = True
+    unlocked = _after_amenity_action(session)
     message = f"{decision['label']}\n{decision['flavor']}{_unlock_suffix(unlocked)}"
     return AmenityResult(True, message)
 
 
 def get_room_amenities_summary(hotel) -> str:
     ra = ensure_room_amenities(hotel)
-    parts = []
+    parts = [get_resort_time_of_day(hotel)["label"]]
     if ra.tv_channel:
         ch = TV_CHANNELS.get(ra.tv_channel, {})
         parts.append(f"TV: {ch.get('label', ra.tv_channel)}")

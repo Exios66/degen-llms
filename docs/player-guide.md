@@ -301,6 +301,17 @@ Exit the casino floor to the **hotel lobby** (web: hub menu or RPG HUD link; dee
 
 **17 unlockable room events** chain across pool visits, shopping (LUSH bath bomb), tier status, and bad decisions. Locked events show cryptic hints in the event log.
 
+### World day/night cycle
+
+**2 hours real time = 1 resort day.** The hub and hotel lobby show the current phase and time until the next day.
+
+Each new day:
+- **Daily charges** post automatically (room rate + resort fee + parking — higher for suites/penthouse)
+- **Reservation requirement rotates:** phone only → desk only → phone + desk → net-positive whale check-in
+- **Insufficient chips** locks room access until you settle overdue charges at the front desk or win on the casino floor
+
+Platinum+ tiers reduce resort fees; Chairman tier waives them narratively.
+
 ### Stay lifecycle (Front Desk)
 
 - **Review folio** — minibar + room service + Mandalay Place deliveries

@@ -2,6 +2,7 @@ import { attachRewardsToSession } from "./rewards.js";
 import { attachHotelToSession } from "./hotel.js";
 import { attachAmenitiesToSession } from "./casino-amenities.js";
 import { attachPoolComplexToSession } from "./pool-complex.js";
+import { attachWorldCycleToSession } from "./world-cycle.js";
 import {
   getActiveSlotId,
   mirrorLibraryToCache,
@@ -171,6 +172,7 @@ export class PlayerSession {
     this.hotel = null;
     this.amenities = null;
     this.poolComplex = null;
+    this.worldCycle = null;
     this.progressivePools = {};
     this.horseRacingCustomNames = null;
     this.horseRacingNameOffset = 0;
@@ -221,6 +223,7 @@ export class PlayerSession {
     if (this.hotel) payload.hotel = this.hotel;
     if (this.amenities) payload.amenities = this.amenities;
     if (this.poolComplex) payload.poolComplex = this.poolComplex;
+    if (this.worldCycle) payload.worldCycle = this.worldCycle;
     return payload;
   }
 
@@ -246,6 +249,7 @@ export class PlayerSession {
     attachHotelToSession(s, data);
     attachAmenitiesToSession(s, data);
     attachPoolComplexToSession(s, data);
+    attachWorldCycleToSession(s, data);
     return s;
   }
 }

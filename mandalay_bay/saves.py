@@ -9,8 +9,9 @@ from pathlib import Path
 from mandalay_bay.chips import ChipWallet, TransactionKind
 from mandalay_bay.display import TerminalUI, fmt_chips
 from mandalay_bay.casino_amenities import CasinoAmenitiesState, ensure_amenities
-from mandalay_bay.hotel import HotelState, RoomAmenitiesState, ensure_hotel
+from mandalay_bay.hotel import HotelState, RoomAmenitiesState, default_hotel_state, ensure_hotel
 from mandalay_bay.pool_complex import PoolComplexState, ensure_pool_complex
+from mandalay_bay.world_cycle import WorldCycleState, ensure_world_cycle
 from mandalay_bay.rewards import RewardsState, SAVE_VERSION_WITH_REWARDS, ensure_rewards, migrate_session_rewards
 from mandalay_bay.session import ActivityStats, PlayerSession
 
@@ -227,6 +228,8 @@ def session_to_dict(session: PlayerSession) -> dict:
         payload["rewards"] = asdict(session.rewards)
     if hasattr(session, "amenities") and session.amenities is not None:
         payload["amenities"] = asdict(session.amenities)
+    if hasattr(session, "world_cycle") and session.world_cycle is not None:
+        payload["world_cycle"] = asdict(session.world_cycle)
     return payload
 
 
@@ -287,6 +290,10 @@ def session_from_dict(data: dict) -> PlayerSession:
         session.amenities = CasinoAmenitiesState(**data["amenities"])
     else:
         ensure_amenities(session)
+    if "world_cycle" in data:
+        session.world_cycle = WorldCycleState(**data["world_cycle"])
+    else:
+        ensure_world_cycle(session)
     return session
 
 

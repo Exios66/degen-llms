@@ -1,9 +1,10 @@
-import { signedChips } from "./core.js";
+import { signedChips, fmtChips } from "./core.js";
 import {
-  ensureHotel, getRoomType, getProperty, reservationHint, findReservation,
+  ensureHotel, getRoomType, getProperty, reservationHint, findReservation, findReservationAtDesk,
   currentHallwayBeat, hallwayChoice, upgradeRoom, extendStay, resetHallway,
   isNetPositive, sessionNetChips, reviewFolio, lateCheckout, triggerWakeUpCall,
-  checkoutStay, expressCheckout,
+  checkoutStay, expressCheckout, getWorldCycleSummary, settleHotelOverdue, reservationStatusMessage,
+  canAccessHotelRoom,
 } from "./hotel.js";
 import {
   loadGuestRegistry, listAllGuests, signGuestDirectory, hasSigned, formatSignedAt,
@@ -13,7 +14,7 @@ import {
   tuneTvChannel, purchaseMinibarItem, makePhoneCall, makeRoomDecision,
   getUnlockedEvents, getRoomAmenitiesSummary, ensureRoomAmenities,
   filterTvChannels, filterPhoneCalls, filterRoomDecisions,
-  getResortTimeOfDay, getEventHint, conciergeMinibarNudge,
+  getSessionResortPhase, getEventHint, conciergeMinibarNudge,
 } from "./room-amenities.js";
 import { getResortCompletion, maybeAutoSignGuestBook } from "./resort-completion.js";
 
@@ -40,6 +41,20 @@ export function buildHotelRenderers(ctx) {
 
   function appendResult(log, res) {
     log.appendChild(el("div", { className: `line ${res.ok ? "success" : "error"}`, textContent: res.message }));
+  }
+
+  function renderWorldCycleBanner() {
+    const cycle = getWorldCycleSummary(session);
+    const hotel = ensureHotel(session);
+    const evicted = cycle.roomEvicted;
+    return el("div", { className: `world-cycle-banner resort-time-${cycle.phase.id}` }, [
+      el("p", { className: "subtitle", textContent: `Day ${cycle.displayDay} · ${cycle.phaseLabel}` }),
+      el("p", { className: "dim", textContent: `${cycle.timeLabel} · Daily charges: ${fmtChips(cycle.dailyTotal)}` }),
+      el("p", { className: "dim", textContent: cycle.statusMessage }),
+      evicted
+        ? el("p", { className: "warning", textContent: `Room locked — ${cycle.overdueBalance > 0 ? `$${cycle.overdueBalance.toLocaleString()} overdue` : "settle at front desk"}. Hit the casino floor.` })
+        : null,
+    ]);
   }
 
   function renderResortCompletionPanel() {
@@ -118,6 +133,7 @@ export function buildHotelRenderers(ctx) {
             : null,
         ]),
         netLine,
+        renderWorldCycleBanner(),
         renderResortCompletionPanel(),
         el("ul", { className: "menu-list" }, [
           menuBtn("Front Desk — Clerk Carmen", () => pushView("hotel-front-desk")),
@@ -125,6 +141,8 @@ export function buildHotelRenderers(ctx) {
           menuBtn("Find my room (hallway)", () => pushView("hotel-hallway")),
           menuBtn("Pool Complex — 11-acre expansion pack", () => pushView("pool-complex")),
           hotel.reachedRoom ? menuBtn("Enter your room", () => pushView("hotel-room")) : null,
+          canAccessHotelRoom(session) && hotel.reachedRoom ? null
+            : el("p", { className: "dim", textContent: reservationStatusMessage(session) }),
           menuBtn("Return to Casino Floor", () => { viewToHub(ctx); }),
           menuBtn("Back", goBack, true),
         ].filter(Boolean)),
@@ -146,12 +164,16 @@ export function buildHotelRenderers(ctx) {
         log,
         el("ul", { className: "menu-list" }, [
           menuBtn("Locate reservation (desk terminal)", () => {
-            const r = findReservation(session);
-            log.appendChild(el("div", { className: "line dim", textContent: r.hint }));
-            if (r.clue) log.appendChild(el("div", { className: "line success", textContent: r.clue }));
-            tracker()?.pushNotification("Reservation Found", r.clue ?? r.hint);
-            rewardsPhone?.sync();
+            const r = findReservationAtDesk(session);
+            log.appendChild(el("div", { className: `line ${r.ok ? "success" : "error"}`, textContent: r.message }));
+            if (r.ok) tracker()?.pushNotification("Desk Check-In", r.message);
             persist();
+            render();
+          }),
+          menuBtn("Settle overdue resort charges", () => {
+            appendResult(log, settleHotelOverdue(session));
+            persist();
+            render();
           }),
           menuBtn("Upgrade to Panorama Suite", () => {
             appendResult(log, upgradeRoom(session, "suite", tracker()));
@@ -207,7 +229,7 @@ export function buildHotelRenderers(ctx) {
       log.appendChild(el("div", { className: "line dim", textContent: line }));
     }
 
-    if (!hotel.foundReservation) {
+    if (!hotel.foundReservation && !reservationAccessMet(session)) {
       return el("div", {}, [
         banner("Hotel Hallways"),
         el("div", { className: "panel" }, [
@@ -368,8 +390,12 @@ export function buildHotelRenderers(ctx) {
     ensureRoomAmenities(hotel);
     const unlocked = getUnlockedEvents(hotel);
     const summary = getRoomAmenitiesSummary(hotel);
-    const time = getResortTimeOfDay(hotel);
+    const time = getSessionResortPhase(session);
     const timeClass = `hotel-room-view resort-time-${time.slot}`;
+
+    if (!canAccessHotelRoom(session) && hotel.reachedRoom) {
+      hotel.reachedRoom = false;
+    }
 
     if (unlocked.length >= Object.keys(ROOM_EVENTS).length) {
       const auto = maybeAutoSignGuestBook(session, session.playerName?.trim() || "Guest");
@@ -389,6 +415,7 @@ export function buildHotelRenderers(ctx) {
           ? el("p", { className: "warning", textContent: "Checkout day — Carmen awaits at the front desk." })
           : null,
         el("p", { className: "room-amenities-summary dim", textContent: summary }),
+        renderWorldCycleBanner(),
         renderRoomSchematic(schematicZoneView),
         unlocked.length
           ? el("div", { className: "room-events-unlocked" }, [

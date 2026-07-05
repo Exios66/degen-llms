@@ -1,6 +1,16 @@
 import { secureRandomInt, fmtChips } from "./core.js";
 import { defaultRewardsState } from "./rewards.js";
 import { getSessionTierIndex } from "./resort-bridge.js";
+import {
+  syncWorldCycle,
+  locateReservationViaPhone,
+  confirmReservationAtDesk,
+  reservationAccessMet,
+  reservationStatusMessage,
+  settleHotelOverdue,
+  getWorldCycleSummary,
+  canAccessHotelRoom,
+} from "./world-cycle.js";
 
 function resolveRewards(session, rewardsTracker) {
   if (rewardsTracker?.ensureRewards) return rewardsTracker.ensureRewards();
@@ -119,6 +129,8 @@ export function defaultHotelState(overrides = {}) {
     resortTime: overrides.resortTime ?? 0,
     folioReviewed: overrides.folioReviewed ?? false,
     lateCheckoutUsed: overrides.lateCheckoutUsed ?? false,
+    reservationConfirmedDesk: overrides.reservationConfirmedDesk ?? false,
+    roomEvicted: overrides.roomEvicted ?? false,
     roomAmenities: overrides.roomAmenities ?? {
       tvChannel: null,
       channelsWatched: [],
@@ -168,6 +180,7 @@ export function ensureHotel(session) {
   if (!session.hotel) {
     session.hotel = defaultHotelState();
   }
+  syncWorldCycle(session);
   return session.hotel;
 }
 
@@ -179,27 +192,28 @@ export function attachHotelToSession(session, data) {
   ensureHotel(session);
 }
 
-/** Reveal reservation details in MGM Rewards app. */
+/** Reveal reservation via phone (MGM Rewards) — requirement varies by in-game day. */
 export function findReservation(session) {
-  const hotel = ensureHotel(session);
-  if (hotel.foundReservation) {
-    return { already: true, hint: reservationHint(hotel) };
-  }
-  hotel.foundReservation = true;
-  return {
-    already: false,
-    hint: reservationHint(hotel),
-    clue: `Head to the ${hotel.wing.toUpperCase()} tower. Gold elevator to floor ${hotel.floor}.`,
-  };
+  return locateReservationViaPhone(session);
 }
+
+/** Front desk reservation confirmation — requirement varies by in-game day. */
+export function findReservationAtDesk(session) {
+  return confirmReservationAtDesk(session);
+}
+
+export { getWorldCycleSummary, settleHotelOverdue, reservationStatusMessage, canAccessHotelRoom };
 
 /**
  * @returns {{ success: boolean, quip?: string, done?: boolean }}
  */
 export function hallwayChoice(session, choiceIndex) {
   const hotel = ensureHotel(session);
-  if (!hotel.foundReservation) {
-    return { success: false, quip: "Open MGM Rewards (P) and locate your reservation first." };
+  if (hotel.roomEvicted ?? session.worldCycle?.roomEvicted) {
+    return { success: false, quip: "Room access revoked — settle overdue charges at the front desk." };
+  }
+  if (!reservationAccessMet(session)) {
+    return { success: false, quip: reservationStatusMessage(session) };
   }
   const beat = HALLWAY_BEATS[hotel.hallwayProgress];
   if (!beat) {

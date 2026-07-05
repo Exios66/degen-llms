@@ -60,6 +60,8 @@ class HotelState:
     resort_time: int = 0
     folio_reviewed: bool = False
     late_checkout_used: bool = False
+    reservation_confirmed_desk: bool = False
+    room_evicted: bool = False
 
 
 @dataclass
@@ -89,6 +91,9 @@ def default_hotel_state() -> HotelState:
 def ensure_hotel(session: PlayerSession) -> HotelState:
     if not hasattr(session, "hotel") or session.hotel is None:
         session.hotel = default_hotel_state()
+    from mandalay_bay.world_cycle import sync_world_cycle
+
+    sync_world_cycle(session)
     return session.hotel
 
 
@@ -142,13 +147,29 @@ def _hallway_beats(hotel: HotelState) -> list[HallwayBeat]:
 
 
 def find_reservation(session: PlayerSession) -> ReservationResult:
+    from mandalay_bay.world_cycle import locate_reservation_via_phone
+
+    result = locate_reservation_via_phone(session)
     hotel = ensure_hotel(session)
     hint = reservation_hint(hotel)
-    if hotel.found_reservation:
+    if result.already:
         return ReservationResult(hint=hint, already=True)
-    hotel.found_reservation = True
-    clue = f"Head to the {hotel.wing.upper()} tower. Gold elevator to floor {hotel.floor}."
-    return ReservationResult(hint=hint, clue=clue)
+    if not result.ok:
+        return ReservationResult(hint=hint, clue=result.message)
+    return ReservationResult(hint=hint, clue=result.message)
+
+
+def find_reservation_at_desk(session: PlayerSession) -> ReservationResult:
+    from mandalay_bay.world_cycle import confirm_reservation_at_desk
+
+    result = confirm_reservation_at_desk(session)
+    hotel = ensure_hotel(session)
+    hint = reservation_hint(hotel)
+    if result.already:
+        return ReservationResult(hint=hint, already=True)
+    if not result.ok:
+        return ReservationResult(hint=hint, clue=result.message)
+    return ReservationResult(hint=hint, clue=result.message)
 
 
 def current_hallway_beat(session: PlayerSession) -> HallwayBeat | None:
@@ -167,9 +188,15 @@ class HallwayResult:
 
 
 def hallway_choice(session: PlayerSession, choice_index: int) -> HallwayResult:
+    from mandalay_bay.world_cycle import reservation_access_met, sync_world_cycle
+
+    sync_world_cycle(session)
     hotel = ensure_hotel(session)
-    if not hotel.found_reservation:
-        return HallwayResult(False, "Locate reservation first.")
+    wc = getattr(session, "world_cycle", None)
+    if wc and wc.room_evicted:
+        return HallwayResult(False, "Settle overdue charges at the front desk.")
+    if not reservation_access_met(session):
+        return HallwayResult(False, "Complete today's reservation requirement first.")
     beat = current_hallway_beat(session)
     if beat is None:
         hotel.reached_room = True

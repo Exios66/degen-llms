@@ -28,7 +28,8 @@ import {
 import { buildHotelRenderers } from "./hotel-ui.js";
 import { buildAmenitiesRenderers } from "./casino-amenities-ui.js";
 import { buildPoolRenderers } from "./pool-complex-ui.js";
-import { ensureHotel } from "./hotel.js";
+import { ensureHotel, getWorldCycleSummary } from "./hotel.js";
+import { syncWorldCycle } from "./world-cycle.js";
 import {
   STAKE_TIERS, TIER_ORDER, getTier, formatTierLabel, effectiveTableStakes, effectiveSlotStakes,
   formatStakeRange, tierUsesSalonLimits,
@@ -50,6 +51,25 @@ let currentStakeTier = null;
 let activeTableDealer = null;
 let viewStack = [];
 let statusMessage = null;
+let worldCycleTimer = null;
+
+function startWorldCycleTicker() {
+  if (worldCycleTimer) clearInterval(worldCycleTimer);
+  worldCycleTimer = setInterval(() => {
+    if (session.slotId == null) return;
+    const result = syncWorldCycle(session);
+    if (result.advanced) {
+      persist();
+      if (result.messages?.length) {
+        showStatus(result.messages[result.messages.length - 1], "warning");
+      } else {
+        render();
+      }
+    } else if (viewStack.some((v) => v.name.startsWith("hotel") || v.name === "hub")) {
+      render();
+    }
+  }, 30000);
+}
 
 function syncSportsbookToSession() {
   if (session.slotId != null) {
@@ -63,6 +83,7 @@ function resetSportsbookFromSession() {
 
 function persist() {
   syncSportsbookToSession();
+  syncWorldCycle(session);
   rewardsPhone?.tracker.syncFromWallet();
   syncRewardsExperience();
   if (session.slotId != null) saveSlot(session);
@@ -402,6 +423,8 @@ function enterCasino(nextSession, options = {}) {
   viewStack = [{ name: "hub", data: {} }];
   clearStatus();
   mountRewardsPhone();
+  syncWorldCycle(session);
+  startWorldCycleTicker();
   const view = options.initialView;
   if (view?.startsWith("hotel-") || view?.startsWith("pool-")) {
     ensureHotel(session);
@@ -748,6 +771,20 @@ function renderSaveDelete() {
   ]);
 }
 
+function renderWorldCycleHud() {
+  ensureHotel(session);
+  const cycle = getWorldCycleSummary(session);
+  return el("div", { className: `world-cycle-hud resort-time-${cycle.phase.id}` }, [
+    el("p", {
+      className: "dim",
+      textContent: `Resort Day ${cycle.displayDay} · ${cycle.phaseLabel} · ${cycle.timeLabel}`,
+    }),
+    cycle.roomEvicted
+      ? el("p", { className: "warning", textContent: "Room locked — win chips to settle overdue resort charges." })
+      : null,
+  ]);
+}
+
 function renderHub() {
   const floors = [...FLOOR_ORDER, "Casino Floor — shopping & bars", "Cashier", "Player Stats", "Save Game", "Exit to Hotel", "Explore Resort (RPG)", "Leave Casino"];
   const options = floors.map((f) => (FLOOR_ORDER.includes(f) ? `Explore ${f}` : f));
@@ -755,6 +792,7 @@ function renderHub() {
   const wrap = el("div", {}, [
     statusBanner(),
     tierExperienceBanner(),
+    renderWorldCycleHud(),
     settingsBar(),
     banner(CASINO_NAME),
     session.slotId != null

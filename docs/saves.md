@@ -76,6 +76,28 @@ When present, `hotel` includes:
 
 Cross-system event requirements also read `poolComplex.visitedZones`, `amenities.purchasedItems`, and MGM Rewards tier from `rewards.lifetimeWagered`.
 
+## World cycle (real-time day/night)
+
+**2 hours real time = 1 in-game resort day.** Phase within the day: dawn → midday → neon dusk → 2 AM clarity.
+
+```json
+{
+  "worldCycle": {
+    "clockAnchorMs": 1717580000000,
+    "processedDay": 3,
+    "roomEvicted": false,
+    "overdueBalance": 0,
+    "lastRolloverMessages": ["Day 3 — Phone then desk…"]
+  }
+}
+```
+
+Each new day:
+- Posts daily room + resort + parking charges (varies by room type)
+- Rotates reservation requirement (phone / desk / both / net-positive whale check-in)
+- Resets hallway and reservation confirmation
+- Evicts room access if charges cannot be paid (settle at front desk or win on the floor)
+
 ## Auto-save
 
 Progress saves automatically when:

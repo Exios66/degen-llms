@@ -7,6 +7,7 @@ from mandalay_bay.activities.registry import ACTIVITIES_BY_ID, ALL_ACTIVITIES, F
 from mandalay_bay.chips import ChipTransaction
 from mandalay_bay.display import TerminalUI, fmt_chips
 from mandalay_bay.help_text import SECTIONS
+from mandalay_bay.casino_amenities_experience import run_casino_floor
 from mandalay_bay.hotel_experience import run_hotel_lobby
 from mandalay_bay.rewards import sync_rewards_from_wallet
 from mandalay_bay.rewards_experience import run_rewards_phone
@@ -214,6 +215,7 @@ def run_hub(
         lobby_options = (
             [f"Explore {floor}" for floor in FLOOR_ORDER]
             + [
+                "Casino Floor — shopping & bars",
                 "Cashier",
                 "Player Stats",
                 "Save Game",
@@ -236,21 +238,24 @@ def run_hub(
         if choice <= floor_count:
             run_floor(session, ui, FLOOR_ORDER[choice - 1], library)
         elif choice == floor_count + 1:
-            run_cashier(session, ui)
+            run_casino_floor(session, ui)
             _autosave(session, library)
         elif choice == floor_count + 2:
-            run_stats(session, ui)
+            run_cashier(session, ui)
+            _autosave(session, library)
         elif choice == floor_count + 3:
-            _save_game(session, ui, library)
+            run_stats(session, ui)
         elif choice == floor_count + 4:
+            _save_game(session, ui, library)
+        elif choice == floor_count + 5:
             run_hotel_lobby(session, ui)
             _autosave(session, library)
-        elif choice == floor_count + 5:
+        elif choice == floor_count + 6:
             run_rewards_phone(session, ui)
             _autosave(session, library)
-        elif choice == floor_count + 6:
-            run_rpg_link(session, ui)
         elif choice == floor_count + 7:
+            run_rpg_link(session, ui)
+        elif choice == floor_count + 8:
             run_help(ui)
         else:
             if ui.prompt_yes_no("Leave The Mandalay Bay?", default=False):

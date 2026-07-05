@@ -1,5 +1,6 @@
 import { attachRewardsToSession } from "./rewards.js";
 import { attachHotelToSession } from "./hotel.js";
+import { attachAmenitiesToSession } from "./casino-amenities.js";
 import { attachPoolComplexToSession } from "./pool-complex.js";
 import {
   getActiveSlotId,
@@ -168,6 +169,8 @@ export class PlayerSession {
     this.rpgData = null;
     this.rewards = null;
     this.hotel = null;
+    this.amenities = null;
+    this.poolComplex = null;
     this.progressivePools = {};
     this.horseRacingCustomNames = null;
     this.horseRacingNameOffset = 0;
@@ -216,6 +219,7 @@ export class PlayerSession {
     if (this.rpg) payload.rpg = this.rpg;
     if (this.rewards) payload.rewards = this.rewards;
     if (this.hotel) payload.hotel = this.hotel;
+    if (this.amenities) payload.amenities = this.amenities;
     if (this.poolComplex) payload.poolComplex = this.poolComplex;
     return payload;
   }
@@ -240,6 +244,7 @@ export class PlayerSession {
     s.rpgData = data.rpgData ?? null;
     attachRewardsToSession(s, data);
     attachHotelToSession(s, data);
+    attachAmenitiesToSession(s, data);
     attachPoolComplexToSession(s, data);
     return s;
   }

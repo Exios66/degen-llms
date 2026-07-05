@@ -23,6 +23,7 @@ import { createHorseSpriteCanvas, getHorseSprite } from "./horse-sprites.js";
 import { getSessionDealer, pickQuip } from "./dealers.js";
 import { RewardsPhone } from "./RewardsPhone.js";
 import { buildHotelRenderers } from "./hotel-ui.js";
+import { buildAmenitiesRenderers } from "./casino-amenities-ui.js";
 import { buildPoolRenderers } from "./pool-complex-ui.js";
 import { ensureHotel } from "./hotel.js";
 import {
@@ -713,7 +714,7 @@ function renderSaveDelete() {
 }
 
 function renderHub() {
-  const floors = [...FLOOR_ORDER, "Cashier", "Player Stats", "Save Game", "Exit to Hotel", "Explore Resort (RPG)", "Leave Casino"];
+  const floors = [...FLOOR_ORDER, "Casino Floor — shopping & bars", "Cashier", "Player Stats", "Save Game", "Exit to Hotel", "Explore Resort (RPG)", "Leave Casino"];
   const options = floors.map((f) => (FLOOR_ORDER.includes(f) ? `Explore ${f}` : f));
 
   const wrap = el("div", {}, [
@@ -733,6 +734,10 @@ function renderHub() {
           className: "hub-feature",
           innerHTML: `<strong>${floor}</strong> — ${acts.map((a) => a.name).join(", ")}`,
         });
+      }),
+      el("div", {
+        className: "hub-feature",
+        innerHTML: "<strong>Casino Floor</strong> — The Shoppes at Mandalay Place (designer flagships) &amp; full-service bars (Eyecandy, Big Chill, Rhythm &amp; Riffs)",
       }),
       el("div", {
         className: "hub-feature",
@@ -784,20 +789,22 @@ function renderHub() {
     if (choice <= FLOOR_ORDER.length) {
       pushView("floor", { floor: FLOOR_ORDER[choice - 1] });
     } else if (choice === FLOOR_ORDER.length + 1) {
-      pushView("cashier");
+      pushView("casino-floor");
     } else if (choice === FLOOR_ORDER.length + 2) {
-      pushView("stats");
+      pushView("cashier");
     } else if (choice === FLOOR_ORDER.length + 3) {
+      pushView("stats");
+    } else if (choice === FLOOR_ORDER.length + 4) {
       if (session.slotId != null) {
         persist();
         showStatus(`Game saved to ${session.slotLabel || `Slot ${session.slotId}`}.`);
       } else {
         showStatus("No save slot active — pick a slot at entry or play as guest.", "error");
       }
-    } else if (choice === FLOOR_ORDER.length + 4) {
+    } else if (choice === FLOOR_ORDER.length + 5) {
       ensureHotel(session);
       pushView("hotel-lobby");
-    } else if (choice === FLOOR_ORDER.length + 5) {
+    } else if (choice === FLOOR_ORDER.length + 6) {
       const rpgUrl = session.slotId != null
         ? `./rpg/?slot=${session.slotId}`
         : "./rpg/?guest=1";
@@ -834,6 +841,25 @@ function renderFloor({ floor }) {
     el("div", { className: "panel" }, [
       el("p", { className: "subtitle", textContent: `${floor}:` }),
       el("ul", { className: "menu-list" }, items),
+    ]),
+    el("div", { className: "panel amenities-shortcuts" }, [
+      el("p", { className: "subtitle", textContent: "On the casino floor:" }),
+      el("ul", { className: "menu-list inline-shortcuts" }, [
+        el("li", {}, [
+          el("button", {
+            className: "menu-btn",
+            textContent: "The Shoppes at Mandalay Place",
+            onclick: () => pushView("mall-lobby"),
+          }),
+        ]),
+        el("li", {}, [
+          el("button", {
+            className: "menu-btn",
+            textContent: "Full Service Bar",
+            onclick: () => pushView("bar-select"),
+          }),
+        ]),
+      ]),
     ]),
   ]);
 
@@ -2307,6 +2333,19 @@ const hotelRenderers = buildHotelRenderers({
   viewStack,
 });
 
+const amenitiesRenderers = buildAmenitiesRenderers({
+  get session() { return session; },
+  pushView,
+  goBack,
+  persist,
+  render,
+  el,
+  banner,
+  chipLine,
+  statusBanner,
+  showStatus,
+});
+
 const poolRenderers = buildPoolRenderers({
   get session() { return session; },
   pushView,
@@ -2347,6 +2386,7 @@ const RENDERERS = {
   "horse-racing-settle": renderHorseRacingSettle,
   "horse-racing-names": renderHorseRacingNames,
   ...hotelRenderers,
+  ...amenitiesRenderers,
   ...poolRenderers,
   "not-found": renderNotFound,
 };

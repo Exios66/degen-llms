@@ -8,6 +8,7 @@ from pathlib import Path
 
 from mandalay_bay.chips import ChipWallet, TransactionKind
 from mandalay_bay.display import TerminalUI, fmt_chips
+from mandalay_bay.casino_amenities import CasinoAmenitiesState, ensure_amenities
 from mandalay_bay.hotel import HotelState, RoomAmenitiesState, ensure_hotel
 from mandalay_bay.pool_complex import PoolComplexState, ensure_pool_complex
 from mandalay_bay.rewards import RewardsState, SAVE_VERSION_WITH_REWARDS, ensure_rewards, migrate_session_rewards
@@ -181,6 +182,8 @@ class SaveLibrary:
         )
         ensure_hotel(session)
         ensure_rewards(session)
+        ensure_pool_complex(session)
+        ensure_amenities(session)
         self.save_slot(session)
         return session
 
@@ -222,6 +225,8 @@ def session_to_dict(session: PlayerSession) -> dict:
         payload["pool_complex"] = asdict(session.pool_complex)
     if hasattr(session, "rewards") and session.rewards is not None:
         payload["rewards"] = asdict(session.rewards)
+    if hasattr(session, "amenities") and session.amenities is not None:
+        payload["amenities"] = asdict(session.amenities)
     return payload
 
 
@@ -278,6 +283,10 @@ def session_from_dict(data: dict) -> PlayerSession:
         session.rewards = RewardsState(**data["rewards"])
     else:
         migrate_session_rewards(session, data_version)
+    if "amenities" in data:
+        session.amenities = CasinoAmenitiesState(**data["amenities"])
+    else:
+        ensure_amenities(session)
     return session
 
 

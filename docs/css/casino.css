@@ -451,6 +451,31 @@ body {
   border-left: 3px solid var(--gold-dim, #c4a030);
 }
 
+.amenities-panel {
+  border-left: 3px solid var(--teal-accent, #2a9d8f);
+}
+
+.amenities-shortcuts {
+  margin-top: 0.75rem;
+  border-left: 3px solid var(--teal-accent, #2a9d8f);
+}
+
+.amenities-shortcuts .inline-shortcuts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.amenities-shortcuts .menu-btn {
+  font-size: 0.9rem;
+}
+
+.store-items .menu-btn {
+  text-align: left;
+  white-space: normal;
+  line-height: 1.35;
+}
+
 .hotel-status {
   margin: 1rem 0;
   padding: 0.75rem;

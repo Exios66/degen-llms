@@ -2321,6 +2321,171 @@ body {
 
 /* ── Horse racing paddock & equestrian sprites ── */
 
+/* ── Horse Stables ── */
+.horse-stables-intro {
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--dim);
+  margin: 0 0 0.25rem;
+  max-width: 72ch;
+}
+
+.horse-stables-label {
+  color: #c8a860;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin: 1rem 0 0.4rem;
+}
+
+/* Pasture — open green field grid */
+.horse-pasture {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  gap: 0.75rem;
+  padding: 1.25rem 1rem;
+  background:
+    radial-gradient(ellipse at 50% 110%, rgba(60, 200, 100, 0.12) 0%, transparent 60%),
+    repeating-linear-gradient(
+      0deg,
+      rgba(44, 128, 64, 0.1) 0px,
+      rgba(44, 128, 64, 0.1) 3px,
+      rgba(56, 148, 76, 0.06) 3px,
+      rgba(56, 148, 76, 0.06) 7px
+    ),
+    linear-gradient(180deg, #152a18 0%, #0d1e10 100%);
+  border: 2px solid #2a5030;
+  border-radius: 10px;
+  margin: 0.5rem 0 1.25rem;
+}
+
+.horse-pasture-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.85rem 0.5rem 0.75rem;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(80, 180, 100, 0.14);
+  border-radius: 8px;
+  transition: border-color 0.15s, transform 0.12s;
+}
+
+.horse-pasture-card:hover {
+  border-color: rgba(120, 220, 140, 0.35);
+  transform: translateY(-2px);
+}
+
+.horse-pasture-name {
+  color: #d8f0d8;
+  font-size: 0.73rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.horse-pasture-coat {
+  color: #7ab890;
+  font-size: 0.6rem;
+  font-style: italic;
+  text-align: center;
+}
+
+/* Stalls — wooden barn grid */
+.horse-stalls-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.75rem;
+  padding: 1rem;
+  background:
+    repeating-linear-gradient(
+      -55deg,
+      rgba(100, 60, 20, 0.07) 0px,
+      rgba(100, 60, 20, 0.07) 3px,
+      transparent 3px,
+      transparent 14px
+    ),
+    linear-gradient(180deg, #14100a 0%, #0e0c06 100%);
+  border: 2px solid #3d2a12;
+  border-radius: 10px;
+  margin: 0.5rem 0 1.25rem;
+}
+
+.horse-stall-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.28rem;
+  padding: 0.5rem 0.4rem 0.8rem;
+  background: linear-gradient(180deg, rgba(90, 55, 18, 0.45) 0%, rgba(55, 32, 10, 0.65) 100%);
+  border: 2px solid #6b4220;
+  border-top: 5px solid #9b6830;
+  border-radius: 0 0 6px 6px;
+  position: relative;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.horse-stall-card:hover {
+  border-color: #c8a048;
+  box-shadow: 0 0 14px rgba(200, 160, 70, 0.18);
+}
+
+.horse-stall-header {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.3rem;
+  padding: 0 0.1rem;
+}
+
+.horse-stall-num {
+  color: #c8a060;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.horse-stall-badge {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #4ab870;
+  box-shadow: 0 0 5px rgba(74, 184, 112, 0.6);
+}
+
+.horse-stall-name {
+  color: #f4e4c0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-align: center;
+  margin-top: 0.15rem;
+}
+
+.horse-stall-coat {
+  color: #b89060;
+  font-size: 0.61rem;
+  font-style: italic;
+  text-align: center;
+}
+
+.horse-stall-note {
+  color: #806845;
+  font-size: 0.59rem;
+  text-align: center;
+  line-height: 1.4;
+  margin-top: 0.1rem;
+  padding: 0 0.15rem;
+}
+
+@media (max-width: 600px) {
+  .horse-pasture,
+  .horse-stalls-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 0.5rem;
+  }
+}
+
 .racing-pavilion {
   max-width: 960px;
   margin: 0 auto;

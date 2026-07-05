@@ -3,6 +3,7 @@ import {
   saveSlot, loadSlot, createSlot, deleteSlot, listSlots, recentSlots, formatSaveTime,
   createGuestSession, PlayerSession,
 } from "./core.js";
+import { applyIntoxicationEffects } from "./intoxication-effects.js";
 import {
   MACHINES,
   spinReels,
@@ -306,9 +307,10 @@ function horsePaddockCard(horse, { selected = false, onClick = null } = {}) {
     createHorseSpriteCanvas(horse.spriteId, {
       size: 80,
       animate: true,
-      animation: "idle",
+      animation: "walk",
+      direction: "front",
       horseNumber: horse.number,
-      withJockey: true,
+      withJockey: false,
     }),
     el("div", { className: "horse-paddock-num", textContent: `#${horse.number}` }),
     el("div", { className: "horse-paddock-name", textContent: horse.name }),
@@ -367,6 +369,7 @@ function enterCasino(nextSession) {
   viewStack = [{ name: "hub", data: {} }];
   clearStatus();
   mountRewardsPhone();
+  applyIntoxicationEffects(session);
   render();
 }
 
@@ -2240,8 +2243,9 @@ function renderHorseRacingSettle() {
             el("span", { className: "racing-finish-pos", textContent: `${i + 1}.` }),
             createHorseSpriteCanvas(h.spriteId, {
               size: 64,
-              frame: i % 4,
-              animation: "trot",
+              frame: i % 3,
+              animation: "walk",
+              direction: "right",
               horseNumber: num,
               withJockey: true,
             }),

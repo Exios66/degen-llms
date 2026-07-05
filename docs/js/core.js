@@ -5,6 +5,7 @@ import { attachPoolComplexToSession } from "./pool-complex.js";
 import { attachWorldCycleToSession } from "./world-cycle.js";
 import { attachBankToSession } from "./bank-account.js";
 import { attachStaffOverridesToSession } from "./staff-manifest.js";
+import { attachIntoxicationToSession } from "./intoxication-effects.js";
 import {
   getActiveSlotId,
   mirrorLibraryToCache,
@@ -175,6 +176,7 @@ export class PlayerSession {
     this.amenities = null;
     this.poolComplex = null;
     this.worldCycle = null;
+    this.intoxication = null;
     this.progressivePools = {};
     this.horseRacingCustomNames = null;
     this.horseRacingNameOffset = 0;
@@ -230,6 +232,7 @@ export class PlayerSession {
     if (this.amenities) payload.amenities = this.amenities;
     if (this.poolComplex) payload.poolComplex = this.poolComplex;
     if (this.worldCycle) payload.worldCycle = this.worldCycle;
+    if (this.intoxication) payload.intoxication = this.intoxication;
     return payload;
   }
 
@@ -258,6 +261,7 @@ export class PlayerSession {
     attachWorldCycleToSession(s, data);
     attachBankToSession(s, data);
     attachStaffOverridesToSession(s, data);
+    attachIntoxicationToSession(s, data);
     return s;
   }
 }

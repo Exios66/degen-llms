@@ -6,6 +6,7 @@ import random
 from dataclasses import dataclass, field
 
 from mandalay_bay.hotel import fmt_chips, is_net_positive
+from mandalay_bay.intoxication import POOL_CONSUMABLE_IDS, record_consumption
 from mandalay_bay.session import PlayerSession
 
 POOL_ZONES = {
@@ -260,6 +261,8 @@ def cabana_service(session: PlayerSession, service_id: str) -> PoolResult:
     price, message = svc
     if price and not session.wallet.debit(price, "pool", "Cabana service"):
         return PoolResult(False, f"Need {fmt_chips(price)}.")
+    if service_id == "bottle":
+        record_consumption(session, POOL_CONSUMABLE_IDS["bottle"], source="pool_cabana")
     return PoolResult(True, message)
 
 
@@ -292,6 +295,8 @@ def beach_club_action(session: PlayerSession, action_id: str) -> PoolResult:
     price, message = act
     if price and not session.wallet.debit(price, "pool", "Beach club"):
         return PoolResult(False, f"Need {fmt_chips(price)}.")
+    if action_id == "bar":
+        record_consumption(session, POOL_CONSUMABLE_IDS["bar"], source="pool_beach_club")
     return PoolResult(True, message)
 
 

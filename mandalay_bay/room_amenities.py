@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from mandalay_bay.hotel import RoomAmenitiesState, ensure_hotel, fmt_chips, is_net_positive
+from mandalay_bay.intoxication import record_consumption
 from mandalay_bay.resort_bridge import get_session_tier_index, resort_requirements_met
 from mandalay_bay.session import PlayerSession
 
@@ -59,6 +60,20 @@ MINIBAR_ITEMS = {
     "champagne_split": {"label": "Champagne split", "price": 45, "flavor": "Pop the cork. The minibar sensor applauds silently."},
     "energy_drink": {"label": "Energy drink", "price": 9, "flavor": "For when the casino floor is still winning."},
     "bottled_water": {"label": "Bottled water", "price": 8, "flavor": "Somehow costs almost as much as the vodka."},
+    "noir_herb_preroll": {
+        "label": "Noir pre-roll (contraband)",
+        "price": 55,
+        "flavor": "State-sanctioned recreational herb — farm-to-lounge, no photos.",
+        "min_tier_index": 4,
+    },
+    "foundation_edible": {
+        "label": "Foundation Room edible (contraband)",
+        "price": 75,
+        "flavor": "Velvet-rope gummy — the lounge sommelier nods approvingly.",
+        "min_tier_index": 4,
+        "room_types": ["penthouse"],
+        "requires_call": "foundation_room",
+    },
     "stare_at_minibar": {
         "label": "Open the door without taking anything",
         "price": 50,
@@ -250,6 +265,10 @@ def _amenity_allowed(session: PlayerSession, hotel, item: dict) -> bool:
         return False
     if "room_types" in item and hotel.room_type not in item["room_types"]:
         return False
+    if "requires_call" in item:
+        ra = ensure_room_amenities(hotel)
+        if item["requires_call"] not in ra.phone_calls:
+            return False
     return True
 
 
@@ -316,6 +335,8 @@ def _unlock_suffix(unlocked: list[dict]) -> str:
 def _gate_message(item: dict) -> str:
     if item.get("requires_net_positive"):
         return "Premium channel locked until you're net-positive on the floor."
+    if item.get("requires_call"):
+        return "Call the Foundation Room direct line first — velvet rope protocol."
     if "min_tier_index" in item:
         return f"Requires MGM Rewards tier {item['min_tier_index'] + 1} or higher."
     if "room_types" in item:
@@ -349,11 +370,14 @@ def purchase_minibar_item(session: PlayerSession, item_id: str) -> AmenityResult
     if not item:
         return AmenityResult(False, "The minibar judges silently.")
     hotel = ensure_hotel(session)
+    if not _amenity_allowed(session, hotel, item):
+        return AmenityResult(False, _gate_message(item))
     ra = ensure_room_amenities(hotel)
     if not session.wallet.debit(item["price"], "hotel", f"Minibar: {item['label']}"):
         return AmenityResult(False, f"Need {fmt_chips(item['price'])} — the minibar doesn't accept IOUs.")
     ra.minibar_purchases.append(item_id)
     ra.minibar_tab += item["price"]
+    record_consumption(session, item_id, source="minibar")
     unlocked = _after_amenity_action(session)
     message = (
         f"{item['label']} — {fmt_chips(item['price'])} charged to the room.\n{item['flavor']}"

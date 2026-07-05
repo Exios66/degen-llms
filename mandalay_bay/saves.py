@@ -13,6 +13,7 @@ from mandalay_bay.hotel import HotelState, RoomAmenitiesState, default_hotel_sta
 from mandalay_bay.pool_complex import PoolComplexState, ensure_pool_complex
 from mandalay_bay.world_cycle import WorldCycleState, ensure_world_cycle
 from mandalay_bay.bank_account import BankAccount, BankTransaction, BankTransactionKind, ensure_bank
+from mandalay_bay.intoxication import attach_intoxication_to_session
 from mandalay_bay.rewards import RewardsState, SAVE_VERSION_WITH_REWARDS, ensure_rewards, migrate_session_rewards
 from mandalay_bay.session import ActivityStats, PlayerSession
 from mandalay_bay.staff_manifest import set_staff_overrides
@@ -253,6 +254,8 @@ def session_to_dict(session: PlayerSession) -> dict:
         }
     if hasattr(session, "staff_overrides") and session.staff_overrides is not None:
         payload["staff_overrides"] = session.staff_overrides
+    if hasattr(session, "intoxication") and session.intoxication is not None:
+        payload["intoxication"] = asdict(session.intoxication)
     return payload
 
 
@@ -340,6 +343,7 @@ def session_from_dict(data: dict) -> PlayerSession:
         ensure_bank(session)
     if "staff_overrides" in data:
         set_staff_overrides(session, data["staff_overrides"])
+    attach_intoxication_to_session(session, data)
     return session
 
 

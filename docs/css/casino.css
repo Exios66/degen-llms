@@ -26,6 +26,7 @@
   --roulette-red: #c41e3a;
   --roulette-black: #1a1a2e;
   --roulette-green: #0d6b3a;
+  --rewards-speed-mult: 1;
 }
 
 *,
@@ -430,6 +431,57 @@ body {
   opacity: 1;
 }
 
+.tier-experience-banner {
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: linear-gradient(135deg, rgba(17, 24, 32, 0.95) 0%, rgba(26, 34, 48, 0.95) 100%);
+}
+
+.tier-experience-label {
+  margin: 0 0 0.25rem;
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cyan);
+}
+
+.tier-experience-tagline {
+  margin: 0 0 0.35rem;
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+.tier-experience-meta {
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.tier-experience-banner--gold .tier-experience-label,
+.tier-experience-banner--platinum .tier-experience-label {
+  color: var(--gold);
+}
+
+.tier-experience-banner--noir .tier-experience-label {
+  color: var(--magenta);
+}
+
+.tier-experience-banner--chairman {
+  border-color: var(--gold);
+  background: linear-gradient(135deg, rgba(40, 32, 8, 0.95) 0%, rgba(17, 24, 32, 0.98) 55%, rgba(60, 20, 40, 0.9) 100%);
+  box-shadow: 0 0 18px rgba(255, 215, 0, 0.15);
+}
+
+.tier-experience-banner--chairman .tier-experience-label {
+  color: var(--gold);
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.35);
+}
+
+.tier-experience-banner--chairman .tier-experience-tagline {
+  color: #fff8dc;
+}
+
 .hub-features {
   display: grid;
   gap: 0.5rem;
@@ -451,6 +503,31 @@ body {
   border-left: 3px solid var(--gold-dim, #c4a030);
 }
 
+.amenities-panel {
+  border-left: 3px solid var(--teal-accent, #2a9d8f);
+}
+
+.amenities-shortcuts {
+  margin-top: 0.75rem;
+  border-left: 3px solid var(--teal-accent, #2a9d8f);
+}
+
+.amenities-shortcuts .inline-shortcuts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.amenities-shortcuts .menu-btn {
+  font-size: 0.9rem;
+}
+
+.store-items .menu-btn {
+  text-align: left;
+  white-space: normal;
+  line-height: 1.35;
+}
+
 .hotel-status {
   margin: 1rem 0;
   padding: 0.75rem;
@@ -466,10 +543,135 @@ body {
   min-height: 12rem;
 }
 
+.room-amenities-summary {
+  margin: 0.75rem 0;
+  padding: 0.5rem 0.75rem;
+  border-left: 2px solid rgba(232, 197, 71, 0.35);
+  font-style: italic;
+}
+
+.room-events-unlocked,
+.room-events-locked {
+  margin: 1rem 0;
+}
+
+.room-events-list {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+}
+
+.room-events-list li {
+  padding: 0.45rem 0;
+  border-bottom: 1px solid rgba(232, 197, 71, 0.1);
+  font-size: 0.92em;
+  line-height: 1.4;
+}
+
+.room-events-list li:last-child {
+  border-bottom: none;
+}
+
+.pool-complex-panel,
+.pool-zone-view {
+  min-height: 12rem;
+}
+
+.pool-complex-panel .subtitle {
+  color: var(--gold, #e8c547);
+}
+
 .hotel-log {
   max-height: 10rem;
   overflow-y: auto;
   margin: 0.75rem 0;
+}
+
+.guest-directory-panel {
+  max-width: 42rem;
+}
+
+.guest-directory-book {
+  margin: 1rem 0;
+}
+
+.guest-directory-intro,
+.guest-directory-count {
+  margin: 0.35rem 0 0.75rem;
+}
+
+.guest-directory-list {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  max-height: 16rem;
+  overflow-y: auto;
+  border: 1px solid rgba(232, 197, 71, 0.25);
+  background: rgba(10, 14, 20, 0.55);
+}
+
+.guest-directory-entry {
+  padding: 0.65rem 0.85rem;
+  border-bottom: 1px solid rgba(232, 197, 71, 0.12);
+}
+
+.guest-directory-entry:last-child {
+  border-bottom: none;
+}
+
+.guest-directory-entry.seed {
+  border-left: 2px solid rgba(232, 197, 71, 0.45);
+}
+
+.guest-directory-name {
+  display: block;
+  font-weight: 600;
+  color: var(--gold, #e8c547);
+}
+
+.guest-directory-date {
+  display: block;
+  font-size: 0.85em;
+  margin-top: 0.15rem;
+}
+
+.guest-directory-note {
+  margin: 0.35rem 0 0;
+  font-size: 0.9em;
+  font-style: italic;
+}
+
+.guest-directory-sign {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(232, 197, 71, 0.2);
+}
+
+.guest-directory-input {
+  display: block;
+  width: 100%;
+  margin: 0.5rem 0;
+  padding: 0.5rem 0.65rem;
+  font-family: inherit;
+  font-size: 0.95rem;
+  color: var(--text, #e6e1cf);
+  background: rgba(10, 14, 20, 0.8);
+  border: 1px solid rgba(57, 197, 207, 0.35);
+  border-radius: 2px;
+}
+
+.guest-directory-input:focus {
+  outline: none;
+  border-color: var(--cyan, #39c5cf);
+}
+
+.guest-directory-input:disabled {
+  opacity: 0.55;
+}
+
+.guest-directory-feedback {
+  margin-top: 0.5rem;
+  min-height: 0;
 }
 
 .warning {
@@ -1553,14 +1755,19 @@ body {
   z-index: 0;
 }
 
-.slot-reel--spinning .slot-reel-symbol {
-  animation: reel-blur 0.35s linear infinite;
+.slot-reel.slot-reel--spinning .slot-reel-symbol {
+  animation: reel-blur 0.22s linear infinite;
+  animation-delay: var(--reel-delay, 0s);
 }
 
+.slot-reel:nth-child(1).slot-reel--spinning .slot-reel-symbol { animation-duration: calc(0.18s * var(--rewards-speed-mult, 1)); }
+.slot-reel:nth-child(2).slot-reel--spinning .slot-reel-symbol { animation-duration: calc(0.22s * var(--rewards-speed-mult, 1)); }
+.slot-reel:nth-child(3).slot-reel--spinning .slot-reel-symbol { animation-duration: calc(0.26s * var(--rewards-speed-mult, 1)); }
+
 @keyframes reel-blur {
-  0% { transform: translateY(-20%); opacity: 0.6; }
-  50% { transform: translateY(10%); opacity: 1; }
-  100% { transform: translateY(30%); opacity: 0.6; }
+  0% { transform: translateY(-35%); opacity: 0.45; filter: blur(1px); }
+  50% { transform: translateY(8%); opacity: 1; filter: blur(0); }
+  100% { transform: translateY(40%); opacity: 0.45; filter: blur(1px); }
 }
 
 .slot-reel-window--win .slot-reel {
@@ -1786,11 +1993,18 @@ body {
 
 .racing-paddock {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-  gap: 0.65rem;
-  padding: 0.85rem;
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  gap: 0.75rem;
+  padding: 1rem;
   background:
-    radial-gradient(ellipse at 50% 0%, rgba(61, 214, 140, 0.08) 0%, transparent 55%),
+    radial-gradient(ellipse at 50% 0%, rgba(61, 214, 140, 0.12) 0%, transparent 55%),
+    repeating-linear-gradient(
+      90deg,
+      rgba(42, 104, 56, 0.15) 0px,
+      rgba(42, 104, 56, 0.15) 4px,
+      rgba(50, 120, 64, 0.1) 4px,
+      rgba(50, 120, 64, 0.1) 8px
+    ),
     linear-gradient(180deg, #1a3020 0%, #0d2018 100%);
   border: 2px solid var(--felt-dark);
   border-radius: 8px;
@@ -1801,9 +2015,11 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.2rem;
-  padding: 0.55rem 0.4rem 0.65rem;
-  background: rgba(0, 0, 0, 0.28);
+  gap: 0.25rem;
+  padding: 0.65rem 0.45rem 0.75rem;
+  background:
+    radial-gradient(ellipse at 50% 85%, rgba(42, 104, 56, 0.35) 0%, transparent 70%),
+    rgba(0, 0, 0, 0.28);
   border: 2px solid rgba(255, 255, 255, 0.08);
   border-radius: 8px;
   transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
@@ -1830,6 +2046,7 @@ body {
   image-rendering: pixelated;
   image-rendering: crisp-edges;
   display: block;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.35));
 }
 
 .horse-paddock-num {

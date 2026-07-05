@@ -2,6 +2,9 @@ import { fmtChips } from "./core.js";
 import {
   COMP_CATALOG, RewardsTracker, TIERS, tierForWagered,
 } from "./rewards.js";
+import {
+  getActivityTiming, getTierExperience, RESORT_OFFERS, tierIndex,
+} from "./rewards-perks.js";
 import { ensureHotel, findReservation, reservationHint, getRoomType } from "./hotel.js";
 
 /**
@@ -144,6 +147,9 @@ export class RewardsPhone {
       case "offers":
         this._renderOffers(body);
         break;
+      case "perks":
+        this._renderPerks(body);
+        break;
       case "reservation":
         this._renderReservation(body);
         break;
@@ -153,6 +159,7 @@ export class RewardsPhone {
 
     const tabs = [
       ["home", "Home"],
+      ["perks", "Perks"],
       ["reservation", "Room"],
       ["card", "Card"],
       ["comps", "Comps"],
@@ -182,10 +189,15 @@ export class RewardsPhone {
   _renderHome(body) {
     const rewards = this.tracker.ensureRewards();
     const tier = tierForWagered(rewards.lifetimeWagered);
+    const exp = getTierExperience(tier.id);
+    const timing = getActivityTiming(tier.id);
     const prog = this.tracker.progressToNextTier();
     body.innerHTML = "";
+    body.className = `rewards-lcd-body rewards-tier-${tier.id}`;
     body.appendChild(this._line(`Member ${rewards.memberId}`));
     body.appendChild(this._line(`${tier.label} · ${fmtChips(rewards.lifetimeWagered)} wagered`));
+    body.appendChild(this._line(exp.tagline, "dim"));
+    body.appendChild(this._line(`Floor speed: ${Math.round((1 / timing.speedMultiplier) * 100)}% VIP`, "dim"));
     if (prog.next) {
       body.appendChild(this._line(`Next: ${prog.next.label} (${fmtChips(prog.remaining)} to go)`));
       const bar = document.createElement("div");
@@ -201,16 +213,20 @@ export class RewardsPhone {
   _renderMemberCard(body) {
     const rewards = this.tracker.ensureRewards();
     const tier = tierForWagered(rewards.lifetimeWagered);
+    const exp = getTierExperience(tier.id);
     body.innerHTML = "";
+    body.className = `rewards-lcd-body rewards-tier-${tier.id}`;
     const card = document.createElement("div");
-    card.className = "rewards-member-card";
+    card.className = `rewards-member-card rewards-member-card--${tier.id}`;
     card.innerHTML = `
       <div class="rewards-tier">${tier.label.toUpperCase()}</div>
       <div class="rewards-member-id">${rewards.memberId}</div>
       <div class="rewards-member-name">${this.session.playerName}</div>
       <div class="rewards-member-wager">${fmtChips(rewards.lifetimeWagered)} lifetime</div>
+      <div class="rewards-member-cost">${exp.monthlyAmortizedCost}</div>
     `;
     body.appendChild(card);
+    body.appendChild(this._line(exp.pitBossLine, "dim"));
   }
 
   _renderComps(body) {
@@ -304,18 +320,36 @@ export class RewardsPhone {
   _renderOffers(body) {
     const rewards = this.tracker.ensureRewards();
     const tier = tierForWagered(rewards.lifetimeWagered);
+    const tierIdx = tierIndex(tier.id);
     body.innerHTML = "";
-    const offers = [
-      "Pool cabana — 20% off for Pearl+",
-      "House of Blues — priority line for Gold+",
-      "Spa day — comped upgrade for Platinum+",
-      "Foundation Room — Noir members only",
-      "Penthouse fantasy package — Chairman",
-    ];
-    const tierIdx = TIERS.findIndex((t) => t.id === tier.id);
-    for (let i = 0; i < offers.length; i++) {
-      const locked = i > tierIdx;
-      body.appendChild(this._line(locked ? `🔒 ${offers[i]}` : offers[i], locked ? "dim" : ""));
+    body.className = `rewards-lcd-body rewards-tier-${tier.id}`;
+    for (const offer of RESORT_OFFERS) {
+      const locked = tierIdx < offer.minTierIndex;
+      body.appendChild(this._line(locked ? `🔒 ${offer.title}` : offer.title, locked ? "dim" : ""));
+      body.appendChild(this._line(offer.detail, "dim"));
+    }
+  }
+
+  _renderPerks(body) {
+    const rewards = this.tracker.ensureRewards();
+    const tier = tierForWagered(rewards.lifetimeWagered);
+    const exp = getTierExperience(tier.id);
+    const timing = getActivityTiming(tier.id);
+    body.innerHTML = "";
+    body.className = `rewards-lcd-body rewards-tier-${tier.id}`;
+    body.appendChild(this._line(`${exp.label} experience`, ""));
+    body.appendChild(this._line(exp.monthlyAmortizedCost, "dim"));
+    body.appendChild(this._line(`Animations ${Math.round((1 / timing.speedMultiplier) * 100)}% faster`, "dim"));
+    for (const perk of exp.perks) {
+      body.appendChild(this._line(`• ${perk}`));
+    }
+    body.appendChild(this._line("", ""));
+    body.appendChild(this._line(exp.pitBossLine, "dim"));
+    if (tier.id !== "chairman") {
+      const next = TIERS[tierIndex(tier.id) + 1];
+      if (next) {
+        body.appendChild(this._line(`Rank up to ${next.label} for more absurdity.`, "dim"));
+      }
     }
   }
 

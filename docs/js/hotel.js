@@ -1,4 +1,29 @@
 import { secureRandomInt, fmtChips } from "./core.js";
+import { defaultRewardsState } from "./rewards.js";
+
+function resolveRewards(session, rewardsTracker) {
+  if (rewardsTracker?.ensureRewards) return rewardsTracker.ensureRewards();
+  if (!session.rewards) {
+    session.rewards = defaultRewardsState();
+    return session.rewards;
+  }
+  const defaults = defaultRewardsState();
+  const rewards = session.rewards;
+  if (!Array.isArray(rewards.unlockedComps)) rewards.unlockedComps = [...defaults.unlockedComps];
+  if (!Array.isArray(rewards.redeemedComps)) rewards.redeemedComps = [];
+  if (!Array.isArray(rewards.notifications)) rewards.notifications = [...defaults.notifications];
+  return rewards;
+}
+
+function redeemRoomComp(session, rewardsTracker, compId) {
+  if (rewardsTracker?.redeemComp) {
+    rewardsTracker.redeemComp(compId);
+    return;
+  }
+  const rewards = resolveRewards(session, rewardsTracker);
+  if (!rewards.unlockedComps.includes(compId) || rewards.redeemedComps.includes(compId)) return;
+  rewards.redeemedComps.push(compId);
+}
 
 /** @typedef {"mandalay_bay"} PropertyId */
 /** @typedef {"standard" | "suite" | "penthouse"} RoomTypeId */
@@ -90,6 +115,16 @@ export function defaultHotelState(overrides = {}) {
     hallwayProgress: overrides.hallwayProgress ?? 0,
     hallwayLog: overrides.hallwayLog ?? [],
     frontDeskVisits: overrides.frontDeskVisits ?? 0,
+    roomAmenities: overrides.roomAmenities ?? {
+      tvChannel: null,
+      channelsWatched: [],
+      minibarPurchases: [],
+      minibarTab: 0,
+      phoneCalls: [],
+      decisions: [],
+      unlockedEvents: [],
+      eventLog: [],
+    },
     ...overrides,
   };
 }
@@ -190,16 +225,16 @@ export function upgradeRoom(session, targetType, rewardsTracker) {
   const hotel = ensureHotel(session);
   const target = ROOM_TYPES[targetType];
   if (!target) return { ok: false, message: "Unknown room type." };
-  const rewards = rewardsTracker?.ensureRewards?.() ?? session.rewards;
-  const hasComp = rewards?.unlockedComps?.includes(target.compId) &&
-    !rewards?.redeemedComps?.includes(target.compId);
+  const rewards = resolveRewards(session, rewardsTracker);
+  const hasComp = rewards.unlockedComps.includes(target.compId) &&
+    !rewards.redeemedComps.includes(target.compId);
   const netPositive = isNetPositive(session);
 
   if (targetType === "standard") {
     return { ok: false, message: "You're already at baseline luxury." };
   }
   if (hasComp) {
-    rewardsTracker?.redeemComp?.(target.compId);
+    redeemRoomComp(session, rewardsTracker, target.compId);
     hotel.roomType = targetType;
     hotel.wing = target.wing;
     hotel.floor = target.floor;
@@ -246,13 +281,13 @@ export function upgradeRoom(session, targetType, rewardsTracker) {
 /** @returns {{ ok: boolean, message: string }} */
 export function extendStay(session, nights = 1, rewardsTracker) {
   const hotel = ensureHotel(session);
-  const rewards = rewardsTracker?.ensureRewards?.() ?? session.rewards;
-  const hasRoomComp = rewards?.unlockedComps?.includes("room_night") &&
-    !rewards?.redeemedComps?.includes("room_night");
+  const rewards = resolveRewards(session, rewardsTracker);
+  const hasRoomComp = rewards.unlockedComps.includes("room_night") &&
+    !rewards.redeemedComps.includes("room_night");
   const netPositive = isNetPositive(session);
 
-  if (hasComp) {
-    rewardsTracker?.redeemComp?.("room_night");
+  if (hasRoomComp) {
+    redeemRoomComp(session, rewardsTracker, "room_night");
     hotel.nightsRemaining += nights;
     return { ok: true, message: `Comp night applied! ${hotel.nightsRemaining} night(s) remaining.` };
   }

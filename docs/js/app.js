@@ -1,7 +1,7 @@
 import {
   CASINO_NAME, ACTIVITIES, FLOOR_ORDER, fmtChips, signedChips,
   saveSlot, loadSlot, createSlot, deleteSlot, listSlots, recentSlots, formatSaveTime,
-  createGuestSession, PlayerSession,
+  createGuestSession, PlayerSession, secureRandomInt, loadActiveProfile,
 } from "./core.js";
 import {
   MACHINES,
@@ -22,7 +22,12 @@ import { generateRace, simulateRace, settleTicket, fmtOdds as fmtRaceOdds, loadB
 import { createHorseSpriteCanvas, getHorseSprite } from "./horse-sprites.js";
 import { getSessionDealer, pickQuip } from "./dealers.js";
 import { RewardsPhone } from "./RewardsPhone.js";
+import {
+  applyTierSpeedCss, getActivityTiming, getSessionTierExperience, maybePitBossTopUp, rewardsTierId,
+} from "./rewards-perks.js";
 import { buildHotelRenderers } from "./hotel-ui.js";
+import { buildAmenitiesRenderers } from "./casino-amenities-ui.js";
+import { buildPoolRenderers } from "./pool-complex-ui.js";
 import { ensureHotel } from "./hotel.js";
 import {
   STAKE_TIERS, TIER_ORDER, getTier, formatTierLabel, effectiveTableStakes, effectiveSlotStakes,
@@ -36,7 +41,8 @@ let rewardsPhone = null;
 let sportsbook = new SportsbookState();
 let blackjackGame = null;
 let blackjackSessionNet = 0;
-let slotsState = { machine: null, sessionNet: 0, spins: 0, tier: null };
+let slotsState = { machine: null, sessionNet: 0, spins: 0, bet: null, spinning: false, reelsRevealed: 3, lastWin: false, lastReels: null, lastMessage: null };
+let slotsSpinTimers = [];
 let holdemState = null;
 let rouletteState = { sessionNet: 0, spins: 0, lastNumber: null, spinning: false, tier: null };
 let horseRacingState = { card: null, pending: [], sessionNet: 0, races: 0, tier: null };
@@ -58,7 +64,12 @@ function resetSportsbookFromSession() {
 function persist() {
   syncSportsbookToSession();
   rewardsPhone?.tracker.syncFromWallet();
+  syncRewardsExperience();
   if (session.slotId != null) saveSlot(session);
+}
+
+function syncRewardsExperience() {
+  applyTierSpeedCss(rewardsTierId(session));
 }
 
 function mountRewardsPhone() {
@@ -67,6 +78,7 @@ function mountRewardsPhone() {
   ensureHotel(session);
   rewardsPhone = new RewardsPhone(root, session, { onPersist: persist });
   rewardsPhone.sync();
+  syncRewardsExperience();
 }
 
 function showStatus(text, type = "success") {
@@ -92,6 +104,29 @@ function statusBanner() {
       onclick: () => { clearStatus(); render(); },
     }),
   ]);
+}
+
+function tierExperienceBanner() {
+  const exp = getSessionTierExperience(session);
+  const timing = getActivityTiming(rewardsTierId(session));
+  const speedPct = Math.round((1 / timing.speedMultiplier) * 100);
+  return el("div", {
+    className: `tier-experience-banner tier-experience-banner--${exp.id}`,
+  }, [
+    el("p", { className: "tier-experience-label", textContent: `${exp.label} experience` }),
+    el("p", { className: "tier-experience-tagline", textContent: exp.tagline }),
+    el("p", {
+      className: "dim tier-experience-meta",
+      textContent: `${exp.monthlyAmortizedCost} · Floor speed ${speedPct}% VIP`,
+    }),
+  ]);
+}
+
+function notifyPitBossTopUp(activityId, lossAmount) {
+  const topup = maybePitBossTopUp(session, activityId, lossAmount);
+  if (!topup) return;
+  rewardsPhone?.tracker.pushNotification("Pit Boss Comp", topup.line);
+  showStatus(topup.line, "success");
 }
 
 function el(tag, attrs = {}, children = []) {
@@ -250,16 +285,37 @@ function slotPaytablePanel(machine) {
   ]);
 }
 
-function slotReelWindow(machine, reels, { spinning = false, win = false } = {}) {
+function clearSlotsSpinTimers() {
+  for (const id of slotsSpinTimers) clearTimeout(id);
+  slotsSpinTimers = [];
+}
+
+function scheduleSlotsSpin(fn, delayMs) {
+  const id = setTimeout(fn, delayMs);
+  slotsSpinTimers.push(id);
+  return id;
+}
+
+function randomSpinSymbol(machine) {
+  const pool = machine.symbols;
+  return displaySymbol(pool[secureRandomInt(0, pool.length - 1)], session.useUnicode);
+}
+
+function slotReelWindow(machine, reels, { spinning = false, reelsRevealed = 3, win = false } = {}) {
   const ui = getMachineUI(machine);
-  const symbols = reels?.length === 3
-    ? reels.map((r) => displaySymbol(r, session.useUnicode))
-    : ["—", "—", "—"];
   const windowEl = el("div", {
-    className: `slot-reel-window slot-reel-window--${ui.reelFrame}${win ? " slot-reel-window--win" : ""}${spinning ? " slot-reel--spinning" : ""}`,
+    className: `slot-reel-window slot-reel-window--${ui.reelFrame}${win ? " slot-reel-window--win" : ""}`,
   });
-  for (const sym of symbols) {
-    windowEl.appendChild(el("div", { className: "slot-reel" }, [
+  for (let idx = 0; idx < 3; idx += 1) {
+    const revealed = !spinning || idx < reelsRevealed;
+    const sym = revealed && reels?.[idx]
+      ? displaySymbol(reels[idx], session.useUnicode)
+      : (spinning ? randomSpinSymbol(machine) : "—");
+    const reelSpinning = spinning && !revealed;
+    windowEl.appendChild(el("div", {
+      className: `slot-reel${reelSpinning ? " slot-reel--spinning" : ""}`,
+      style: reelSpinning ? `--reel-delay:${idx * 0.15}s` : undefined,
+    }, [
       el("span", { className: "slot-reel-symbol", textContent: sym }),
     ]));
   }
@@ -288,7 +344,7 @@ function horsePaddockCard(horse, { selected = false, onClick = null } = {}) {
   const card = el("div", {
     className: `horse-paddock-card${selected ? " horse-paddock-card--selected" : ""}`,
   }, [
-    createHorseSpriteCanvas(horse.spriteId, { size: 72 }),
+    createHorseSpriteCanvas(horse.spriteId, { size: 96, animate: true }),
     el("div", { className: "horse-paddock-num", textContent: `#${horse.number}` }),
     el("div", { className: "horse-paddock-name", textContent: horse.name }),
     el("div", { className: "horse-paddock-sprite-label", textContent: spriteMeta.label }),
@@ -334,18 +390,23 @@ function menu(options, title, onSelect, { showCasinoBanner = true } = {}) {
   return el("div", { className: "panel" }, frag);
 }
 
-function enterCasino(nextSession) {
+function enterCasino(nextSession, options = {}) {
   session = nextSession;
   resetSportsbookFromSession();
   blackjackGame = null;
   blackjackSessionNet = 0;
-  slotsState = { machine: null, sessionNet: 0, spins: 0, spinning: false, lastWin: false, lastReels: null, lastMessage: null };
+  slotsState = { machine: null, sessionNet: 0, spins: 0, bet: null, spinning: false, reelsRevealed: 3, lastWin: false, lastReels: null, lastMessage: null };
   holdemState = null;
   rouletteState = { sessionNet: 0, spins: 0, lastNumber: null, spinning: false };
   horseRacingState = { card: null, pending: [], sessionNet: 0, races: 0 };
   viewStack = [{ name: "hub", data: {} }];
   clearStatus();
   mountRewardsPhone();
+  const view = options.initialView;
+  if (view?.startsWith("hotel-") || view?.startsWith("pool-")) {
+    ensureHotel(session);
+    viewStack = [{ name: view, data: {} }];
+  }
   render();
 }
 
@@ -481,8 +542,11 @@ function renderHoldemTable(table) {
   return felt;
 }
 
-function renderRouletteWheel(lastNumber = null, spinning = false) {
+function renderRouletteWheel(lastNumber = null, spinning = false, spinMs = 1200) {
   const wheel = el("div", { className: `roulette-wheel${spinning ? " roulette-wheel--spinning" : ""}` });
+  if (spinning) {
+    wheel.style.animationDuration = `${spinMs}ms`;
+  }
   const wrap = el("div", { className: "roulette-wheel-panel" }, [
     el("div", { className: "roulette-wheel-wrap" }, [
       el("div", { className: "roulette-wheel-pointer" }),
@@ -685,11 +749,12 @@ function renderSaveDelete() {
 }
 
 function renderHub() {
-  const floors = [...FLOOR_ORDER, "Cashier", "Player Stats", "Save Game", "Exit to Hotel", "Explore Resort (RPG)", "Leave Casino"];
+  const floors = [...FLOOR_ORDER, "Casino Floor — shopping & bars", "Cashier", "Player Stats", "Save Game", "Exit to Hotel", "Explore Resort (RPG)", "Leave Casino"];
   const options = floors.map((f) => (FLOOR_ORDER.includes(f) ? `Explore ${f}` : f));
 
   const wrap = el("div", {}, [
     statusBanner(),
+    tierExperienceBanner(),
     settingsBar(),
     banner(CASINO_NAME),
     session.slotId != null
@@ -705,6 +770,18 @@ function renderHub() {
           className: "hub-feature",
           innerHTML: `<strong>${floor}</strong> — ${acts.map((a) => a.name).join(", ")}`,
         });
+      }),
+      el("div", {
+        className: "hub-feature",
+        innerHTML: "<strong>Casino Floor</strong> — The Shoppes at Mandalay Place (designer flagships) &amp; full-service bars (Eyecandy, Big Chill, Rhythm &amp; Riffs)",
+      }),
+      el("div", {
+        className: "hub-feature",
+        innerHTML: "<strong>Hotel Experience</strong> — reservations, suite upgrades, hallway mini-game (Exit to Hotel · P for MGM Rewards)",
+      }),
+      el("div", {
+        className: "hub-feature",
+        innerHTML: "<strong>Pixel RPG</strong> — explore the resort open world (Explore Resort)",
       }),
     ]),
     el("div", { className: "panel" }, [
@@ -748,20 +825,22 @@ function renderHub() {
     if (choice <= FLOOR_ORDER.length) {
       pushView("floor", { floor: FLOOR_ORDER[choice - 1] });
     } else if (choice === FLOOR_ORDER.length + 1) {
-      pushView("cashier");
+      pushView("casino-floor");
     } else if (choice === FLOOR_ORDER.length + 2) {
-      pushView("stats");
+      pushView("cashier");
     } else if (choice === FLOOR_ORDER.length + 3) {
+      pushView("stats");
+    } else if (choice === FLOOR_ORDER.length + 4) {
       if (session.slotId != null) {
         persist();
         showStatus(`Game saved to ${session.slotLabel || `Slot ${session.slotId}`}.`);
       } else {
         showStatus("No save slot active — pick a slot at entry or play as guest.", "error");
       }
-    } else if (choice === FLOOR_ORDER.length + 4) {
+    } else if (choice === FLOOR_ORDER.length + 5) {
       ensureHotel(session);
       pushView("hotel-lobby");
-    } else if (choice === FLOOR_ORDER.length + 5) {
+    } else if (choice === FLOOR_ORDER.length + 6) {
       const rpgUrl = session.slotId != null
         ? `./rpg/?slot=${session.slotId}`
         : "./rpg/?guest=1";
@@ -798,6 +877,25 @@ function renderFloor({ floor }) {
     el("div", { className: "panel" }, [
       el("p", { className: "subtitle", textContent: `${floor}:` }),
       el("ul", { className: "menu-list" }, items),
+    ]),
+    el("div", { className: "panel amenities-shortcuts" }, [
+      el("p", { className: "subtitle", textContent: "On the casino floor:" }),
+      el("ul", { className: "menu-list inline-shortcuts" }, [
+        el("li", {}, [
+          el("button", {
+            className: "menu-btn",
+            textContent: "The Shoppes at Mandalay Place",
+            onclick: () => pushView("mall-lobby"),
+          }),
+        ]),
+        el("li", {}, [
+          el("button", {
+            className: "menu-btn",
+            textContent: "Full Service Bar",
+            onclick: () => pushView("bar-select"),
+          }),
+        ]),
+      ]),
     ]),
   ]);
 
@@ -1033,7 +1131,8 @@ function renderSlotsMenu() {
       el("h3", { className: "slot-category-title", textContent: cat.label }),
       el("div", { className: "slot-machine-grid" }, machines.map((m) =>
         slotMachineCard(m, () => {
-          slotsState = { machine: m, sessionNet: 0, spins: 0, spinning: false, lastWin: false, lastReels: null, lastMessage: null };
+          clearSlotsSpinTimers();
+          slotsState = { machine: m, sessionNet: 0, spins: 0, bet: null, spinning: false, reelsRevealed: 3, lastWin: false, lastReels: null, lastMessage: null };
           pushView("slots-play");
         })
       )),
@@ -1054,8 +1153,10 @@ function renderSlotsPlay() {
   const stakes = effectiveSlotStakes(machine, tier, session.wallet.balance);
   const minBet = stakes.minBet;
   const maxBet = stakes.maxBet;
+  const defaultBet = Math.min(Math.max(slotsState.bet ?? minBet, minBet), maxBet);
   const betInput = el("input", {
-    type: "number", min: String(minBet), max: String(maxBet), value: String(minBet),
+    type: "number", min: String(minBet), max: String(maxBet), value: String(defaultBet),
+    oninput: (e) => { slotsState.bet = parseInt(e.target.value, 10) || minBet; },
   });
   const msgEl = el("p", {
     className: `slot-result ${slotsState.lastMessage?.type ?? "dim"}`,
@@ -1070,7 +1171,8 @@ function renderSlotsPlay() {
 
   const reelsEl = slotReelWindow(machine, slotsState.lastReels, {
     spinning: slotsState.spinning,
-    win: slotsState.lastWin,
+    reelsRevealed: slotsState.reelsRevealed,
+    win: slotsState.lastWin && !slotsState.spinning,
   });
 
   const jackpotEl = machine.progressive && machine.progressivePoolId
@@ -1084,35 +1186,57 @@ function renderSlotsPlay() {
     ? el("p", { className: "dim", textContent: `Max bet (${maxBet.toLocaleString()} chips) required to qualify for the progressive jackpot.` })
     : null;
 
+  function setSlotMessage(text, type = "dim") {
+    slotsState.lastMessage = { text, type };
+    msgEl.className = `slot-result ${type}`;
+    msgEl.textContent = text;
+  }
+
   function doSpin() {
+    if (slotsState.spinning) return;
     const bet = parseInt(betInput.value, 10);
+    slotsState.bet = bet;
     if (bet === 0) {
+      clearSlotsSpinTimers();
       session.recordResult("slots", slotsState.sessionNet, slotsState.spins);
       persist();
       popView();
       render();
       return;
     }
-    if (bet < minBet) { msgEl.className = "slot-result error"; msgEl.textContent = `Minimum spin is ${minBet}.`; return; }
-    if (bet > maxBet) { msgEl.className = "slot-result error"; msgEl.textContent = `Maximum spin is ${maxBet}.`; return; }
+    if (bet < minBet) { setSlotMessage(`Minimum spin is ${minBet}.`, "error"); return; }
+    if (bet > maxBet) { setSlotMessage(`Maximum spin is ${maxBet}.`, "error"); return; }
     if (!session.wallet.debit(bet, "slots", `${machine.name} spin ${fmtChips(bet)}`)) {
-      msgEl.className = "slot-result error";
-      msgEl.textContent = "Insufficient chips.";
+      setSlotMessage("Insufficient chips.", "error");
       return;
     }
 
+    clearSlotsSpinTimers();
+    contributeToProgressive(session, machine, bet);
+    const reels = spinReels(machine);
+    const jackpotAmount = tryJackpot(session, machine, reels, bet, maxBet);
+    const { win, reason } = calculatePayout(reels, bet, machine, jackpotAmount);
+
     slotsState.spinning = true;
+    slotsState.reelsRevealed = 0;
     slotsState.lastWin = false;
+    slotsState.lastReels = reels;
+    slotsState.lastMessage = { text: "Spinning…", type: "dim" };
     render();
 
-    setTimeout(() => {
-      contributeToProgressive(session, machine, bet);
-      const reels = spinReels(machine);
-      const jackpotAmount = tryJackpot(session, machine, reels, bet, maxBet);
-      const { win, reason } = calculatePayout(reels, bet, machine, jackpotAmount);
-      slotsState.spins += 1;
+    const spinTiming = getActivityTiming(rewardsTierId(session));
+    scheduleSlotsSpin(() => {
+      slotsState.reelsRevealed = 1;
+      render();
+    }, spinTiming.slotsReel1);
+    scheduleSlotsSpin(() => {
+      slotsState.reelsRevealed = 2;
+      render();
+    }, spinTiming.slotsReel2);
+    scheduleSlotsSpin(() => {
       slotsState.spinning = false;
-      slotsState.lastReels = reels;
+      slotsState.reelsRevealed = 3;
+      slotsState.spins += 1;
       slotsState.lastWin = win > 0;
 
       if (win > 0) {
@@ -1125,10 +1249,11 @@ function renderSlotsPlay() {
       } else {
         slotsState.sessionNet -= bet;
         slotsState.lastMessage = { text: "No win this spin.", type: "dim" };
+        notifyPitBossTopUp("slots", bet);
       }
       persist();
       render();
-    }, 500);
+    }, spinTiming.slotsReel3);
   }
 
   return slotCabinet(machine, {
@@ -1152,7 +1277,9 @@ function renderSlotsPlay() {
         el("button", {
           className: "btn",
           textContent: "Leave machine",
+          disabled: slotsState.spinning,
           onclick: () => {
+            clearSlotsSpinTimers();
             session.recordResult("slots", slotsState.sessionNet, slotsState.spins);
             persist();
             popView();
@@ -1668,7 +1795,11 @@ function renderRoulette() {
   };
 
   const rouletteDisplay = el("div", { className: "roulette-display" }, [
-    renderRouletteWheel(rouletteState.lastNumber, rouletteState.spinning),
+    renderRouletteWheel(
+      rouletteState.lastNumber,
+      rouletteState.spinning,
+      getActivityTiming(rewardsTierId(session)).rouletteSpin,
+    ),
     renderRouletteBetMat(straightInput, onMatPick),
   ]);
 
@@ -1691,6 +1822,7 @@ function renderRoulette() {
     rouletteState.spinning = true;
     render();
 
+    const spinMs = getActivityTiming(rewardsTierId(session)).rouletteSpin;
     setTimeout(() => {
       const number = spinWheel();
       const straightPick = bet.kind === "straight" ? parseInt(straightInput.value, 10) : null;
@@ -1706,11 +1838,12 @@ function renderRoulette() {
         rouletteState.sessionNet += win - amount;
       } else {
         rouletteState.sessionNet -= amount;
+        notifyPitBossTopUp("roulette", amount);
       }
       summaryEl.textContent = `Session: ${signedChips(rouletteState.sessionNet)} over ${rouletteState.spins} spin(s)`;
       persist();
       render();
-    }, 1200);
+    }, spinMs);
   }
 
   return videoMachine("roulette", {
@@ -1893,7 +2026,7 @@ function renderHorseRacingSettle() {
       const h = horseRacingState.card.horses.find((x) => x.number === num);
       finishLine.appendChild(el("div", { className: "racing-finish-entry" }, [
         el("span", { className: "racing-finish-pos", textContent: `${i + 1}.` }),
-        createHorseSpriteCanvas(h.spriteId, { size: 56 }),
+        createHorseSpriteCanvas(h.spriteId, { size: 72, frame: i % 4 }),
         el("span", { className: "racing-finish-name", textContent: `#${num} ${h.name}` }),
       ]));
     });
@@ -2244,6 +2377,30 @@ const hotelRenderers = buildHotelRenderers({
   viewStack,
 });
 
+const amenitiesRenderers = buildAmenitiesRenderers({
+  get session() { return session; },
+  pushView,
+  goBack,
+  persist,
+  render,
+  el,
+  banner,
+  chipLine,
+  statusBanner,
+  showStatus,
+});
+
+const poolRenderers = buildPoolRenderers({
+  get session() { return session; },
+  pushView,
+  goBack,
+  persist,
+  render,
+  el,
+  banner,
+  chipLine,
+});
+
 const RENDERERS = {
   "save-picker": renderSavePicker,
   "save-create": renderSaveCreate,
@@ -2273,6 +2430,8 @@ const RENDERERS = {
   "horse-racing-settle": renderHorseRacingSettle,
   "horse-racing-names": renderHorseRacingNames,
   ...hotelRenderers,
+  ...amenitiesRenderers,
+  ...poolRenderers,
   "not-found": renderNotFound,
 };
 
@@ -2282,6 +2441,7 @@ function render() {
   app.innerHTML = "";
   if (fn) {
     app.appendChild(fn(current.data));
+    window.__casinoReady = true;
     return;
   }
   app.appendChild(renderNotFound({ requestedView: current.name }));
@@ -2291,11 +2451,12 @@ viewStack = [{ name: "save-picker", data: {} }];
 
 function applyLaunchParams() {
   const params = new URLSearchParams(window.location.search);
+  const initialView = params.get("view") ?? undefined;
   if (params.get("guest") === "1") {
     enterCasino(createGuestSession({
       playerName: params.get("name") || "Guest",
       chips: Math.max(0, parseInt(params.get("chips") || "1000", 10)),
-    }));
+    }), { initialView });
     return true;
   }
   const slotParam = params.get("slot");
@@ -2308,7 +2469,7 @@ function applyLaunchParams() {
       }
       const loaded = loadSlot(slotId);
       if (loaded) {
-        enterCasino(loaded);
+        enterCasino(loaded, { initialView });
         return true;
       }
       pushView("save-create", { slotId });
@@ -2318,6 +2479,28 @@ function applyLaunchParams() {
   return false;
 }
 
+function hideBootLoader() {
+  const loader = document.getElementById("boot-loader");
+  if (loader) loader.remove();
+}
+
+if (!applyLaunchParams()) {
+  const remembered = loadActiveProfile();
+  if (remembered) {
+    hideBootLoader();
+    enterCasino(remembered);
+    loadBundledHorseNames();
+  } else {
+    loadBundledHorseNames().finally(() => {
+      hideBootLoader();
+      render();
+    });
+  }
+} else {
+  hideBootLoader();
+  loadBundledHorseNames();
+}
+
 if (!navigator.onLine) {
   window.addEventListener("online", () => render(), { once: true });
 }
@@ -2325,12 +2508,6 @@ if (!navigator.onLine) {
 window.addEventListener("beforeunload", () => {
   if (session.slotId != null) persist();
 });
-
-if (!applyLaunchParams()) {
-  loadBundledHorseNames().finally(() => render());
-} else {
-  loadBundledHorseNames();
-}
 
 document.addEventListener("keydown", (e) => {
   if (e.key === "p" || e.key === "P") {

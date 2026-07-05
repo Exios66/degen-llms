@@ -1,5 +1,5 @@
 import { secureRandomInt, fisherYatesShuffle } from "./core.js";
-import { assignHorseSprites } from "./horse-sprites.js";
+import { assignHorseSprites, HORSE_SPRITE_COUNT } from "./horse-sprites.js";
 
 /** Built-in roster — overridden by custom CSV list when configured. */
 export const DEFAULT_HORSE_NAMES = [
@@ -109,7 +109,7 @@ export function generateRace(session = null) {
 
   if (session) {
     session.horseRacingNameOffset = nextOffset;
-    session.horseRacingSpriteOffset = (spriteOffset + count) % 16;
+    session.horseRacingSpriteOffset = (spriteOffset + count) % HORSE_SPRITE_COUNT;
   }
 
   const track = TRACKS[secureRandomInt(0, TRACKS.length - 1)];

@@ -1509,6 +1509,16 @@ function renderSportsbook() {
   }
   session.recordVisit("sportsbook");
   persist();
+
+  if (!sportsbook.events.length) {
+    sportsbook.refreshBoardAsync(false).then(() => render());
+    return el("div", { className: "panel" }, [
+      banner("Sports Book — Mandalay Sports Book"),
+      chipLine(),
+      el("p", { className: "dim", textContent: "Loading today's board…" }),
+    ]);
+  }
+
   const tier = currentStakeTier;
   const wagerStakes = tier
     ? effectiveTableStakes(tier, session.wallet.balance, act.minBet)
@@ -1551,6 +1561,15 @@ function renderSportsbook() {
 }
 
 function renderSportsbookWager() {
+  if (!sportsbook.events.length) {
+    return el("div", { className: "panel" }, [
+      banner("Place Wager"),
+      el("p", { className: "error", textContent: "No events on the board. Go back and refresh lines." }),
+      el("div", { className: "action-bar" }, [
+        el("button", { className: "btn", textContent: "Back", onclick: () => { popView(); render(); } }),
+      ]),
+    ]);
+  }
   const act = ACTIVITIES.sportsbook;
   const tier = currentStakeTier;
   const wagerStakes = tier

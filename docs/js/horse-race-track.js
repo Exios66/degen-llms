@@ -1,13 +1,13 @@
 /**
  * Atari / electromechanical table-racing style animated track.
- * All horses on the card run in visible lanes with chibi sprites + jockeys.
+ * Side-profile gallop sprites with jockeys on the race canvas.
  */
 
 import {
   drawHorseAndJockeyAt,
   getJockeySilks,
-  HORSE_NATIVE_H,
-  HORSE_NATIVE_W,
+  HORSE_GALLOP_H,
+  HORSE_GALLOP_W,
 } from "./horse-sprites.js";
 import { fmtOdds } from "./horse_racing.js";
 
@@ -124,11 +124,11 @@ function drawLaneBadge(ctx, x, y, number, silks) {
 }
 
 function drawRunner(ctx, runner, x, laneTop, animFrame) {
-  const y = laneTop + Math.floor((LANE_H - HORSE_NATIVE_H * HORSE_SCALE) / 2);
+  const y = laneTop + Math.floor((LANE_H - HORSE_GALLOP_H * HORSE_SCALE) / 2);
   drawHorseAndJockeyAt(ctx, runner.spriteId, x, y, {
     scale: HORSE_SCALE,
     frame: animFrame,
-    animation: "walk",
+    animation: "gallop",
     direction: "right",
     horseNumber: runner.number,
     jockeySilks: runner.silks,
@@ -224,7 +224,7 @@ export function createRaceTrackView({
 
   function renderFrame(elapsed) {
     const scroll = elapsed * 0.04;
-    const animFrame = Math.floor(elapsed / 80) % 3;
+    const animFrame = Math.floor(elapsed / 55) % 4;
 
     ctx.clearRect(0, 0, TRACK_W, canvasH);
     drawTrackScene(ctx, TRACK_W, canvasH, laneCount, scroll);
@@ -300,4 +300,4 @@ export function createRacePreview(card) {
   return preview;
 }
 
-export { TRACK_W, LANE_H, HORSE_SCALE };
+export { TRACK_W, LANE_H, HORSE_SCALE, HORSE_GALLOP_W, HORSE_GALLOP_H };

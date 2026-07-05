@@ -2,23 +2,34 @@
 /** Smoke-test horse sprite module imports and rendering. */
 import { createCanvas } from "canvas";
 import {
+  HORSE_GALLOP_W,
   HORSE_SPRITE_COUNT,
   HORSE_SPRITE_ROSTER,
   assignHorseSprites,
   drawHorseSprite,
   getHorseSprite,
+  getHorseAnimationFrameCount,
 } from "../docs/js/horse-sprites.js";
 
 if (HORSE_SPRITE_COUNT !== 8) throw new Error(`Expected 8 sprites, got ${HORSE_SPRITE_COUNT}`);
+if (getHorseAnimationFrameCount("gallop") !== 4) throw new Error("Gallop should use 4 frames");
 if (HORSE_SPRITE_ROSTER.some((s) => /unicorn|galaxy|neon|kawaii/i.test(s.label))) {
   throw new Error("Fantasy sprite labels still present");
 }
 
-const canvas = createCanvas(32, 32);
+const canvas = createCanvas(HORSE_GALLOP_W, 32);
 const ctx = canvas.getContext("2d");
 for (const entry of HORSE_SPRITE_ROSTER) {
   drawHorseSprite(ctx, entry.id, { scale: 1, frame: 0, direction: "front", animation: "walk" });
-  drawHorseSprite(ctx, entry.id, { scale: 1, frame: 1, direction: "right", animation: "walk", jockeySilks: { cap: "#fff", shirt: "#f00", sleeves: "#800", pants: "#eee", trim: "#fff" } });
+  for (let f = 0; f < 4; f++) {
+    drawHorseSprite(ctx, entry.id, {
+      scale: 1,
+      frame: f,
+      direction: "right",
+      animation: "gallop",
+      jockeySilks: { cap: "#fff", shirt: "#f00", sleeves: "#800", pants: "#eee", trim: "#fff" },
+    });
+  }
   if (!getHorseSprite(entry.id)) throw new Error(`Missing sprite ${entry.id}`);
 }
 

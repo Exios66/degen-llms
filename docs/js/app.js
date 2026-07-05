@@ -1919,8 +1919,8 @@ function renderHorseRacingSettle() {
             el("span", { className: "racing-finish-pos", textContent: `${i + 1}.` }),
             createHorseSpriteCanvas(h.spriteId, {
               size: 64,
-              frame: i % 3,
-              animation: "walk",
+              frame: i % 4,
+              animation: "gallop",
               direction: "right",
               horseNumber: num,
               withJockey: true,

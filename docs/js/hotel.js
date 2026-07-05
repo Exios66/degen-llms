@@ -115,6 +115,16 @@ export function defaultHotelState(overrides = {}) {
     hallwayProgress: overrides.hallwayProgress ?? 0,
     hallwayLog: overrides.hallwayLog ?? [],
     frontDeskVisits: overrides.frontDeskVisits ?? 0,
+    roomAmenities: overrides.roomAmenities ?? {
+      tvChannel: null,
+      channelsWatched: [],
+      minibarPurchases: [],
+      minibarTab: 0,
+      phoneCalls: [],
+      decisions: [],
+      unlockedEvents: [],
+      eventLog: [],
+    },
     ...overrides,
   };
 }

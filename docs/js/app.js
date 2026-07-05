@@ -24,6 +24,7 @@ import { getSessionDealer, pickQuip } from "./dealers.js";
 import { RewardsPhone } from "./RewardsPhone.js";
 import { buildHotelRenderers } from "./hotel-ui.js";
 import { buildAmenitiesRenderers } from "./casino-amenities-ui.js";
+import { buildPoolRenderers } from "./pool-complex-ui.js";
 import { ensureHotel } from "./hotel.js";
 import {
   STAKE_TIERS, TIER_ORDER, getTier, formatTierLabel, effectiveTableStakes, effectiveSlotStakes,
@@ -370,7 +371,7 @@ function enterCasino(nextSession, options = {}) {
   clearStatus();
   mountRewardsPhone();
   const view = options.initialView;
-  if (view?.startsWith("hotel-")) {
+  if (view?.startsWith("hotel-") || view?.startsWith("pool-")) {
     ensureHotel(session);
     viewStack = [{ name: view, data: {} }];
   }
@@ -2345,6 +2346,17 @@ const amenitiesRenderers = buildAmenitiesRenderers({
   showStatus,
 });
 
+const poolRenderers = buildPoolRenderers({
+  get session() { return session; },
+  pushView,
+  goBack,
+  persist,
+  render,
+  el,
+  banner,
+  chipLine,
+});
+
 const RENDERERS = {
   "save-picker": renderSavePicker,
   "save-create": renderSaveCreate,
@@ -2375,6 +2387,7 @@ const RENDERERS = {
   "horse-racing-names": renderHorseRacingNames,
   ...hotelRenderers,
   ...amenitiesRenderers,
+  ...poolRenderers,
   "not-found": renderNotFound,
 };
 

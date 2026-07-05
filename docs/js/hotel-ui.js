@@ -7,6 +7,11 @@ import {
 import {
   loadGuestRegistry, listAllGuests, signGuestDirectory, hasSigned, formatSignedAt,
 } from "./guest-directory.js";
+import {
+  TV_CHANNELS, MINIBAR_ITEMS, PHONE_CALLS, ROOM_DECISIONS, ROOM_EVENTS,
+  tuneTvChannel, purchaseMinibarItem, makePhoneCall, makeRoomDecision,
+  getUnlockedEvents, getRoomAmenitiesSummary, ensureRoomAmenities,
+} from "./room-amenities.js";
 
 /**
  * Hotel view renderers for the digital casino.
@@ -69,6 +74,7 @@ export function buildHotelRenderers(ctx) {
           menuBtn("Front Desk — Clerk Carmen", () => pushView("hotel-front-desk")),
           menuBtn("Guest Directory — lobby guest book", () => pushView("hotel-guest-directory")),
           menuBtn("Find my room (hallway)", () => pushView("hotel-hallway")),
+          menuBtn("Pool Complex — 11-acre expansion pack", () => pushView("pool-complex")),
           hotel.reachedRoom ? menuBtn("Enter your room", () => pushView("hotel-room")) : null,
           menuBtn("Return to Casino Floor", () => { viewToHub(ctx); }),
           menuBtn("Back", goBack, true),
@@ -280,9 +286,19 @@ export function buildHotelRenderers(ctx) {
     ]);
   }
 
+  function renderAmenityLog(log, result) {
+    for (const line of result.message.split("\n")) {
+      log.appendChild(el("div", { className: `line ${result.ok ? "success" : "error"}`, textContent: line }));
+    }
+  }
+
   function renderHotelRoom() {
     const hotel = ensureHotel(session);
     const room = getRoomType(hotel);
+    ensureRoomAmenities(hotel);
+    const unlocked = getUnlockedEvents(hotel);
+    const summary = getRoomAmenitiesSummary(hotel);
+
     return el("div", {}, [
       banner(room.label),
       chipLine(),
@@ -290,10 +306,189 @@ export function buildHotelRenderers(ctx) {
         el("p", { className: "subtitle", textContent: `Room ${hotel.roomNumber} · Floor ${hotel.floor}` }),
         el("p", { textContent: room.description }),
         el("p", { className: "dim", textContent: `${hotel.nightsRemaining} night(s) remaining. The bay glitters below.` }),
+        el("p", { className: "room-amenities-summary dim", textContent: summary }),
+        unlocked.length
+          ? el("div", { className: "room-events-unlocked" }, [
+              el("p", { className: "subtitle", textContent: "Unlocked events" }),
+              el("ul", { className: "room-events-list" },
+                unlocked.map((evt) => el("li", { textContent: `${evt.label} — ${evt.narrative}` }))),
+            ])
+          : el("p", { className: "dim", textContent: "Mix TV, minibar, phone calls, and bad decisions to unlock Vegas vignettes." }),
         el("ul", { className: "menu-list" }, [
+          menuBtn("TV — aquarium channel & resort loops", () => pushView("hotel-room-tv")),
+          menuBtn("Minibar — sensor-enabled debauchery", () => pushView("hotel-room-minibar")),
+          menuBtn("Room phone — unlimited foreign calls", () => pushView("hotel-room-phone")),
+          menuBtn("Room decisions — balcony, DND, room service", () => pushView("hotel-room-decisions")),
+          menuBtn("Event log — your Vegas highlight reel", () => pushView("hotel-room-events")),
           menuBtn("Guest Directory — bedside guest book", () => pushView("hotel-guest-directory")),
           menuBtn("Return to casino floor", () => viewToHub(ctx)),
           menuBtn("Hotel lobby", () => pushView("hotel-lobby")),
+          menuBtn("Back", goBack, true),
+        ]),
+      ]),
+    ]);
+  }
+
+  function renderHotelRoomTv() {
+    const hotel = ensureHotel(session);
+    const ra = ensureRoomAmenities(hotel);
+    const log = el("div", { className: "log-area hotel-log" });
+
+    const channelButtons = Object.values(TV_CHANNELS).map((ch) =>
+      menuBtn(ch.label, () => {
+        const res = tuneTvChannel(session, ch.id);
+        log.replaceChildren();
+        renderAmenityLog(log, res);
+        tracker()?.pushNotification("In-Room TV", ch.label);
+        persist();
+      }),
+    );
+
+    return el("div", {}, [
+      banner("In-Room TV"),
+      chipLine(),
+      el("div", { className: "panel hotel-panel hotel-room-view" }, [
+        el("p", { className: "subtitle", textContent: "Resort channels — aquarium cam is channel 47" }),
+        ra.tvChannel
+          ? el("p", { className: "dim", textContent: `Now playing: ${TV_CHANNELS[ra.tvChannel]?.label ?? ra.tvChannel}` })
+          : null,
+        log,
+        el("ul", { className: "menu-list" }, [
+          ...channelButtons,
+          menuBtn("Back to room", () => pushView("hotel-room")),
+          menuBtn("Back", goBack, true),
+        ]),
+      ]),
+    ]);
+  }
+
+  function renderHotelRoomMinibar() {
+    const hotel = ensureHotel(session);
+    const ra = ensureRoomAmenities(hotel);
+    const log = el("div", { className: "log-area hotel-log" });
+
+    const itemButtons = Object.values(MINIBAR_ITEMS).map((item) =>
+      menuBtn(`${item.label} — $${item.price}`, () => {
+        const res = purchaseMinibarItem(session, item.id);
+        log.replaceChildren();
+        renderAmenityLog(log, res);
+        if (res.ok) tracker()?.pushNotification("Minibar", item.label);
+        persist();
+        render();
+      }),
+    );
+
+    return el("div", {}, [
+      banner("Minibar"),
+      chipLine(),
+      el("div", { className: "panel hotel-panel hotel-room-view" }, [
+        el("p", { className: "subtitle", textContent: "Everything costs triple. The sensor never sleeps." }),
+        ra.minibarTab > 0
+          ? el("p", { className: "warning", textContent: `Running tab: $${ra.minibarTab.toLocaleString()}` })
+          : el("p", { className: "dim", textContent: "The minibar hums. Judgment included." }),
+        log,
+        el("ul", { className: "menu-list" }, [
+          ...itemButtons,
+          menuBtn("Back to room", () => pushView("hotel-room")),
+          menuBtn("Back", goBack, true),
+        ]),
+      ]),
+    ]);
+  }
+
+  function renderHotelRoomPhone() {
+    const hotel = ensureHotel(session);
+    const ra = ensureRoomAmenities(hotel);
+    const log = el("div", { className: "log-area hotel-log" });
+
+    const callButtons = Object.values(PHONE_CALLS).map((call) =>
+      menuBtn(call.label, () => {
+        const res = makePhoneCall(session, call.id);
+        log.replaceChildren();
+        renderAmenityLog(log, res);
+        tracker()?.pushNotification("Room Phone", call.destination);
+        persist();
+      }),
+    );
+
+    return el("div", {}, [
+      banner("Room Phone"),
+      chipLine(),
+      el("div", { className: "panel hotel-panel hotel-room-view" }, [
+        el("p", { className: "subtitle", textContent: "Unlimited foreign calls — Mandalay Bay absorbs the guilt" }),
+        el("p", { className: "dim", textContent: "The handset is heavier than your conscience. Dial freely." }),
+        ra.phoneCalls.length
+          ? el("p", { className: "dim", textContent: `${ra.phoneCalls.length} call(s) on this stay.` })
+          : null,
+        log,
+        el("ul", { className: "menu-list" }, [
+          ...callButtons,
+          menuBtn("Back to room", () => pushView("hotel-room")),
+          menuBtn("Back", goBack, true),
+        ]),
+      ]),
+    ]);
+  }
+
+  function renderHotelRoomDecisions() {
+    const log = el("div", { className: "log-area hotel-log" });
+
+    const decisionButtons = Object.values(ROOM_DECISIONS).map((dec) => {
+      const priceTag = dec.price ? ` — $${dec.price}` : "";
+      return menuBtn(`${dec.label}${priceTag}`, () => {
+        const res = makeRoomDecision(session, dec.id);
+        log.replaceChildren();
+        renderAmenityLog(log, res);
+        persist();
+        render();
+      });
+    });
+
+    return el("div", {}, [
+      banner("Room Decisions"),
+      chipLine(),
+      el("div", { className: "panel hotel-panel hotel-room-view" }, [
+        el("p", { className: "subtitle", textContent: "Small choices. Large room charges." }),
+        log,
+        el("ul", { className: "menu-list" }, [
+          ...decisionButtons,
+          menuBtn("Back to room", () => pushView("hotel-room")),
+          menuBtn("Back", goBack, true),
+        ]),
+      ]),
+    ]);
+  }
+
+  function renderHotelRoomEvents() {
+    const hotel = ensureHotel(session);
+    const ra = ensureRoomAmenities(hotel);
+    const unlocked = getUnlockedEvents(hotel);
+    const locked = Object.values(ROOM_EVENTS).filter((e) => !ra.unlockedEvents.includes(e.id));
+
+    return el("div", {}, [
+      banner("Vegas Event Log"),
+      chipLine(),
+      el("div", { className: "panel hotel-panel hotel-room-view" }, [
+        el("p", { className: "subtitle", textContent: "Unlockable vignettes from your in-room debauchery" }),
+        unlocked.length
+          ? el("div", { className: "room-events-unlocked" }, [
+              el("p", { className: "success", textContent: `${unlocked.length} unlocked` }),
+              el("ul", { className: "room-events-list" },
+                unlocked.map((evt) => el("li", {}, [
+                  el("strong", { textContent: evt.label }),
+                  el("span", { textContent: ` — ${evt.narrative}` }),
+                ]))),
+            ])
+          : el("p", { className: "dim", textContent: "Nothing unlocked yet. The sharks are waiting." }),
+        locked.length
+          ? el("div", { className: "room-events-locked" }, [
+              el("p", { className: "dim", textContent: "Still on the table:" }),
+              el("ul", { className: "room-events-list dim" },
+                locked.map((evt) => el("li", { textContent: evt.label }))),
+            ])
+          : null,
+        el("ul", { className: "menu-list" }, [
+          menuBtn("Back to room", () => pushView("hotel-room")),
           menuBtn("Back", goBack, true),
         ]),
       ]),
@@ -306,6 +501,11 @@ export function buildHotelRenderers(ctx) {
     "hotel-guest-directory": renderHotelGuestDirectory,
     "hotel-hallway": renderHotelHallway,
     "hotel-room": renderHotelRoom,
+    "hotel-room-tv": renderHotelRoomTv,
+    "hotel-room-minibar": renderHotelRoomMinibar,
+    "hotel-room-phone": renderHotelRoomPhone,
+    "hotel-room-decisions": renderHotelRoomDecisions,
+    "hotel-room-events": renderHotelRoomEvents,
   };
 }
 

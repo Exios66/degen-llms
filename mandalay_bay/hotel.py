@@ -29,6 +29,18 @@ class HallwayBeat:
 
 
 @dataclass
+class RoomAmenitiesState:
+    tv_channel: str | None = None
+    channels_watched: list[str] = field(default_factory=list)
+    minibar_purchases: list[str] = field(default_factory=list)
+    minibar_tab: int = 0
+    phone_calls: list[str] = field(default_factory=list)
+    decisions: list[str] = field(default_factory=list)
+    unlocked_events: list[str] = field(default_factory=list)
+    event_log: list[str] = field(default_factory=list)
+
+
+@dataclass
 class HotelState:
     property_id: str = "mandalay_bay"
     reservation_code: str = "MB-0000"
@@ -41,6 +53,7 @@ class HotelState:
     reached_room: bool = False
     hallway_progress: int = 0
     hallway_log: list[str] = field(default_factory=list)
+    room_amenities: RoomAmenitiesState | None = None
 
 
 @dataclass

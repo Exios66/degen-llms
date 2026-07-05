@@ -18,7 +18,7 @@ import { SportsbookState, fmtOdds } from "./sportsbook.js";
 import { BlackjackGame, defaultConfig, Action } from "./blackjack/game.js";
 import { HoldemTable, BettingAction } from "./holdem/game.js";
 import { HAND_CLASS_NAMES } from "./holdem/hand_eval.js";
-import { BET_TYPES, spinWheel, wheelColor, resolveBet } from "./roulette.js";
+import { BET_TYPES, spinWheel, wheelColor, resolveBet, RED_NUMBERS } from "./roulette.js";
 import { generateRace, simulateRace, settleTicket, fmtOdds as fmtRaceOdds } from "./horse_racing.js";
 import { getSessionDealer, pickQuip } from "./dealers.js";
 
@@ -30,7 +30,7 @@ let blackjackGame = null;
 let blackjackSessionNet = 0;
 let slotsState = { machine: null, sessionNet: 0, spins: 0 };
 let holdemState = null;
-let rouletteState = { sessionNet: 0, spins: 0 };
+let rouletteState = { sessionNet: 0, spins: 0, lastNumber: null, spinning: false };
 let horseRacingState = { card: null, pending: [], sessionNet: 0, races: 0 };
 let activeTableDealer = null;
 let viewStack = [];
@@ -110,6 +110,85 @@ function dealerPanel(gameId) {
   ]);
 }
 
+const MACHINE_GAMES = {
+  blackjack: { label: "BLACKJACK", icon: "♠♥", variant: "blackjack" },
+  holdem: { label: "TEXAS HOLD'EM", icon: "♣♦", variant: "holdem" },
+  roulette: { label: "ROULETTE", icon: "◉", variant: "roulette" },
+};
+
+function machineGameNav(activeGame) {
+  const tabs = [
+    ["blackjack", "BJ"],
+    ["holdem", "HOLD'EM"],
+    ["roulette", "ROULETTE"],
+  ];
+  return el("div", { className: "machine-game-nav" }, tabs.map(([id, label]) =>
+    el("span", {
+      className: `machine-game-tab${id === activeGame ? " machine-game-tab--active" : ""}`,
+      textContent: label,
+    })
+  ));
+}
+
+function videoMachine(gameId, { title, screenChildren = [], controls = null, footerExtra = null }) {
+  const game = MACHINE_GAMES[gameId] || { label: title, icon: "★", variant: "blackjack" };
+  const footer = [el("span", { className: "machine-led", textContent: "CREDIT" }), chipLine()];
+  if (footerExtra) footer.push(footerExtra);
+  const parts = [
+    el("div", { className: "machine-cabinet-top" }, [
+      el("div", { className: "machine-marquee", textContent: `${game.icon}  ${title || game.label}  ${game.icon}` }),
+      el("div", { className: "machine-brand", textContent: CASINO_NAME }),
+    ]),
+    el("div", { className: "machine-screen" }, [
+      el("div", { className: "machine-screen-inner" }, [
+        machineGameNav(gameId),
+        ...screenChildren.filter(Boolean),
+      ]),
+    ]),
+  ];
+  if (controls) parts.push(el("div", { className: "machine-controls" }, [controls]));
+  parts.push(el("div", { className: "machine-footer" }, footer));
+  return el("div", { className: `video-machine video-machine--${game.variant}` }, parts);
+}
+
+function cardTile(card, { hidden = false, empty = false } = {}) {
+  if (empty) {
+    return el("div", { className: "card-chip card-chip--empty", textContent: "·" });
+  }
+  if (!card || hidden) {
+    return el("div", {
+      className: "card-chip card-chip--hidden",
+      textContent: session.useUnicode ? "?" : "??",
+    });
+  }
+  const isRed = session.useColor && card.isRed();
+  return el("div", {
+    className: `card-chip ${isRed ? "card-chip--red" : "card-chip--black"}`,
+    innerHTML: formatCardLabel(card),
+  });
+}
+
+function cardRow(cards, { hiddenMask = null, slots = null } = {}) {
+  const row = el("div", { className: "card-row" });
+  const count = slots ?? cards.length;
+  for (let i = 0; i < count; i++) {
+    const card = cards[i];
+    const hidden = hiddenMask ? hiddenMask(i, card) : !card;
+    row.appendChild(cardTile(card, { hidden: hidden || !card, empty: !card && slots != null }));
+  }
+  return row;
+}
+
+function machineLog(lines, { max = 12, lineClass = "dim" } = {}) {
+  const log = el("div", { className: "machine-log" });
+  for (const line of lines.slice(-max)) {
+    const text = typeof line === "string" ? line : line.text;
+    const cls = typeof line === "string" ? lineClass : (line.type || lineClass);
+    log.appendChild(el("div", { className: `line ${cls}`, textContent: text }));
+  }
+  return log;
+}
+
 function menu(options, title, onSelect, { showCasinoBanner = true } = {}) {
   const items = options.map((opt, i) =>
     el("li", {}, [
@@ -141,7 +220,7 @@ function enterCasino(nextSession) {
   blackjackSessionNet = 0;
   slotsState = { machine: null, sessionNet: 0, spins: 0 };
   holdemState = null;
-  rouletteState = { sessionNet: 0, spins: 0 };
+  rouletteState = { sessionNet: 0, spins: 0, lastNumber: null, spinning: false };
   horseRacingState = { card: null, pending: [], sessionNet: 0, races: 0 };
   viewStack = [{ name: "hub", data: {} }];
   clearStatus();
@@ -209,28 +288,114 @@ function formatCardLabel(card) {
 }
 
 function renderTable(snapshot) {
-  const container = el("div", { className: "table-display" });
-  for (const row of snapshot.rows) {
-    const cards = row.cards.map((c) => formatCardLabel(c)).join(" ");
-    let suffix = "";
-    if (row.surrendered) suffix = " [surrendered]";
-    else if (row.bust) suffix = " [BUST]";
-    else if (row.blackjack) suffix = " [BLACKJACK]";
-    const cls = row.highlight ? "seat-line highlight" : "seat-line";
-    container.appendChild(el("div", {
-      className: cls,
-      innerHTML: `Seat ${row.seat} ${row.label} (${fmtChips(row.bankroll)}): bet ${fmtChips(row.bet)} — ${cards} (${row.value})${suffix}`,
-    }));
-  }
+  const container = el("div", { className: "felt-table bj-table-layout" });
+
   if (snapshot.dealer) {
     const d = snapshot.dealer;
-    const cards = d.cards.map((c) => formatCardLabel(c)).join(" ");
-    container.appendChild(el("div", {
-      className: "dealer-line",
-      innerHTML: `${activeTableDealer?.name ?? "Dealer"}: ${cards} (${d.value})`,
-    }));
+    const dealerRow = el("div", { className: "bj-dealer-row" }, [
+      el("span", { className: "bj-role-label", textContent: activeTableDealer?.name ?? "Dealer" }),
+      cardRow(d.cards),
+      el("span", { className: "bj-hand-value", textContent: `(${d.value})` }),
+    ]);
+    container.appendChild(dealerRow);
   }
+
+  const seatsEl = el("div", { className: "bj-seats" });
+  for (const row of snapshot.rows) {
+    const badges = [];
+    if (row.surrendered) badges.push(el("span", { className: "bj-seat-badge bj-seat-badge--surrender", textContent: "SURR" }));
+    else if (row.bust) badges.push(el("span", { className: "bj-seat-badge bj-seat-badge--bust", textContent: "BUST" }));
+    else if (row.blackjack) badges.push(el("span", { className: "bj-seat-badge bj-seat-badge--bj", textContent: "BJ" }));
+
+    const seatEl = el("div", { className: row.highlight ? "bj-seat bj-seat--active" : "bj-seat" }, [
+      el("div", { className: "bj-seat-info" }, [
+        el("div", { className: "bj-seat-name", textContent: `Seat ${row.seat} ${row.label}` }),
+        el("div", {
+          className: "bj-seat-meta",
+          textContent: `${fmtChips(row.bankroll)} · bet ${fmtChips(row.bet)}`,
+        }),
+      ]),
+      cardRow(row.cards),
+      el("span", { className: "bj-hand-value", textContent: `(${row.value})` }),
+      ...badges,
+    ]);
+    seatsEl.appendChild(seatEl);
+  }
+  container.appendChild(seatsEl);
   return container;
+}
+
+function renderHoldemTable(table) {
+  const felt = el("div", { className: "felt-table holdem-table-layout" });
+  felt.appendChild(el("div", { className: "holdem-pot", textContent: `Pot ${fmtChips(table.pot)}` }));
+  felt.appendChild(el("div", { className: "holdem-street", textContent: table.street }));
+
+  const boardCards = [];
+  for (let i = 0; i < 5; i++) boardCards.push(table.community[i] ?? null);
+  felt.appendChild(cardRow(boardCards, { slots: 5 }));
+
+  const playersEl = el("div", { className: "holdem-players" });
+  for (const p of table.players) {
+    const isActive = !table.handOver && table.players[table.actionIndex] === p;
+    const holeCards = p.isHuman || table.handOver
+      ? p.hole
+      : p.hole.map(() => null);
+    const seat = el("div", {
+      className: [
+        "holdem-seat",
+        p.isHuman ? "holdem-seat--you" : "",
+        p.folded ? "holdem-seat--folded" : "",
+        isActive ? "holdem-seat--active" : "",
+      ].filter(Boolean).join(" "),
+    }, [
+      el("div", { className: "holdem-seat-name", textContent: p.name }),
+      el("div", { className: "holdem-seat-stack", textContent: `${fmtChips(p.stack)}${p.folded ? " · folded" : ""}${p.allIn ? " · all-in" : ""}` }),
+      el("div", { className: "holdem-hole-cards" }, [cardRow(holeCards, { hiddenMask: (_, c) => !c })]),
+    ]);
+    playersEl.appendChild(seat);
+  }
+  felt.appendChild(playersEl);
+  return felt;
+}
+
+function renderRouletteWheel(lastNumber = null, spinning = false) {
+  const wheel = el("div", { className: `roulette-wheel${spinning ? " roulette-wheel--spinning" : ""}` });
+  const wrap = el("div", { className: "roulette-wheel-panel" }, [
+    el("div", { className: "roulette-wheel-wrap" }, [
+      el("div", { className: "roulette-wheel-pointer" }),
+      wheel,
+      lastNumber != null
+        ? el("div", {
+          className: `roulette-result-ball roulette-result-ball--${wheelColor(lastNumber)}`,
+          textContent: String(lastNumber),
+        })
+        : null,
+    ]),
+    el("p", {
+      className: "roulette-result-label",
+      textContent: lastNumber != null ? `Ball on ${lastNumber} (${wheelColor(lastNumber)})` : "Place your bets",
+    }),
+  ]);
+  return wrap;
+}
+
+function renderRouletteBetMat(straightInput, onPick) {
+  const mat = el("div", { className: "roulette-bet-mat" });
+  const zeroBtn = el("button", { type: "button", textContent: "0" });
+  zeroBtn.onclick = () => { straightInput.value = "0"; if (onPick) onPick(0); };
+  mat.appendChild(el("div", { className: "roulette-mat-zero" }, [zeroBtn]));
+
+  const grid = el("div", { className: "roulette-mat-grid" });
+  for (let n = 1; n <= 36; n++) {
+    const isRed = RED_NUMBERS.has(n);
+    const btn = el("button", { type: "button", textContent: String(n) });
+    btn.onclick = () => { straightInput.value = String(n); if (onPick) onPick(n); };
+    grid.appendChild(el("div", {
+      className: `roulette-mat-cell roulette-mat-cell--${isRed ? "red" : "black"}`,
+    }, [btn]));
+  }
+  mat.appendChild(grid);
+  return mat;
 }
 
 function renderSavePicker() {
@@ -957,29 +1122,34 @@ function renderSportsbookSettle() {
 function renderBlackjackMenu() {
   const act = ACTIVITIES.blackjack;
   if (session.wallet.balance < act.minBet) {
-    return el("div", { className: "panel" }, [
-      banner("Table Games — Blackjack"),
-      el("p", { className: "error", textContent: `You need at least ${act.minBet} chips to sit down.` }),
-      el("div", { className: "action-bar" }, [
+    return videoMachine("blackjack", {
+      title: "BLACKJACK",
+      screenChildren: [
+        el("p", { className: "error", textContent: `You need at least ${act.minBet} chips to sit down.` }),
+      ],
+      controls: el("div", { className: "action-bar" }, [
         el("button", { className: "btn", textContent: "Back", onclick: () => { popView(); render(); } }),
       ]),
-    ]);
+    });
   }
   session.recordVisit("blackjack");
   persist();
-  return el("div", {}, [
-    banner("Table Games — Blackjack"),
-    chipLine(),
-    dealerPanel("blackjack"),
-    menu(["Quick hand (solo, table minimums)", "Custom table setup"], "Choose your table:", (choice) => {
-      if (choice === 0) { goBack(); return; }
-      if (choice === 1) {
-        startBlackjack(defaultConfig(session.wallet.balance));
-      } else {
-        pushView("blackjack-custom");
-      }
-    }),
-  ]);
+  return videoMachine("blackjack", {
+    title: "BLACKJACK",
+    screenChildren: [
+      statusBanner(),
+      dealerPanel("blackjack"),
+      el("p", { className: "machine-screen-label", textContent: "Select table" }),
+      menu(["Quick hand (solo, table minimums)", "Custom table setup"], null, (choice) => {
+        if (choice === 0) { goBack(); return; }
+        if (choice === 1) {
+          startBlackjack(defaultConfig(session.wallet.balance));
+        } else {
+          pushView("blackjack-custom");
+        }
+      }, { showCasinoBanner: false }),
+    ],
+  });
 }
 
 function renderBlackjackCustom() {
@@ -1008,17 +1178,19 @@ function renderBlackjackCustom() {
   modeSelect.onchange = toggleBotFields;
   toggleBotFields();
 
-  return el("div", { className: "panel" }, [
-    banner("Custom Table Setup"),
-    chipLine(),
-    el("div", { className: "form-row" }, [el("label", { textContent: "Mode" }), modeSelect]),
-    el("div", { className: "form-row" }, [el("label", { textContent: "Minimum bet" }), minBet]),
-    el("div", { className: "form-row" }, [el("label", { textContent: "Maximum bet" }), maxBet]),
-    el("div", { className: "form-row" }, [el("label", { textContent: "Decks in shoe (1-8)" }), decks]),
-    botsRow,
-    seatRow,
-    el("div", { className: "form-row" }, [el("label", { textContent: "Dealer rule" }), dealerRule]),
-    el("div", { className: "action-bar" }, [
+  return videoMachine("blackjack", {
+    title: "TABLE SETUP",
+    screenChildren: [
+      el("p", { className: "machine-screen-label", textContent: "Custom blackjack table" }),
+      el("div", { className: "form-row" }, [el("label", { textContent: "Mode" }), modeSelect]),
+      el("div", { className: "form-row" }, [el("label", { textContent: "Minimum bet" }), minBet]),
+      el("div", { className: "form-row" }, [el("label", { textContent: "Maximum bet" }), maxBet]),
+      el("div", { className: "form-row" }, [el("label", { textContent: "Decks in shoe (1-8)" }), decks]),
+      botsRow,
+      seatRow,
+      el("div", { className: "form-row" }, [el("label", { textContent: "Dealer rule" }), dealerRule]),
+    ],
+    controls: el("div", { className: "action-bar" }, [
       el("button", {
         className: "btn primary",
         textContent: "Sit down",
@@ -1039,19 +1211,21 @@ function renderBlackjackCustom() {
       }),
       el("button", { className: "btn", textContent: "Back", onclick: () => goBack() }),
     ]),
-  ]);
+  });
 }
 
 function renderHoldemMenu() {
   const act = ACTIVITIES.holdem;
   if (session.wallet.balance < act.minBet) {
-    return el("div", { className: "panel" }, [
-      banner("Texas Hold'em"),
-      el("p", { className: "error", textContent: `You need at least ${act.minBet} chips to sit down.` }),
-      el("div", { className: "action-bar" }, [
+    return videoMachine("holdem", {
+      title: "TEXAS HOLD'EM",
+      screenChildren: [
+        el("p", { className: "error", textContent: `You need at least ${act.minBet} chips to sit down.` }),
+      ],
+      controls: el("div", { className: "action-bar" }, [
         el("button", { className: "btn", textContent: "Back", onclick: () => goBack() }),
       ]),
-    ]);
+    });
   }
   session.recordVisit("holdem");
   persist();
@@ -1061,21 +1235,22 @@ function renderHoldemMenu() {
     max: String(session.wallet.balance),
     value: String(Math.min(200, session.wallet.balance)),
   });
-  const ranksEl = el("p", {
-    className: "dim",
+  const ranksEl = el("div", {
+    className: "holdem-rank-ref dim",
     textContent: HAND_CLASS_NAMES.map((n, i) => `${i}: ${n}`).join(" · "),
   });
-  return el("div", { className: "panel" }, [
-    banner("Texas Hold'em"),
-    chipLine(),
-    dealerPanel("holdem"),
-    el("p", { className: "subtitle", textContent: "Hand rankings (UCI/Kaggle poker-hands dataset CLASS 0–9):" }),
-    ranksEl,
-    el("div", { className: "form-row" }, [
-      el("label", { textContent: `Buy-in (${act.minBet}–${session.wallet.balance})` }),
-      buyInInput,
-    ]),
-    el("div", { className: "action-bar" }, [
+  return videoMachine("holdem", {
+    title: "TEXAS HOLD'EM",
+    screenChildren: [
+      dealerPanel("holdem"),
+      el("p", { className: "machine-screen-label", textContent: "Hand rankings" }),
+      ranksEl,
+      el("div", { className: "form-row" }, [
+        el("label", { textContent: `Buy-in (${act.minBet}–${session.wallet.balance})` }),
+        buyInInput,
+      ]),
+    ],
+    controls: el("div", { className: "action-bar" }, [
       el("button", {
         className: "btn primary",
         textContent: "Sit down",
@@ -1099,7 +1274,7 @@ function renderHoldemMenu() {
       }),
       el("button", { className: "btn", textContent: "Back", onclick: () => goBack() }),
     ]),
-  ]);
+  });
 }
 
 function processHoldemBots() {
@@ -1124,24 +1299,20 @@ function processHoldemBots() {
 function renderHoldemPlay() {
   if (!holdemState) return el("div", { textContent: "No active Hold'em table." });
   const table = holdemState.table;
-  const log = el("div", { className: "log-area" });
-  for (const line of holdemState.log.slice(-12)) {
-    log.appendChild(el("div", { className: "line dim", textContent: line }));
-  }
-
-  const board = table.community.length
-    ? table.community.map((c) => formatCardLabel(c)).join(" ")
-    : "—";
-  const hole = table.human.hole.map((c) => formatCardLabel(c)).join(" ");
-  const actionBar = el("div", { className: "action-bar" });
+  const logLines = [...holdemState.log];
 
   if (table.handOver) {
     if (table.showdownScores.length) {
       for (const { name, score } of table.showdownScores) {
-        log.appendChild(el("div", { className: "line", textContent: `${name}: ${score.name}` }));
+        logLines.push({ text: `${name}: ${score.name}`, type: "" });
       }
     }
-    log.appendChild(el("div", { className: "line success", textContent: table.lastMessage }));
+    logLines.push({ text: table.lastMessage, type: "success" });
+  }
+
+  const actionBar = el("div", { className: "action-bar" });
+
+  if (table.handOver) {
     if (table.human.stack >= table.bigBlind) {
       actionBar.appendChild(el("button", {
         className: "btn primary",
@@ -1188,15 +1359,22 @@ function renderHoldemPlay() {
     }));
   }
 
-  return el("div", { className: "panel" }, [
-    banner("TEXAS HOLD'EM"),
-    chipLine(),
-    el("p", { textContent: `Pot: ${fmtChips(table.pot)} · Street: ${table.street} · Table stack: ${fmtChips(table.human.stack)}` }),
-    el("p", { innerHTML: `Board: ${board}` }),
-    el("p", { innerHTML: `Your hand: ${hole}` }),
-    log,
-    actionBar,
-  ]);
+  return videoMachine("holdem", {
+    title: "TEXAS HOLD'EM",
+    screenChildren: [
+      el("p", {
+        className: "machine-status",
+        textContent: `Table stack: ${fmtChips(table.human.stack)} · Blinds ${fmtChips(table.smallBlind)}/${fmtChips(table.bigBlind)}`,
+      }),
+      renderHoldemTable(table),
+      machineLog(logLines),
+    ],
+    controls: actionBar,
+    footerExtra: el("span", {
+      className: "machine-led",
+      textContent: `HAND ${holdemState.hands + 1}`,
+    }),
+  });
 }
 
 function finishHoldem(silent = false) {
@@ -1218,13 +1396,15 @@ function finishHoldem(silent = false) {
 function renderRoulette() {
   const act = ACTIVITIES.roulette;
   if (session.wallet.balance < act.minBet) {
-    return el("div", { className: "panel" }, [
-      banner("Mandalay Roulette"),
-      el("p", { className: "error", textContent: `You need at least ${act.minBet} chips to play.` }),
-      el("div", { className: "action-bar" }, [
+    return videoMachine("roulette", {
+      title: "ROULETTE",
+      screenChildren: [
+        el("p", { className: "error", textContent: `You need at least ${act.minBet} chips to play.` }),
+      ],
+      controls: el("div", { className: "action-bar" }, [
         el("button", { className: "btn", textContent: "Back", onclick: () => goBack() }),
       ]),
-    ]);
+    });
   }
   session.recordVisit("roulette");
   persist();
@@ -1236,7 +1416,7 @@ function renderRoulette() {
   const straightRow = el("div", { className: "form-row" }, [
     el("label", { textContent: "Straight number (0–36)" }), straightInput,
   ]);
-  straightRow.style.display = "none";
+  straightRow.style.display = BET_TYPES[0].kind === "straight" ? "" : "none";
   betSelect.onchange = () => {
     straightRow.style.display = BET_TYPES[betSelect.value].kind === "straight" ? "" : "none";
   };
@@ -1244,50 +1424,86 @@ function renderRoulette() {
   const amountInput = el("input", {
     type: "number", min: String(act.minBet), max: String(session.wallet.balance), value: String(act.minBet),
   });
-  const resultEl = el("p", { className: "dim", textContent: "European wheel (0–36). Place a bet and spin." });
-  const summaryEl = el("p", { textContent: "" });
+  const resultEl = el("p", {
+    className: "dim",
+    textContent: rouletteState.lastNumber != null
+      ? `Last spin: ${rouletteState.lastNumber} (${wheelColor(rouletteState.lastNumber)})`
+      : "European wheel (0–36). Place a bet and spin.",
+  });
+  const summaryEl = el("p", {
+    className: "roulette-session",
+    textContent: rouletteState.spins
+      ? `Session: ${signedChips(rouletteState.sessionNet)} over ${rouletteState.spins} spin(s)`
+      : "",
+  });
 
-  return el("div", { className: "panel" }, [
-    banner("Mandalay Roulette"),
-    chipLine(),
-    dealerPanel("roulette"),
-    el("div", { className: "form-row" }, [el("label", { textContent: "Bet type" }), betSelect]),
-    straightRow,
-    el("div", { className: "form-row" }, [el("label", { textContent: "Wager" }), amountInput]),
-    resultEl,
-    summaryEl,
-    el("div", { className: "action-bar" }, [
-      el("button", {
-        className: "btn primary",
-        textContent: "Spin",
-        onclick: () => {
-          const bet = BET_TYPES[parseInt(betSelect.value, 10)];
-          const amount = parseInt(amountInput.value, 10);
-          if (amount < act.minBet) { resultEl.className = "error"; resultEl.textContent = `Minimum bet is ${act.minBet}.`; return; }
-          if (!session.wallet.debit(amount, "roulette", `Roulette ${bet.kind}`)) {
-            resultEl.className = "error"; resultEl.textContent = "Insufficient chips."; return;
-          }
-          resultEl.className = "dim";
-          const dealer = activeTableDealer ?? getSessionDealer(session, "roulette");
-          resultEl.textContent = `${dealer.name}: "${pickQuip(dealer, "deal")}"`;
-          const number = spinWheel();
-          const straightPick = bet.kind === "straight" ? parseInt(straightInput.value, 10) : null;
-          const { win, reason } = resolveBet(bet, amount, number, straightPick);
-          rouletteState.spins += 1;
-          resultEl.className = win > 0 ? "success" : "dim";
-          const quip = pickQuip(dealer, win > 0 ? "win" : "lose");
-          resultEl.textContent = `Ball lands on ${number} (${wheelColor(number)}) — ${reason}. ${dealer.name}: "${quip}"`;
-          if (win > 0) {
-            session.wallet.credit(win, "roulette", reason);
-            rouletteState.sessionNet += win - amount;
-          } else {
-            rouletteState.sessionNet -= amount;
-          }
-          summaryEl.textContent = `Session: ${signedChips(rouletteState.sessionNet)} over ${rouletteState.spins} spin(s)`;
-          persist();
-          render();
-        },
-      }),
+  const onMatPick = (n) => {
+    betSelect.value = "0";
+    straightRow.style.display = "";
+    straightInput.value = String(n);
+  };
+
+  const rouletteDisplay = el("div", { className: "roulette-display" }, [
+    renderRouletteWheel(rouletteState.lastNumber, rouletteState.spinning),
+    renderRouletteBetMat(straightInput, onMatPick),
+  ]);
+
+  function doSpin() {
+    const bet = BET_TYPES[parseInt(betSelect.value, 10)];
+    const amount = parseInt(amountInput.value, 10);
+    if (amount < act.minBet) {
+      resultEl.className = "error";
+      resultEl.textContent = `Minimum bet is ${act.minBet}.`;
+      return;
+    }
+    if (!session.wallet.debit(amount, "roulette", `Roulette ${bet.kind}`)) {
+      resultEl.className = "error";
+      resultEl.textContent = "Insufficient chips.";
+      return;
+    }
+    const dealer = activeTableDealer ?? getSessionDealer(session, "roulette");
+    resultEl.className = "dim";
+    resultEl.textContent = `${dealer.name}: "${pickQuip(dealer, "deal")}"`;
+    rouletteState.spinning = true;
+    render();
+
+    setTimeout(() => {
+      const number = spinWheel();
+      const straightPick = bet.kind === "straight" ? parseInt(straightInput.value, 10) : null;
+      const { win, reason } = resolveBet(bet, amount, number, straightPick);
+      rouletteState.spins += 1;
+      rouletteState.lastNumber = number;
+      rouletteState.spinning = false;
+      resultEl.className = win > 0 ? "success" : "dim";
+      const quip = pickQuip(dealer, win > 0 ? "win" : "lose");
+      resultEl.textContent = `Ball lands on ${number} (${wheelColor(number)}) — ${reason}. ${dealer.name}: "${quip}"`;
+      if (win > 0) {
+        session.wallet.credit(win, "roulette", reason);
+        rouletteState.sessionNet += win - amount;
+      } else {
+        rouletteState.sessionNet -= amount;
+      }
+      summaryEl.textContent = `Session: ${signedChips(rouletteState.sessionNet)} over ${rouletteState.spins} spin(s)`;
+      persist();
+      render();
+    }, 1200);
+  }
+
+  return videoMachine("roulette", {
+    title: "ROULETTE",
+    screenChildren: [
+      dealerPanel("roulette"),
+      rouletteDisplay,
+      el("div", { className: "roulette-outside-bets" }, [
+        el("div", { className: "form-row" }, [el("label", { textContent: "Bet type" }), betSelect]),
+        el("div", { className: "form-row" }, [el("label", { textContent: "Wager" }), amountInput]),
+      ]),
+      straightRow,
+      resultEl,
+      summaryEl,
+    ],
+    controls: el("div", { className: "action-bar" }, [
+      el("button", { className: "btn primary", textContent: "Spin", onclick: doSpin }),
       el("button", {
         className: "btn",
         textContent: "Leave table",
@@ -1298,7 +1514,11 @@ function renderRoulette() {
         },
       }),
     ]),
-  ]);
+    footerExtra: el("span", {
+      className: "machine-led",
+      textContent: rouletteState.spins ? `SPIN ${rouletteState.spins}` : "READY",
+    }),
+  });
 }
 
 function renderHorseRacing() {
@@ -1464,18 +1684,10 @@ function renderBlackjackPlay() {
   if (!blackjackGame) return el("div", { textContent: "No active game." });
 
   const game = blackjackGame;
-  const log = el("div", { className: "log-area" });
-  for (const m of game.messages) {
-    log.appendChild(el("div", { className: `line ${m.type}`, textContent: m.text }));
-  }
-
   const reveal = game.phase === "settlement" || game.phase === "complete" || game.dealer.holeRevealed;
   const highlight = game.pendingAction?.player?.seat ?? game.human()?.seat;
   const snapshot = game.getTableSnapshot(reveal, highlight);
   const tableEl = renderTable(snapshot);
-
-  const statusEl = el("p", { className: "dim", textContent: game.statusLine() });
-  const chipEl = el("p", { className: "chip-line", textContent: `Chips: ${fmtChips(session.wallet.balance)}` });
   const actionBar = el("div", { className: "action-bar" });
 
   if (game.phase === "betting" && game.pendingBet) {
@@ -1540,11 +1752,6 @@ function renderBlackjackPlay() {
   }
 
   if (game.phase === "complete" && !game.roundOverEarly) {
-    for (const line of game.resultLines) {
-      const cls = line.includes("+") ? "success" : line.includes("-") ? "error" : "";
-      log.appendChild(el("div", { className: `line ${cls}`, textContent: line }));
-    }
-
     if (game.canPlayAnother()) {
       actionBar.appendChild(el("button", {
         className: "btn primary",
@@ -1571,17 +1778,28 @@ function renderBlackjackPlay() {
     }));
   }
 
-  return el("div", { className: "panel" }, [
-    banner(activeTableDealer ? `BLACKJACK — ${activeTableDealer.name}` : "BLACKJACK"),
-    activeTableDealer
-      ? el("p", { className: "dim", textContent: activeTableDealer.tagline })
-      : null,
-    chipEl,
-    statusEl,
-    tableEl,
-    log,
-    actionBar,
-  ]);
+  return videoMachine("blackjack", {
+    title: activeTableDealer ? activeTableDealer.name.toUpperCase() : "BLACKJACK",
+    screenChildren: [
+      activeTableDealer
+        ? el("p", { className: "machine-status", textContent: activeTableDealer.tagline })
+        : null,
+      el("p", { className: "machine-status", textContent: game.statusLine() }),
+      tableEl,
+      machineLog(game.messages),
+      game.phase === "complete" && !game.roundOverEarly
+        ? machineLog(game.resultLines.map((line) => ({
+          text: line,
+          type: line.includes("+") ? "success" : line.includes("-") ? "error" : "",
+        })), { max: 8 })
+        : null,
+    ],
+    controls: actionBar,
+    footerExtra: el("span", {
+      className: "machine-led",
+      textContent: game.phase === "betting" ? "PLACE BET" : game.phase.toUpperCase(),
+    }),
+  });
 }
 
 function finishBlackjack(silent = false) {

@@ -3,6 +3,8 @@ import { attachHotelToSession } from "./hotel.js";
 import { attachAmenitiesToSession } from "./casino-amenities.js";
 import { attachPoolComplexToSession } from "./pool-complex.js";
 import { attachWorldCycleToSession } from "./world-cycle.js";
+import { attachBankToSession } from "./bank-account.js";
+import { attachStaffOverridesToSession } from "./staff-manifest.js";
 import { attachIntoxicationToSession } from "./intoxication-effects.js";
 import {
   getActiveSlotId,
@@ -179,6 +181,8 @@ export class PlayerSession {
     this.horseRacingCustomNames = null;
     this.horseRacingNameOffset = 0;
     this.horseRacingSpriteOffset = 0;
+    this.bank = null;
+    this.staffOverrides = null;
   }
 
   statFor(activity) {
@@ -219,6 +223,8 @@ export class PlayerSession {
       horseRacingCustomNames: this.horseRacingCustomNames ?? null,
       horseRacingNameOffset: this.horseRacingNameOffset ?? 0,
       horseRacingSpriteOffset: this.horseRacingSpriteOffset ?? 0,
+      bank: this.bank?.toJSON?.() ?? null,
+      staffOverrides: this.staffOverrides ?? null,
     };
     if (this.rpg) payload.rpg = this.rpg;
     if (this.rewards) payload.rewards = this.rewards;
@@ -253,6 +259,8 @@ export class PlayerSession {
     attachAmenitiesToSession(s, data);
     attachPoolComplexToSession(s, data);
     attachWorldCycleToSession(s, data);
+    attachBankToSession(s, data);
+    attachStaffOverridesToSession(s, data);
     attachIntoxicationToSession(s, data);
     return s;
   }

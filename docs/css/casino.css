@@ -1830,10 +1830,6 @@ body {
   image-rendering: pixelated;
   image-rendering: crisp-edges;
   display: block;
-  width: auto;
-  height: auto;
-  min-width: 48px;
-  min-height: 36px;
 }
 
 .horse-paddock-num {

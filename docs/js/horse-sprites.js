@@ -242,7 +242,7 @@ export function drawHorseSprite(ctx, spriteId, { scale = 3, frame = 0 } = {}) {
 export function createHorseSpriteCanvas(spriteId, { size = 72, frame = 0 } = {}) {
   const nativeW = 24;
   const nativeH = 18;
-  const scale = Math.max(1, Math.floor(size / nativeW));
+  const scale = Math.floor(size / nativeW);
   const canvas = document.createElement("canvas");
   canvas.width = nativeW * scale;
   canvas.height = nativeH * scale;

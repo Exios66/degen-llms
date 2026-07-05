@@ -19,7 +19,7 @@ import { HoldemTable, BettingAction } from "./holdem/game.js";
 import { HAND_CLASS_NAMES } from "./holdem/hand_eval.js";
 import { BET_TYPES, spinWheel, wheelColor, resolveBet, RED_NUMBERS } from "./roulette.js";
 import { generateRace, simulateRace, settleTicket, fmtOdds as fmtRaceOdds, loadBundledHorseNames, parseHorseNamesCSV, setCustomHorseNames, getHorseNamePool } from "./horse_racing.js";
-import { assignHorseSprites, createHorseSpriteCanvas, getHorseSprite } from "./horse-sprites.js";
+import { createHorseSpriteCanvas, getHorseSprite } from "./horse-sprites.js";
 import { getSessionDealer, pickQuip } from "./dealers.js";
 import { RewardsPhone } from "./RewardsPhone.js";
 import { buildHotelRenderers } from "./hotel-ui.js";
@@ -301,15 +301,8 @@ function horsePaddockCard(horse, { selected = false, onClick = null } = {}) {
   return card;
 }
 
-function withHorseSpriteIds(horses) {
-  if (!horses.some((h) => !h.spriteId)) return horses;
-  const spriteIds = assignHorseSprites(horses.length, 0);
-  return horses.map((h, i) => (h.spriteId ? h : { ...h, spriteId: spriteIds[i] }));
-}
-
 function renderHorsePaddock(horses, { selectedNumber = null, onSelect = null } = {}) {
-  const roster = withHorseSpriteIds(horses);
-  return el("div", { className: "racing-paddock" }, roster.map((h) =>
+  return el("div", { className: "racing-paddock" }, horses.map((h) =>
     horsePaddockCard(h, {
       selected: selectedNumber === h.number,
       onClick: onSelect ? () => onSelect(h.number) : null,

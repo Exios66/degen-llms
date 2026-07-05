@@ -1,16 +1,18 @@
 name: Deploy GitHub Pages
 
-# The live site is served from the gh-pages branch (/docs) via legacy Pages
-# build. The github-pages Actions environment only allows gh-pages/pages
-# branches, so we sync docs/ from main onto gh-pages instead of using
-# actions/deploy-pages from main.
+# Live site: gh-pages branch /docs/ (legacy GitHub Pages root = /docs on that branch).
+# Full mirror of main/docs/ — casino CSS, slot skins, horse sprites, hotel, RPG, etc.
 
 on:
   push:
     branches: [main]
     paths:
       - "docs/**"
+      - "scripts/sync-gh-pages.sh"
       - ".github/workflows/deploy-gh-pages.yml"
+  schedule:
+    # Hourly drift check — sync only when docs/ differs from main
+    - cron: "0 * * * *"
   workflow_dispatch:
 
 permissions:
@@ -24,26 +26,16 @@ jobs:
   sync-gh-pages:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout main
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: main
           fetch-depth: 0
+          ref: main
 
-      - name: Sync docs to gh-pages branch
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git fetch origin gh-pages
-          git checkout gh-pages
-          git checkout origin/main -- docs/
-          if git diff --quiet; then
-            echo "docs/ already up to date on gh-pages"
-          else
-            git add docs/
-            git commit -m "Sync gh-pages/docs/ from main (${GITHUB_SHA:0:7})"
-            git push origin gh-pages
-          fi
+      - name: Full sync docs/ to gh-pages and log ping
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+        run: bash scripts/sync-gh-pages.sh
 
       - name: Site URL
         run: echo "Live at https://exios66.github.io/degen-llms/"

@@ -3,6 +3,8 @@ import { attachHotelToSession } from "./hotel.js";
 import { attachAmenitiesToSession } from "./casino-amenities.js";
 import { attachPoolComplexToSession } from "./pool-complex.js";
 import { attachWorldCycleToSession } from "./world-cycle.js";
+import { attachBankToSession } from "./bank-account.js";
+import { attachStaffOverridesToSession } from "./staff-manifest.js";
 import {
   getActiveSlotId,
   mirrorLibraryToCache,
@@ -11,7 +13,7 @@ import {
 } from "./profileCache.js";
 
 export const CASINO_NAME = "The Mandalay Bay";
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 6;
 
 /** Default RPG overworld state for pixel mode (Phase 1+). */
 export function defaultRpgState(overrides = {}) {
@@ -177,6 +179,8 @@ export class PlayerSession {
     this.horseRacingCustomNames = null;
     this.horseRacingNameOffset = 0;
     this.horseRacingSpriteOffset = 0;
+    this.bank = null;
+    this.staffOverrides = null;
   }
 
   statFor(activity) {
@@ -217,6 +221,8 @@ export class PlayerSession {
       horseRacingCustomNames: this.horseRacingCustomNames ?? null,
       horseRacingNameOffset: this.horseRacingNameOffset ?? 0,
       horseRacingSpriteOffset: this.horseRacingSpriteOffset ?? 0,
+      bank: this.bank?.toJSON?.() ?? null,
+      staffOverrides: this.staffOverrides ?? null,
     };
     if (this.rpg) payload.rpg = this.rpg;
     if (this.rewards) payload.rewards = this.rewards;
@@ -250,6 +256,8 @@ export class PlayerSession {
     attachAmenitiesToSession(s, data);
     attachPoolComplexToSession(s, data);
     attachWorldCycleToSession(s, data);
+    attachBankToSession(s, data);
+    attachStaffOverridesToSession(s, data);
     return s;
   }
 }

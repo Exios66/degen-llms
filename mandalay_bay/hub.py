@@ -7,11 +7,26 @@ from mandalay_bay.activities.registry import ACTIVITIES_BY_ID, ALL_ACTIVITIES, F
 from mandalay_bay.chips import ChipTransaction
 from mandalay_bay.display import TerminalUI, fmt_chips
 from mandalay_bay.help_text import SECTIONS
+from mandalay_bay.bank_account import (
+    OUTSIDE_EXPENSE_CATEGORIES,
+    BankTransaction,
+    buy_in_for_session,
+    cash_out_to_bank,
+    ensure_bank,
+    expense_category_label,
+    fund_bank_from_outside,
+    rename_bank_account,
+)
 from mandalay_bay.casino_amenities_experience import run_casino_floor
 from mandalay_bay.hotel_experience import run_hotel_lobby
 from mandalay_bay.rewards import sync_rewards_from_wallet
 from mandalay_bay.rewards_experience import run_rewards_phone
 from mandalay_bay.session import PlayerSession
+from mandalay_bay.staff_manifest import (
+    clear_staff_override,
+    editable_staff_entries,
+    update_staff_override,
+)
 
 if TYPE_CHECKING:
     from mandalay_bay.saves import SaveLibrary
@@ -82,27 +97,56 @@ def run_help(ui: TerminalUI) -> None:
     ui.pause()
 
 
+def _bank_line(session: PlayerSession, ui: TerminalUI) -> None:
+    bank = ensure_bank(session)
+    ui.dim(f"{bank.account_name}: {fmt_chips(bank.balance)} (off-floor)")
+
+
 def run_cashier(session: PlayerSession, ui: TerminalUI) -> None:
     ui.banner("Cashier")
     ui.chip_line(session.wallet.balance)
+    _bank_line(session, ui)
     choice = ui.menu_choice(
         [
             "Buy chips ($500 bundle)",
             "Buy custom amount",
-            "Cash out chips",
-            "View transaction ledger",
+            "Cash out chips to bank",
+            "View floor transaction ledger",
         ],
         title="Chip window:",
     )
     if choice == 0:
         return
     if choice == 1:
-        session.wallet.buy_in(500)
-        ui.success(f"Purchased {fmt_chips(500)}. Balance: {fmt_chips(session.wallet.balance)}")
+        outcome = buy_in_for_session(session, 500, use_outside_funds=True)
+        if outcome == "from_bank":
+            ui.success(
+                f"Purchased {fmt_chips(500)} from {ensure_bank(session).account_name}. "
+                f"Floor balance: {fmt_chips(session.wallet.balance)}"
+            )
+        else:
+            ui.success(f"Purchased {fmt_chips(500)} with outside funds. Balance: {fmt_chips(session.wallet.balance)}")
     elif choice == 2:
         amount = ui.prompt_int("Amount to buy", 50, 100_000, default=500)
-        session.wallet.buy_in(amount)
-        ui.success(f"Purchased {fmt_chips(amount)}. Balance: {fmt_chips(session.wallet.balance)}")
+        bank = ensure_bank(session)
+        if bank.balance >= amount:
+            outcome = buy_in_for_session(session, amount)
+        elif ui.prompt_yes_no(
+            f"Only {fmt_chips(bank.balance)} in {bank.account_name}. Use outside funds for the buy-in?",
+            default=True,
+        ):
+            outcome = buy_in_for_session(session, amount, use_outside_funds=True)
+        else:
+            outcome = "cancelled"
+        if outcome == "from_bank":
+            ui.success(
+                f"Purchased {fmt_chips(amount)} from {bank.account_name}. "
+                f"Floor balance: {fmt_chips(session.wallet.balance)}"
+            )
+        elif outcome == "outside_funds":
+            ui.success(f"Purchased {fmt_chips(amount)} with outside funds. Balance: {fmt_chips(session.wallet.balance)}")
+        elif outcome != "cancelled":
+            ui.error("Buy-in failed.")
     elif choice == 3:
         if session.wallet.balance <= 0:
             ui.error("You have no chips to cash out.")
@@ -113,8 +157,12 @@ def run_cashier(session: PlayerSession, ui: TerminalUI) -> None:
                 session.wallet.balance,
                 default=session.wallet.balance,
             )
-            if session.wallet.cash_out(amount):
-                ui.success(f"Cashed out {fmt_chips(amount)}. Balance: {fmt_chips(session.wallet.balance)}")
+            bank = ensure_bank(session)
+            if cash_out_to_bank(session, amount):
+                ui.success(
+                    f"Cashed out {fmt_chips(amount)} to {bank.account_name}. "
+                    f"Floor balance: {fmt_chips(session.wallet.balance)}"
+                )
             else:
                 ui.error("Cash out failed.")
     elif choice == 4:
@@ -134,6 +182,140 @@ def _show_ledger(session: PlayerSession, ui: TerminalUI) -> None:
             f"  {tx.timestamp.strftime('%H:%M:%S')} | {tx.activity:12} | "
             f"{sign}{tx.amount:,} | bal {tx.balance_after:,} | {tx.description}"
         )
+
+
+def _show_bank_ledger(session: PlayerSession, ui: TerminalUI) -> None:
+    txs: list[BankTransaction] = ensure_bank(session).recent_transactions(20)
+    if not txs:
+        ui.dim("No bank transactions yet.")
+        return
+    ui.print("\n--- Recent Bank Transactions ---")
+    for tx in reversed(txs):
+        sign = "+" if tx.amount >= 0 else ""
+        ui.print(
+            f"  {tx.timestamp.strftime('%H:%M:%S')} | {tx.category:12} | "
+            f"{sign}{tx.amount:,} | bal {tx.balance_after:,} | {tx.description}"
+        )
+
+
+def run_bank_account(session: PlayerSession, ui: TerminalUI) -> None:
+    bank = ensure_bank(session)
+    ui.banner(bank.account_name)
+    ui.print("Your off-strip account — cashed-out chips land here for life outside the casino.")
+    ui.chip_line(session.wallet.balance)
+    ui.print(f"Bank balance: {fmt_chips(bank.balance)}")
+    choice = ui.menu_choice(
+        [
+            "Deposit outside funds",
+            "Pay outside expense",
+            "Rename account",
+            "View bank ledger",
+        ],
+        title="Off-strip banking:",
+    )
+    if choice == 0:
+        return
+    if choice == 1:
+        amount = ui.prompt_int("Amount to deposit", 50, 1_000_000, default=500)
+        fund_bank_from_outside(session, amount)
+        ui.success(f"Deposited {fmt_chips(amount)}. Bank balance: {fmt_chips(bank.balance)}")
+    elif choice == 2:
+        if bank.balance <= 0:
+            ui.error("Your bank account is empty.")
+        else:
+            options = [label for _, label in OUTSIDE_EXPENSE_CATEGORIES]
+            cat_choice = ui.menu_choice(options, title="Expense category:")
+            if cat_choice == 0:
+                ui.pause()
+                return
+            category_id = OUTSIDE_EXPENSE_CATEGORIES[cat_choice - 1][0]
+            amount = ui.prompt_int(
+                "Amount to spend",
+                1,
+                bank.balance,
+                default=min(100, bank.balance),
+            )
+            note = ui.prompt("Memo (optional): ").strip()
+            label = expense_category_label(category_id)
+            description = f"{label}" + (f" — {note}" if note else "")
+            if bank.pay_expense(amount, category_id, description):
+                ui.success(f"Paid {fmt_chips(amount)} for {label}. Bank balance: {fmt_chips(bank.balance)}")
+            else:
+                ui.error("Payment failed.")
+    elif choice == 3:
+        new_name = ui.prompt(f"Account name [{bank.account_name}]: ").strip()
+        if new_name:
+            rename_bank_account(session, new_name)
+            ui.success(f"Account renamed to {session.bank.account_name}.")
+    elif choice == 4:
+        _show_bank_ledger(session, ui)
+    ui.pause()
+
+
+def run_staff_manifest(session: PlayerSession, ui: TerminalUI) -> None:
+    ui.banner("Staff Manifest")
+    ui.print("Customize dealer and venue staff names and context for your visit.")
+    entries = editable_staff_entries(session)
+    while True:
+        options = [
+            f"{entry['name']} ({entry['category'][:-1]})"
+            + (" *" if entry["customized"] else "")
+            for entry in entries
+        ]
+        options.extend(["Reset all customizations", "Done"])
+        choice = ui.menu_choice(options, title="Edit staff member:")
+        if choice == 0 or choice == len(options):
+            break
+        if choice == len(options) - 1:
+            session.staff_overrides = None
+            entries = editable_staff_entries(session)
+            ui.success("Restored default staff manifest.")
+            continue
+        entry = entries[choice - 1]
+        ui.print(f"\nEditing: {entry['id']} ({entry['category']})")
+        if entry["category"] == "dealers":
+            ui.dim(f"Games: {', '.join(entry['games'])}")
+        else:
+            ui.dim(f"Role: {entry.get('role', 'staff')}")
+        new_name = ui.prompt(f"Display name [{entry['name']}]: ")
+        if entry["category"] == "dealers":
+            new_tagline = ui.prompt(f"Tagline [{entry['tagline']}]: ")
+            new_context = ui.prompt(f"Context [{entry['context']}]: ")
+            fields: dict[str, str] = {}
+            if new_name.strip():
+                fields["name"] = new_name
+            if new_tagline.strip():
+                fields["tagline"] = new_tagline
+            if new_context.strip():
+                fields["context"] = new_context
+            if fields:
+                update_staff_override(
+                    session,
+                    category="dealers",
+                    staff_id=entry["id"],
+                    fields=fields,
+                )
+            else:
+                clear_staff_override(session, category="dealers", staff_id=entry["id"])
+        else:
+            new_context = ui.prompt(f"Context [{entry['context']}]: ")
+            fields = {}
+            if new_name.strip():
+                fields["name"] = new_name
+            if new_context.strip():
+                fields["context"] = new_context
+            if fields:
+                update_staff_override(
+                    session,
+                    category="npcs",
+                    staff_id=entry["id"],
+                    fields=fields,
+                )
+            else:
+                clear_staff_override(session, category="npcs", staff_id=entry["id"])
+        entries = editable_staff_entries(session)
+        ui.success(f"Updated {entry['id']}.")
+    ui.pause()
 
 
 def run_stats(session: PlayerSession, ui: TerminalUI) -> None:
@@ -209,6 +391,7 @@ def run_hub(
         if session.has_save_slot:
             ui.dim(f"Save slot {session.slot_id}: {session.slot_label}")
         ui.chip_line(session.wallet.balance)
+        _bank_line(session, ui)
         _maybe_low_balance_notice(session, ui)
         ui.print()
 
@@ -217,6 +400,8 @@ def run_hub(
             + [
                 "Casino Floor — shopping & bars",
                 "Cashier",
+                "Off-Strip Bank Account",
+                "Staff Manifest",
                 "Player Stats",
                 "Save Game",
                 "Exit to Hotel",
@@ -244,18 +429,24 @@ def run_hub(
             run_cashier(session, ui)
             _autosave(session, library)
         elif choice == floor_count + 3:
-            run_stats(session, ui)
+            run_bank_account(session, ui)
+            _autosave(session, library)
         elif choice == floor_count + 4:
-            _save_game(session, ui, library)
+            run_staff_manifest(session, ui)
+            _autosave(session, library)
         elif choice == floor_count + 5:
+            run_stats(session, ui)
+        elif choice == floor_count + 6:
+            _save_game(session, ui, library)
+        elif choice == floor_count + 7:
             run_hotel_lobby(session, ui)
             _autosave(session, library)
-        elif choice == floor_count + 6:
+        elif choice == floor_count + 8:
             run_rewards_phone(session, ui)
             _autosave(session, library)
-        elif choice == floor_count + 7:
+        elif choice == floor_count + 9:
             run_rpg_link(session, ui)
-        elif choice == floor_count + 8:
+        elif choice == floor_count + 10:
             run_help(ui)
         else:
             if ui.prompt_yes_no("Leave The Mandalay Bay?", default=False):

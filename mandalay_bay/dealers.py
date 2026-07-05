@@ -205,7 +205,10 @@ def dealer_shift_seed(session: PlayerSession, game_id: str) -> int:
 
 
 def get_session_dealer(session: PlayerSession, game_id: str) -> DealerProfile:
-    return get_on_duty_dealer(game_id, dealer_shift_seed(session, game_id))
+    from mandalay_bay.staff_manifest import resolve_dealer
+
+    dealer = get_on_duty_dealer(game_id, dealer_shift_seed(session, game_id))
+    return resolve_dealer(session, dealer)
 
 
 def pick_quip(dealer: DealerProfile, kind: str, rng: random.Random | None = None) -> str:

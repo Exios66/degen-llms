@@ -4,7 +4,8 @@ import {
   TILE_SIZE, MAP_WIDTH, MAP_HEIGHT, buildMapLayersForId, getNpcsForMap,
   DOOR_TRIGGERS, getMapDefinition, SPAWN_DEFAULT, TILE,
 } from "../systems/MapData.js";
-import { getOnDutyDealer, dealerShiftSeed } from "../../../js/dealers.js";
+import { getSessionDealer } from "../../../js/dealers.js";
+import { resolveNpc } from "../../../js/staff-manifest.js";
 
 export class OverworldScene extends Phaser.Scene {
   constructor() {
@@ -238,14 +239,14 @@ export class OverworldScene extends Phaser.Scene {
   }
 
   _dealerForZone(zone) {
-    return getOnDutyDealer(zone, dealerShiftSeed(this.session, zone));
+    return getSessionDealer(this.session, zone);
   }
 
   _resolveNpcDisplayName(npc) {
     if (npc.zone) {
       return this._dealerForZone(npc.zone).name;
     }
-    return npc.name;
+    return resolveNpc(this.session, npc.id, { fallbackName: npc.name }).name;
   }
 
   _resolveDealerDialogueId(dealerId, baseKind) {

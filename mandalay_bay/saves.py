@@ -12,8 +12,10 @@ from mandalay_bay.casino_amenities import CasinoAmenitiesState, ensure_amenities
 from mandalay_bay.hotel import HotelState, RoomAmenitiesState, default_hotel_state, ensure_hotel
 from mandalay_bay.pool_complex import PoolComplexState, ensure_pool_complex
 from mandalay_bay.world_cycle import WorldCycleState, ensure_world_cycle
+from mandalay_bay.bank_account import BankAccount, BankTransaction, BankTransactionKind, ensure_bank
 from mandalay_bay.rewards import RewardsState, SAVE_VERSION_WITH_REWARDS, ensure_rewards, migrate_session_rewards
 from mandalay_bay.session import ActivityStats, PlayerSession
+from mandalay_bay.staff_manifest import set_staff_overrides
 
 MAX_SLOTS = 5
 DEFAULT_STARTING_CHIPS = 1000
@@ -185,6 +187,7 @@ class SaveLibrary:
         ensure_rewards(session)
         ensure_pool_complex(session)
         ensure_amenities(session)
+        ensure_bank(session)
         self.save_slot(session)
         return session
 
@@ -230,6 +233,26 @@ def session_to_dict(session: PlayerSession) -> dict:
         payload["amenities"] = asdict(session.amenities)
     if hasattr(session, "world_cycle") and session.world_cycle is not None:
         payload["world_cycle"] = asdict(session.world_cycle)
+    if hasattr(session, "bank") and session.bank is not None:
+        bank_txs = []
+        for tx in session.bank.transactions:
+            bank_txs.append(
+                {
+                    "timestamp": tx.timestamp.isoformat(),
+                    "kind": tx.kind.value,
+                    "amount": tx.amount,
+                    "category": tx.category,
+                    "description": tx.description,
+                    "balance_after": tx.balance_after,
+                }
+            )
+        payload["bank"] = {
+            "balance": session.bank.balance,
+            "account_name": session.bank.account_name,
+            "transactions": bank_txs,
+        }
+    if hasattr(session, "staff_overrides") and session.staff_overrides is not None:
+        payload["staff_overrides"] = session.staff_overrides
     return payload
 
 
@@ -294,6 +317,29 @@ def session_from_dict(data: dict) -> PlayerSession:
         session.world_cycle = WorldCycleState(**data["world_cycle"])
     else:
         ensure_world_cycle(session)
+    if "bank" in data:
+        bank_data = data["bank"]
+        bank = BankAccount(
+            balance=bank_data.get("balance", 0),
+            account_name=bank_data.get("account_name", "Off-Strip Checking"),
+        )
+        bank.transactions = []
+        for raw in bank_data.get("transactions", []):
+            bank.transactions.append(
+                BankTransaction(
+                    timestamp=datetime.fromisoformat(raw["timestamp"]),
+                    kind=BankTransactionKind(raw["kind"]),
+                    amount=raw["amount"],
+                    category=raw["category"],
+                    description=raw["description"],
+                    balance_after=raw["balance_after"],
+                )
+            )
+        session.bank = bank
+    else:
+        ensure_bank(session)
+    if "staff_overrides" in data:
+        set_staff_overrides(session, data["staff_overrides"])
     return session
 
 

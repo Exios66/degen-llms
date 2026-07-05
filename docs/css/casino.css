@@ -1553,14 +1553,19 @@ body {
   z-index: 0;
 }
 
-.slot-reel--spinning .slot-reel-symbol {
-  animation: reel-blur 0.35s linear infinite;
+.slot-reel.slot-reel--spinning .slot-reel-symbol {
+  animation: reel-blur 0.22s linear infinite;
+  animation-delay: var(--reel-delay, 0s);
 }
 
+.slot-reel:nth-child(1).slot-reel--spinning .slot-reel-symbol { animation-duration: 0.18s; }
+.slot-reel:nth-child(2).slot-reel--spinning .slot-reel-symbol { animation-duration: 0.22s; }
+.slot-reel:nth-child(3).slot-reel--spinning .slot-reel-symbol { animation-duration: 0.26s; }
+
 @keyframes reel-blur {
-  0% { transform: translateY(-20%); opacity: 0.6; }
-  50% { transform: translateY(10%); opacity: 1; }
-  100% { transform: translateY(30%); opacity: 0.6; }
+  0% { transform: translateY(-35%); opacity: 0.45; filter: blur(1px); }
+  50% { transform: translateY(8%); opacity: 1; filter: blur(0); }
+  100% { transform: translateY(40%); opacity: 0.45; filter: blur(1px); }
 }
 
 .slot-reel-window--win .slot-reel {

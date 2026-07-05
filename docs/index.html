@@ -41,7 +41,7 @@
   <script>
     window.addEventListener("error", function (e) {
       var app = document.getElementById("app");
-      if (!app || app.dataset.bootError) return;
+      if (!app || app.dataset.bootError || window.__casinoReady) return;
       app.dataset.bootError = "1";
       app.innerHTML = "<div class=\"loading-screen\"><div class=\"banner\"><h1>The Mandalay Bay</h1></div>"
         + "<p class=\"error\">Could not start the casino: " + (e.message || "unknown error") + "</p>"

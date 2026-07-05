@@ -48,7 +48,7 @@ export function buildHotelRenderers(ctx) {
     const evicted = cycle.roomEvicted;
     return el("div", { className: `world-cycle-banner resort-time-${cycle.phase.id}` }, [
       el("p", { className: "subtitle", textContent: `Day ${cycle.displayDay} · ${cycle.phaseLabel}` }),
-      el("p", { className: "dim", textContent: `${cycle.timeLabel} · Daily charges: ${fmtChips(cycle.dailyTotal)}` }),
+      el("p", { className: "dim", textContent: `${cycle.vegasClock} · ${cycle.timeLabel} · Daily charges: ${fmtChips(cycle.dailyTotal)}` }),
       el("p", { className: "dim", textContent: cycle.statusMessage }),
       evicted
         ? el("p", { className: "warning", textContent: `Room locked — ${cycle.overdueBalance > 0 ? `$${cycle.overdueBalance.toLocaleString()} overdue` : "settle at front desk"}. Hit the casino floor.` })

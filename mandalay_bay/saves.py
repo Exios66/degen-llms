@@ -17,6 +17,7 @@ from mandalay_bay.intoxication import attach_intoxication_to_session
 from mandalay_bay.rewards import RewardsState, SAVE_VERSION_WITH_REWARDS, ensure_rewards, migrate_session_rewards
 from mandalay_bay.session import ActivityStats, PlayerSession
 from mandalay_bay.casino_time import flush_casino_time, format_save_slot_play_times
+from mandalay_bay.vegas_time import format_vegas_datetime
 
 MAX_SLOTS = 5
 DEFAULT_STARTING_CHIPS = 1000
@@ -355,9 +356,7 @@ def session_from_dict(data: dict) -> PlayerSession:
 
 
 def _format_updated(when: datetime | None) -> str:
-    if when is None:
-        return "never"
-    return when.astimezone().strftime("%Y-%m-%d %H:%M")
+    return format_vegas_datetime(when)
 
 
 def run_save_picker(

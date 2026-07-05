@@ -7,6 +7,8 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
+from mandalay_bay.vegas_time import format_vegas_signed_at
+
 _DATA_DIR = Path(__file__).resolve().parent / "data"
 _REGISTRY_PATH = _DATA_DIR / "guest_directory.json"
 
@@ -154,7 +156,6 @@ def sign_guest_directory(
 
 def format_signed_at(iso: str) -> str:
     try:
-        dt = datetime.fromisoformat(iso.replace("Z", "+00:00"))
-        return dt.astimezone().strftime("%b %d, %Y %I:%M %p")
+        return format_vegas_signed_at(iso)
     except ValueError:
         return iso

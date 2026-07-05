@@ -4,6 +4,7 @@ import {
   createGuestSession, PlayerSession, formatPlayTimeSummary, formatSaveSlotPlayTimes, getCasinoTimeMs,
 } from "./core.js";
 import { startCasinoClock, stopCasinoClock } from "./casino-time.js";
+import { formatVegasClockLabel, formatVegasTime } from "./vegas-time.js";
 import { applyIntoxicationEffects } from "./intoxication-effects.js";
 import {
   MACHINES,
@@ -63,6 +64,8 @@ function isInCasinoView() {
 function startCasinoTimeTicker() {
   stopCasinoTimeTicker();
   casinoTimeTicker = window.setInterval(() => {
+    const vegasEl = document.getElementById("vegas-clock");
+    if (vegasEl) vegasEl.textContent = formatVegasClockLabel();
     if (!isInCasinoView() || session.slotId == null) return;
     const timeEl = document.getElementById("casino-time-tracker");
     if (timeEl) {
@@ -419,6 +422,11 @@ function settingsBar() {
     : "No save";
   const children = [
     el("span", { className: "dim", textContent: `Save: ${saveLabel}` }),
+    el("span", {
+      id: "vegas-clock",
+      className: "dim",
+      textContent: formatVegasClockLabel(),
+    }),
   ];
   if (session.slotId != null) {
     children.push(el("span", {
@@ -768,6 +776,7 @@ function renderHub() {
       ? el("p", { className: "dim", textContent: `Save: ${session.slotLabel || `Slot ${session.slotId}`}` })
       : el("p", { className: "dim", textContent: "Guest visit — progress is not saved" }),
     el("p", { className: "welcome-line", textContent: `Welcome, ${session.playerName}` }),
+    el("p", { className: "dim", textContent: formatVegasClockLabel() }),
     chipLine(),
     el("div", { className: "hub-features panel" }, [
       el("p", { className: "subtitle", textContent: "On the floor today:" }),
@@ -1004,10 +1013,9 @@ function renderCashierLedger() {
       el("th", { textContent: "Description" }),
     ])]),
     el("tbody", {}, txs.length ? [...txs].reverse().map((tx) => {
-      const d = new Date(tx.timestamp);
       const sign = tx.amount >= 0 ? "+" : "";
       return el("tr", {}, [
-        el("td", { textContent: d.toLocaleTimeString() }),
+        el("td", { textContent: formatVegasTime(tx.timestamp) }),
         el("td", { textContent: tx.activity }),
         el("td", { textContent: `${sign}${tx.amount.toLocaleString()}` }),
         el("td", { textContent: tx.balanceAfter.toLocaleString() }),
@@ -1165,10 +1173,9 @@ function renderBankLedger() {
       el("th", { textContent: "Description" }),
     ])]),
     el("tbody", {}, txs.length ? [...txs].reverse().map((tx) => {
-      const d = new Date(tx.timestamp);
       const sign = tx.amount >= 0 ? "+" : "";
       return el("tr", {}, [
-        el("td", { textContent: d.toLocaleTimeString() }),
+        el("td", { textContent: formatVegasTime(tx.timestamp) }),
         el("td", { textContent: tx.category }),
         el("td", { textContent: `${sign}${tx.amount.toLocaleString()}` }),
         el("td", { textContent: tx.balanceAfter.toLocaleString() }),

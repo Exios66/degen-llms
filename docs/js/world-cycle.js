@@ -1,6 +1,6 @@
 /** Real-time day/night cycle — 2 hours real time = 1 in-game day. */
 
-import { fmtChips } from "./core.js";
+import { formatVegasClockLabel } from "./vegas-time.js";
 import { defaultHotelState, ensureHotel, isNetPositive } from "./hotel.js";
 import { getSessionTierIndex } from "./resort-bridge.js";
 
@@ -328,6 +328,7 @@ export function getWorldCycleSummary(session) {
   return {
     ...state,
     timeLabel: formatTimeRemaining(state.msUntilNextDay),
+    vegasClock: formatVegasClockLabel(),
     phaseLabel: state.phase.label,
     dailyTotal: charges.total,
     statusMessage: reservationStatusMessage(session),

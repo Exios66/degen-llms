@@ -21,6 +21,7 @@ import {
   formatSaveSlotPlayTimes,
   getCasinoTimeMs,
 } from "./casino-time.js";
+import { formatVegasDateTimeShort } from "./vegas-time.js";
 
 export const CASINO_NAME = "The Mandalay Bay";
 export const SAVE_VERSION = 7;
@@ -486,7 +487,7 @@ export function createSlot(slotId, { playerName = "Guest", chips = 1000, label =
 export function formatSaveTime(iso) {
   if (!iso) return "never";
   try {
-    return new Date(iso).toLocaleString();
+    return formatVegasDateTimeShort(iso);
   } catch {
     return "unknown";
   }

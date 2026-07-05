@@ -1,91 +1,96 @@
-# GitHub Pages logs
+# Repository logs
 
-This directory holds deploy logs for the **gh-pages branch /docs/** method (`deploy_method=gh-pages-branch-docs`). GitHub’s Actions UI only shows workflow pass/fail — it does not surface branch-deploy Pages propagation, verification, or structured error codes. Use these files for your own analysis.
+This directory holds append-only logs for GitHub Pages branch deploys. GitHub’s UI is oriented toward Actions-based Pages builds; this project publishes from the **`gh-pages` branch `/docs` folder**, so these logs are the source of truth for deploy health.
 
-## `gh-pages-sync.log` — operational sync history
+## Files
 
-Records every **Deploy GitHub Pages** workflow run:
+| File | Purpose |
+|------|---------|
+| [`gh-pages-sync.log`](gh-pages-sync.log) | Sync ping — whether `main/docs/` matched or was copied to `gh-pages` |
+| [`gh-pages-build-status.log`](gh-pages-build-status.log) | **Build outcome** — success/failure, error codes, debug codes, HTTP checks |
 
-- **push** — when `docs/` or the deploy workflow changes on `main`
-- **schedule** — hourly check (`0 * * * *` UTC)
-- **workflow_dispatch** — manual run from the Actions tab
-- **manual_run** — explicit local or agent invocation (`/sync-gh-pages` skill, `./scripts/sync-gh-pages.sh`)
+## Build status log format
 
-Each line is pipe-delimited:
-
-```
-TIMESTAMP | trigger=… | main=SHA | gh-pages=SHA | status=… | synced=yes|no | changed=N | docs_files=N | url=…
-```
-
-| `status` | Meaning |
-|----------|---------|
-| `up_to_date` | gh-pages already matched main; no publish |
-| `synced` | docs were copied from main to the `gh-pages` branch |
-
-## `gh-pages-build-status.log` — success & failure with codes
-
-One line per run with outcome, error code, and a debug phase chain. Written by `scripts/sync-gh-pages.sh` on every run (including failures).
+Each line in `gh-pages-build-status.log` is pipe-delimited:
 
 ```
-timestamp=ISO8601Z | outcome=success|failure | code=GBP-NNN | debug=GBP-…,GBP-… | error="…" | trigger=… | deploy_method=gh-pages-branch-docs | url=… | workflow_attempt=N | main=SHA | gh-pages_before=SHA | gh-pages_after=SHA | sync_status=synced|up_to_date | synced=yes|no | changed=N | docs_files=N
+timestamp=2026-07-05T07:28:38Z | outcome=success | code=GBP-000 | debug=GBP-SYNC-002,GBP-VERIFY-001,... | trigger=manual_run | deploy_method=gh-pages-branch-docs | main=8dd7e68 | gh-pages=6b80462 | ...
 ```
 
-| Field | Meaning |
-|-------|---------|
-| `outcome` | `success` or `failure` |
-| `code` | Primary GBP error/success code (see table below) |
-| `debug` | Comma-separated phase codes showing how far the run progressed |
-| `error` | Human-readable message on failure (omitted on success) |
-| `deploy_method` | Pages source: branch `gh-pages` serving `/docs` |
-| `workflow_attempt` | GitHub Actions run attempt (`0` for local runs) |
-| `gh-pages_before` / `gh-pages_after` | Remote `gh-pages` tip before and after this run |
+### Core fields
 
-### Outcome codes (`code=GBP-NNN`)
+| Field | Values | Meaning |
+|-------|--------|---------|
+| `timestamp` | ISO-8601 UTC | When the build check completed |
+| `outcome` | `success` \| `failure` | Overall result |
+| `code` | `GBP-000` … `GBP-010` | Primary error/success code (see below) |
+| `debug` | Comma-separated codes | Granular steps and failure hints |
+| `trigger` | `push`, `schedule`, `workflow_dispatch`, `manual_run` | What started the run |
+| `deploy_method` | `gh-pages-branch-docs` | Always branch deploy (not Actions artifact Pages) |
+| `error` | Quoted string | Human-readable failure message (failures only) |
+
+### Outcome codes (`code=`)
 
 | Code | Meaning |
 |------|---------|
-| `GBP-000` | Success — sync (if needed), verification, and log commit completed |
+| `GBP-000` | Success — sync (if needed) and live verification passed |
 | `GBP-001` | Git fetch failed |
-| `GBP-002` | Git archive / docs staging failed |
-| `GBP-003` | `gh-pages` checkout failed |
-| `GBP-004` | `gh-pages` commit or push failed |
-| `GBP-005` | Return checkout to `main` failed |
-| `GBP-006` | Live site HTTP verification failed |
-| `GBP-007` | Sync/build log commit or push to `main` failed |
-| `GBP-099` | Unexpected error |
+| `GBP-002` | Checkout blocked (dirty working tree) |
+| `GBP-003` | Push to `gh-pages` rejected |
+| `GBP-004` | `git archive` / extract failed |
+| `GBP-005` | Commit on `gh-pages` failed |
+| `GBP-006` | Live site verification failed (HTTP or content checks) |
+| `GBP-007` | Live site unreachable |
+| `GBP-008` | Asset validation failed |
+| `GBP-009` | Unexpected script error (`set -e` / trap) |
+| `GBP-010` | GitHub Actions job failed before sync completed |
 
-### Debug phase codes (`debug=…`)
+### Debug codes (`debug=`)
 
-| Code | Phase |
-|------|-------|
-| `GBP-SYNC-001` | Run started |
-| `GBP-SYNC-002` | Docs pushed to `gh-pages` |
-| `GBP-SYNC-003` | Sync skipped (already up to date) |
-| `GBP-SYNC-004` | Logs committed to `main` (failures only) |
-| `GBP-SYNC-005` | Live site verification passed |
-| `GBP-FAIL-FETCH-001` | Fetch failure |
-| `GBP-FAIL-ARCHIVE-001` | Archive failure |
-| `GBP-FAIL-CHECKOUT-001` | Checkout failure |
-| `GBP-FAIL-PUSH-001` | Push failure |
-| `GBP-FAIL-MAIN-001` | Main checkout failure |
-| `GBP-FAIL-LOG-001` | Log commit/push failure |
-| `GBP-FAIL-VERIFY-001` | Verification failure |
+| Code | Meaning |
+|------|---------|
+| `GBP-SYNC-001` | Docs already up to date (no push) |
+| `GBP-SYNC-002` | Docs synced and pushed to `gh-pages` |
+| `GBP-SYNC-003` | Partial fetch (`gh-pages` ref unavailable) |
+| `GBP-VERIFY-001` | `index.html` HTTP 200 |
+| `GBP-VERIFY-002` | `js/app.js` HTTP 200 and contains horse paddock code |
+| `GBP-VERIFY-003` | `js/horse-sprites.js` HTTP 200 |
+| `GBP-VERIFY-004` | Cache-bust query param present on assets |
+| `GBP-VERIFY-005` | No merge-conflict markers in `app.js` |
+| `GBP-VERIFY-006` | `css/casino.css` HTTP 200 |
+| `GBP-FAIL-PUSH-001` | Push non-fast-forward or permissions |
+| `GBP-FAIL-TRAP-001` | Unhandled script error |
+| `GBP-FAIL-WF-001` | Workflow job failure (billing, checkout, etc.) |
+| `GBP-FAIL-VERIFY-001` | Verification step failed |
 
-### Example success line
+### Optional HTTP fields (on verify runs)
+
+| Field | Example | Meaning |
+|-------|---------|---------|
+| `http_index` | `200` | Status code for `/index.html` |
+| `http_app_js` | `200` | Status code for `/js/app.js` |
+| `latency_app_js_ms` | `142` | Round-trip latency in ms |
+| `cache_bust` | `stamped` \| `placeholder` \| `none` | Asset cache-bust state |
+
+## Sync ping log format
+
+See [`gh-pages-sync.log`](gh-pages-sync.log) — one line per run:
 
 ```
-timestamp=2026-07-05T08:00:00Z | outcome=success | code=GBP-000 | debug=GBP-SYNC-001,GBP-SYNC-003,GBP-SYNC-005 | trigger=schedule | deploy_method=gh-pages-branch-docs | url=https://exios66.github.io/degen-llms/ | workflow_attempt=1 | main=abc1234 | gh-pages_before=def5678 | gh-pages_after=def5678 | sync_status=up_to_date | synced=no | changed=0 | docs_files=54
+TIMESTAMP | trigger=… | main=SHA | gh-pages=SHA | status=up_to_date|synced | synced=yes|no | changed=N | docs_files=N | url=…
 ```
 
-### Example failure line
+## Scripts
 
-```
-timestamp=2026-07-05T08:05:00Z | outcome=failure | code=GBP-006 | debug=GBP-SYNC-001,GBP-SYNC-002,GBP-FAIL-VERIFY-001 | error="Live site verification failed after sync" | trigger=manual_run | deploy_method=gh-pages-branch-docs | url=https://exios66.github.io/degen-llms/ | workflow_attempt=1 | main=abc1234 | gh-pages_before=def5678 | gh-pages_after=999aaaa | sync_status=synced | synced=yes | changed=4 | docs_files=54
-```
+| Script | Role |
+|--------|------|
+| [`scripts/sync-gh-pages.sh`](../scripts/sync-gh-pages.sh) | Sync + both logs |
+| [`scripts/verify-gh-pages-live.sh`](../scripts/verify-gh-pages-live.sh) | Live HTTP/content checks only |
+| [`scripts/log-gh-pages-workflow-failure.sh`](../scripts/log-gh-pages-workflow-failure.sh) | Records Actions failures (`GBP-010`) |
+| [`scripts/lib/gh-pages-build-log.sh`](../scripts/lib/gh-pages-build-log.sh) | Shared logging helpers and code constants |
 
 ## Live site
 
-Branch deploy from **`gh-pages`** (`/docs` folder):  
 https://exios66.github.io/degen-llms/
 
-Verification checks `/`, `/index.html`, `/css/casino.css`, `/js/app.js`, and `/rpg/index.html` with retries (Pages can lag 1–3 minutes after push). Set `SKIP_VERIFY=1` to skip checks locally.
+Configured as **Deploy from branch → `gh-pages` → `/docs`**, not “GitHub Actions” as the Pages source.

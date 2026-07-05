@@ -1,105 +1,69 @@
 # Sports Book
 
-Simulated sports wagering at the **Sports Book** floor.
+Simulated sports wagering and prediction markets at the **Sports Book** floor.
 
 ## Supported sports
 
-- NFL
-- NBA
-- MLB
-- Soccer
+- NFL, NBA, MLB, MLS Soccer
+- NHL, NCAA Football, NCAA Basketball
+- UFC/MMA, Tennis, PGA Golf
 
-Events are generated with team matchups, moneyline odds, and point spreads.
+Events use real team names, division-aware matchups, strength-based odds, and sport-accurate score simulation.
 
 ## Game flow
 
 ```
-Sports Book → Review board → Place wager(s) → Settle open bets → Back to lobby
+Sports Book → Sports | Predictions tabs → Place wagers → Settle all → Wallet updated
 ```
 
-```mermaid
-flowchart LR
-    board[Event Board]
-    board --> pick[Pick Event]
-    pick --> type[Moneyline or Spread]
-    type --> team[Pick Team/Side]
-    team --> amount[Enter Wager]
-    amount --> ticket[Open Ticket]
-    ticket --> settle[Settle All]
-    settle --> payout[Wallet Updated]
-```
+## Sports bet types
 
-## Event board
+| Type | Description |
+|------|-------------|
+| **Moneyline** | Outright winner |
+| **Spread** | Cover the point spread (-110 juice) |
+| **Total (O/U)** | Combined score over/under the line |
+| **Props** | e.g. both teams score, combined TDs |
+| **Outright** | UFC, tennis, golf winner markets |
 
-Each event shows:
+**Push**: Ties on moneyline, exact spread, or exact total return the stake.
 
-```
-1) [NFL] Chiefs @ Raiders
-   ML: Chiefs +130 | Raiders -150
-   Spread: Raiders -1.5 (-110) | Chiefs +1.5 (-110)
-```
+## Prediction markets
 
-- **ML** — Moneyline (outright winner)
-- **Spread** — Point spread with standard -110 juice
+Binary YES/NO contracts priced in cents (Polymarket-style):
 
-## Bet types
+| Category | Examples |
+|----------|----------|
+| **Sports Pulse** | Cover spreads, totals — linked to board events |
+| **Headlines & Buzz** | Award shows, viral stories |
+| **Vegas & Resort** | Strip traffic, pool attendance |
+| **Public Sentiment** | Crowd/poll swings, social buzz |
 
-### Moneyline
+- Buy YES @ 35¢ with 100 chips → max payout ~286 chips if YES resolves
+- Prices drift ±5¢ on refresh
+- **High volatility** — you can lose your entire stake
 
-Pick the team to win outright.
+## Board
 
-| Odds | Meaning |
-|------|---------|
-| +130 | $100 bet wins $130 profit |
-| -150 | Bet $150 to win $100 profit |
+- 10 events with sport filter chips
+- Optional live fixture sync (web) when network and API are available
+- Refresh preserves open tickets against original events
 
-**Push**: If scores tie, stake is returned.
+## Settlement
 
-### Spread
+One **Settle all open positions** run:
 
-Pick a team to cover the point spread.
-
-- **Raiders -1.5** — Raiders must win by 2+
-- **Chiefs +1.5** — Chiefs can lose by 1 or win outright
-
-**Push**: If the adjusted margin is exactly 0 (whole-number spreads only), stake is returned.
-
-## Placing tickets
-
-1. Select **Place a wager**
-2. Enter event number
-3. Choose Moneyline or Spread
-4. Pick team/side
-5. Enter wager ($10 minimum, up to balance)
-
-Chips debit immediately. The menu shows your open ticket count.
-
-## Settling bets
-
-Select **Settle all open bets** to:
-
-1. Generate random final scores (sport-appropriate ranges)
-2. Resolve each ticket
-3. Credit winnings or confirm losses
-4. Clear the pending queue
-
-You control when results are simulated — place multiple tickets, then settle together.
-
-## Refresh lines
-
-Generates four new events with fresh odds. **Open tickets are preserved** against their original events.
+1. Simulates final scores (sport-specific models, correlated with pre-game strength)
+2. Resolves sports tickets and prediction contracts
+3. Credits winnings and clears the slip
 
 ## Minimum wager
 
-$10 chips per ticket.
-
-## RNG
-
-- Event generation: random sport, teams, strength ratings
-- Final scores: `secrets.SystemRandom()` within sport-specific ranges
-- Soccer: 0–3 goals per team; others: 10–35 points
+$10 chips per ticket or contract.
 
 ## Implementation
 
-- `mandalay_bay/activities/sportsbook.py`
-- Tests: `tests/test_sportsbook.py`
+- `docs/js/sportSimulator.js`, `docs/js/predictionMarkets.js`, `docs/js/sportsbook.js`
+- `mandalay_bay/sport_simulator.py`, `mandalay_bay/prediction_markets.py`
+- Data: `docs/data/sports_catalog.json`
+- Tests: `tests/test_sportsbook.py`, `tests/test_sport_simulator.py`, `tests/test_prediction_markets.py`

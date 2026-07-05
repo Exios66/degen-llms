@@ -571,6 +571,8 @@ export function getEventHint(eventId) {
 export function getRoomAmenitiesSummary(hotel) {
   const ra = ensureRoomAmenities(hotel);
   const parts = [];
+  const time = getResortTimeOfDay(hotel);
+  parts.push(time.label);
   if (ra.tvChannel) {
     const ch = TV_CHANNELS[ra.tvChannel];
     parts.push(`TV: ${ch?.label ?? ra.tvChannel}`);

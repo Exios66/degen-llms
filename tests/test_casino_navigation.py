@@ -1,6 +1,5 @@
 from pathlib import Path
 
-from mandalay_bay.activities.sportsbook import BetSlip, SportsbookActivity, SportsEvent
 from mandalay_bay.chips import ChipWallet
 from mandalay_bay.display import TerminalUI
 from mandalay_bay.hub import run_cashier, run_help, run_hub
@@ -46,29 +45,6 @@ def test_wallet_apply_delta_and_reconcile() -> None:
     assert wallet.balance == 950
     wallet.reconcile(1050, "blackjack", "Exit sync")
     assert wallet.balance == 1050
-
-
-def test_spread_push_returns_stake() -> None:
-    activity = SportsbookActivity()
-    event = SportsEvent(
-        event_id="test",
-        sport="NFL",
-        home="Raiders",
-        away="Chiefs",
-        home_odds=-110,
-        away_odds=-110,
-        spread=-3.0,
-        spread_home_odds=-110,
-        spread_away_odds=-110,
-        home_score=20,
-        away_score=17,
-    )
-    slip = BetSlip(event=event, bet_type="spread", pick="Raiders", amount=100, odds=-110)
-    won, payout, reason = activity._resolve_slip(slip)
-    assert won is True
-    assert payout == 100
-    assert "Push" in reason
-
 
 def test_hub_leave_casino_flow(tmp_path: Path) -> None:
     library = SaveLibrary(save_dir=tmp_path / "saves")

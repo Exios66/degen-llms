@@ -11,7 +11,7 @@ import {
 } from "./profileCache.js";
 
 export const CASINO_NAME = "The Mandalay Bay";
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 
 /** Default RPG overworld state for pixel mode (Phase 1+). */
 export function defaultRpgState(overrides = {}) {
@@ -520,7 +520,7 @@ export const ACTIVITIES = {
     name: "Mandalay Sports Book",
     floor: "Sports Book",
     minBet: 10,
-    description: "Wager on simulated live events — moneyline and spread betting.",
+    description: "Sports wagering and prediction markets — spreads, totals, props, and high-volatility YES/NO contracts.",
   },
   horse_racing: {
     id: "horse_racing",

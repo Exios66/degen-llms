@@ -45,7 +45,6 @@ export function buildHotelRenderers(ctx) {
 
   function renderWorldCycleBanner() {
     const cycle = getWorldCycleSummary(session);
-    const hotel = ensureHotel(session);
     const evicted = cycle.roomEvicted;
     return el("div", { className: `world-cycle-banner resort-time-${cycle.phase.id}` }, [
       el("p", { className: "subtitle", textContent: `Day ${cycle.displayDay} · ${cycle.phaseLabel}` }),
@@ -101,10 +100,6 @@ export function buildHotelRenderers(ctx) {
       bed: "hotel-room-decisions",
     };
     pushView(map[zoneId] ?? "hotel-room");
-  }
-    const r = session.rewards;
-    if (!r) return false;
-    return r.unlockedComps?.includes(compId) && !r.redeemedComps?.includes(compId);
   }
 
   function renderHotelLobby() {

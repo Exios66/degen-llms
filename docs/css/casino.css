@@ -88,6 +88,32 @@ body {
   margin: 0.5rem 0;
 }
 
+.chip-line-wrap .bank-line {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+}
+
+.staff-manifest-list .staff-custom-badge {
+  color: var(--green);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+.staff-context-input {
+  width: 100%;
+  min-height: 6rem;
+  font: inherit;
+}
+
+.racing-names-input,
+.staff-context-input {
+  background: rgba(0, 0, 0, 0.35);
+  color: inherit;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  padding: 0.5rem;
+}
+
 .welcome-line {
   margin: 0.25rem 0;
 }
@@ -2319,7 +2345,7 @@ body {
   border-image: linear-gradient(90deg, #e74c3c, #f0c040) 1;
 }
 
-/* ── Horse racing paddock & kawaii sprites ── */
+/* ── Horse racing paddock & equestrian sprites ── */
 
 .racing-pavilion {
   max-width: 960px;

@@ -332,7 +332,24 @@ export function dealerShiftSeed(session, gameId) {
  * @returns {DealerProfile}
  */
 export function getSessionDealer(session, gameId) {
-  return getOnDutyDealer(gameId, dealerShiftSeed(session, gameId));
+  const dealer = getOnDutyDealer(gameId, dealerShiftSeed(session, gameId));
+  return resolveDealerFromManifest(session, dealer);
+}
+
+/**
+ * Resolve dealer with optional staff manifest overrides.
+ * @param {import("./core.js").PlayerSession | null | undefined} session
+ * @param {DealerProfile} dealer
+ */
+export function resolveDealerFromManifest(session, dealer) {
+  if (!session?.staffOverrides) return dealer;
+  const override = session.staffOverrides.dealers?.[dealer.id];
+  if (!override) return dealer;
+  return {
+    ...dealer,
+    name: override.name ?? dealer.name,
+    tagline: override.tagline ?? dealer.tagline,
+  };
 }
 
 /**

@@ -3,6 +3,7 @@ import {
   saveSlot, loadSlot, createSlot, deleteSlot, listSlots, recentSlots, formatSaveTime,
   createGuestSession, PlayerSession,
 } from "./core.js";
+import { applyIntoxicationEffects } from "./intoxication-effects.js";
 import {
   MACHINES,
   spinReels,
@@ -22,6 +23,13 @@ import { generateRace, simulateRace, settleTicket, fmtOdds as fmtRaceOdds, loadB
 import { createHorseSpriteCanvas, getHorseSprite, getJockeySilks } from "./horse-sprites.js";
 import { createRaceTrackView, createRacePreview } from "./horse-race-track.js";
 import { getSessionDealer, pickQuip } from "./dealers.js";
+import {
+  ensureBank, cashOutToBank, buyInForSession, fundBankFromOutside, renameBankAccount,
+  OUTSIDE_EXPENSE_CATEGORIES, expenseCategoryLabel,
+} from "./bank-account.js";
+import {
+  editableStaffEntries, updateStaffOverride, clearStaffOverride, setStaffOverrides,
+} from "./staff-manifest.js";
 import { RewardsPhone } from "./RewardsPhone.js";
 import { buildHotelRenderers } from "./hotel-ui.js";
 import { ensureHotel } from "./hotel.js";
@@ -116,7 +124,14 @@ function banner(title) {
 }
 
 function chipLine() {
-  return el("p", { className: "chip-line", textContent: `Chips: ${fmtChips(session.wallet.balance)}` });
+  const bank = ensureBank(session);
+  return el("div", { className: "chip-line-wrap" }, [
+    el("p", { className: "chip-line", textContent: `Floor chips: ${fmtChips(session.wallet.balance)}` }),
+    el("p", {
+      className: "bank-line dim",
+      textContent: `${bank.accountName}: ${fmtChips(bank.balance)} (off-strip)`,
+    }),
+  ]);
 }
 
 function dealerPanel(gameId) {
@@ -292,9 +307,10 @@ function horsePaddockCard(horse, { selected = false, onClick = null } = {}) {
     createHorseSpriteCanvas(horse.spriteId, {
       size: 80,
       animate: true,
-      animation: "idle",
+      animation: "walk",
+      direction: "front",
       horseNumber: horse.number,
-      withJockey: true,
+      withJockey: false,
     }),
     el("div", { className: "horse-paddock-num", textContent: `#${horse.number}` }),
     el("div", { className: "horse-paddock-name", textContent: horse.name }),
@@ -353,6 +369,7 @@ function enterCasino(nextSession) {
   viewStack = [{ name: "hub", data: {} }];
   clearStatus();
   mountRewardsPhone();
+  applyIntoxicationEffects(session);
   render();
 }
 
@@ -692,7 +709,17 @@ function renderSaveDelete() {
 }
 
 function renderHub() {
-  const floors = [...FLOOR_ORDER, "Cashier", "Player Stats", "Save Game", "Exit to Hotel", "Explore Resort (RPG)", "Leave Casino"];
+  const floors = [
+    ...FLOOR_ORDER,
+    "Cashier",
+    "Off-Strip Bank Account",
+    "Staff Manifest",
+    "Player Stats",
+    "Save Game",
+    "Exit to Hotel",
+    "Explore Resort (RPG)",
+    "Leave Casino",
+  ];
   const options = floors.map((f) => (FLOOR_ORDER.includes(f) ? `Explore ${f}` : f));
 
   const wrap = el("div", {}, [
@@ -757,18 +784,22 @@ function renderHub() {
     } else if (choice === FLOOR_ORDER.length + 1) {
       pushView("cashier");
     } else if (choice === FLOOR_ORDER.length + 2) {
-      pushView("stats");
+      pushView("bank-account");
     } else if (choice === FLOOR_ORDER.length + 3) {
+      pushView("staff-manifest");
+    } else if (choice === FLOOR_ORDER.length + 4) {
+      pushView("stats");
+    } else if (choice === FLOOR_ORDER.length + 5) {
       if (session.slotId != null) {
         persist();
         showStatus(`Game saved to ${session.slotLabel || `Slot ${session.slotId}`}.`);
       } else {
         showStatus("No save slot active — pick a slot at entry or play as guest.", "error");
       }
-    } else if (choice === FLOOR_ORDER.length + 4) {
+    } else if (choice === FLOOR_ORDER.length + 6) {
       ensureHotel(session);
       pushView("hotel-lobby");
-    } else if (choice === FLOOR_ORDER.length + 5) {
+    } else if (choice === FLOOR_ORDER.length + 7) {
       const rpgUrl = session.slotId != null
         ? `./rpg/?slot=${session.slotId}`
         : "./rpg/?guest=1";
@@ -830,14 +861,19 @@ function renderCashier() {
     banner("Cashier"),
     chipLine(),
     menu(
-      ["Buy chips ($500 bundle)", "Buy custom amount", "Cash out chips", "View transaction ledger"],
+      ["Buy chips ($500 bundle)", "Buy custom amount", "Cash out chips to bank", "View floor transaction ledger"],
       "Chip window:",
       (choice) => {
         if (choice === 0) { goBack(); return; }
         if (choice === 1) {
-          session.wallet.buyIn(500);
+          const outcome = buyInForSession(session, 500, { useOutsideFunds: true });
           persist();
-          showStatus(`Purchased ${fmtChips(500)}. Balance: ${fmtChips(session.wallet.balance)}`);
+          const bank = ensureBank(session);
+          if (outcome === "from_bank") {
+            showStatus(`Purchased ${fmtChips(500)} from ${bank.accountName}. Floor balance: ${fmtChips(session.wallet.balance)}`);
+          } else {
+            showStatus(`Purchased ${fmtChips(500)} with outside funds. Balance: ${fmtChips(session.wallet.balance)}`);
+          }
         } else if (choice === 2) {
           pushView("cashier-buy");
         } else if (choice === 3) {
@@ -864,9 +900,24 @@ function renderCashierBuy() {
         onclick: () => {
           const amount = parseInt(input.value, 10);
           if (amount < 50 || amount > 100000) { alert("Enter $50–$100,000"); return; }
-          session.wallet.buyIn(amount);
+          const bank = ensureBank(session);
+          let outcome;
+          if (bank.balance >= amount) {
+            outcome = buyInForSession(session, amount);
+          } else if (confirm(`Only ${fmtChips(bank.balance)} in ${bank.accountName}. Use outside funds for the buy-in?`)) {
+            outcome = buyInForSession(session, amount, { useOutsideFunds: true });
+          } else {
+            return;
+          }
           persist();
-          showStatus(`Purchased ${fmtChips(amount)}. Balance: ${fmtChips(session.wallet.balance)}`);
+          if (outcome === "from_bank") {
+            showStatus(`Purchased ${fmtChips(amount)} from ${bank.accountName}. Floor balance: ${fmtChips(session.wallet.balance)}`);
+          } else if (outcome === "outside_funds") {
+            showStatus(`Purchased ${fmtChips(amount)} with outside funds. Balance: ${fmtChips(session.wallet.balance)}`);
+          } else {
+            showStatus("Buy-in failed.", "error");
+            return;
+          }
           popView();
           render();
         },
@@ -890,9 +941,10 @@ function renderCashierCashout() {
         textContent: "Cash out",
         onclick: () => {
           const amount = parseInt(input.value, 10);
-          if (session.wallet.cashOut(amount)) {
+          const bank = ensureBank(session);
+          if (cashOutToBank(session, amount)) {
             persist();
-            showStatus(`Cashed out ${fmtChips(amount)}. Balance: ${fmtChips(session.wallet.balance)}`);
+            showStatus(`Cashed out ${fmtChips(amount)} to ${bank.accountName}. Floor balance: ${fmtChips(session.wallet.balance)}`);
             popView();
             render();
           } else showStatus("Cash out failed.", "error");
@@ -931,6 +983,279 @@ function renderCashierLedger() {
     table,
     el("div", { className: "action-bar" }, [
       el("button", { className: "btn", textContent: "Back", onclick: () => { popView(); render(); } }),
+    ]),
+  ]);
+}
+
+function renderBankAccount() {
+  const bank = ensureBank(session);
+  return el("div", {}, [
+    statusBanner(),
+    banner(bank.accountName),
+    chipLine(),
+    el("p", {
+      className: "dim",
+      textContent: "Your off-strip account — cashed-out chips land here for life outside the casino.",
+    }),
+    menu(
+      ["Deposit outside funds", "Pay outside expense", "Rename account", "View bank ledger"],
+      "Off-strip banking:",
+      (choice) => {
+        if (choice === 0) { goBack(); return; }
+        if (choice === 1) pushView("bank-deposit");
+        else if (choice === 2) pushView("bank-expense");
+        else if (choice === 3) pushView("bank-rename");
+        else if (choice === 4) pushView("bank-ledger");
+      },
+      { showCasinoBanner: false },
+    ),
+  ]);
+}
+
+function renderBankDeposit() {
+  const input = el("input", { type: "number", min: "50", max: "1000000", value: "500" });
+  return el("div", { className: "panel" }, [
+    banner("Deposit Outside Funds"),
+    chipLine(),
+    el("p", { className: "dim", textContent: "Symbolic personal funds wired to your off-strip account." }),
+    el("div", { className: "form-row" }, [el("label", { textContent: "Amount" }), input]),
+    el("div", { className: "action-bar" }, [
+      el("button", {
+        className: "btn primary",
+        textContent: "Deposit",
+        onclick: () => {
+          const amount = parseInt(input.value, 10);
+          if (amount < 50 || amount > 1000000) { alert("Enter $50–$1,000,000"); return; }
+          fundBankFromOutside(session, amount);
+          persist();
+          showStatus(`Deposited ${fmtChips(amount)}. Bank balance: ${fmtChips(session.bank.balance)}`);
+          goBack();
+        },
+      }),
+      el("button", { className: "btn", textContent: "Back", onclick: () => goBack() }),
+    ]),
+  ]);
+}
+
+function renderBankExpense() {
+  const bank = ensureBank(session);
+  if (bank.balance <= 0) {
+    return el("div", { className: "panel" }, [
+      banner("Pay Outside Expense"),
+      el("p", { className: "error", textContent: "Your bank account is empty." }),
+      el("div", { className: "action-bar" }, [
+        el("button", { className: "btn", textContent: "Back", onclick: () => goBack() }),
+      ]),
+    ]);
+  }
+
+  const categorySelect = el("select", {}, OUTSIDE_EXPENSE_CATEGORIES.map(([id, label]) =>
+    el("option", { value: id, textContent: label })
+  ));
+  const amountInput = el("input", {
+    type: "number",
+    min: "1",
+    max: String(bank.balance),
+    value: String(Math.min(100, bank.balance)),
+  });
+  const memoInput = el("input", { type: "text", placeholder: "Optional memo" });
+
+  return el("div", { className: "panel" }, [
+    banner("Pay Outside Expense"),
+    chipLine(),
+    el("div", { className: "form-row" }, [el("label", { textContent: "Category" }), categorySelect]),
+    el("div", { className: "form-row" }, [el("label", { textContent: "Amount" }), amountInput]),
+    el("div", { className: "form-row" }, [el("label", { textContent: "Memo" }), memoInput]),
+    el("div", { className: "action-bar" }, [
+      el("button", {
+        className: "btn primary",
+        textContent: "Pay",
+        onclick: () => {
+          const amount = parseInt(amountInput.value, 10);
+          if (amount < 1 || amount > bank.balance) {
+            alert(`Enter $1–${bank.balance.toLocaleString()}`);
+            return;
+          }
+          const categoryId = categorySelect.value;
+          const label = expenseCategoryLabel(categoryId);
+          const memo = memoInput.value.trim();
+          const description = memo ? `${label} — ${memo}` : label;
+          if (bank.payExpense(amount, categoryId, description)) {
+            persist();
+            showStatus(`Paid ${fmtChips(amount)} for ${label}. Bank balance: ${fmtChips(bank.balance)}`);
+            goBack();
+          } else {
+            showStatus("Payment failed.", "error");
+          }
+        },
+      }),
+      el("button", { className: "btn", textContent: "Back", onclick: () => goBack() }),
+    ]),
+  ]);
+}
+
+function renderBankRename() {
+  const bank = ensureBank(session);
+  const input = el("input", { type: "text", value: bank.accountName });
+  return el("div", { className: "panel" }, [
+    banner("Rename Account"),
+    el("div", { className: "form-row" }, [el("label", { textContent: "Account name" }), input]),
+    el("div", { className: "action-bar" }, [
+      el("button", {
+        className: "btn primary",
+        textContent: "Save name",
+        onclick: () => {
+          renameBankAccount(session, input.value);
+          persist();
+          showStatus(`Account renamed to ${session.bank.accountName}.`);
+          goBack();
+        },
+      }),
+      el("button", { className: "btn", textContent: "Back", onclick: () => goBack() }),
+    ]),
+  ]);
+}
+
+function renderBankLedger() {
+  const txs = ensureBank(session).recentTransactions(20);
+  const table = el("table", { className: "ledger-table" }, [
+    el("thead", {}, [el("tr", {}, [
+      el("th", { textContent: "Time" }),
+      el("th", { textContent: "Category" }),
+      el("th", { textContent: "Amount" }),
+      el("th", { textContent: "Balance" }),
+      el("th", { textContent: "Description" }),
+    ])]),
+    el("tbody", {}, txs.length ? [...txs].reverse().map((tx) => {
+      const d = new Date(tx.timestamp);
+      const sign = tx.amount >= 0 ? "+" : "";
+      return el("tr", {}, [
+        el("td", { textContent: d.toLocaleTimeString() }),
+        el("td", { textContent: tx.category }),
+        el("td", { textContent: `${sign}${tx.amount.toLocaleString()}` }),
+        el("td", { textContent: tx.balanceAfter.toLocaleString() }),
+        el("td", { textContent: tx.description }),
+      ]);
+    }) : [el("tr", {}, [el("td", { colSpan: "5", className: "dim", textContent: "No bank transactions yet." })])]),
+  ]);
+
+  return el("div", { className: "panel" }, [
+    banner("Bank Ledger"),
+    table,
+    el("div", { className: "action-bar" }, [
+      el("button", { className: "btn", textContent: "Back", onclick: () => goBack() }),
+    ]),
+  ]);
+}
+
+function renderStaffManifest() {
+  const entries = editableStaffEntries(session);
+  const list = el("ul", { className: "menu-list staff-manifest-list" });
+  entries.forEach((entry, i) => {
+    const roleLabel = entry.category === "dealers"
+      ? entry.games.join(", ")
+      : entry.role;
+    list.appendChild(el("li", {}, [
+      el("button", {
+        className: "menu-btn",
+        innerHTML: [
+          `<span class="num">${i + 1})</span> ${entry.name}`,
+          entry.customized ? ' <span class="staff-custom-badge">custom</span>' : "",
+          `<br><span class="dim" style="padding-left:1.75rem;font-size:0.85rem;">${roleLabel}</span>`,
+        ].join(""),
+        onclick: () => pushView("staff-manifest-edit", { staffId: entry.id, category: entry.category }),
+      }),
+    ]));
+  });
+
+  return el("div", {}, [
+    statusBanner(),
+    banner("Staff Manifest"),
+    el("p", {
+      className: "dim",
+      textContent: "Customize dealer and venue staff names and context for your visit.",
+    }),
+    el("div", { className: "panel" }, [
+      list,
+      el("div", { className: "action-bar" }, [
+        el("button", {
+          className: "btn",
+          textContent: "Reset all customizations",
+          onclick: () => {
+            if (confirm("Restore the default staff manifest for this save?")) {
+              setStaffOverrides(session, null);
+              persist();
+              showStatus("Restored default staff manifest.");
+              render();
+            }
+          },
+        }),
+        el("button", { className: "btn", textContent: "Back", onclick: () => goBack() }),
+      ]),
+    ]),
+  ]);
+}
+
+function renderStaffManifestEdit({ staffId, category }) {
+  const entry = editableStaffEntries(session).find((e) => e.id === staffId && e.category === category);
+  if (!entry) {
+    return el("div", { className: "panel" }, [
+      el("p", { className: "error", textContent: "Staff member not found." }),
+      el("button", { className: "btn", textContent: "Back", onclick: () => goBack() }),
+    ]);
+  }
+
+  const nameInput = el("input", { type: "text", value: entry.name });
+  const taglineInput = category === "dealers"
+    ? el("input", { type: "text", value: entry.tagline })
+    : null;
+  const contextInput = el("textarea", {
+    className: "staff-context-input",
+    rows: "4",
+    textContent: entry.context,
+  });
+
+  const fields = [
+    el("div", { className: "form-row" }, [el("label", { textContent: "Display name" }), nameInput]),
+  ];
+  if (taglineInput) {
+    fields.push(el("div", { className: "form-row" }, [el("label", { textContent: "Tagline" }), taglineInput]));
+  }
+  fields.push(el("div", { className: "form-row" }, [el("label", { textContent: "Context / notes" }), contextInput]));
+
+  return el("div", { className: "panel" }, [
+    banner(`Edit ${entry.name}`),
+    el("p", { className: "dim", textContent: `${entry.id} · ${category === "dealers" ? entry.games.join(", ") : entry.role}` }),
+    ...fields,
+    el("div", { className: "action-bar" }, [
+      el("button", {
+        className: "btn primary",
+        textContent: "Save",
+        onclick: () => {
+          const fieldsToSave = { name: nameInput.value.trim() };
+          if (taglineInput) fieldsToSave.tagline = taglineInput.value.trim();
+          fieldsToSave.context = contextInput.value.trim();
+          if (Object.values(fieldsToSave).every((v) => !v)) {
+            clearStaffOverride(session, category, staffId);
+          } else {
+            updateStaffOverride(session, category, staffId, fieldsToSave);
+          }
+          persist();
+          showStatus(`Updated ${entry.name}.`);
+          goBack();
+        },
+      }),
+      el("button", {
+        className: "btn",
+        textContent: "Reset this entry",
+        onclick: () => {
+          clearStaffOverride(session, category, staffId);
+          persist();
+          showStatus(`Reset ${staffId} to defaults.`);
+          goBack();
+        },
+      }),
+      el("button", { className: "btn", textContent: "Back", onclick: () => goBack() }),
     ]),
   ]);
 }
@@ -1919,7 +2244,8 @@ function renderHorseRacingSettle() {
             createHorseSpriteCanvas(h.spriteId, {
               size: 64,
               frame: i % 4,
-              animation: "trot",
+              animation: "gallop",
+              direction: "right",
               horseNumber: num,
               withJockey: true,
             }),
@@ -2291,6 +2617,13 @@ const RENDERERS = {
   "cashier-buy": renderCashierBuy,
   "cashier-cashout": renderCashierCashout,
   "cashier-ledger": renderCashierLedger,
+  "bank-account": renderBankAccount,
+  "bank-deposit": renderBankDeposit,
+  "bank-expense": renderBankExpense,
+  "bank-rename": renderBankRename,
+  "bank-ledger": renderBankLedger,
+  "staff-manifest": renderStaffManifest,
+  "staff-manifest-edit": renderStaffManifestEdit,
   stats: renderStats,
   leave: renderLeave,
   "stake-tier": renderStakeTier,

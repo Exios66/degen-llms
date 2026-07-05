@@ -59,6 +59,22 @@ export const HORSE_SPRITE_ROSTER = [
 
 export const HORSE_SPRITE_COUNT = HORSE_SPRITE_ROSTER.length;
 
+/** Classic table-racing silk colors — one palette per post position. */
+export const JOCKEY_SILKS = [
+  { name: "Teal", cap: "#58c8e8", shirt: "#40b0d0", sleeves: "#3098b8", pants: "#f0f0f0", trim: "#ffffff" },
+  { name: "Rose", cap: "#f098a8", shirt: "#e87898", sleeves: "#d06078", pants: "#f8f0f0", trim: "#ffffff" },
+  { name: "Violet", cap: "#a878d8", shirt: "#8860c0", sleeves: "#6848a0", pants: "#f0eef8", trim: "#ffd040" },
+  { name: "Gold", cap: "#f0d040", shirt: "#e8b820", sleeves: "#c89810", pants: "#fffef0", trim: "#ffffff" },
+  { name: "Crimson", cap: "#c84858", shirt: "#a83040", sleeves: "#881828", pants: "#f8ecec", trim: "#ffffff" },
+  { name: "Royal", cap: "#4878e8", shirt: "#3060c8", sleeves: "#2048a0", pants: "#eef0f8", trim: "#ffd040" },
+  { name: "Emerald", cap: "#48b878", shirt: "#309860", sleeves: "#208048", pants: "#f0f8f2", trim: "#ffffff" },
+  { name: "Orange", cap: "#f0a040", shirt: "#e08828", sleeves: "#c07018", pants: "#fff8f0", trim: "#ffffff" },
+];
+
+export function getJockeySilks(horseNumber) {
+  return JOCKEY_SILKS[(horseNumber - 1) % JOCKEY_SILKS.length];
+}
+
 const SPRITE_BY_ID = Object.fromEntries(HORSE_SPRITE_ROSTER.map((s) => [s.id, s]));
 
 export function getHorseSprite(spriteId) {
@@ -166,6 +182,22 @@ function drawMark(ctx, mark, ox, oy, accent, outline, scale) {
   dots(ctx, (m[mark] ?? []).map(([x, y, c]) => [x, y, c]), ox, oy, scale);
 }
 
+function drawJockey(ctx, ox, oy, silks, scale) {
+  const skin = "#f0d0b0";
+  const skinLo = "#d8b090";
+  px(ctx, ox + 15, oy + 4, 3, 2, silks.cap, scale);
+  px(ctx, ox + 16, oy + 3, 2, 1, shadeColor(silks.cap, 0.15), scale);
+  px(ctx, ox + 16, oy + 6, 2, 2, skin, scale);
+  px(ctx, ox + 17, oy + 7, 1, 1, skinLo, scale);
+  px(ctx, ox + 14, oy + 8, 6, 3, silks.shirt, scale);
+  px(ctx, ox + 13, oy + 9, 1, 2, silks.sleeves, scale);
+  px(ctx, ox + 20, oy + 9, 1, 2, silks.sleeves, scale);
+  px(ctx, ox + 15, oy + 8, 4, 1, silks.trim, scale);
+  px(ctx, ox + 15, oy + 11, 2, 2, silks.pants, scale);
+  px(ctx, ox + 17, oy + 11, 2, 2, silks.pants, scale);
+  px(ctx, ox + 14, oy + 10, 1, 1, shadeColor(silks.pants, -0.15), scale);
+}
+
 function drawPattern(ctx, pattern, ox, oy, accent, bodyHi, scale) {
   if (!pattern) return;
   const p = {
@@ -186,17 +218,30 @@ function drawPattern(ctx, pattern, ox, oy, accent, bodyHi, scale) {
 /**
  * Draw a cozy chibi side-view horse (Hardy Horse / Mana Seed inspired).
  * @param {'idle'|'trot'} animation
+ * @param {boolean} clear — clear canvas before draw (default true when canvas exists)
+ * @param {object|null} jockeySilks — when set, draws jockey and silk cloth
  */
-export function drawHorseSprite(ctx, spriteId, { scale = 2, frame = 0, animation = "idle" } = {}) {
+export function drawHorseSprite(ctx, spriteId, {
+  scale = 2,
+  frame = 0,
+  animation = "idle",
+  offsetX = 0,
+  offsetY = 0,
+  clear = null,
+  jockeySilks = null,
+} = {}) {
   const s = getHorseSprite(spriteId);
   const pal = buildPalette(s);
-  const ox = 4;
+  const ox = 4 + offsetX;
   const isTrot = animation === "trot";
   const tailFrame = isTrot ? Math.floor(frame / 2) % 3 : frame % 3;
   const legPose = isTrot ? TROT_LEGS[frame % 4] : TROT_LEGS[0];
-  const oy = 3 + legPose.bob;
+  const oy = 3 + legPose.bob + offsetY;
 
-  ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+  const shouldClear = clear ?? (offsetX === 0 && offsetY === 0);
+  if (shouldClear && ctx.canvas) {
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+  }
 
   // Ground shadow
   px(ctx, ox + 8, oy + 26, 22, 2, "rgba(0,0,0,0.22)", scale);
@@ -248,10 +293,17 @@ export function drawHorseSprite(ctx, spriteId, { scale = 2, frame = 0, animation
   drawLeg(ctx, ox, oy, 19, 18, legPose.frontFar, pal, scale);
   drawLeg(ctx, ox, oy, 23, 18, legPose.frontNear, pal, scale);
 
-  // Racing saddle cloth
-  px(ctx, ox + 13, oy + 14, 8, 3, pal.accent, scale);
-  px(ctx, ox + 14, oy + 13, 6, 1, shadeColor(pal.accent, -0.2), scale);
-  px(ctx, ox + 15, oy + 15, 4, 1, shadeColor(pal.accent, 0.15), scale);
+  // Racing saddle cloth or jockey silks
+  if (jockeySilks) {
+    px(ctx, ox + 13, oy + 14, 8, 3, jockeySilks.shirt, scale);
+    px(ctx, ox + 14, oy + 13, 6, 1, shadeColor(jockeySilks.shirt, -0.2), scale);
+    px(ctx, ox + 15, oy + 15, 4, 1, jockeySilks.trim, scale);
+    drawJockey(ctx, ox, oy, jockeySilks, scale);
+  } else {
+    px(ctx, ox + 13, oy + 14, 8, 3, pal.accent, scale);
+    px(ctx, ox + 14, oy + 13, 6, 1, shadeColor(pal.accent, -0.2), scale);
+    px(ctx, ox + 15, oy + 15, 4, 1, shadeColor(pal.accent, 0.15), scale);
+  }
 
   drawPattern(ctx, s.pattern, ox, oy, pal.accent, pal.bodyHi, scale);
   drawMark(ctx, s.mark, ox + 18, oy, pal.accent, pal.outline, scale);
@@ -268,7 +320,27 @@ export function drawHorseSprite(ctx, spriteId, { scale = 2, frame = 0, animation
   }
 }
 
-export function createHorseSpriteCanvas(spriteId, { size = 80, frame = 0, animate = false, animation = "idle" } = {}) {
+/** Draw horse + jockey composited at canvas pixel coordinates. */
+export function drawHorseAndJockeyAt(ctx, spriteId, canvasX, canvasY, {
+  scale = 1,
+  frame = 0,
+  animation = "trot",
+  horseNumber = 1,
+  jockeySilks = null,
+} = {}) {
+  const silks = jockeySilks ?? getJockeySilks(horseNumber);
+  drawHorseSprite(ctx, spriteId, {
+    scale,
+    frame,
+    animation,
+    offsetX: canvasX / scale - 4,
+    offsetY: canvasY / scale - 3,
+    clear: false,
+    jockeySilks: silks,
+  });
+}
+
+export function createHorseSpriteCanvas(spriteId, { size = 80, frame = 0, animate = false, animation = "idle", horseNumber = 1, withJockey = false } = {}) {
   const scale = Math.max(1, Math.floor(size / HORSE_NATIVE_W));
   const canvas = document.createElement("canvas");
   canvas.width = HORSE_NATIVE_W * scale;
@@ -276,20 +348,26 @@ export function createHorseSpriteCanvas(spriteId, { size = 80, frame = 0, animat
   canvas.className = "horse-sprite-canvas";
   const ctx = canvas.getContext("2d");
   ctx.imageSmoothingEnabled = false;
-  drawHorseSprite(ctx, spriteId, { scale, frame, animation });
-  if (animate) startHorseCanvasAnimation(canvas, spriteId, { animation });
+  drawHorseSprite(ctx, spriteId, {
+    scale,
+    frame,
+    animation,
+    jockeySilks: withJockey ? getJockeySilks(horseNumber) : null,
+  });
+  if (animate) startHorseCanvasAnimation(canvas, spriteId, { animation, horseNumber, withJockey });
   return canvas;
 }
 
 /** Cycle idle tail-swish or trot frames (Hardy Horse animation style). */
-export function startHorseCanvasAnimation(canvas, spriteId, { fps = 4, animation = "idle" } = {}) {
+export function startHorseCanvasAnimation(canvas, spriteId, { fps = 4, animation = "idle", horseNumber = 1, withJockey = false } = {}) {
   const scale = canvas.width / HORSE_NATIVE_W;
   const ctx = canvas.getContext("2d");
   ctx.imageSmoothingEnabled = false;
   const frameCount = animation === "trot" ? 4 : 3;
+  const silks = withJockey ? getJockeySilks(horseNumber) : null;
   let frame = 0;
   const tick = () => {
-    drawHorseSprite(ctx, spriteId, { scale, frame, animation });
+    drawHorseSprite(ctx, spriteId, { scale, frame, animation, jockeySilks: silks });
     frame = (frame + 1) % frameCount;
   };
   tick();

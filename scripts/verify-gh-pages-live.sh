@@ -2,9 +2,15 @@
 # Post-deploy HTTP checks for the live GitHub Pages site (branch deploy /docs).
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-# shellcheck source=scripts/lib/gh-pages-build-log.sh
-source "$ROOT/scripts/lib/gh-pages-build-log.sh"
+LIB_DIR="$(cd "$(dirname "$0")" && pwd)"
+if [[ -f "$LIB_DIR/gh-pages-build-log.sh" ]]; then
+  # shellcheck source=scripts/lib/gh-pages-build-log.sh
+  source "$LIB_DIR/gh-pages-build-log.sh"
+else
+  ROOT="$(cd "$LIB_DIR/.." && pwd)"
+  # shellcheck source=scripts/lib/gh-pages-build-log.sh
+  source "$ROOT/scripts/lib/gh-pages-build-log.sh"
+fi
 
 SITE_URL="${SITE_URL:-https://exios66.github.io/degen-llms/}"
 BASE="${SITE_URL%/}/"

@@ -111,7 +111,10 @@ GH_SHA_SHORT="${GH_SHA:0:7}"
 gh_pages_build_log_set "gh-pages" "$GH_SHA_SHORT"
 
 STAGING="$(mktemp -d)"
-trap 'rm -rf "$STAGING"' EXIT
+VERIFY_DIR="$(mktemp -d)"
+cp "$ROOT/scripts/verify-gh-pages-live.sh" "$VERIFY_DIR/"
+cp "$ROOT/scripts/lib/gh-pages-build-log.sh" "$VERIFY_DIR/"
+trap 'rm -rf "$STAGING" "$VERIFY_DIR"' EXIT
 
 if ! git archive "origin/$SOURCE_BRANCH" docs | tar -x -C "$STAGING"; then
   SYNC_ERROR="git archive failed for origin/${SOURCE_BRANCH}:docs"
@@ -207,7 +210,7 @@ echo "$LOG_LINE"
 
 trap - ERR
 
-GBP_VERIFY_CONTEXT_ONLY=1 bash "$ROOT/scripts/verify-gh-pages-live.sh" || VERIFY_FAILED=1
+GBP_VERIFY_CONTEXT_ONLY=1 bash "$VERIFY_DIR/verify-gh-pages-live.sh" || VERIFY_FAILED=1
 
 VERIFY_DEBUG=""
 for ctx in "${GBP_BUILD_LOG_CONTEXT[@]}"; do

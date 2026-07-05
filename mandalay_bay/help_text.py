@@ -80,18 +80,26 @@ Enter 0 as spin amount to leave the machine.
 SPORTSBOOK_HELP = """
 SPORTS BOOK — HOW TO WAGER
 ==========================
-1) Review the event board (NFL, NBA, MLB, Soccer)
-2) Place a wager — pick moneyline or spread
-3) Settle open bets when ready for simulated final scores
+1) Sports board — 10 events across NFL, NBA, MLB, MLS, NHL, NCAA, UFC, Tennis, Golf
+2) Prediction markets — high-volatility YES/NO contracts on sports pulse, headlines, Vegas buzz, and public sentiment
+3) Settle all open positions when ready for simulated final scores and market resolutions
 
-Moneyline: Pick the outright winner.
-Spread:    Pick a team to cover the point spread.
+Sports bet types:
+  Moneyline — Pick the outright winner
+  Spread    — Pick a team to cover the point spread
+  Total     — Over/under the combined score line
+  Props     — Side bets tied to the same simulated outcome
+  Outright  — UFC, tennis, and golf winner markets
+
+Prediction markets:
+  Buy YES or NO at displayed cent prices (e.g. 35¢ YES → high upside if correct)
+  Prices drift on refresh — explosive returns, lethal risk
 
 American odds examples:
   +150  — Win $150 profit on a $100 bet
   -110  — Bet $110 to win $100 profit
 
-Open tickets are listed in the Sports Book menu header.
+Open positions appear in the unified bet slip.
 """
 
 HOLDEM_HELP = """

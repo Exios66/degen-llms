@@ -16,7 +16,8 @@ from mandalay_bay.bank_account import BankAccount, BankTransaction, BankTransact
 from mandalay_bay.intoxication import attach_intoxication_to_session
 from mandalay_bay.rewards import RewardsState, SAVE_VERSION_WITH_REWARDS, ensure_rewards, migrate_session_rewards
 from mandalay_bay.session import ActivityStats, PlayerSession
-from mandalay_bay.staff_manifest import set_staff_overrides
+from mandalay_bay.casino_time import flush_casino_time, format_save_slot_play_times
+from mandalay_bay.vegas_time import format_vegas_datetime
 
 MAX_SLOTS = 5
 DEFAULT_STARTING_CHIPS = 1000
@@ -36,6 +37,7 @@ class SlotSummary:
     player_name: str
     balance: int
     updated_at: datetime | None
+    casino_time_ms: int
     occupied: bool
 
 
@@ -86,6 +88,7 @@ class SaveLibrary:
             "player_name": session.player_name,
             "balance": session.wallet.balance,
             "updated_at": datetime.now(timezone.utc).isoformat(),
+            "casino_time_ms": session.casino_time_ms,
         }
 
     def list_slots(self) -> list[SlotSummary]:
@@ -103,6 +106,7 @@ class SaveLibrary:
                         player_name=meta.get("player_name", "Guest"),
                         balance=meta.get("balance", 0),
                         updated_at=updated,
+                        casino_time_ms=int(meta.get("casino_time_ms", 0)),
                         occupied=True,
                     )
                 )
@@ -114,6 +118,7 @@ class SaveLibrary:
                         player_name="",
                         balance=0,
                         updated_at=None,
+                        casino_time_ms=0,
                         occupied=False,
                     )
                 )
@@ -147,6 +152,7 @@ class SaveLibrary:
     def save_slot(self, session: PlayerSession) -> None:
         if session.slot_id is None:
             raise ValueError("Session has no slot_id — cannot save")
+        flush_casino_time(session)
         path = self._slot_path(session.slot_id)
         path.write_text(json.dumps(session_to_dict(session), indent=2), encoding="utf-8")
         self._update_summary(session)
@@ -223,6 +229,7 @@ def session_to_dict(session: PlayerSession) -> dict:
         "wallet": {"balance": session.wallet.balance, "transactions": txs},
         "activity_stats": stats,
         "progressive_pools": dict(session.progressive_pools),
+        "casino_time_ms": session.casino_time_ms,
     }
     if hasattr(session, "hotel") and session.hotel is not None:
         payload["hotel"] = asdict(session.hotel)
@@ -294,6 +301,7 @@ def session_from_dict(data: dict) -> PlayerSession:
         slot_id=data.get("slot_id"),
         slot_label=data.get("slot_label", ""),
         progressive_pools=dict(data.get("progressive_pools", {})),
+        casino_time_ms=int(data.get("casino_time_ms", 0)),
     )
     if "hotel" in data:
         hotel_data = dict(data["hotel"])
@@ -348,9 +356,7 @@ def session_from_dict(data: dict) -> PlayerSession:
 
 
 def _format_updated(when: datetime | None) -> str:
-    if when is None:
-        return "never"
-    return when.astimezone().strftime("%Y-%m-%d %H:%M")
+    return format_vegas_datetime(when)
 
 
 def run_save_picker(
@@ -374,7 +380,8 @@ def run_save_picker(
             for entry in recent:
                 ui.print(
                     f"  Slot {entry.slot_id}: {entry.label} — {entry.player_name} — "
-                    f"{fmt_chips(entry.balance)} (last: {_format_updated(entry.updated_at)})"
+                    f"{fmt_chips(entry.balance)} · {format_save_slot_play_times(entry.casino_time_ms)} "
+                    f"(last: {_format_updated(entry.updated_at)})"
                 )
 
         all_slots = library.list_slots()
@@ -382,7 +389,8 @@ def run_save_picker(
         for slot in all_slots:
             if slot.occupied:
                 options.append(
-                    f"Load Slot {slot.slot_id} — {slot.player_name} ({fmt_chips(slot.balance)})"
+                    f"Load Slot {slot.slot_id} — {slot.player_name} ({fmt_chips(slot.balance)}) · "
+                    f"{format_save_slot_play_times(slot.casino_time_ms)}"
                 )
             else:
                 options.append(f"New save in Slot {slot.slot_id} (empty)")

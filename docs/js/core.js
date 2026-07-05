@@ -1,5 +1,11 @@
 import { attachRewardsToSession } from "./rewards.js";
 import { attachHotelToSession } from "./hotel.js";
+import {
+  getActiveSlotId,
+  mirrorLibraryToCache,
+  readCacheLibrary,
+  setActiveSlotId,
+} from "./profileCache.js";
 
 export const CASINO_NAME = "The Mandalay Bay";
 export const SAVE_VERSION = 4;
@@ -263,16 +269,30 @@ function emptyLibrary() {
 export function loadLibrary() {
   try {
     const raw = localStorage.getItem(LIBRARY_KEY);
-    if (raw) return { ...emptyLibrary(), ...JSON.parse(raw) };
+    if (raw) {
+      const lib = { ...emptyLibrary(), ...JSON.parse(raw) };
+      mirrorLibraryToCache(lib);
+      return lib;
+    }
   } catch {
     /* ignore corrupt data */
   }
   migrateLegacySession();
   try {
     const raw = localStorage.getItem(LIBRARY_KEY);
-    if (raw) return { ...emptyLibrary(), ...JSON.parse(raw) };
+    if (raw) {
+      const lib = { ...emptyLibrary(), ...JSON.parse(raw) };
+      mirrorLibraryToCache(lib);
+      return lib;
+    }
   } catch {
     /* ignore */
+  }
+  const cached = readCacheLibrary();
+  if (cached) {
+    const lib = { ...emptyLibrary(), ...cached };
+    writeLibrary(lib);
+    return lib;
   }
   return emptyLibrary();
 }
@@ -302,6 +322,7 @@ function migrateLegacySession() {
 function writeLibrary(lib) {
   try {
     localStorage.setItem(LIBRARY_KEY, JSON.stringify(lib));
+    mirrorLibraryToCache(lib);
   } catch {
     /* ignore quota errors */
   }
@@ -363,6 +384,7 @@ export function loadSlot(slotId) {
   session.slotId = slotId;
   touchRecent(lib, slotId);
   writeLibrary(lib);
+  setActiveSlotId(slotId);
   return session;
 }
 
@@ -373,6 +395,7 @@ export function saveSlot(session) {
   updateSummary(lib, session);
   touchRecent(lib, session.slotId);
   writeLibrary(lib);
+  setActiveSlotId(session.slotId);
 }
 
 export function deleteSlot(slotId) {
@@ -381,6 +404,22 @@ export function deleteSlot(slotId) {
   delete lib.summaries[String(slotId)];
   lib.recent = lib.recent.filter((id) => id !== slotId);
   writeLibrary(lib);
+  if (getActiveSlotId() === slotId) {
+    const next = lib.recent.find((id) => lib.slots[String(id)]);
+    setActiveSlotId(next ?? null);
+  }
+}
+
+/** Load the last remembered casino profile, or the most recent save. */
+export function loadActiveProfile() {
+  const preferred = getActiveSlotId();
+  if (preferred != null) {
+    const session = loadSlot(preferred);
+    if (session) return session;
+  }
+  const recent = recentSlots();
+  if (recent.length) return loadSlot(recent[0].slotId);
+  return null;
 }
 
 export function createSlot(slotId, { playerName = "Guest", chips = 1000, label = "", useColor = true, useUnicode = true } = {}) {

@@ -1,7 +1,7 @@
 import {
   CASINO_NAME, ACTIVITIES, FLOOR_ORDER, fmtChips, signedChips,
   saveSlot, loadSlot, createSlot, deleteSlot, listSlots, recentSlots, formatSaveTime,
-  createGuestSession, PlayerSession, secureRandomInt,
+  createGuestSession, PlayerSession, secureRandomInt, loadActiveProfile,
 } from "./core.js";
 import {
   MACHINES,
@@ -310,7 +310,7 @@ function horsePaddockCard(horse, { selected = false, onClick = null } = {}) {
   const card = el("div", {
     className: `horse-paddock-card${selected ? " horse-paddock-card--selected" : ""}`,
   }, [
-    createHorseSpriteCanvas(horse.spriteId, { size: 72 }),
+    createHorseSpriteCanvas(horse.spriteId, { size: 96, animate: true }),
     el("div", { className: "horse-paddock-num", textContent: `#${horse.number}` }),
     el("div", { className: "horse-paddock-name", textContent: horse.name }),
     el("div", { className: "horse-paddock-sprite-label", textContent: spriteMeta.label }),
@@ -356,7 +356,7 @@ function menu(options, title, onSelect, { showCasinoBanner = true } = {}) {
   return el("div", { className: "panel" }, frag);
 }
 
-function enterCasino(nextSession) {
+function enterCasino(nextSession, options = {}) {
   session = nextSession;
   resetSportsbookFromSession();
   blackjackGame = null;
@@ -368,6 +368,11 @@ function enterCasino(nextSession) {
   viewStack = [{ name: "hub", data: {} }];
   clearStatus();
   mountRewardsPhone();
+  const view = options.initialView;
+  if (view?.startsWith("hotel-")) {
+    ensureHotel(session);
+    viewStack = [{ name: view, data: {} }];
+  }
   render();
 }
 
@@ -727,6 +732,14 @@ function renderHub() {
           className: "hub-feature",
           innerHTML: `<strong>${floor}</strong> — ${acts.map((a) => a.name).join(", ")}`,
         });
+      }),
+      el("div", {
+        className: "hub-feature",
+        innerHTML: "<strong>Hotel Experience</strong> — reservations, suite upgrades, hallway mini-game (Exit to Hotel · P for MGM Rewards)",
+      }),
+      el("div", {
+        className: "hub-feature",
+        innerHTML: "<strong>Pixel RPG</strong> — explore the resort open world (Explore Resort)",
       }),
     ]),
     el("div", { className: "panel" }, [
@@ -1942,7 +1955,7 @@ function renderHorseRacingSettle() {
       const h = horseRacingState.card.horses.find((x) => x.number === num);
       finishLine.appendChild(el("div", { className: "racing-finish-entry" }, [
         el("span", { className: "racing-finish-pos", textContent: `${i + 1}.` }),
-        createHorseSpriteCanvas(h.spriteId, { size: 56 }),
+        createHorseSpriteCanvas(h.spriteId, { size: 72, frame: i % 4 }),
         el("span", { className: "racing-finish-name", textContent: `#${num} ${h.name}` }),
       ]));
     });
@@ -2341,11 +2354,12 @@ viewStack = [{ name: "save-picker", data: {} }];
 
 function applyLaunchParams() {
   const params = new URLSearchParams(window.location.search);
+  const initialView = params.get("view") ?? undefined;
   if (params.get("guest") === "1") {
     enterCasino(createGuestSession({
       playerName: params.get("name") || "Guest",
       chips: Math.max(0, parseInt(params.get("chips") || "1000", 10)),
-    }));
+    }), { initialView });
     return true;
   }
   const slotParam = params.get("slot");
@@ -2358,7 +2372,7 @@ function applyLaunchParams() {
       }
       const loaded = loadSlot(slotId);
       if (loaded) {
-        enterCasino(loaded);
+        enterCasino(loaded, { initialView });
         return true;
       }
       pushView("save-create", { slotId });
@@ -2368,6 +2382,28 @@ function applyLaunchParams() {
   return false;
 }
 
+function hideBootLoader() {
+  const loader = document.getElementById("boot-loader");
+  if (loader) loader.remove();
+}
+
+if (!applyLaunchParams()) {
+  const remembered = loadActiveProfile();
+  if (remembered) {
+    hideBootLoader();
+    enterCasino(remembered);
+    loadBundledHorseNames();
+  } else {
+    loadBundledHorseNames().finally(() => {
+      hideBootLoader();
+      render();
+    });
+  }
+} else {
+  hideBootLoader();
+  loadBundledHorseNames();
+}
+
 if (!navigator.onLine) {
   window.addEventListener("online", () => render(), { once: true });
 }
@@ -2375,12 +2411,6 @@ if (!navigator.onLine) {
 window.addEventListener("beforeunload", () => {
   if (session.slotId != null) persist();
 });
-
-if (!applyLaunchParams()) {
-  loadBundledHorseNames().finally(() => render());
-} else {
-  loadBundledHorseNames();
-}
 
 document.addEventListener("keydown", (e) => {
   if (e.key === "p" || e.key === "P") {

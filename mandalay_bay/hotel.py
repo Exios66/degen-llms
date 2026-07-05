@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from mandalay_bay.chips import ChipWallet, TransactionKind
+from mandalay_bay.rewards import RewardsState, has_unredeemed_comp, redeem_comp
 from mandalay_bay.session import PlayerSession
 
 ROOM_TYPES = {
@@ -179,11 +180,10 @@ def upgrade_room(session: PlayerSession, target: str) -> ActionResult:
     spec = ROOM_TYPES.get(target)
     if not spec:
         return ActionResult(False, "Unknown room type.")
-    rewards = getattr(session, "rewards", None)
+    rewards: RewardsState | None = getattr(session, "rewards", None)
     comp_id = spec["comp_id"]
-    has_comp = rewards and comp_id in rewards.get("unlocked_comps", []) and comp_id not in rewards.get("redeemed_comps", [])
-    if has_comp and rewards is not None:
-        rewards.setdefault("redeemed_comps", []).append(comp_id)
+    if rewards and has_unredeemed_comp(rewards, comp_id):
+        redeem_comp(rewards, comp_id)
         _apply_room(session, target, spec)
         return ActionResult(True, f"Comp applied — {spec['label']}.")
     if is_net_positive(session) and target == "suite":
@@ -203,9 +203,9 @@ def upgrade_room(session: PlayerSession, target: str) -> ActionResult:
 
 def extend_stay(session: PlayerSession, nights: int = 1) -> ActionResult:
     hotel = ensure_hotel(session)
-    rewards = getattr(session, "rewards", None)
-    if rewards and "room_night" in rewards.get("unlocked_comps", []) and "room_night" not in rewards.get("redeemed_comps", []):
-        rewards.setdefault("redeemed_comps", []).append("room_night")
+    rewards: RewardsState | None = getattr(session, "rewards", None)
+    if rewards and has_unredeemed_comp(rewards, "room_night"):
+        redeem_comp(rewards, "room_night")
         hotel.nights_remaining += nights
         return ActionResult(True, f"{hotel.nights_remaining} night(s) remaining.")
     if is_net_positive(session):

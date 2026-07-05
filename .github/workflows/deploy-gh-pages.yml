@@ -9,6 +9,8 @@ on:
     paths:
       - "docs/**"
       - "scripts/sync-gh-pages.sh"
+      - "scripts/verify-gh-pages.sh"
+      - "scripts/lib/gh-pages-build-log.sh"
       - ".github/workflows/deploy-gh-pages.yml"
   schedule:
     # Hourly drift check — sync only when docs/ differs from main
@@ -35,6 +37,7 @@ jobs:
       - name: Full sync docs/ to gh-pages and log ping
         env:
           GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_RUN_ATTEMPT: ${{ github.run_attempt }}
         run: bash scripts/sync-gh-pages.sh
 
       - name: Site URL

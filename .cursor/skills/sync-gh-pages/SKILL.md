@@ -37,9 +37,9 @@ Publish the full `docs/` tree from `main` to the **`gh-pages`** branch so the li
    - Requires push access to `origin` for `main` and `gh-pages`.
 
 3. **After the run**
-   - Read the printed log line (also appended to [`logs/gh-pages-sync.log`](../../../logs/gh-pages-sync.log)).
-   - Confirm `trigger=manual_run` in that line.
-   - Report to the user: `status` (`synced` vs `up_to_date`), `changed` file count, and the live URL.
+   - Read the printed log lines (appended to [`logs/gh-pages-sync.log`](../../../logs/gh-pages-sync.log) and [`logs/gh-pages-build-status.log`](../../../logs/gh-pages-build-status.log)).
+   - Confirm `trigger=manual_run` in the sync line.
+   - Report to the user: sync `status` (`synced` vs `up_to_date`), build `outcome` (`success` vs `failure`), `code` (e.g. `GBP-000`), `changed` file count, and the live URL.
 
 ## Log format
 
@@ -56,7 +56,11 @@ TIMESTAMP | trigger=manual_run | main=SHA | gh-pages=SHA | status=… | synced=y
 | `schedule` | Hourly drift check (UTC) |
 | `workflow_dispatch` | Manual run from Actions tab |
 
-See [`logs/README.md`](../../../logs/README.md) for full details.
+See [`logs/README.md`](../../../logs/README.md) for full details (sync log + build status codes).
+
+## Build status log
+
+Each run also appends one line to [`logs/gh-pages-build-status.log`](../../../logs/gh-pages-build-status.log) with `outcome`, `code` (GBP-NNN), and `debug` phase codes — useful when GitHub Actions shows green but the live site is stale or verification fails.
 
 ## What the sync does
 

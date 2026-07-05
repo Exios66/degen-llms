@@ -43,6 +43,38 @@ Occupied slots show player name, chip balance, and last played time. **Most rece
 | Display preferences | Yes |
 | RPG position & quest flags ([pixel mode](rpg/GDD.md)) | Yes, when present |
 | Open sports book tickets | No (settle before saving) |
+| Hotel state & room amenities (v4+) | Yes |
+| Pool complex progress | Yes |
+| Shopping / bar purchases | Yes |
+
+## Hotel save schema (v4+)
+
+When present, `hotel` includes:
+
+```json
+{
+  "propertyId": "mandalay_bay",
+  "reservationCode": "MB-4821",
+  "roomType": "standard",
+  "nightsRemaining": 2,
+  "resortTime": 0,
+  "roomAmenities": {
+    "tvChannel": "aquarium",
+    "channelsWatched": ["aquarium"],
+    "minibarPurchases": ["salted_almonds"],
+    "minibarTab": 18,
+    "phoneCalls": ["concierge"],
+    "decisions": ["balcony"],
+    "unlockedEvents": ["shark_whisperer"],
+    "eventLog": ["You narrate the aquarium feed…"],
+    "amenityActions": 4,
+    "wakeUpScheduled": false,
+    "checkedOut": false
+  }
+}
+```
+
+Cross-system event requirements also read `poolComplex.visitedZones`, `amenities.purchasedItems`, and MGM Rewards tier from `rewards.lifetimeWagered`.
 
 ## Auto-save
 

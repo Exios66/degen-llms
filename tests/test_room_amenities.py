@@ -78,3 +78,21 @@ def test_room_amenities_save_roundtrip() -> None:
     ra = ensure_room_amenities(ensure_hotel(loaded))
     assert ra.tv_channel == "aquarium"
     assert ra.minibar_tab == 45
+
+
+def test_convention_survival_unlock() -> None:
+    session = _session()
+    tune_tv_channel(session, "news")
+    purchase_minibar_item(session, "energy_drink")
+    make_room_decision(session, "do_not_disturb")
+    ra = ensure_room_amenities(ensure_hotel(session))
+    assert "convention_survival" in ra.unlocked_events
+
+
+def test_penthouse_telescope_event() -> None:
+    session = _session()
+    hotel = ensure_hotel(session)
+    hotel.room_type = "penthouse"
+    make_room_decision(session, "telescope_balcony")
+    ra = ensure_room_amenities(hotel)
+    assert "telescope_strip" in ra.unlocked_events

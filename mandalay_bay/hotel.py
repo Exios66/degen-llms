@@ -38,6 +38,9 @@ class RoomAmenitiesState:
     decisions: list[str] = field(default_factory=list)
     unlocked_events: list[str] = field(default_factory=list)
     event_log: list[str] = field(default_factory=list)
+    amenity_actions: int = 0
+    wake_up_scheduled: bool = False
+    checked_out: bool = False
 
 
 @dataclass
@@ -54,6 +57,9 @@ class HotelState:
     hallway_progress: int = 0
     hallway_log: list[str] = field(default_factory=list)
     room_amenities: RoomAmenitiesState | None = None
+    resort_time: int = 0
+    folio_reviewed: bool = False
+    late_checkout_used: bool = False
 
 
 @dataclass
@@ -244,3 +250,97 @@ def _apply_room(session: PlayerSession, room_type: str, spec: dict) -> None:
 
 def fmt_chips(amount: int) -> str:
     return f"${amount:,}"
+
+
+def build_folio_lines(session: PlayerSession) -> list[str]:
+    """Satirical checkout folio — minibar, room service, shopping."""
+    hotel = ensure_hotel(session)
+    ra = hotel.room_amenities or RoomAmenitiesState()
+    lines = [f"Folio — Room {hotel.room_number} · Conf {hotel.reservation_code}"]
+
+    if ra.minibar_tab > 0:
+        lines.append(f"Minibar tab: {fmt_chips(ra.minibar_tab)} (sensor-enabled hospitality)")
+
+    room_service_total = 0
+    if "room_service" in ra.decisions:
+        room_service_total += 35
+    if "tip_maid" in ra.decisions:
+        room_service_total += 25
+    if room_service_total:
+        lines.append(f"In-room services: {fmt_chips(room_service_total)}")
+
+    amenities = getattr(session, "amenities", None)
+    if amenities and amenities.purchased_items:
+        lines.append(f"Mandalay Place deliveries: {len(amenities.purchased_items)} item(s) to your room")
+
+    if len(lines) == 1:
+        lines.append("No charges. Suspiciously responsible for Vegas.")
+    return lines
+
+
+def review_folio(session: PlayerSession) -> ActionResult:
+    hotel = ensure_hotel(session)
+    hotel.folio_reviewed = True
+    body = "\n".join(build_folio_lines(session))
+    return ActionResult(True, body)
+
+
+def late_checkout(session: PlayerSession) -> ActionResult:
+    hotel = ensure_hotel(session)
+    if hotel.late_checkout_used:
+        return ActionResult(False, "You already negotiated late checkout.")
+    hotel.late_checkout_used = True
+    if is_net_positive(session):
+        return ActionResult(True, "Carmen comps an extra two hours. The minibar sensor sleeps.")
+    cost = 75
+    if session.wallet.debit(cost, "hotel", "Late checkout"):
+        return ActionResult(True, f"Paid {fmt_chips(cost)} for two extra hours. Worth it.")
+    return ActionResult(False, f"Need {fmt_chips(cost)} or net-positive floor status.")
+
+
+def wake_up_call(session: PlayerSession) -> ActionResult:
+    import random
+
+    hotel = ensure_hotel(session)
+    ra = hotel.room_amenities or RoomAmenitiesState()
+    alarms = [
+        "Steve Harvey: \"Rise and shine! Survey says… you're late for brunch!\"",
+        "Shark Reef feed narration: \"The sand tiger approaches… your alarm clock.\"",
+        "Convention keynote: \"Synergy waits for no one. Especially not you.\"",
+    ]
+    msg = random.choice(alarms)
+    ra.wake_up_scheduled = False
+    return ActionResult(True, msg)
+
+
+def checkout_stay(session: PlayerSession) -> ActionResult:
+    hotel = ensure_hotel(session)
+    ra = hotel.room_amenities or RoomAmenitiesState()
+    if ra.checked_out:
+        return ActionResult(False, "You already checked out. The carpet misses you.")
+    ra.checked_out = True
+    hotel.nights_remaining = max(0, hotel.nights_remaining - 1)
+    folio = "\n".join(build_folio_lines(session))
+    if hotel.nights_remaining == 0:
+        return ActionResult(
+            True,
+            f"{folio}\n\nCheckout complete. Nights remaining: 0 — Carmen offers extend-stay or casino floor exile.",
+        )
+    return ActionResult(True, f"{folio}\n\nCheckout complete. {hotel.nights_remaining} night(s) remaining on your stay.")
+
+
+def express_checkout(session: PlayerSession) -> ActionResult:
+    from mandalay_bay.resort_bridge import get_session_tier_index
+
+    tier_idx = get_session_tier_index(session)
+    hotel = ensure_hotel(session)
+    ra = hotel.room_amenities or RoomAmenitiesState()
+    if ra.checked_out:
+        return ActionResult(False, "Already checked out.")
+    ra.checked_out = True
+    hotel.nights_remaining = max(0, hotel.nights_remaining - 1)
+    if tier_idx >= 5:
+        return ActionResult(True, "Chairman express — folio waived spiritually. Chauffeur waiting.")
+    if tier_idx >= 1:
+        return ActionResult(True, "Express checkout — line skipped. Folio emailed to guilt@vegas.com.")
+    return ActionResult(False, "Pearl+ required for express checkout. Join the regular line.")

@@ -759,6 +759,88 @@ body {
 
 .hotel-room-view {
   min-height: 12rem;
+  transition: box-shadow 0.4s ease, border-color 0.4s ease;
+}
+
+.hotel-room-view.resort-time-0 {
+  box-shadow: inset 0 0 40px rgba(255, 200, 120, 0.08);
+}
+
+.hotel-room-view.resort-time-1 {
+  box-shadow: inset 0 0 40px rgba(255, 230, 150, 0.06);
+}
+
+.hotel-room-view.resort-time-2 {
+  box-shadow: inset 0 0 50px rgba(180, 80, 255, 0.1);
+  border-color: rgba(180, 80, 255, 0.25);
+}
+
+.hotel-room-view.resort-time-3 {
+  box-shadow: inset 0 0 60px rgba(40, 120, 200, 0.12);
+  border-color: rgba(40, 120, 200, 0.3);
+}
+
+.tv-glow {
+  box-shadow: inset 0 0 30px rgba(100, 180, 255, 0.15);
+}
+
+.minibar-neon {
+  box-shadow: inset 0 0 24px rgba(255, 60, 120, 0.12);
+}
+
+.concierge-nudge {
+  font-style: italic;
+  margin-bottom: 0.5rem;
+}
+
+.room-schematic {
+  margin: 1rem 0;
+  padding: 0.75rem;
+  border: 1px dashed rgba(232, 197, 71, 0.25);
+  border-radius: 4px;
+}
+
+.room-schematic-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.room-schematic-zone {
+  padding: 0.65rem;
+  background: rgba(232, 197, 71, 0.08);
+  border: 1px solid rgba(232, 197, 71, 0.25);
+  color: inherit;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.85em;
+}
+
+.room-schematic-zone:hover {
+  background: rgba(232, 197, 71, 0.16);
+}
+
+.resort-completion-panel {
+  margin: 1rem 0;
+  padding: 0.75rem;
+  background: rgba(232, 197, 71, 0.04);
+  border: 1px solid rgba(232, 197, 71, 0.15);
+}
+
+.resort-completion-list {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+}
+
+.resort-completion-list li {
+  padding: 0.25rem 0;
+}
+
+.event-hint {
+  font-style: italic;
+  opacity: 0.85;
 }
 
 .room-amenities-summary {

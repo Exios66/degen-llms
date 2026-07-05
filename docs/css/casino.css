@@ -2342,11 +2342,11 @@ body {
 
 .racing-paddock {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
-  gap: 0.75rem;
-  padding: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(136px, 1fr));
+  gap: 0.65rem;
+  padding: 0.85rem;
   background:
-    radial-gradient(ellipse at 50% 0%, rgba(61, 214, 140, 0.12) 0%, transparent 55%),
+    radial-gradient(ellipse at 50% 0%, rgba(61, 214, 140, 0.1) 0%, transparent 55%),
     repeating-linear-gradient(
       90deg,
       rgba(42, 104, 56, 0.15) 0px,
@@ -2372,15 +2372,6 @@ body {
   border: 2px solid rgba(255, 255, 255, 0.08);
   border-radius: 8px;
   transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
-  animation: paddock-bob 2.4s ease-in-out infinite;
-}
-
-.horse-paddock-card:nth-child(2n) { animation-delay: 0.4s; }
-.horse-paddock-card:nth-child(3n) { animation-delay: 0.8s; }
-
-@keyframes paddock-bob {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-3px); }
 }
 
 .horse-paddock-card:hover,
@@ -2388,7 +2379,6 @@ body {
   border-color: var(--gold);
   box-shadow: 0 0 12px rgba(255, 215, 0, 0.2);
   transform: translateY(-2px);
-  animation: none;
 }
 
 .horse-sprite-canvas {

@@ -1,7 +1,7 @@
 import {
   CASINO_NAME, ACTIVITIES, FLOOR_ORDER, fmtChips, signedChips,
   saveSlot, loadSlot, createSlot, deleteSlot, listSlots, recentSlots, formatSaveTime,
-  createGuestSession, PlayerSession, secureRandomInt, loadActiveProfile,
+  createGuestSession, PlayerSession,
 } from "./core.js";
 import {
   MACHINES,
@@ -13,15 +13,7 @@ import {
   progressivePool,
 } from "./slots.js";
 import { getMachineUI, paytableEntries, SLOT_CATEGORIES } from "./slots-ui.js";
-import {
-  SportsbookState, fmtOdds, filterEvents, getUniqueSports,
-  formatEventScore, oddsForSelection,
-} from "./sportsbook.js";
-import {
-  PredictionMarketsState, MARKET_CATEGORIES, filterMarkets,
-  categoryLabel, predictionPayout,
-} from "./predictionMarkets.js";
-import { fetchLiveFixtures, mergeLiveFixtures } from "./sportsDataProvider.js";
+import { SportsbookState, fmtOdds } from "./sportsbook.js";
 import { BlackjackGame, defaultConfig, Action } from "./blackjack/game.js";
 import { HoldemTable, BettingAction } from "./holdem/game.js";
 import { HAND_CLASS_NAMES } from "./holdem/hand_eval.js";
@@ -30,14 +22,8 @@ import { generateRace, simulateRace, settleTicket, fmtOdds as fmtRaceOdds, loadB
 import { createHorseSpriteCanvas, getHorseSprite } from "./horse-sprites.js";
 import { getSessionDealer, pickQuip } from "./dealers.js";
 import { RewardsPhone } from "./RewardsPhone.js";
-import {
-  applyTierSpeedCss, getActivityTiming, getSessionTierExperience, maybePitBossTopUp, rewardsTierId,
-} from "./rewards-perks.js";
 import { buildHotelRenderers } from "./hotel-ui.js";
-import { buildAmenitiesRenderers } from "./casino-amenities-ui.js";
-import { buildPoolRenderers } from "./pool-complex-ui.js";
-import { ensureHotel, getWorldCycleSummary } from "./hotel.js";
-import { syncWorldCycle } from "./world-cycle.js";
+import { ensureHotel } from "./hotel.js";
 import {
   STAKE_TIERS, TIER_ORDER, getTier, formatTierLabel, effectiveTableStakes, effectiveSlotStakes,
   formatStakeRange, tierUsesSalonLimits,
@@ -48,12 +34,9 @@ const app = document.getElementById("app");
 let session = new PlayerSession();
 let rewardsPhone = null;
 let sportsbook = new SportsbookState();
-let predictions = new PredictionMarketsState();
-let sportsbookInitPromise = null;
 let blackjackGame = null;
 let blackjackSessionNet = 0;
-let slotsState = { machine: null, sessionNet: 0, spins: 0, bet: null, spinning: false, reelsRevealed: 3, lastWin: false, lastReels: null, lastMessage: null };
-let slotsSpinTimers = [];
+let slotsState = { machine: null, sessionNet: 0, spins: 0, tier: null };
 let holdemState = null;
 let rouletteState = { sessionNet: 0, spins: 0, lastNumber: null, spinning: false, tier: null };
 let horseRacingState = { card: null, pending: [], sessionNet: 0, races: 0, tier: null };
@@ -61,149 +44,21 @@ let currentStakeTier = null;
 let activeTableDealer = null;
 let viewStack = [];
 let statusMessage = null;
-let worldCycleTimer = null;
-
-function startWorldCycleTicker() {
-  if (worldCycleTimer) clearInterval(worldCycleTimer);
-  worldCycleTimer = setInterval(() => {
-    if (session.slotId == null) return;
-    const result = syncWorldCycle(session);
-    if (result.advanced) {
-      persist();
-      if (result.messages?.length) {
-        showStatus(result.messages[result.messages.length - 1], "warning");
-      } else {
-        render();
-      }
-    } else if (viewStack.some((v) => v.name.startsWith("hotel") || v.name === "hub")) {
-      render();
-    }
-  }, 30000);
-}
 
 function syncSportsbookToSession() {
   if (session.slotId != null) {
-    session.sportsbookData = {
-      ...sportsbook.toJSON(),
-      predictionMarkets: predictions.toJSON(),
-    };
+    session.sportsbookData = sportsbook.toJSON();
   }
 }
 
 function resetSportsbookFromSession() {
   sportsbook = SportsbookState.fromJSON(session.sportsbookData);
-  predictions = PredictionMarketsState.fromJSON(session.sportsbookData?.predictionMarkets);
-  sportsbookInitPromise = null;
-}
-
-async function ensureSportsbookReady(forceRefresh = false) {
-  if (sportsbookInitPromise && !forceRefresh) return sportsbookInitPromise;
-  sportsbookInitPromise = (async () => {
-    await sportsbook.ensureCatalog();
-    await sportsbook.init(!sportsbook.events.length);
-    try {
-      const cache = await fetchLiveFixtures(sportsbook.catalog, sportsbook.liveCache);
-      sportsbook.liveCache = cache;
-      if (cache.fixtures?.length) {
-        sportsbook.events = mergeLiveFixtures(sportsbook.events, cache, sportsbook.catalog);
-      }
-    } catch {
-      // Simulator fallback
-    }
-    predictions.syncMarkets(sportsbook.events, forceRefresh);
-  })();
-  return sportsbookInitPromise;
-}
-
-function sportsbookWagerStakes() {
-  const act = ACTIVITIES.sportsbook;
-  const tier = currentStakeTier;
-  return tier
-    ? effectiveTableStakes(tier, session.wallet.balance, act.minBet)
-    : { minBet: act.minBet, maxBet: session.wallet.balance };
-}
-
-function renderUnifiedSlip() {
-  const slipEl = el("div", { className: "unified-slip" });
-  const totalOpen = sportsbook.pending.length + predictions.positions.length;
-  if (!totalOpen) return null;
-
-  slipEl.appendChild(el("p", { className: "subtitle", textContent: `Open positions (${totalOpen})` }));
-  for (const slip of sportsbook.pending) {
-    slipEl.appendChild(el("div", {
-      className: "ticket",
-      textContent: `${slip.amount.toLocaleString()} on ${slip.pick} (${slip.betType}) — ${slip.event.label}`,
-    }));
-  }
-  for (const pos of predictions.positions) {
-    slipEl.appendChild(el("div", {
-      className: "ticket",
-      textContent: `${pos.amount.toLocaleString()} on ${pos.side.toUpperCase()} @ ${pos.priceCents}¢ — ${pos.question}`,
-    }));
-  }
-  return slipEl;
-}
-
-function placeSportsTicket(event, betType, pick, amount, extra = {}) {
-  const wagerStakes = sportsbookWagerStakes();
-  if (amount < wagerStakes.minBet) {
-    alert(`Minimum wager is ${wagerStakes.minBet} chips.`);
-    return false;
-  }
-  if (amount > wagerStakes.maxBet) {
-    alert(`Maximum wager is ${wagerStakes.maxBet} chips.`);
-    return false;
-  }
-  const odds = oddsForSelection(event, betType, pick, extra.propId);
-  if (!session.wallet.debit(amount, "sportsbook", `${betType} on ${pick}`)) {
-    alert("Insufficient chips.");
-    return false;
-  }
-  sportsbook.addTicket({ event, betType, pick, amount, odds, ...extra });
-  persist();
-  showStatus(`Ticket placed: ${amount.toLocaleString()} chips on ${pick}.`);
-  return true;
-}
-
-function placePredictionContract(market, side, amount) {
-  const wagerStakes = sportsbookWagerStakes();
-  if (amount < wagerStakes.minBet) {
-    alert(`Minimum wager is ${wagerStakes.minBet} chips.`);
-    return false;
-  }
-  if (amount > wagerStakes.maxBet) {
-    alert(`Maximum wager is ${wagerStakes.maxBet} chips.`);
-    return false;
-  }
-  const priceCents = side === "yes" ? market.yesPrice : market.noPrice;
-  if (!session.wallet.debit(amount, "sportsbook", `Prediction ${side.toUpperCase()} @ ${priceCents}¢`)) {
-    alert("Insufficient chips.");
-    return false;
-  }
-  const maxPayout = predictionPayout(amount, priceCents);
-  predictions.addPosition({
-    marketId: market.marketId,
-    question: market.question,
-    side,
-    priceCents,
-    amount,
-    maxPayout,
-  });
-  persist();
-  showStatus(`${side.toUpperCase()} @ ${priceCents}¢ — max payout ${maxPayout.toLocaleString()} chips.`);
-  return true;
 }
 
 function persist() {
   syncSportsbookToSession();
-  syncWorldCycle(session);
   rewardsPhone?.tracker.syncFromWallet();
-  syncRewardsExperience();
   if (session.slotId != null) saveSlot(session);
-}
-
-function syncRewardsExperience() {
-  applyTierSpeedCss(rewardsTierId(session));
 }
 
 function mountRewardsPhone() {
@@ -212,7 +67,6 @@ function mountRewardsPhone() {
   ensureHotel(session);
   rewardsPhone = new RewardsPhone(root, session, { onPersist: persist });
   rewardsPhone.sync();
-  syncRewardsExperience();
 }
 
 function showStatus(text, type = "success") {
@@ -240,36 +94,12 @@ function statusBanner() {
   ]);
 }
 
-function tierExperienceBanner() {
-  const exp = getSessionTierExperience(session);
-  const timing = getActivityTiming(rewardsTierId(session));
-  const speedPct = Math.round((1 / timing.speedMultiplier) * 100);
-  return el("div", {
-    className: `tier-experience-banner tier-experience-banner--${exp.id}`,
-  }, [
-    el("p", { className: "tier-experience-label", textContent: `${exp.label} experience` }),
-    el("p", { className: "tier-experience-tagline", textContent: exp.tagline }),
-    el("p", {
-      className: "dim tier-experience-meta",
-      textContent: `${exp.monthlyAmortizedCost} · Floor speed ${speedPct}% VIP`,
-    }),
-  ]);
-}
-
-function notifyPitBossTopUp(activityId, lossAmount) {
-  const topup = maybePitBossTopUp(session, activityId, lossAmount);
-  if (!topup) return;
-  rewardsPhone?.tracker.pushNotification("Pit Boss Comp", topup.line);
-  showStatus(topup.line, "success");
-}
-
 function el(tag, attrs = {}, children = []) {
   const node = document.createElement(tag);
   for (const [k, v] of Object.entries(attrs)) {
     if (k === "className") node.className = v;
     else if (k === "textContent") node.textContent = v;
     else if (k === "innerHTML") node.innerHTML = v;
-    else if (k === "disabled" || k === "checked" || k === "readonly" || k === "selected") node[k] = Boolean(v);
     else if (k.startsWith("on")) node[k.toLowerCase()] = v;
     else node.setAttribute(k, v);
   }
@@ -420,37 +250,16 @@ function slotPaytablePanel(machine) {
   ]);
 }
 
-function clearSlotsSpinTimers() {
-  for (const id of slotsSpinTimers) clearTimeout(id);
-  slotsSpinTimers = [];
-}
-
-function scheduleSlotsSpin(fn, delayMs) {
-  const id = setTimeout(fn, delayMs);
-  slotsSpinTimers.push(id);
-  return id;
-}
-
-function randomSpinSymbol(machine) {
-  const pool = machine.symbols;
-  return displaySymbol(pool[secureRandomInt(0, pool.length - 1)], session.useUnicode);
-}
-
-function slotReelWindow(machine, reels, { spinning = false, reelsRevealed = 3, win = false } = {}) {
+function slotReelWindow(machine, reels, { spinning = false, win = false } = {}) {
   const ui = getMachineUI(machine);
+  const symbols = reels?.length === 3
+    ? reels.map((r) => displaySymbol(r, session.useUnicode))
+    : ["—", "—", "—"];
   const windowEl = el("div", {
-    className: `slot-reel-window slot-reel-window--${ui.reelFrame}${win ? " slot-reel-window--win" : ""}`,
+    className: `slot-reel-window slot-reel-window--${ui.reelFrame}${win ? " slot-reel-window--win" : ""}${spinning ? " slot-reel--spinning" : ""}`,
   });
-  for (let idx = 0; idx < 3; idx += 1) {
-    const revealed = !spinning || idx < reelsRevealed;
-    const sym = revealed && reels?.[idx]
-      ? displaySymbol(reels[idx], session.useUnicode)
-      : (spinning ? randomSpinSymbol(machine) : "—");
-    const reelSpinning = spinning && !revealed;
-    windowEl.appendChild(el("div", {
-      className: `slot-reel${reelSpinning ? " slot-reel--spinning" : ""}`,
-      style: reelSpinning ? `--reel-delay:${idx * 0.15}s` : undefined,
-    }, [
+  for (const sym of symbols) {
+    windowEl.appendChild(el("div", { className: "slot-reel" }, [
       el("span", { className: "slot-reel-symbol", textContent: sym }),
     ]));
   }
@@ -479,7 +288,7 @@ function horsePaddockCard(horse, { selected = false, onClick = null } = {}) {
   const card = el("div", {
     className: `horse-paddock-card${selected ? " horse-paddock-card--selected" : ""}`,
   }, [
-    createHorseSpriteCanvas(horse.spriteId, { size: 96, animate: true }),
+    createHorseSpriteCanvas(horse.spriteId, { size: 80, animate: true, animation: "idle" }),
     el("div", { className: "horse-paddock-num", textContent: `#${horse.number}` }),
     el("div", { className: "horse-paddock-name", textContent: horse.name }),
     el("div", { className: "horse-paddock-sprite-label", textContent: spriteMeta.label }),
@@ -525,25 +334,18 @@ function menu(options, title, onSelect, { showCasinoBanner = true } = {}) {
   return el("div", { className: "panel" }, frag);
 }
 
-function enterCasino(nextSession, options = {}) {
+function enterCasino(nextSession) {
   session = nextSession;
   resetSportsbookFromSession();
   blackjackGame = null;
   blackjackSessionNet = 0;
-  slotsState = { machine: null, sessionNet: 0, spins: 0, bet: null, spinning: false, reelsRevealed: 3, lastWin: false, lastReels: null, lastMessage: null };
+  slotsState = { machine: null, sessionNet: 0, spins: 0, spinning: false, lastWin: false, lastReels: null, lastMessage: null };
   holdemState = null;
   rouletteState = { sessionNet: 0, spins: 0, lastNumber: null, spinning: false };
   horseRacingState = { card: null, pending: [], sessionNet: 0, races: 0 };
   viewStack = [{ name: "hub", data: {} }];
   clearStatus();
   mountRewardsPhone();
-  syncWorldCycle(session);
-  startWorldCycleTicker();
-  const view = options.initialView;
-  if (view?.startsWith("hotel-") || view?.startsWith("pool-")) {
-    ensureHotel(session);
-    viewStack = [{ name: view, data: {} }];
-  }
   render();
 }
 
@@ -551,8 +353,6 @@ function returnToSavePicker() {
   persist();
   rewardsPhone?.close();
   sportsbook = new SportsbookState();
-  predictions = new PredictionMarketsState();
-  sportsbookInitPromise = null;
   blackjackGame = null;
   holdemState = null;
   session = new PlayerSession();
@@ -681,11 +481,8 @@ function renderHoldemTable(table) {
   return felt;
 }
 
-function renderRouletteWheel(lastNumber = null, spinning = false, spinMs = 1200) {
+function renderRouletteWheel(lastNumber = null, spinning = false) {
   const wheel = el("div", { className: `roulette-wheel${spinning ? " roulette-wheel--spinning" : ""}` });
-  if (spinning) {
-    wheel.style.animationDuration = `${spinMs}ms`;
-  }
   const wrap = el("div", { className: "roulette-wheel-panel" }, [
     el("div", { className: "roulette-wheel-wrap" }, [
       el("div", { className: "roulette-wheel-pointer" }),
@@ -887,28 +684,12 @@ function renderSaveDelete() {
   ]);
 }
 
-function renderWorldCycleHud() {
-  ensureHotel(session);
-  const cycle = getWorldCycleSummary(session);
-  return el("div", { className: `world-cycle-hud resort-time-${cycle.phase.id}` }, [
-    el("p", {
-      className: "dim",
-      textContent: `Resort Day ${cycle.displayDay} · ${cycle.phaseLabel} · ${cycle.timeLabel}`,
-    }),
-    cycle.roomEvicted
-      ? el("p", { className: "warning", textContent: "Room locked — win chips to settle overdue resort charges." })
-      : null,
-  ]);
-}
-
 function renderHub() {
-  const floors = [...FLOOR_ORDER, "Casino Floor — shopping & bars", "Cashier", "Player Stats", "Save Game", "Exit to Hotel", "Explore Resort (RPG)", "Leave Casino"];
+  const floors = [...FLOOR_ORDER, "Cashier", "Player Stats", "Save Game", "Exit to Hotel", "Explore Resort (RPG)", "Leave Casino"];
   const options = floors.map((f) => (FLOOR_ORDER.includes(f) ? `Explore ${f}` : f));
 
   const wrap = el("div", {}, [
     statusBanner(),
-    tierExperienceBanner(),
-    renderWorldCycleHud(),
     settingsBar(),
     banner(CASINO_NAME),
     session.slotId != null
@@ -924,18 +705,6 @@ function renderHub() {
           className: "hub-feature",
           innerHTML: `<strong>${floor}</strong> — ${acts.map((a) => a.name).join(", ")}`,
         });
-      }),
-      el("div", {
-        className: "hub-feature",
-        innerHTML: "<strong>Casino Floor</strong> — The Shoppes at Mandalay Place (designer flagships) &amp; full-service bars (Eyecandy, Big Chill, Rhythm &amp; Riffs)",
-      }),
-      el("div", {
-        className: "hub-feature",
-        innerHTML: "<strong>Hotel Experience</strong> — reservations, suite upgrades, hallway mini-game (Exit to Hotel · P for MGM Rewards)",
-      }),
-      el("div", {
-        className: "hub-feature",
-        innerHTML: "<strong>Pixel RPG</strong> — explore the resort open world (Explore Resort)",
       }),
     ]),
     el("div", { className: "panel" }, [
@@ -979,22 +748,20 @@ function renderHub() {
     if (choice <= FLOOR_ORDER.length) {
       pushView("floor", { floor: FLOOR_ORDER[choice - 1] });
     } else if (choice === FLOOR_ORDER.length + 1) {
-      pushView("casino-floor");
-    } else if (choice === FLOOR_ORDER.length + 2) {
       pushView("cashier");
-    } else if (choice === FLOOR_ORDER.length + 3) {
+    } else if (choice === FLOOR_ORDER.length + 2) {
       pushView("stats");
-    } else if (choice === FLOOR_ORDER.length + 4) {
+    } else if (choice === FLOOR_ORDER.length + 3) {
       if (session.slotId != null) {
         persist();
         showStatus(`Game saved to ${session.slotLabel || `Slot ${session.slotId}`}.`);
       } else {
         showStatus("No save slot active — pick a slot at entry or play as guest.", "error");
       }
-    } else if (choice === FLOOR_ORDER.length + 5) {
+    } else if (choice === FLOOR_ORDER.length + 4) {
       ensureHotel(session);
       pushView("hotel-lobby");
-    } else if (choice === FLOOR_ORDER.length + 6) {
+    } else if (choice === FLOOR_ORDER.length + 5) {
       const rpgUrl = session.slotId != null
         ? `./rpg/?slot=${session.slotId}`
         : "./rpg/?guest=1";
@@ -1031,25 +798,6 @@ function renderFloor({ floor }) {
     el("div", { className: "panel" }, [
       el("p", { className: "subtitle", textContent: `${floor}:` }),
       el("ul", { className: "menu-list" }, items),
-    ]),
-    el("div", { className: "panel amenities-shortcuts" }, [
-      el("p", { className: "subtitle", textContent: "On the casino floor:" }),
-      el("ul", { className: "menu-list inline-shortcuts" }, [
-        el("li", {}, [
-          el("button", {
-            className: "menu-btn",
-            textContent: "The Shoppes at Mandalay Place",
-            onclick: () => pushView("mall-lobby"),
-          }),
-        ]),
-        el("li", {}, [
-          el("button", {
-            className: "menu-btn",
-            textContent: "Full Service Bar",
-            onclick: () => pushView("bar-select"),
-          }),
-        ]),
-      ]),
     ]),
   ]);
 
@@ -1285,19 +1033,7 @@ function renderSlotsMenu() {
       el("h3", { className: "slot-category-title", textContent: cat.label }),
       el("div", { className: "slot-machine-grid" }, machines.map((m) =>
         slotMachineCard(m, () => {
-          clearSlotsSpinTimers();
-          slotsState = {
-            machine: m,
-            sessionNet: 0,
-            spins: 0,
-            bet: null,
-            spinning: false,
-            reelsRevealed: 3,
-            lastWin: false,
-            lastReels: null,
-            lastMessage: null,
-            tier: slotsState.tier ?? currentStakeTier,
-          };
+          slotsState = { machine: m, sessionNet: 0, spins: 0, spinning: false, lastWin: false, lastReels: null, lastMessage: null };
           pushView("slots-play");
         })
       )),
@@ -1318,79 +1054,9 @@ function renderSlotsPlay() {
   const stakes = effectiveSlotStakes(machine, tier, session.wallet.balance);
   const minBet = stakes.minBet;
   const maxBet = stakes.maxBet;
-
-  if (maxBet < minBet) {
-    return el("div", { className: "panel" }, [
-      banner(machine.name),
-      el("p", {
-        className: "error",
-        textContent: `This machine requires at least ${minBet.toLocaleString()} chips per spin at ${tier.name}.`,
-      }),
-      el("div", { className: "action-bar" }, [
-        el("button", {
-          className: "btn",
-          textContent: "Back to machines",
-          onclick: () => { popView(); render(); },
-        }),
-      ]),
-    ]);
-  }
-
-  const betStep = minBet;
-  const defaultBet = Math.min(Math.max(slotsState.bet ?? minBet, minBet), maxBet);
-
-  function clampSlotBet(value) {
-    const n = parseInt(value, 10);
-    if (Number.isNaN(n)) return minBet;
-    return Math.min(Math.max(n, minBet), maxBet);
-  }
-
-  function setSlotBet(value) {
-    const clamped = clampSlotBet(value);
-    betInput.value = String(clamped);
-    slotsState.bet = clamped;
-  }
-
   const betInput = el("input", {
-    type: "number",
-    className: "bet-stepper-input",
-    min: String(minBet),
-    max: String(maxBet),
-    step: String(betStep),
-    value: String(defaultBet),
-    disabled: slotsState.spinning,
-    oninput: (e) => { slotsState.bet = clampSlotBet(e.target.value); },
+    type: "number", min: String(minBet), max: String(maxBet), value: String(minBet),
   });
-
-  const betStepper = el("div", { className: "bet-stepper" }, [
-    el("button", {
-      className: "btn bet-step-btn",
-      type: "button",
-      textContent: "−",
-      title: `Decrease bet by ${betStep.toLocaleString()}`,
-      disabled: slotsState.spinning,
-      onclick: () => setSlotBet((parseInt(betInput.value, 10) || minBet) - betStep),
-    }),
-    betInput,
-    el("button", {
-      className: "btn bet-step-btn",
-      type: "button",
-      textContent: "+",
-      title: `Increase bet by ${betStep.toLocaleString()}`,
-      disabled: slotsState.spinning,
-      onclick: () => setSlotBet((parseInt(betInput.value, 10) || minBet) + betStep),
-    }),
-    maxBet > minBet
-      ? el("button", {
-        className: "btn bet-step-btn bet-max-btn",
-        type: "button",
-        textContent: "Max",
-        title: `Set bet to ${maxBet.toLocaleString()}`,
-        disabled: slotsState.spinning,
-        onclick: () => setSlotBet(maxBet),
-      })
-      : null,
-  ].filter(Boolean));
   const msgEl = el("p", {
     className: `slot-result ${slotsState.lastMessage?.type ?? "dim"}`,
     textContent: slotsState.spinning
@@ -1404,8 +1070,7 @@ function renderSlotsPlay() {
 
   const reelsEl = slotReelWindow(machine, slotsState.lastReels, {
     spinning: slotsState.spinning,
-    reelsRevealed: slotsState.reelsRevealed,
-    win: slotsState.lastWin && !slotsState.spinning,
+    win: slotsState.lastWin,
   });
 
   const jackpotEl = machine.progressive && machine.progressivePoolId
@@ -1419,57 +1084,35 @@ function renderSlotsPlay() {
     ? el("p", { className: "dim", textContent: `Max bet (${maxBet.toLocaleString()} chips) required to qualify for the progressive jackpot.` })
     : null;
 
-  function setSlotMessage(text, type = "dim") {
-    slotsState.lastMessage = { text, type };
-    msgEl.className = `slot-result ${type}`;
-    msgEl.textContent = text;
-  }
-
   function doSpin() {
-    if (slotsState.spinning) return;
     const bet = parseInt(betInput.value, 10);
-    slotsState.bet = bet;
     if (bet === 0) {
-      clearSlotsSpinTimers();
       session.recordResult("slots", slotsState.sessionNet, slotsState.spins);
       persist();
       popView();
       render();
       return;
     }
-    if (bet < minBet) { setSlotMessage(`Minimum spin is ${minBet}.`, "error"); return; }
-    if (bet > maxBet) { setSlotMessage(`Maximum spin is ${maxBet}.`, "error"); return; }
+    if (bet < minBet) { msgEl.className = "slot-result error"; msgEl.textContent = `Minimum spin is ${minBet}.`; return; }
+    if (bet > maxBet) { msgEl.className = "slot-result error"; msgEl.textContent = `Maximum spin is ${maxBet}.`; return; }
     if (!session.wallet.debit(bet, "slots", `${machine.name} spin ${fmtChips(bet)}`)) {
-      setSlotMessage("Insufficient chips.", "error");
+      msgEl.className = "slot-result error";
+      msgEl.textContent = "Insufficient chips.";
       return;
     }
 
-    clearSlotsSpinTimers();
-    contributeToProgressive(session, machine, bet);
-    const reels = spinReels(machine);
-    const jackpotAmount = tryJackpot(session, machine, reels, bet, maxBet);
-    const { win, reason } = calculatePayout(reels, bet, machine, jackpotAmount);
-
     slotsState.spinning = true;
-    slotsState.reelsRevealed = 0;
     slotsState.lastWin = false;
-    slotsState.lastReels = reels;
-    slotsState.lastMessage = { text: "Spinning…", type: "dim" };
     render();
 
-    const spinTiming = getActivityTiming(rewardsTierId(session));
-    scheduleSlotsSpin(() => {
-      slotsState.reelsRevealed = 1;
-      render();
-    }, spinTiming.slotsReel1);
-    scheduleSlotsSpin(() => {
-      slotsState.reelsRevealed = 2;
-      render();
-    }, spinTiming.slotsReel2);
-    scheduleSlotsSpin(() => {
-      slotsState.spinning = false;
-      slotsState.reelsRevealed = 3;
+    setTimeout(() => {
+      contributeToProgressive(session, machine, bet);
+      const reels = spinReels(machine);
+      const jackpotAmount = tryJackpot(session, machine, reels, bet, maxBet);
+      const { win, reason } = calculatePayout(reels, bet, machine, jackpotAmount);
       slotsState.spins += 1;
+      slotsState.spinning = false;
+      slotsState.lastReels = reels;
       slotsState.lastWin = win > 0;
 
       if (win > 0) {
@@ -1482,11 +1125,10 @@ function renderSlotsPlay() {
       } else {
         slotsState.sessionNet -= bet;
         slotsState.lastMessage = { text: "No win this spin.", type: "dim" };
-        notifyPitBossTopUp("slots", bet);
       }
       persist();
       render();
-    }, spinTiming.slotsReel3);
+    }, 500);
   }
 
   return slotCabinet(machine, {
@@ -1501,18 +1143,16 @@ function renderSlotsPlay() {
     ],
     baseChildren: [
       el("p", { className: "chip-line", textContent: `Chips: ${fmtChips(session.wallet.balance)}` }),
-      el("div", { className: "form-row slot-bet-row" }, [
-        el("label", { textContent: `Spin amount (${minBet}–${maxBet}, step ${betStep}, 0 to leave)` }),
-        betStepper,
+      el("div", { className: "form-row" }, [
+        el("label", { textContent: `Spin amount (${minBet}–${maxBet}, 0 to leave)` }),
+        betInput,
       ]),
       el("div", { className: "action-bar" }, [
         el("button", { className: "btn primary", textContent: "Spin", onclick: doSpin, disabled: slotsState.spinning }),
         el("button", {
           className: "btn",
           textContent: "Leave machine",
-          disabled: slotsState.spinning,
           onclick: () => {
-            clearSlotsSpinTimers();
             session.recordResult("slots", slotsState.sessionNet, slotsState.spins);
             persist();
             popView();
@@ -1526,8 +1166,7 @@ function renderSlotsPlay() {
 
 function renderSportsbook() {
   const act = ACTIVITIES.sportsbook;
-  const openCount = sportsbook.pending.length + predictions.positions.length;
-  if (session.wallet.balance < act.minBet && !openCount) {
+  if (session.wallet.balance < act.minBet && !sportsbook.pending.length) {
     return el("div", { className: "panel" }, [
       banner("Sports Book"),
       el("p", { className: "error", textContent: `You need at least ${act.minBet} chips to wager.` }),
@@ -1536,400 +1175,122 @@ function renderSportsbook() {
       ]),
     ]);
   }
-
-  ensureSportsbookReady().then(() => render()).catch(() => render());
-
-  if (!sportsbook.catalog || !sportsbook.events.length) {
-    return el("div", { className: "panel" }, [
-      banner("Sports Book — Mandalay Sports Book"),
-      chipLine(),
-      el("p", { className: "sportsbook-loading", textContent: "Loading lines and markets…" }),
-      el("div", { className: "action-bar" }, [
-        el("button", { className: "btn", textContent: "Back", onclick: () => { popView(); render(); } }),
-      ]),
-    ]);
-  }
-
   session.recordVisit("sportsbook");
   persist();
   const tier = currentStakeTier;
-  const wagerStakes = sportsbookWagerStakes();
-  const tab = sportsbook.activeTab ?? "sports";
+  const wagerStakes = tier
+    ? effectiveTableStakes(tier, session.wallet.balance, act.minBet)
+    : { minBet: act.minBet, maxBet: session.wallet.balance };
 
-  const tabs = el("div", { className: "sportsbook-tabs" }, [
-    el("button", {
-      className: `sportsbook-tab${tab === "sports" ? " active" : ""}`,
-      textContent: "Sports",
-      onclick: () => { sportsbook.activeTab = "sports"; persist(); render(); },
-    }),
-    el("button", {
-      className: `sportsbook-tab${tab === "predictions" ? " active" : ""}`,
-      textContent: "Predictions",
-      onclick: () => { sportsbook.activeTab = "predictions"; persist(); render(); },
-    }),
-  ]);
+  const board = el("div", {}, sportsbook.events.map((event, i) =>
+    el("div", { className: "event-card" }, [
+      el("div", { className: "sport", textContent: event.sport }),
+      el("div", { innerHTML: `<strong>${i + 1}) ${event.label}</strong>` }),
+      el("div", { className: "dim", innerHTML: `ML: ${event.away} ${fmtOdds(event.awayOdds)} | ${event.home} ${fmtOdds(event.homeOdds)}` }),
+      el("div", { className: "dim", innerHTML: `Spread: ${event.home} ${event.spread >= 0 ? "+" : ""}${event.spread} (${fmtOdds(event.spreadHomeOdds)}) | ${event.away} ${(-event.spread) >= 0 ? "+" : ""}${-event.spread} (${fmtOdds(event.spreadAwayOdds)})` }),
+    ])
+  ));
 
-  const content = el("div", {});
-
-  if (tab === "sports") {
-    const sports = getUniqueSports(sportsbook.events);
-    const chips = el("div", { className: "sport-filter-chips" }, [
-      el("button", {
-        className: `filter-chip${sportsbook.sportFilter === "all" ? " active" : ""}`,
-        textContent: "All",
-        onclick: () => { sportsbook.sportFilter = "all"; persist(); render(); },
-      }),
-      ...sports.map((s) => el("button", {
-        className: `filter-chip${sportsbook.sportFilter === s ? " active" : ""}`,
-        textContent: s,
-        onclick: () => { sportsbook.sportFilter = s; persist(); render(); },
-      })),
-    ]);
-
-    const filtered = filterEvents(sportsbook.events, sportsbook.sportFilter);
-    const board = el("div", {}, filtered.map((event, i) => {
-      const statusClass = event.live ? "event-status live" : "event-status";
-      const statusText = event.live ? "Live" : event.status === "final" ? "Final" : "Scheduled";
-      const cardChildren = [
-        el("div", { className: "event-card-header" }, [
-          el("div", {}, [
-            el("div", { className: "sport", textContent: event.sportLabel || event.sport }),
-            el("div", { innerHTML: `<strong>${i + 1}) ${event.label}</strong>` }),
-          ]),
-          el("span", { className: statusClass, textContent: statusText }),
-        ]),
-      ];
-
-      if (event.eventType === "outright") {
-        cardChildren.push(el("div", { className: "event-lines dim", innerHTML:
-          `Outright: ${event.home} ${fmtOdds(event.homeOdds)} | ${event.away} ${fmtOdds(event.awayOdds)}` }));
-        cardChildren.push(el("div", { className: "event-bet-row" }, [
-          el("button", {
-            className: "outcome-chip yes",
-            textContent: `Bet ${event.home}`,
-            onclick: () => pushView("sportsbook-wager", { eventId: event.eventId, betType: "outright", pick: event.home }),
-          }),
-        ]));
-      } else {
-        cardChildren.push(el("div", { className: "event-lines" }, [
-          el("div", { className: "dim", innerHTML: `ML: ${event.away} ${fmtOdds(event.awayOdds)} | ${event.home} ${fmtOdds(event.homeOdds)}` }),
-          el("div", { className: "dim", innerHTML: `Spread: ${event.home} ${event.spread >= 0 ? "+" : ""}${event.spread} | ${event.away} ${(-event.spread) >= 0 ? "+" : ""}${-event.spread}` }),
-          el("div", { className: "dim", innerHTML: `Total: O/U ${event.total}` }),
-        ]));
-        cardChildren.push(el("div", { className: "event-bet-row" }, [
-          el("button", {
-            className: "outcome-chip yes",
-            textContent: `${event.home} ML`,
-            onclick: () => pushView("sportsbook-wager", { eventId: event.eventId, betType: "moneyline", pick: event.home }),
-          }),
-          el("button", {
-            className: "outcome-chip yes",
-            textContent: `${event.away} ML`,
-            onclick: () => pushView("sportsbook-wager", { eventId: event.eventId, betType: "moneyline", pick: event.away }),
-          }),
-          el("button", {
-            className: "outcome-chip yes",
-            textContent: `Over ${event.total}`,
-            onclick: () => pushView("sportsbook-wager", { eventId: event.eventId, betType: "total", pick: "over" }),
-          }),
-          el("button", {
-            className: "outcome-chip no",
-            textContent: `Under ${event.total}`,
-            onclick: () => pushView("sportsbook-wager", { eventId: event.eventId, betType: "total", pick: "under" }),
-          }),
-          el("button", {
-            className: "btn",
-            textContent: "More bets",
-            onclick: () => pushView("sportsbook-wager", { eventId: event.eventId }),
-          }),
-        ]));
-        if (event.props?.length) {
-          const propsEl = el("div", { className: "event-props" });
-          propsEl.appendChild(el("span", { className: "dim", textContent: "Props: " }));
-          for (const prop of event.props) {
-            propsEl.appendChild(el("button", {
-              className: "outcome-chip yes",
-              textContent: prop.label,
-              onclick: () => pushView("sportsbook-wager", {
-                eventId: event.eventId, betType: "prop", propId: prop.id, propLabel: prop.label, pick: "yes",
-              }),
-            }));
-          }
-          cardChildren.push(propsEl);
-        }
-      }
-
-      return el("div", { className: "event-card event-card--expanded" }, cardChildren);
-    }));
-
-    content.appendChild(chips);
-    content.appendChild(board);
-  } else {
-    content.appendChild(el("div", { className: "volatility-banner", textContent:
-      "Prediction markets are high-volatility. Prices move fast; you can lose your entire stake." }));
-
-    const catChips = el("div", { className: "sport-filter-chips" }, [
-      el("button", {
-        className: `filter-chip${predictions.categoryFilter === "all" ? " active" : ""}`,
-        textContent: "All",
-        onclick: () => { predictions.categoryFilter = "all"; persist(); render(); },
-      }),
-      ...MARKET_CATEGORIES.map((c) => el("button", {
-        className: `filter-chip${predictions.categoryFilter === c.id ? " active" : ""}`,
-        textContent: c.label,
-        onclick: () => { predictions.categoryFilter = c.id; persist(); render(); },
-      })),
-    ]);
-    content.appendChild(catChips);
-
-    const markets = filterMarkets(predictions.markets, predictions.categoryFilter);
-    const marketBoard = el("div", {}, markets.map((market) => {
-      const yesPct = market.yesPrice;
-      return el("div", { className: "market-card" }, [
-        el("div", { className: "market-category", textContent: categoryLabel(market.category) }),
-        el("div", { className: "market-question", textContent: market.question }),
-        el("div", { className: "prob-bar" }, [
-          el("div", { className: "prob-yes", style: { width: `${yesPct}%` } }),
-          el("div", { className: "prob-no" }),
-        ]),
-        el("div", { className: "market-prices", innerHTML:
-          `YES ${market.yesPrice}¢ · NO ${market.noPrice}¢ · Vol ${market.volume.toLocaleString()}` }),
-        el("div", { className: "market-actions" }, [
-          el("button", {
-            className: "outcome-chip yes",
-            textContent: `YES ${market.yesPrice}¢`,
-            onclick: () => pushView("sportsbook-prediction", { marketId: market.marketId, side: "yes" }),
-          }),
-          el("button", {
-            className: "outcome-chip no",
-            textContent: `NO ${market.noPrice}¢`,
-            onclick: () => pushView("sportsbook-prediction", { marketId: market.marketId, side: "no" }),
-          }),
-        ]),
-      ]);
-    }));
-    content.appendChild(marketBoard);
+  const pendingEl = el("div", { className: "pending-tickets" });
+  if (sportsbook.pending.length) {
+    pendingEl.appendChild(el("p", { className: "subtitle", textContent: "Open tickets:" }));
+    for (const slip of sportsbook.pending) {
+      pendingEl.appendChild(el("div", {
+        className: "ticket",
+        textContent: `${slip.amount.toLocaleString()} chips on ${slip.pick} (${slip.betType}, ${fmtOdds(slip.odds)}) — ${slip.event.label}`,
+      }));
+    }
   }
-
-  const slip = renderUnifiedSlip();
-  const liveNote = sportsbook.liveCache?.fixtures?.length
-    ? el("p", { className: "live-badge", textContent: "● Live fixtures synced" })
-    : null;
 
   return el("div", { className: "panel" }, [
     banner("Sports Book — Mandalay Sports Book"),
     chipLine(),
     tier ? el("p", { className: "dim", textContent: `${tier.name}: ${formatStakeRange(wagerStakes.minBet, wagerStakes.maxBet, { noCap: tier.maxBet == null })}` }) : null,
-    liveNote,
-    tabs,
-    content,
-    slip,
-    menu([
-      "Settle all open positions",
-      tab === "sports" ? "Refresh lines" : "Refresh market prices",
-      "View bet slip",
-    ], "Sports Book:", (choice) => {
+    el("p", { className: "subtitle", textContent: "Today's Board" }),
+    board,
+    pendingEl,
+    menu(["Place a wager", "Settle all open bets (simulate results)", "Refresh lines"], "Sports Book:", (choice) => {
       if (choice === 0) { goBack(); return; }
-      if (choice === 1) pushView("sportsbook-settle");
-      else if (choice === 2) {
-        if (tab === "sports") {
-          sportsbookInitPromise = null;
-          ensureSportsbookReady(true).then(() => render());
-        } else {
-          predictions.refreshPrices();
-          persist();
-          render();
-        }
-      } else if (choice === 3) pushView("sportsbook-slip");
+      if (choice === 1) pushView("sportsbook-wager");
+      else if (choice === 2) pushView("sportsbook-settle");
+      else if (choice === 3) { sportsbook.refreshBoard(true); render(); }
     }),
   ]);
 }
 
 function renderSportsbookWager() {
-  const ctx = viewStack[viewStack.length - 1]?.data ?? {};
-  const wagerStakes = sportsbookWagerStakes();
-  const event = ctx.eventId
-    ? sportsbook.events.find((e) => e.eventId === ctx.eventId)
-    : sportsbook.events[0];
-
-  if (!event) {
-    return el("div", { className: "panel" }, [
-      banner("Place Wager"),
-      el("p", { className: "error", textContent: "No event available." }),
-      el("button", { className: "btn", textContent: "Back", onclick: () => { popView(); render(); } }),
-    ]);
-  }
-
-  const eventSelect = el("select", {}, sportsbook.events.map((e) =>
-    el("option", {
-      value: e.eventId,
-      textContent: `${e.sportLabel || e.sport}: ${e.label}`,
-      selected: e.eventId === event.eventId,
-    })
+  const act = ACTIVITIES.sportsbook;
+  const tier = currentStakeTier;
+  const wagerStakes = tier
+    ? effectiveTableStakes(tier, session.wallet.balance, act.minBet)
+    : { minBet: act.minBet, maxBet: session.wallet.balance };
+  const eventSelect = el("select", {}, sportsbook.events.map((e, i) =>
+    el("option", { value: String(i), textContent: `${i + 1}) ${e.label}` })
   ));
-  eventSelect.value = event.eventId;
-
-  let selectedEvent = event;
-  eventSelect.onchange = () => {
-    selectedEvent = sportsbook.events.find((e) => e.eventId === eventSelect.value) ?? event;
-    render();
-  };
-
-  const betType = ctx.betType ?? (selectedEvent.eventType === "outright" ? "outright" : "moneyline");
-  const betOptions = selectedEvent.eventType === "outright"
-    ? [{ value: "outright", text: "Outright winner" }]
-    : [
-      { value: "moneyline", text: "Moneyline" },
-      { value: "spread", text: "Spread" },
-      { value: "total", text: "Total (O/U)" },
-      { value: "prop", text: "Game prop" },
-    ];
-  const betTypeSelect = el("select", {}, betOptions.map((o) =>
-    el("option", { value: o.value, textContent: o.text, selected: o.value === betType })
-  ));
-
+  const betTypeSelect = el("select", {}, [
+    el("option", { value: "moneyline", textContent: "Moneyline" }),
+    el("option", { value: "spread", textContent: "Spread" }),
+  ]);
   const pickSelect = el("select");
-  const propSelect = el("select");
   const amountInput = el("input", {
-    type: "number",
-    min: String(wagerStakes.minBet),
-    max: String(wagerStakes.maxBet),
-    value: String(wagerStakes.minBet),
+    type: "number", min: String(wagerStakes.minBet), max: String(wagerStakes.maxBet), value: String(wagerStakes.minBet),
   });
 
-  function rebuildPicks() {
+  function updatePicks() {
+    const event = sportsbook.events[parseInt(eventSelect.value, 10)];
     pickSelect.innerHTML = "";
-    propSelect.innerHTML = "";
-    const bt = betTypeSelect.value;
-    const ev = sportsbook.events.find((e) => e.eventId === eventSelect.value) ?? selectedEvent;
-    if (bt === "moneyline" || bt === "outright") {
-      const names = bt === "outright" ? (ev.field ?? [ev.home, ev.away]) : [ev.away, ev.home];
-      for (const name of names) {
-        pickSelect.appendChild(el("option", { value: name, textContent: name, selected: ctx.pick === name }));
-      }
-    } else if (bt === "spread") {
-      pickSelect.appendChild(el("option", { value: ev.home, textContent: `${ev.home} ${ev.spread >= 0 ? "+" : ""}${ev.spread}` }));
-      pickSelect.appendChild(el("option", { value: ev.away, textContent: `${ev.away} ${(-ev.spread) >= 0 ? "+" : ""}${-ev.spread}` }));
-    } else if (bt === "total") {
-      pickSelect.appendChild(el("option", { value: "over", textContent: `Over ${ev.total}`, selected: ctx.pick === "over" }));
-      pickSelect.appendChild(el("option", { value: "under", textContent: `Under ${ev.total}`, selected: ctx.pick === "under" }));
-    } else if (bt === "prop") {
-      for (const p of ev.props ?? []) {
-        propSelect.appendChild(el("option", { value: p.id, textContent: p.label, selected: ctx.propId === p.id }));
-      }
-      pickSelect.appendChild(el("option", { value: "yes", textContent: "Yes", selected: ctx.pick === "yes" }));
-      pickSelect.appendChild(el("option", { value: "no", textContent: "No" }));
+    if (betTypeSelect.value === "moneyline") {
+      pickSelect.appendChild(el("option", { value: event.away, textContent: event.away }));
+      pickSelect.appendChild(el("option", { value: event.home, textContent: event.home }));
+    } else {
+      pickSelect.appendChild(el("option", {
+        value: event.home,
+        textContent: `${event.home} ${event.spread >= 0 ? "+" : ""}${event.spread}`,
+      }));
+      pickSelect.appendChild(el("option", {
+        value: event.away,
+        textContent: `${event.away} ${(-event.spread) >= 0 ? "+" : ""}${-event.spread}`,
+      }));
     }
   }
-  betTypeSelect.onchange = rebuildPicks;
-  eventSelect.onchange = () => { rebuildPicks(); };
-  rebuildPicks();
-
-  const formRows = [
-    el("div", { className: "form-row" }, [el("label", { textContent: "Event" }), eventSelect]),
-    el("div", { className: "form-row" }, [el("label", { textContent: "Bet type" }), betTypeSelect]),
-  ];
-  if (betTypeSelect.value === "prop") {
-    formRows.push(el("div", { className: "form-row" }, [el("label", { textContent: "Prop" }), propSelect]));
-  }
-  formRows.push(el("div", { className: "form-row" }, [el("label", { textContent: "Pick" }), pickSelect]));
-  formRows.push(el("div", { className: "form-row" }, [el("label", { textContent: "Wager amount" }), amountInput]));
+  eventSelect.onchange = updatePicks;
+  betTypeSelect.onchange = updatePicks;
+  updatePicks();
 
   return el("div", { className: "panel" }, [
     banner("Place Wager"),
     chipLine(),
-    ...formRows,
+    el("div", { className: "form-row" }, [el("label", { textContent: "Event" }), eventSelect]),
+    el("div", { className: "form-row" }, [el("label", { textContent: "Bet type" }), betTypeSelect]),
+    el("div", { className: "form-row" }, [el("label", { textContent: "Pick" }), pickSelect]),
+    el("div", { className: "form-row" }, [el("label", { textContent: "Wager amount" }), amountInput]),
     el("div", { className: "action-bar" }, [
       el("button", {
         className: "btn primary",
         textContent: "Place ticket",
         onclick: () => {
-          const ev = sportsbook.events.find((e) => e.eventId === eventSelect.value);
-          if (!ev) return;
-          const bt = betTypeSelect.value;
+          const event = sportsbook.events[parseInt(eventSelect.value, 10)];
+          const betType = betTypeSelect.value;
           const pick = pickSelect.value;
           const amount = parseInt(amountInput.value, 10);
-          const extra = {};
-          if (bt === "prop") {
-            const prop = ev.props?.find((p) => p.id === propSelect.value);
-            extra.propId = prop?.id;
-            extra.propLabel = prop?.label;
+          if (amount < wagerStakes.minBet) { alert(`Minimum wager is ${wagerStakes.minBet} chips.`); return; }
+          if (amount > wagerStakes.maxBet) { alert(`Maximum wager is ${wagerStakes.maxBet} chips.`); return; }
+          let odds;
+          if (betType === "moneyline") {
+            odds = pick === event.away ? event.awayOdds : event.homeOdds;
+          } else {
+            odds = pick === event.home ? event.spreadHomeOdds : event.spreadAwayOdds;
           }
-          if (placeSportsTicket(ev, bt, pick, amount, extra)) {
-            popView();
-            render();
+          if (!session.wallet.debit(amount, "sportsbook", `${betType} on ${pick}`)) {
+            alert("Insufficient chips."); return;
           }
+          sportsbook.addTicket({ event, betType, pick, amount, odds });
+          persist();
+          showStatus(`Ticket placed: ${amount.toLocaleString()} chips on ${pick}. Settle when ready.`);
+          popView();
+          render();
         },
       }),
-      el("button", { className: "btn", textContent: "Back", onclick: () => { popView(); render(); } }),
-    ]),
-  ]);
-}
-
-function renderSportsbookPrediction() {
-  const ctx = viewStack[viewStack.length - 1]?.data ?? {};
-  const market = predictions.markets.find((m) => m.marketId === ctx.marketId);
-  const side = ctx.side ?? "yes";
-  const wagerStakes = sportsbookWagerStakes();
-
-  if (!market) {
-    return el("div", { className: "panel" }, [
-      banner("Prediction Contract"),
-      el("p", { className: "error", textContent: "Market not found." }),
-      el("button", { className: "btn", textContent: "Back", onclick: () => { popView(); render(); } }),
-    ]);
-  }
-
-  const priceCents = side === "yes" ? market.yesPrice : market.noPrice;
-  const amountInput = el("input", {
-    type: "number",
-    min: String(wagerStakes.minBet),
-    max: String(wagerStakes.maxBet),
-    value: String(wagerStakes.minBet),
-  });
-
-  return el("div", { className: "panel" }, [
-    banner("Buy Prediction Contract"),
-    chipLine(),
-    el("div", { className: "volatility-banner", textContent:
-      "High-volatility contract — you can lose your entire stake." }),
-    el("p", { innerHTML: `<strong>${market.question}</strong>` }),
-    el("p", { className: "dim", textContent: `${categoryLabel(market.category)} · ${side.toUpperCase()} @ ${priceCents}¢` }),
-    el("div", { className: "prob-bar" }, [
-      el("div", { className: "prob-yes", style: { width: `${market.yesPrice}%` } }),
-      el("div", { className: "prob-no" }),
-    ]),
-    el("div", { className: "form-row" }, [el("label", { textContent: "Stake (chips)" }), amountInput]),
-    el("p", {
-      className: "dim",
-      id: "pred-payout-preview",
-      textContent: `Max payout if ${side.toUpperCase()}: ${predictionPayout(wagerStakes.minBet, priceCents).toLocaleString()} chips`,
-    }),
-    el("div", { className: "action-bar" }, [
-      el("button", {
-        className: "btn primary",
-        textContent: `Buy ${side.toUpperCase()}`,
-        onclick: () => {
-          const amount = parseInt(amountInput.value, 10);
-          if (placePredictionContract(market, side, amount)) {
-            popView();
-            render();
-          }
-        },
-      }),
-      el("button", { className: "btn", textContent: "Back", onclick: () => { popView(); render(); } }),
-    ]),
-  ]);
-}
-
-function renderSportsbookSlip() {
-  const slip = renderUnifiedSlip();
-  return el("div", { className: "panel" }, [
-    banner("Bet Slip"),
-    chipLine(),
-    slip ?? el("p", { className: "dim", textContent: "No open positions." }),
-    el("div", { className: "action-bar" }, [
-      el("button", { className: "btn primary", textContent: "Settle all", onclick: () => pushView("sportsbook-settle") }),
       el("button", { className: "btn", textContent: "Back", onclick: () => { popView(); render(); } }),
     ]),
   ]);
@@ -1938,54 +1299,29 @@ function renderSportsbookSlip() {
 function renderSportsbookSettle() {
   const log = el("div", { className: "log-area" });
   let sessionNet = 0;
-  let totalCount = 0;
 
-  if (!sportsbook.pending.length && !predictions.positions.length) {
-    log.appendChild(el("p", { className: "error", textContent: "No open positions." }));
+  if (!sportsbook.pending.length) {
+    log.appendChild(el("p", { className: "error", textContent: "No open tickets. Place a wager first." }));
   } else {
-    if (sportsbook.pending.length) {
-      const { results, count } = sportsbook.settleAll(sportsbook.catalog);
-      log.appendChild(el("p", { className: "subtitle", textContent: "FINAL SCORES" }));
-      for (const r of results) {
-        log.appendChild(el("div", {
-          className: "line",
-          innerHTML: `<strong>${r.event.label}:</strong> ${formatEventScore(r.event)}`,
-        }));
-        if (r.won) {
-          session.wallet.credit(r.payout, "sportsbook", r.reason);
-          sessionNet += r.payout - r.slip.amount;
-          log.appendChild(el("div", { className: "line success", textContent: `  WIN: ${r.reason} (+${(r.payout - r.slip.amount).toLocaleString()} chips)` }));
-        } else {
-          sessionNet -= r.slip.amount;
-          log.appendChild(el("div", { className: "line error", textContent: `  LOSE: ${r.reason} (-${r.slip.amount.toLocaleString()} chips)` }));
-        }
+    const { results, count } = sportsbook.settleAll();
+    log.appendChild(el("p", { className: "subtitle", textContent: "FINAL SCORES" }));
+    for (const r of results) {
+      log.appendChild(el("div", { className: "line", innerHTML: `<strong>${r.event.label}:</strong> ${r.event.away} ${r.event.awayScore} — ${r.event.home} ${r.event.homeScore}` }));
+      if (r.won) {
+        session.wallet.credit(r.payout, "sportsbook", r.reason);
+        sessionNet += r.payout - r.slip.amount;
+        log.appendChild(el("div", { className: "line success", textContent: `  WIN: ${r.reason} (+${(r.payout - r.slip.amount).toLocaleString()} chips)` }));
+      } else {
+        sessionNet -= r.slip.amount;
+        log.appendChild(el("div", { className: "line error", textContent: `  LOSE: ${r.reason} (-${r.slip.amount.toLocaleString()} chips)` }));
       }
-      totalCount += count;
     }
-
-    if (predictions.positions.length) {
-      const { results, count } = predictions.settleAll(sportsbook.events);
-      log.appendChild(el("p", { className: "subtitle", textContent: "PREDICTION MARKET RESULTS" }));
-      for (const r of results) {
-        log.appendChild(el("div", { className: "line", innerHTML: `<strong>${r.market.question}</strong> → ${r.resolution.toUpperCase()}` }));
-        if (r.won) {
-          session.wallet.credit(r.payout, "sportsbook", r.reason);
-          sessionNet += r.payout - r.position.amount;
-          log.appendChild(el("div", { className: "line success", textContent: `  WIN: ${r.reason}` }));
-        } else {
-          sessionNet -= r.position.amount;
-          log.appendChild(el("div", { className: "line error", textContent: `  LOSE: ${r.reason} (-${r.position.amount.toLocaleString()} chips)` }));
-        }
-      }
-      totalCount += count;
-    }
-
-    session.recordResult("sportsbook", sessionNet, totalCount);
+    session.recordResult("sportsbook", sessionNet, count);
     persist();
   }
 
   return el("div", { className: "panel" }, [
-    banner("Settle Positions"),
+    banner("Settle Bets"),
     chipLine(),
     log,
     el("div", { className: "action-bar" }, [
@@ -2332,11 +1668,7 @@ function renderRoulette() {
   };
 
   const rouletteDisplay = el("div", { className: "roulette-display" }, [
-    renderRouletteWheel(
-      rouletteState.lastNumber,
-      rouletteState.spinning,
-      getActivityTiming(rewardsTierId(session)).rouletteSpin,
-    ),
+    renderRouletteWheel(rouletteState.lastNumber, rouletteState.spinning),
     renderRouletteBetMat(straightInput, onMatPick),
   ]);
 
@@ -2359,7 +1691,6 @@ function renderRoulette() {
     rouletteState.spinning = true;
     render();
 
-    const spinMs = getActivityTiming(rewardsTierId(session)).rouletteSpin;
     setTimeout(() => {
       const number = spinWheel();
       const straightPick = bet.kind === "straight" ? parseInt(straightInput.value, 10) : null;
@@ -2375,12 +1706,11 @@ function renderRoulette() {
         rouletteState.sessionNet += win - amount;
       } else {
         rouletteState.sessionNet -= amount;
-        notifyPitBossTopUp("roulette", amount);
       }
       summaryEl.textContent = `Session: ${signedChips(rouletteState.sessionNet)} over ${rouletteState.spins} spin(s)`;
       persist();
       render();
-    }, spinMs);
+    }, 1200);
   }
 
   return videoMachine("roulette", {
@@ -2563,7 +1893,7 @@ function renderHorseRacingSettle() {
       const h = horseRacingState.card.horses.find((x) => x.number === num);
       finishLine.appendChild(el("div", { className: "racing-finish-entry" }, [
         el("span", { className: "racing-finish-pos", textContent: `${i + 1}.` }),
-        createHorseSpriteCanvas(h.spriteId, { size: 72, frame: i % 4 }),
+        createHorseSpriteCanvas(h.spriteId, { size: 64, frame: i % 4, animation: "trot" }),
         el("span", { className: "racing-finish-name", textContent: `#${num} ${h.name}` }),
       ]));
     });
@@ -2914,30 +2244,6 @@ const hotelRenderers = buildHotelRenderers({
   viewStack,
 });
 
-const amenitiesRenderers = buildAmenitiesRenderers({
-  get session() { return session; },
-  pushView,
-  goBack,
-  persist,
-  render,
-  el,
-  banner,
-  chipLine,
-  statusBanner,
-  showStatus,
-});
-
-const poolRenderers = buildPoolRenderers({
-  get session() { return session; },
-  pushView,
-  goBack,
-  persist,
-  render,
-  el,
-  banner,
-  chipLine,
-});
-
 const RENDERERS = {
   "save-picker": renderSavePicker,
   "save-create": renderSaveCreate,
@@ -2955,8 +2261,6 @@ const RENDERERS = {
   "slots-play": renderSlotsPlay,
   sportsbook: renderSportsbook,
   "sportsbook-wager": renderSportsbookWager,
-  "sportsbook-prediction": renderSportsbookPrediction,
-  "sportsbook-slip": renderSportsbookSlip,
   "sportsbook-settle": renderSportsbookSettle,
   "blackjack-menu": renderBlackjackMenu,
   "blackjack-custom": renderBlackjackCustom,
@@ -2969,8 +2273,6 @@ const RENDERERS = {
   "horse-racing-settle": renderHorseRacingSettle,
   "horse-racing-names": renderHorseRacingNames,
   ...hotelRenderers,
-  ...amenitiesRenderers,
-  ...poolRenderers,
   "not-found": renderNotFound,
 };
 
@@ -2980,7 +2282,6 @@ function render() {
   app.innerHTML = "";
   if (fn) {
     app.appendChild(fn(current.data));
-    window.__casinoReady = true;
     return;
   }
   app.appendChild(renderNotFound({ requestedView: current.name }));
@@ -2990,12 +2291,11 @@ viewStack = [{ name: "save-picker", data: {} }];
 
 function applyLaunchParams() {
   const params = new URLSearchParams(window.location.search);
-  const initialView = params.get("view") ?? undefined;
   if (params.get("guest") === "1") {
     enterCasino(createGuestSession({
       playerName: params.get("name") || "Guest",
       chips: Math.max(0, parseInt(params.get("chips") || "1000", 10)),
-    }), { initialView });
+    }));
     return true;
   }
   const slotParam = params.get("slot");
@@ -3008,7 +2308,7 @@ function applyLaunchParams() {
       }
       const loaded = loadSlot(slotId);
       if (loaded) {
-        enterCasino(loaded, { initialView });
+        enterCasino(loaded);
         return true;
       }
       pushView("save-create", { slotId });
@@ -3018,28 +2318,6 @@ function applyLaunchParams() {
   return false;
 }
 
-function hideBootLoader() {
-  const loader = document.getElementById("boot-loader");
-  if (loader) loader.remove();
-}
-
-if (!applyLaunchParams()) {
-  const remembered = loadActiveProfile();
-  if (remembered) {
-    hideBootLoader();
-    enterCasino(remembered);
-    loadBundledHorseNames();
-  } else {
-    loadBundledHorseNames().finally(() => {
-      hideBootLoader();
-      render();
-    });
-  }
-} else {
-  hideBootLoader();
-  loadBundledHorseNames();
-}
-
 if (!navigator.onLine) {
   window.addEventListener("online", () => render(), { once: true });
 }
@@ -3047,6 +2325,12 @@ if (!navigator.onLine) {
 window.addEventListener("beforeunload", () => {
   if (session.slotId != null) persist();
 });
+
+if (!applyLaunchParams()) {
+  loadBundledHorseNames().finally(() => render());
+} else {
+  loadBundledHorseNames();
+}
 
 document.addEventListener("keydown", (e) => {
   if (e.key === "p" || e.key === "P") {

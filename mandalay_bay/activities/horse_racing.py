@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import csv
 from dataclasses import dataclass
+from pathlib import Path
 
 from blackjack.rng import SECURE_RANDOM, fisher_yates_shuffle
 from mandalay_bay.activities.base import Activity, ActivityInfo
@@ -12,6 +14,10 @@ HORSE_NAMES = [
     "Midnight Runner", "Desert Wind", "Golden Mane", "Silver Streak",
     "Lucky Charm", "Thunder Bolt", "Royal Flush", "Neon Star",
 ]
+
+_DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+_DEFAULT_CSV = _DATA_DIR / "horse_names.csv"
+_name_cycle_offset = 0
 
 
 @dataclass
@@ -33,11 +39,43 @@ class RaceCard:
         return f"{self.track} — {len(self.horses)} runners"
 
 
-def _generate_race() -> RaceCard:
-    track = SECURE_RANDOM.choice(["Mandalay Turf", "Bay Downs", "Sunset Mile", "Neon Park"])
-    names = HORSE_NAMES.copy()
+def _parse_names_csv(path: Path) -> list[str]:
+    names: list[str] = []
+    if not path.is_file():
+        return names
+    with path.open(newline="", encoding="utf-8") as fh:
+        reader = csv.reader(fh)
+        for row in reader:
+            if not row:
+                continue
+            cell = row[0].strip()
+            if not cell or cell.lower() == "name" or cell.startswith("#"):
+                continue
+            if 2 <= len(cell) <= 48:
+                names.append(cell)
+    return list(dict.fromkeys(names))
+
+
+def load_horse_name_pool(custom_path: Path | None = None) -> list[str]:
+    """Load bundled CSV roster, or a custom path when provided."""
+    path = custom_path or _DEFAULT_CSV
+    parsed = _parse_names_csv(path)
+    return parsed if len(parsed) >= 6 else HORSE_NAMES.copy()
+
+
+def _pick_horse_names(pool: list[str], count: int) -> list[str]:
+    global _name_cycle_offset
+    names = [pool[(_name_cycle_offset + i) % len(pool)] for i in range(count)]
+    _name_cycle_offset = (_name_cycle_offset + count) % len(pool)
     fisher_yates_shuffle(names, SECURE_RANDOM)
+    return names
+
+
+def _generate_race(name_pool: list[str] | None = None) -> RaceCard:
+    pool = name_pool or load_horse_name_pool()
+    track = SECURE_RANDOM.choice(["Mandalay Turf", "Bay Downs", "Sunset Mile", "Neon Park"])
     count = SECURE_RANDOM.randrange(5, 7)
+    picked = _pick_horse_names(pool, count)
     horses: list[RaceHorse] = []
     for i in range(count):
         strength = SECURE_RANDOM.uniform(0.4, 1.0)
@@ -47,7 +85,7 @@ def _generate_race() -> RaceCard:
             odds = SECURE_RANDOM.choice([120, 150, 180])
         else:
             odds = SECURE_RANDOM.choice([250, 300, 400, 600])
-        horses.append(RaceHorse(i + 1, names[i], odds, strength))
+        horses.append(RaceHorse(i + 1, picked[i], odds, strength))
     return RaceCard(track=track, horses=horses)
 
 

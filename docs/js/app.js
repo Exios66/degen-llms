@@ -18,7 +18,8 @@ import { BlackjackGame, defaultConfig, Action } from "./blackjack/game.js";
 import { HoldemTable, BettingAction } from "./holdem/game.js";
 import { HAND_CLASS_NAMES } from "./holdem/hand_eval.js";
 import { BET_TYPES, spinWheel, wheelColor, resolveBet, RED_NUMBERS } from "./roulette.js";
-import { generateRace, simulateRace, settleTicket, fmtOdds as fmtRaceOdds } from "./horse_racing.js";
+import { generateRace, simulateRace, settleTicket, fmtOdds as fmtRaceOdds, loadBundledHorseNames, parseHorseNamesCSV, setCustomHorseNames, getHorseNamePool } from "./horse_racing.js";
+import { createHorseSpriteCanvas, getHorseSprite } from "./horse-sprites.js";
 import { getSessionDealer, pickQuip } from "./dealers.js";
 import { RewardsPhone } from "./RewardsPhone.js";
 import { buildHotelRenderers } from "./hotel-ui.js";
@@ -280,6 +281,33 @@ function slotCabinet(machine, { screenChildren = [], baseChildren = [] }) {
     el("div", { className: "slot-cabinet-screen" }, screenChildren.filter(Boolean)),
     el("div", { className: "slot-cabinet-base" }, baseChildren.filter(Boolean)),
   ]);
+}
+
+function horsePaddockCard(horse, { selected = false, onClick = null } = {}) {
+  const spriteMeta = getHorseSprite(horse.spriteId);
+  const card = el("div", {
+    className: `horse-paddock-card${selected ? " horse-paddock-card--selected" : ""}`,
+  }, [
+    createHorseSpriteCanvas(horse.spriteId, { size: 72 }),
+    el("div", { className: "horse-paddock-num", textContent: `#${horse.number}` }),
+    el("div", { className: "horse-paddock-name", textContent: horse.name }),
+    el("div", { className: "horse-paddock-sprite-label", textContent: spriteMeta.label }),
+    el("div", { className: "horse-paddock-odds", textContent: fmtRaceOdds(horse.odds) }),
+  ]);
+  if (onClick) {
+    card.style.cursor = "pointer";
+    card.onclick = onClick;
+  }
+  return card;
+}
+
+function renderHorsePaddock(horses, { selectedNumber = null, onSelect = null } = {}) {
+  return el("div", { className: "racing-paddock" }, horses.map((h) =>
+    horsePaddockCard(h, {
+      selected: selectedNumber === h.number,
+      onClick: onSelect ? () => onSelect(h.number) : null,
+    })
+  ));
 }
 
 function menu(options, title, onSelect, { showCasinoBanner = true } = {}) {
@@ -1761,7 +1789,7 @@ function renderHorseRacing() {
     ]);
   }
   session.recordVisit("horse_racing");
-  if (!horseRacingState.card) horseRacingState.card = generateRace();
+  if (!horseRacingState.card) horseRacingState.card = generateRace(session);
   persist();
   const tier = horseRacingState.tier ?? currentStakeTier;
   const wagerStakes = tier
@@ -1769,34 +1797,45 @@ function renderHorseRacing() {
     : { minBet: act.minBet, maxBet: session.wallet.balance };
 
   const card = horseRacingState.card;
-  const board = el("div", {}, card.horses.map((h) =>
-    el("div", { className: "event-card", innerHTML: `<strong>#${h.number} ${h.name}</strong> <span class="dim">${fmtRaceOdds(h.odds)}</span>` })
-  ));
+  const namePool = getHorseNamePool(session);
+  const poolLabel = session.horseRacingCustomNames
+    ? `Custom roster (${namePool.length} horses)`
+    : `Default roster (${namePool.length} horses)`;
+
   const pendingEl = el("div", { className: "pending-tickets" });
   if (horseRacingState.pending.length) {
     pendingEl.appendChild(el("p", { className: "subtitle", textContent: "Open tickets:" }));
     for (const slip of horseRacingState.pending) {
+      const h = card.horses.find((x) => x.number === slip.horse);
       pendingEl.appendChild(el("div", {
         className: "ticket",
-        textContent: `${slip.amount} chips on #${slip.horse} (${slip.betType})`,
+        textContent: `${slip.amount} chips on #${slip.horse} ${h?.name ?? ""} (${slip.betType})`,
       }));
     }
   }
 
-  return el("div", { className: "panel" }, [
+  return el("div", { className: "panel racing-pavilion" }, [
     banner("Mandalay Racing"),
     chipLine(),
     tier ? el("p", { className: "dim", textContent: `${tier.name}: ${formatStakeRange(wagerStakes.minBet, wagerStakes.maxBet, { noCap: tier.maxBet == null })}` }) : null,
     dealerPanel("horse_racing"),
     el("p", { className: "subtitle", textContent: card.label }),
-    board,
+    el("p", { className: "racing-roster-note dim", textContent: `${poolLabel} — study the paddock before you wager.` }),
+    el("p", { className: "racing-paddock-label", textContent: "Paddock" }),
+    renderHorsePaddock(card.horses),
     pendingEl,
-    menu(["Place a wager", "Run race & settle", "New race card"], "Racing pavilion:", (choice) => {
-      if (choice === 0) { goBack(); return; }
-      if (choice === 1) pushView("horse-racing-wager");
-      else if (choice === 2) pushView("horse-racing-settle");
-      else if (choice === 3) { horseRacingState.card = generateRace(); render(); }
-    }),
+    menu(
+      ["Place a wager", "Run race & settle", "New race card", "Manage horse names"],
+      "Racing pavilion:",
+      (choice) => {
+        if (choice === 0) { goBack(); return; }
+        if (choice === 1) pushView("horse-racing-wager");
+        else if (choice === 2) pushView("horse-racing-settle");
+        else if (choice === 3) { horseRacingState.card = generateRace(session); render(); }
+        else if (choice === 4) pushView("horse-racing-names");
+      },
+      { showCasinoBanner: false },
+    ),
   ]);
 }
 
@@ -1807,9 +1846,31 @@ function renderHorseRacingWager() {
     ? effectiveTableStakes(tier, session.wallet.balance, act.minBet)
     : { minBet: act.minBet, maxBet: session.wallet.balance };
   const card = horseRacingState.card;
+  let selectedHorse = card.horses[0]?.number ?? 1;
+  const paddockContainer = el("div", {});
+
   const horseSelect = el("select", {}, card.horses.map((h) =>
     el("option", { value: String(h.number), textContent: `#${h.number} ${h.name} (${fmtRaceOdds(h.odds)})` })
   ));
+  horseSelect.value = String(selectedHorse);
+
+  function refreshPaddock() {
+    paddockContainer.innerHTML = "";
+    paddockContainer.appendChild(renderHorsePaddock(card.horses, {
+      selectedNumber: selectedHorse,
+      onSelect: (num) => {
+        selectedHorse = num;
+        horseSelect.value = String(num);
+        refreshPaddock();
+      },
+    }));
+  }
+  horseSelect.onchange = () => {
+    selectedHorse = parseInt(horseSelect.value, 10);
+    refreshPaddock();
+  };
+  refreshPaddock();
+
   const betTypeSelect = el("select", {}, [
     el("option", { value: "win", textContent: "Win" }),
     el("option", { value: "place", textContent: "Place (top 2)" }),
@@ -1819,9 +1880,11 @@ function renderHorseRacingWager() {
     type: "number", min: String(wagerStakes.minBet), max: String(wagerStakes.maxBet), value: String(wagerStakes.minBet),
   });
 
-  return el("div", { className: "panel" }, [
+  return el("div", { className: "panel racing-pavilion" }, [
     banner("Place Wager"),
     chipLine(),
+    el("p", { className: "racing-paddock-label", textContent: "Choose your pony" }),
+    paddockContainer,
     el("div", { className: "form-row" }, [el("label", { textContent: "Horse" }), horseSelect]),
     el("div", { className: "form-row" }, [el("label", { textContent: "Bet type" }), betTypeSelect]),
     el("div", { className: "form-row" }, [el("label", { textContent: "Amount" }), amountInput]),
@@ -1839,9 +1902,9 @@ function renderHorseRacingWager() {
           if (!session.wallet.debit(amount, "horse_racing", `${betType} on #${horse}`)) {
             alert("Insufficient chips."); return;
           }
-          horseRacingState.pending.push({ horse, horseName: h.name, odds: h.odds, betType, amount });
+          horseRacingState.pending.push({ horse, horseName: h.name, odds: h.odds, betType, amount, spriteId: h.spriteId });
           persist();
-          showStatus(`Ticket placed: ${amount} chips on #${horse} (${betType}).`);
+          showStatus(`Ticket placed: ${amount} chips on #${horse} ${h.name} (${betType}).`);
           goBack();
         },
       }),
@@ -1857,10 +1920,21 @@ function renderHorseRacingSettle() {
   } else {
     const results = simulateRace(horseRacingState.card);
     log.appendChild(el("p", { className: "subtitle", textContent: "FINISH ORDER" }));
+    const finishLine = el("div", { className: "racing-finish-line" });
+    results.forEach((num, i) => {
+      const h = horseRacingState.card.horses.find((x) => x.number === num);
+      finishLine.appendChild(el("div", { className: "racing-finish-entry" }, [
+        el("span", { className: "racing-finish-pos", textContent: `${i + 1}.` }),
+        createHorseSpriteCanvas(h.spriteId, { size: 56 }),
+        el("span", { className: "racing-finish-name", textContent: `#${num} ${h.name}` }),
+      ]));
+    });
+    log.appendChild(finishLine);
     results.forEach((num, i) => {
       const h = horseRacingState.card.horses.find((x) => x.number === num);
       log.appendChild(el("div", { className: "line", textContent: `${i + 1}. #${num} ${h.name}` }));
     });
+
     for (const slip of horseRacingState.pending) {
       const r = settleTicket(slip, results);
       if (r.won) {
@@ -1878,11 +1952,89 @@ function renderHorseRacingSettle() {
     persist();
   }
 
-  return el("div", { className: "panel" }, [
+  return el("div", { className: "panel racing-pavilion" }, [
     banner("Race Results"),
     chipLine(),
     log,
     el("div", { className: "action-bar" }, [
+      el("button", { className: "btn", textContent: "Back", onclick: () => goBack() }),
+    ]),
+  ]);
+}
+
+function renderHorseRacingNames() {
+  const pool = getHorseNamePool(session);
+  const statusEl = el("p", {
+    className: "dim",
+    textContent: session.horseRacingCustomNames
+      ? `Using custom roster: ${pool.length} horse names.`
+      : `Using default roster: ${pool.length} horse names (from bundled CSV).`,
+  });
+  const previewEl = el("div", { className: "racing-name-preview" });
+  const previewNames = pool.slice(0, 12);
+  for (const name of previewNames) {
+    previewEl.appendChild(el("span", { className: "racing-name-chip", textContent: name }));
+  }
+  if (pool.length > 12) {
+    previewEl.appendChild(el("span", { className: "racing-name-chip dim", textContent: `+${pool.length - 12} more…` }));
+  }
+
+  const textarea = el("textarea", {
+    className: "racing-names-input",
+    rows: "8",
+    placeholder: "Paste horse names here — one per line, or CSV with a Name column.\n\nSugar Cube\nStarlight Trot\nMarshmallow Mane",
+  });
+  const fileInput = el("input", { type: "file", accept: ".csv,.txt,text/csv,text/plain" });
+  fileInput.onchange = async () => {
+    const file = fileInput.files?.[0];
+    if (!file) return;
+    textarea.value = await file.text();
+    statusEl.textContent = `Loaded ${file.name} — review and save to apply.`;
+    statusEl.className = "success";
+  };
+
+  return el("div", { className: "panel racing-pavilion" }, [
+    banner("Horse Name Roster"),
+    chipLine(),
+    el("p", { className: "dim", textContent: "Upload or paste a custom horse name list. Names cycle through the paddock on each new race card." }),
+    statusEl,
+    previewEl,
+    el("div", { className: "form-row" }, [
+      el("label", { textContent: "Import CSV / text file" }),
+      fileInput,
+    ]),
+    el("div", { className: "form-row" }, [
+      el("label", { textContent: "Or paste names" }),
+      textarea,
+    ]),
+    el("div", { className: "action-bar" }, [
+      el("button", {
+        className: "btn primary",
+        textContent: "Save custom roster",
+        onclick: () => {
+          const names = parseHorseNamesCSV(textarea.value);
+          if (names.length < 6) {
+            alert("Please provide at least 6 unique horse names.");
+            return;
+          }
+          setCustomHorseNames(session, names);
+          horseRacingState.card = null;
+          persist();
+          showStatus(`Saved ${names.length} custom horse names. New race cards will cycle through your roster.`);
+          goBack();
+        },
+      }),
+      el("button", {
+        className: "btn",
+        textContent: "Reset to default",
+        onclick: () => {
+          setCustomHorseNames(session, null);
+          horseRacingState.card = null;
+          persist();
+          showStatus("Restored default horse name roster.");
+          render();
+        },
+      }),
       el("button", { className: "btn", textContent: "Back", onclick: () => goBack() }),
     ]),
   ]);
@@ -2151,6 +2303,7 @@ const RENDERERS = {
   "horse-racing": renderHorseRacing,
   "horse-racing-wager": renderHorseRacingWager,
   "horse-racing-settle": renderHorseRacingSettle,
+  "horse-racing-names": renderHorseRacingNames,
   ...hotelRenderers,
   "not-found": renderNotFound,
 };
@@ -2206,7 +2359,9 @@ window.addEventListener("beforeunload", () => {
 });
 
 if (!applyLaunchParams()) {
-  render();
+  loadBundledHorseNames().finally(() => render());
+} else {
+  loadBundledHorseNames();
 }
 
 document.addEventListener("keydown", (e) => {

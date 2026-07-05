@@ -2,6 +2,20 @@
 
 Three-reel slot machines on the **Slot Machines** floor — modeled after the games found at MGM Mandalay Bay, from penny slots to linked progressives.
 
+## Stake tiers
+
+Before playing any machine or table game, choose a **stake tier**. Each tier sets the minimum and maximum wager for that session:
+
+| Tier | Range | Notes |
+|------|-------|-------|
+| Penny & Low Limit | $1 – $25 | Micro stakes |
+| Standard | $5 – $100 | Main floor |
+| High Limit | $25 – $500 | High-limit room |
+| **401K Contribution** | **$542 – $6,500** | Average U.S. employee deferral (~$542/mo, $6,500/yr cap) |
+| **High Roller / No Limit** | **$2,500 – bankroll** | Salon stakes — no table maximum |
+
+Salon tiers (401K and No Limit) apply across **every** machine and table on the floor. Progressive jackpots still require the **effective max bet** for your tier to qualify.
+
 ## Machines
 
 | Machine | Min bet | Max bet | Type |
@@ -26,10 +40,11 @@ Max bet is capped by your current chip balance. Progressive machines display the
 ## Game flow
 
 ```
-Slot Machines → Mandalay Bay Slots → Pick machine → Spin loop → Leave
+Slot Machines → Mandalay Bay Slots → Choose stake tier → Pick machine → Spin loop → Leave
 ```
 
-1. Select a machine from the full floor lineup
+1. Choose a stake tier (Penny through High Roller / No Limit)
+2. Select a machine from the full floor lineup
 2. Paytable and jackpot (if progressive) are displayed
 3. Enter spin amount (or `0` to leave)
 4. Reels spin with secure weighted RNG

@@ -5,6 +5,12 @@ from dataclasses import dataclass
 from blackjack.rng import SECURE_RANDOM
 from mandalay_bay.activities.base import Activity, ActivityInfo
 from mandalay_bay.session import PlayerSession
+from mandalay_bay.stakes import (
+    effective_slot_stakes,
+    format_stake_range,
+    pick_stake_tier,
+    tier_uses_salon_limits,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -469,10 +475,10 @@ def _payout(
     return 0, "No win"
 
 
-def _jackpot_eligible(machine: SlotMachine, bet: int) -> bool:
+def _jackpot_eligible(machine: SlotMachine, bet: int, effective_max: int) -> bool:
     if not machine.jackpot_requires_max_bet:
         return True
-    return bet >= machine.max_bet
+    return bet >= effective_max
 
 
 def _try_jackpot(
@@ -480,13 +486,14 @@ def _try_jackpot(
     machine: SlotMachine,
     reels: list[Symbol],
     bet: int,
+    effective_max: int,
 ) -> int | None:
     if not machine.progressive or not machine.jackpot_key or not machine.progressive_pool_id:
         return None
     keys = [r.name for r in reels]
     if "|".join(keys) != machine.jackpot_key:
         return None
-    if not _jackpot_eligible(machine, bet):
+    if not _jackpot_eligible(machine, bet, effective_max):
         return None
     pool_id = machine.progressive_pool_id
     amount = progressive_pool(session, pool_id, machine.progressive_seed)
@@ -531,36 +538,48 @@ class SlotsActivity(Activity):
             ui.pause()
             return
 
+        tier = pick_stake_tier(session, ui, title="Choose stake tier:")
+        if tier is None:
+            return
+        ui.dim(tier.description)
+
         menu_labels = []
         for mid in MACHINE_ORDER:
             m = MACHINES[mid]
+            stakes = effective_slot_stakes(m.min_bet, m.max_bet, tier, session.wallet.balance)
+            range_label = format_stake_range(
+                stakes[0],
+                stakes[1],
+                no_cap=tier_uses_salon_limits(tier) and tier.max_bet is None,
+            )
             prog = ""
             if m.progressive and m.progressive_pool_id:
                 pool = progressive_pool(session, m.progressive_pool_id, m.progressive_seed)
                 prog = f" [Jackpot: {pool:,}]"
-            menu_labels.append(f"{m.name} ({m.min_bet}-{m.max_bet} chips){prog}")
+            menu_labels.append(f"{m.name} ({range_label}){prog}")
 
         choice = ui.menu_choice(menu_labels, title="Pick a machine:")
         if choice == 0:
             return
 
         machine = MACHINES[MACHINE_ORDER[choice - 1]]
-        min_bet = machine.min_bet
-        max_bet = min(machine.max_bet, session.wallet.balance)
+        min_bet, max_bet = effective_slot_stakes(
+            machine.min_bet, machine.max_bet, tier, session.wallet.balance
+        )
 
         if max_bet < min_bet:
-            ui.error(f"This machine requires at least {min_bet} chips per spin.")
+            ui.error(f"This machine requires at least {min_bet} chips per spin at {tier.name}.")
             ui.pause()
             return
 
-        ui.print(f"\n{machine.name}")
+        ui.print(f"\n{machine.name} — {tier.name}")
         if machine.tagline:
             ui.dim(machine.tagline)
         if machine.progressive and machine.progressive_pool_id:
             pool = progressive_pool(session, machine.progressive_pool_id, machine.progressive_seed)
             ui.print(f"Current progressive jackpot: {pool:,} chips")
             if machine.jackpot_requires_max_bet:
-                ui.dim(f"Max bet ({machine.max_bet} chips) required to qualify for the jackpot.")
+                ui.dim(f"Max bet ({max_bet:,} chips) required to qualify for the jackpot.")
         ui.print("\nPaytable:")
         ui.print(format_paytable(machine))
         ui.print("")
@@ -592,7 +611,7 @@ class SlotsActivity(Activity):
             shown = " | ".join(_display_symbol(r, session.use_unicode) for r in reels)
             ui.print(f"\n  [ {shown} ]")
 
-            jackpot_amount = _try_jackpot(session, machine, reels, bet)
+            jackpot_amount = _try_jackpot(session, machine, reels, bet, max_bet)
             win, reason = _payout(reels, bet, machine, jackpot_amount=jackpot_amount)
             spins += 1
             if win > 0:

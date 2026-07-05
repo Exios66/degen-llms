@@ -472,6 +472,93 @@ body {
   margin: 0.75rem 0;
 }
 
+.guest-directory-panel {
+  max-width: 42rem;
+}
+
+.guest-directory-book {
+  margin: 1rem 0;
+}
+
+.guest-directory-intro,
+.guest-directory-count {
+  margin: 0.35rem 0 0.75rem;
+}
+
+.guest-directory-list {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  max-height: 16rem;
+  overflow-y: auto;
+  border: 1px solid rgba(232, 197, 71, 0.25);
+  background: rgba(10, 14, 20, 0.55);
+}
+
+.guest-directory-entry {
+  padding: 0.65rem 0.85rem;
+  border-bottom: 1px solid rgba(232, 197, 71, 0.12);
+}
+
+.guest-directory-entry:last-child {
+  border-bottom: none;
+}
+
+.guest-directory-entry.seed {
+  border-left: 2px solid rgba(232, 197, 71, 0.45);
+}
+
+.guest-directory-name {
+  display: block;
+  font-weight: 600;
+  color: var(--gold, #e8c547);
+}
+
+.guest-directory-date {
+  display: block;
+  font-size: 0.85em;
+  margin-top: 0.15rem;
+}
+
+.guest-directory-note {
+  margin: 0.35rem 0 0;
+  font-size: 0.9em;
+  font-style: italic;
+}
+
+.guest-directory-sign {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(232, 197, 71, 0.2);
+}
+
+.guest-directory-input {
+  display: block;
+  width: 100%;
+  margin: 0.5rem 0;
+  padding: 0.5rem 0.65rem;
+  font-family: inherit;
+  font-size: 0.95rem;
+  color: var(--text, #e6e1cf);
+  background: rgba(10, 14, 20, 0.8);
+  border: 1px solid rgba(57, 197, 207, 0.35);
+  border-radius: 2px;
+}
+
+.guest-directory-input:focus {
+  outline: none;
+  border-color: var(--cyan, #39c5cf);
+}
+
+.guest-directory-input:disabled {
+  opacity: 0.55;
+}
+
+.guest-directory-feedback {
+  margin-top: 0.5rem;
+  min-height: 0;
+}
+
 .warning {
   color: var(--gold, #e8c547);
 }

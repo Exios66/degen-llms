@@ -435,6 +435,35 @@ body {
   color: var(--cyan);
 }
 
+.hotel-panel {
+  border-left: 3px solid var(--gold-dim, #c4a030);
+}
+
+.hotel-status {
+  margin: 1rem 0;
+  padding: 0.75rem;
+  background: rgba(232, 197, 71, 0.06);
+  border: 1px solid rgba(232, 197, 71, 0.2);
+}
+
+.hotel-status p {
+  margin: 0.35rem 0;
+}
+
+.hotel-room-view {
+  min-height: 12rem;
+}
+
+.hotel-log {
+  max-height: 10rem;
+  overflow-y: auto;
+  margin: 0.75rem 0;
+}
+
+.warning {
+  color: var(--gold, #e8c547);
+}
+
 /* Error & placeholder screens (404, offline, maintenance, in-app not-found) */
 .error-screen {
   text-align: center;

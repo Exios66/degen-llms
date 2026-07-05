@@ -2,6 +2,7 @@ import { fmtChips } from "./core.js";
 import {
   COMP_CATALOG, RewardsTracker, TIERS, tierForWagered,
 } from "./rewards.js";
+import { ensureHotel, findReservation, reservationHint, getRoomType } from "./hotel.js";
 
 /**
  * Era-styled flip-phone DOM widget for the MGM Rewards app.
@@ -40,12 +41,16 @@ export class RewardsPhone {
     else this.open();
   }
 
-  open() {
+  open(screen = "home") {
     this._open = true;
-    this._screen = "home";
+    this._screen = screen;
     this.tracker.syncFromWallet();
     this._phoneEl.hidden = false;
     this._renderScreen();
+  }
+
+  openReservation() {
+    this.open("reservation");
   }
 
   close() {
@@ -139,16 +144,19 @@ export class RewardsPhone {
       case "offers":
         this._renderOffers(body);
         break;
+      case "reservation":
+        this._renderReservation(body);
+        break;
       default:
         this._renderHome(body);
     }
 
     const tabs = [
       ["home", "Home"],
+      ["reservation", "Room"],
       ["card", "Card"],
       ["comps", "Comps"],
       ["inbox", "Inbox"],
-      ["offers", "Offers"],
     ];
     for (const [id, label] of tabs) {
       const btn = document.createElement("button");
@@ -267,6 +275,30 @@ export class RewardsPhone {
       this._updateBadge();
     };
     body.appendChild(markAll);
+  }
+
+  _renderReservation(body) {
+    const hotel = ensureHotel(this.session);
+    const room = getRoomType(hotel);
+    body.innerHTML = "";
+    body.appendChild(this._line(`${room.label}`));
+    body.appendChild(this._line(`Conf ${hotel.reservationCode}`, "dim"));
+    if (hotel.foundReservation) {
+      body.appendChild(this._line(reservationHint(hotel), "dim"));
+      body.appendChild(this._line("Head to hotel hallways from the lobby.", "dim"));
+    } else {
+      body.appendChild(this._line("Tap locate to reveal your tower.", "dim"));
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = "Locate reservation";
+      btn.onclick = () => {
+        const r = findReservation(this.session);
+        this.tracker.pushNotification("Reservation Found", r.clue ?? r.hint);
+        this.onPersist?.();
+        this._renderScreen();
+      };
+      body.appendChild(btn);
+    }
   }
 
   _renderOffers(body) {

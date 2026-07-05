@@ -8,6 +8,7 @@ const PALETTE = {
   [TILE.PLANT]: 0x2d6a3f,
   [TILE.WATER]: 0x2a6a8a,
   [TILE.WALL]: 0x1a1520,
+  [TILE.BAR]: 0x5c3a1a,
 };
 
 const TILE_HIGHLIGHT = {
@@ -15,6 +16,7 @@ const TILE_HIGHLIGHT = {
   [TILE.CARPET]: 0x5a2952,
   [TILE.FELT]: 0x2a7c4a,
   [TILE.WALL]: 0x2a2438,
+  [TILE.BAR]: 0x7c4a2a,
 };
 
 /**
@@ -41,6 +43,18 @@ export function createGameTextures(scene) {
   createCharacterTexture(scene, "npc_gold", 0xe8c547, 0xc4a030);
   createCharacterTexture(scene, "npc_green", 0x3dd68c, 0x2a9c64);
   createCharacterTexture(scene, "npc_pink", 0xc678dd, 0x9a58aa);
+  createCharacterTexture(scene, "npc_teal", 0x39c5cf, 0x2a9299);
+  createCharacterTexture(scene, "npc_red", 0xf07178, 0xc05058);
+  createCharacterTexture(scene, "npc_orange", 0xffa657, 0xcc8445);
+  createCharacterTexture(scene, "npc_silver", 0xb0b8c8, 0x808890);
+
+  const barG = scene.make.graphics({ x: 0, y: 0, add: false });
+  barG.fillStyle(PALETTE[TILE.BAR], 1);
+  barG.fillRect(2, 6, 12, 10);
+  barG.fillStyle(0x9a7040, 1);
+  barG.fillRect(2, 4, 12, 4);
+  barG.generateTexture("decor_bar", TILE_SIZE, TILE_SIZE);
+  barG.destroy();
 
   const plantG = scene.make.graphics({ x: 0, y: 0, add: false });
   plantG.fillStyle(PALETTE[TILE.PLANT], 1);

@@ -75,8 +75,11 @@ body {
   white-space: nowrap;
 }
 
-.hud-chips {
-  color: var(--gold);
+.bj-dealer-tagline {
+  color: var(--dim);
+  font-size: 8px;
+  margin: 0 0 8px;
+  font-style: italic;
 }
 
 .hud-name {

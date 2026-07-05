@@ -1,22 +1,28 @@
 {
   "chip_chandler_intro": {
     "speaker": "Chip Chandler",
-    "text": "Welcome to The Mandalay Bay! I'm Chip Chandler, guest services. Walk north to the casino floor — Dealer Dana runs Table 7.",
+    "text": "Welcome to The Mandalay Bay! I'm Chip Chandler, guest services. Walk north to the casino floor — our pit crew rotates between tables all night.",
     "next": "chip_chandler_tips"
   },
   "chip_chandler_tips": {
     "speaker": "Chip Chandler",
-    "text": "Your chip balance carries everywhere on the floor. Talk to NPCs with E or Enter. Good luck — the house is patient.",
+    "text": "Your chip balance carries everywhere on the floor. Talk to NPCs with E or Enter. Betty runs the lobby bar west side; Paula handles the Racing Pavilion northeast. Good luck — the house is patient.",
     "setFlag": "met_chip_chandler",
     "choices": [
       { "label": "Any secrets?", "next": "chip_chandler_secret" },
+      { "label": "Who's dealing tonight?", "next": "chip_chandler_dealers" },
       { "label": "Thanks!", "next": "chip_chandler_bye" }
     ]
   },
   "chip_chandler_secret": {
     "speaker": "Chip Chandler",
-    "text": "Between us? The gold carpet tiles near the plants sometimes hide stories. Also — Tina by the slot aisle saw something weird last night.",
+    "text": "Between us? The gold carpet tiles near the plants sometimes hide stories. Also — Tina by the slot aisle saw something weird last night. And Steve Harvey might be calling races at the Pavilion. Survey says… be careful.",
     "setFlag": "hint_plants",
+    "next": "chip_chandler_bye"
+  },
+  "chip_chandler_dealers": {
+    "speaker": "Chip Chandler",
+    "text": "Meryl Screech, Judi Bench, Jennifer Lawless — the whole charismatic crew shuffles between blackjack, poker, and roulette. Check the pit labels when you walk up. Steve Harvey handles roulette and the Pavilion when he's not hosting imaginary game shows.",
     "next": "chip_chandler_bye"
   },
   "chip_chandler_bye": {
@@ -24,39 +30,233 @@
     "text": "Enjoy your stay. Press E anytime you see the golden arrow!",
     "setFlag": "tutorial_complete"
   },
-  "dealer_dana_greet": {
-    "speaker": "Dealer Dana",
-    "text": "Evening. Table 7 is open — six decks, H17, 3:2 blackjack. Minimum ten chips.",
+
+  "steve_harvey_greet": {
+    "speaker": "Steve Harvey",
+    "text": "Welcome to Table 9! I'm Steve Harvey — yes, THAT Steve Harvey — and this wheel does not play. Minimum ten chips. Survey says… that's a bargain.",
     "choices": [
-      {
-        "label": "Deal me in!",
-        "encounter": "blackjack",
-        "setFlag": "played_blackjack"
-      },
-      {
-        "label": "Just watching for now.",
-        "next": "dealer_dana_watch"
-      }
+      { "label": "Just watching for now.", "next": "steve_harvey_watch" },
+      { "label": "Where's the Pavilion?", "next": "steve_harvey_pavilion" }
     ]
   },
-  "dealer_dana_watch": {
-    "speaker": "Dealer Dana",
-    "text": "Smart. The felt remembers every hand. Come back when you're ready — I'll be here.",
-    "setFlag": "dealer_dana_seen"
+  "steve_harvey_return": {
+    "speaker": "Steve Harvey",
+    "text": "Back again? Survey says… the wheel missed you. Paula at the Pavilion has race cards if you want action without the spin.",
+    "choices": [
+      { "label": "Tell me about the Pavilion.", "next": "steve_harvey_pavilion" },
+      { "label": "I'll wander.", "next": "steve_harvey_watch" }
+    ]
   },
-  "dealer_dana_return": {
-    "speaker": "Dealer Dana",
-    "text": "Back for another round? The shoe doesn't judge.",
+  "steve_harvey_watch": {
+    "speaker": "Steve Harvey",
+    "text": "Smart. Watch the wheel, learn the rhythm. Come back when you're ready — I'll be here or calling races. The house is patient. I'm not.",
+    "setFlag": "steve_harvey_seen"
+  },
+  "steve_harvey_pavilion": {
+    "speaker": "Steve Harvey",
+    "text": "Northeast corner — Pavilion Paula runs the window. When I'm on duty there, Survey says… bet the long shot. When I'm not, still bet the long shot. Entertainment!",
+    "next": "steve_harvey_watch"
+  },
+
+  "meryl_screech_greet": {
+    "speaker": "Dealer Meryl Screech",
+    "text": "Evening. Table 7 is open — six decks, H17, 3:2 blackjack. Minimum ten chips. The felt remembers every hand.",
+    "choices": [
+      { "label": "Deal me in!", "encounter": "blackjack", "setFlag": "played_blackjack" },
+      { "label": "Just watching for now.", "next": "meryl_screech_watch" }
+    ]
+  },
+  "meryl_screech_return": {
+    "speaker": "Dealer Meryl Screech",
+    "text": "Back for another round? The shoe doesn't judge. Neither do I — theatrically.",
     "choices": [
       { "label": "Let's play.", "encounter": "blackjack" },
-      { "label": "Not yet.", "next": "dealer_dana_watch" }
+      { "label": "Not yet.", "next": "meryl_screech_watch" }
     ]
   },
+  "meryl_screech_watch": {
+    "speaker": "Dealer Meryl Screech",
+    "text": "Smart. The felt remembers every hand. Come back when you're ready — I'll be here.",
+    "setFlag": "meryl_screech_seen"
+  },
+
+  "judi_bench_greet": {
+    "speaker": "Croupier Judi Bench",
+    "text": "Good evening. Texas Hold'em — full streets, AI opponents, minimum buy-in ten chips. Bond. James Bond. Blinds.",
+    "choices": [
+      { "label": "I'll find the terminal tables.", "next": "judi_bench_watch" },
+      { "label": "Any tips?", "next": "judi_bench_tips" }
+    ]
+  },
+  "judi_bench_return": {
+    "speaker": "Croupier Judi Bench",
+    "text": "Welcome back. The river awaits. Terminal mode has the full Hold'em engine if you want real cards.",
+    "choices": [
+      { "label": "Tips?", "next": "judi_bench_tips" },
+      { "label": "Thanks.", "next": "judi_bench_watch" }
+    ]
+  },
+  "judi_bench_tips": {
+    "speaker": "Croupier Judi Bench",
+    "text": "Patience beats bravado. Watch three hands before you commit your stack. And never confuse confidence with a pair of threes.",
+    "next": "judi_bench_watch"
+  },
+  "judi_bench_watch": {
+    "speaker": "Croupier Judi Bench",
+    "text": "Observe the table. Knowledge is the best tell.",
+    "setFlag": "judi_bench_seen"
+  },
+
+  "jennifer_lawless_greet": {
+    "speaker": "Jennifer Lawless",
+    "text": "Hey! Table's open — blackjack or Hold'em depending on the night. I promise I won't trip over your chips. Probably.",
+    "choices": [
+      { "label": "Blackjack!", "encounter": "blackjack", "setFlag": "played_blackjack" },
+      { "label": "Just watching.", "next": "jennifer_lawless_watch" }
+    ]
+  },
+  "jennifer_lawless_return": {
+    "speaker": "Jennifer Lawless",
+    "text": "Back for more? I didn't trip once since you left. Personal best.",
+    "choices": [
+      { "label": "Deal me in!", "encounter": "blackjack" },
+      { "label": "Not yet.", "next": "jennifer_lawless_watch" }
+    ]
+  },
+  "jennifer_lawless_watch": {
+    "speaker": "Jennifer Lawless",
+    "text": "No rush. I tripped once standing still. Take your time.",
+    "setFlag": "jennifer_lawless_seen"
+  },
+
+  "sofia_volume_greet": {
+    "speaker": "Sofia Volume",
+    "text": "Dale, amigo! The wheel is HOT tonight! European single-zero, minimum five chips. Place your bets, cariño!",
+    "choices": [
+      { "label": "I'll hit the terminal wheel!", "next": "sofia_volume_watch" },
+      { "label": "What's your favorite bet?", "next": "sofia_volume_tips" }
+    ]
+  },
+  "sofia_volume_return": {
+    "speaker": "Sofia Volume",
+    "text": "You're back! The wheel missed you! Terminal mode has the full roulette table — go spin, amigo!",
+    "choices": [
+      { "label": "Favorite bet?", "next": "sofia_volume_tips" },
+      { "label": "Gracias!", "next": "sofia_volume_watch" }
+    ]
+  },
+  "sofia_volume_tips": {
+    "speaker": "Sofia Volume",
+    "text": "Red or black — simple, dramatic, like my cousin's wedding! Dale! But never bet rent, cariño.",
+    "next": "sofia_volume_watch"
+  },
+  "sofia_volume_watch": {
+    "speaker": "Sofia Volume",
+    "text": "Watch the wheel, feel the energy! It's electric!",
+    "setFlag": "sofia_volume_seen"
+  },
+
+  "octavia_spectacular_greet": {
+    "speaker": "Octavia Spectacular",
+    "text": "Evening, honey. Pull up a chair — blackjack's my stage tonight. Minimum ten chips, maximum hospitality.",
+    "choices": [
+      { "label": "Deal me in!", "encounter": "blackjack", "setFlag": "played_blackjack" },
+      { "label": "Just watching, sugar.", "next": "octavia_spectacular_watch" }
+    ]
+  },
+  "octavia_spectacular_return": {
+    "speaker": "Octavia Spectacular",
+    "text": "Welcome back, sugar. The cards missed you. Honey, the house always wins — but you look good trying.",
+    "choices": [
+      { "label": "Let's play.", "encounter": "blackjack" },
+      { "label": "Not yet.", "next": "octavia_spectacular_watch" }
+    ]
+  },
+  "octavia_spectacular_watch": {
+    "speaker": "Octavia Spectacular",
+    "text": "Smart to watch first, sugar. I respect that.",
+    "setFlag": "octavia_spectacular_seen"
+  },
+
+  "nicole_widechart_greet": {
+    "speaker": "Nicole Widechart",
+    "text": "Evening. The table is set. High-limit energy, standard minimums. The chips are whispering. I'm listening.",
+    "choices": [
+      { "label": "Blackjack, please.", "encounter": "blackjack", "setFlag": "played_blackjack" },
+      { "label": "I'll observe.", "next": "nicole_widechart_watch" }
+    ]
+  },
+  "nicole_widechart_return": {
+    "speaker": "Nicole Widechart",
+    "text": "You've returned. Composure suits you. The table awaits.",
+    "choices": [
+      { "label": "Let's play.", "encounter": "blackjack" },
+      { "label": "Not yet.", "next": "nicole_widechart_watch" }
+    ]
+  },
+  "nicole_widechart_watch": {
+    "speaker": "Nicole Widechart",
+    "text": "Observation precedes action. Always.",
+    "setFlag": "nicole_widechart_seen"
+  },
+
+  "barkeep_betty_greet": {
+    "speaker": "Barkeep Betty",
+    "text": "What'll it be? Betty's Bar — west lobby, best carpet views on the floor. Chips don't buy drinks here, but stories do.",
+    "choices": [
+      { "label": "Who's dealing tonight?", "next": "barkeep_betty_dealers" },
+      { "label": "Any floor gossip?", "next": "barkeep_betty_gossip" },
+      { "label": "Just passing through.", "next": "barkeep_betty_bye" }
+    ]
+  },
+  "barkeep_betty_dealers": {
+    "speaker": "Barkeep Betty",
+    "text": "The pit crew rotates — Meryl on blackjack, Judi on poker, Sofia on roulette when Steve's at the Pavilion. Check the name floating above the felt. I pour faster than they shuffle.",
+    "next": "barkeep_betty_bye"
+  },
+  "barkeep_betty_gossip": {
+    "speaker": "Barkeep Betty",
+    "text": "Tina swears she saw a secret behind the north wall tiles. Paula says Steve Harvey called a photo finish last week. Survey says… Tina needs water.",
+    "setFlag": "hint_north_wall",
+    "next": "barkeep_betty_bye"
+  },
+  "barkeep_betty_bye": {
+    "speaker": "Barkeep Betty",
+    "text": "Come back when you need a break from the felt. Betty's always open.",
+    "setFlag": "met_betty"
+  },
+
+  "pavilion_paula_greet": {
+    "speaker": "Pavilion Paula",
+    "text": "Welcome to the Racing Pavilion! Win, place, show — thoroughbred action on simulated Mandalay tracks. Minimum wager five chips in terminal mode.",
+    "choices": [
+      { "label": "Is Steve Harvey here?", "next": "pavilion_paula_steve" },
+      { "label": "Any tips for the ponies?", "next": "pavilion_paula_tips" },
+      { "label": "Thanks!", "next": "pavilion_paula_bye" }
+    ]
+  },
+  "pavilion_paula_steve": {
+    "speaker": "Pavilion Paula",
+    "text": "When Steve's on duty, you'll hear him before you see him. 'Survey says… Royal Flush in the stretch!' He rotates in from roulette. The man loves a long shot.",
+    "next": "pavilion_paula_bye"
+  },
+  "pavilion_paula_tips": {
+    "speaker": "Pavilion Paula",
+    "text": "Favorites pay less but win more. Long shots like 'Neon Star' make for better stories. Never bet the rent — that's what Tina said, anyway.",
+    "next": "pavilion_paula_bye"
+  },
+  "pavilion_paula_bye": {
+    "speaker": "Pavilion Paula",
+    "text": "Head to terminal mode for the full Racing Pavilion. Good luck at the window!",
+    "setFlag": "met_paula"
+  },
+
   "tourist_tina": {
     "speaker": "Tourist Tina",
-    "text": "I came for the wave pool but ended up at the blackjack pit. Vegas, right?",
+    "text": "I came for the wave pool but ended up at the blackjack pit. Vegas, right? Betty's bar has better stories than the slots.",
     "choices": [
       { "label": "First time here?", "next": "tourist_tina_first" },
+      { "label": "Who's dealing?", "next": "tourist_tina_dealers" },
       { "label": "Good luck!", "next": "tourist_tina_bye" }
     ]
   },
@@ -64,6 +264,11 @@
     "speaker": "Tourist Tina",
     "text": "Third! I heard there's a secret behind the north wall tiles. Probably nonsense. Probably.",
     "setFlag": "hint_north_wall",
+    "next": "tourist_tina_bye"
+  },
+  "tourist_tina_dealers": {
+    "speaker": "Tourist Tina",
+    "text": "There's like seven of them? Meryl, Steve, Sofia — they swap tables. I waved at Nicole Widechart and she looked through me. Chills.",
     "next": "tourist_tina_bye"
   },
   "tourist_tina_bye": {

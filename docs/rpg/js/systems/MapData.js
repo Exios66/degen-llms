@@ -7,6 +7,7 @@ export const TILE = {
   PLANT: 4,
   WATER: 5,
   WALL: 6,
+  BAR: 7,
 };
 
 export const TILE_SIZE = 16;
@@ -19,11 +20,25 @@ export const COLLISION = new Set([
   TILE.PLANT,
   TILE.WALL,
   TILE.WATER,
+  TILE.BAR,
 ]);
 
-/** @typedef {{ id: string, name: string, x: number, y: number, sprite: string, dialogueId: string, encounter?: string, direction?: string }} NpcDef */
+/** @typedef {'blackjack' | 'holdem' | 'roulette'} PitZone */
 
-/** Phase 1 NPC placements. */
+/**
+ * @typedef {Object} NpcDef
+ * @property {string} id
+ * @property {string} name
+ * @property {number} x
+ * @property {number} y
+ * @property {string} sprite
+ * @property {string} dialogueId
+ * @property {string} [encounter]
+ * @property {string} [direction]
+ * @property {PitZone} [zone] — pit NPCs resolve on-duty dealer dynamically
+ */
+
+/** Phase 2 NPC placements — pit zones + venue staff. */
 export const NPCS = [
   {
     id: "chip_chandler",
@@ -35,21 +50,60 @@ export const NPCS = [
     direction: "down",
   },
   {
-    id: "dealer_dana",
-    name: "Dealer Dana",
+    id: "pit_blackjack",
+    name: "Blackjack Pit",
     x: 15,
-    y: 12,
+    y: 11,
     sprite: "npc_green",
-    dialogueId: "dealer_dana_greet",
+    dialogueId: "pit_blackjack_greet",
+    zone: "blackjack",
     encounter: "blackjack",
     direction: "down",
+  },
+  {
+    id: "pit_holdem",
+    name: "Hold'em Pit",
+    x: 11,
+    y: 10,
+    sprite: "npc_teal",
+    dialogueId: "pit_holdem_greet",
+    zone: "holdem",
+    direction: "down",
+  },
+  {
+    id: "pit_roulette",
+    name: "Roulette Pit",
+    x: 19,
+    y: 10,
+    sprite: "npc_red",
+    dialogueId: "pit_roulette_greet",
+    zone: "roulette",
+    direction: "down",
+  },
+  {
+    id: "barkeep_betty",
+    name: "Barkeep Betty",
+    x: 5,
+    y: 22,
+    sprite: "npc_orange",
+    dialogueId: "barkeep_betty_greet",
+    direction: "right",
+  },
+  {
+    id: "pavilion_paula",
+    name: "Pavilion Paula",
+    x: 24,
+    y: 9,
+    sprite: "npc_pink",
+    dialogueId: "pavilion_paula_greet",
+    direction: "left",
   },
   {
     id: "tourist_tina",
     name: "Tourist Tina",
     x: 8,
     y: 18,
-    sprite: "npc_pink",
+    sprite: "npc_silver",
     dialogueId: "tourist_tina",
     direction: "right",
   },
@@ -88,6 +142,16 @@ export function buildMapLayers() {
       }
 
       if (x === 0 || x === 29 || y === 0 || y === 29) tile = TILE.WALL;
+
+      // Lobby bar — west counter
+      if (y >= 21 && y <= 23 && x >= 3 && x <= 6) {
+        decorTile = TILE.BAR;
+      }
+
+      // Pavilion kiosk decor — northeast carpet
+      if (y >= 8 && y <= 10 && x >= 23 && x <= 26) {
+        decorTile = TILE.BAR;
+      }
 
       if (tile === TILE.CARPET || tile === TILE.LOBBY) {
         if ((x + y) % 11 === 0 && x > 2 && x < 27 && y > 15 && y < 27) {

@@ -151,9 +151,17 @@ Slot Machines:
 
 ### Machine selection
 
-Fourteen machines modeled after the Mandalay Bay casino floor:
+Choose a **stake tier** first, then pick from fourteen machines modeled after the Mandalay Bay casino floor:
 
-| Machine | Bet range | Notes |
+| Stake tier | Range |
+|------------|-------|
+| Penny & Low Limit | $1 – $25 |
+| Standard | $5 – $100 |
+| High Limit | $25 – $500 |
+| **401K Contribution** | **$542 – $6,500** |
+| **High Roller / No Limit** | **$2,500 – bankroll (no cap)** |
+
+| Machine | Base bet range | Notes |
 |---------|-----------|-------|
 | Mandalay Fortune | $5 – $50 | Classic three-reel |
 | High Roller | $25 – $500 | High-limit room |

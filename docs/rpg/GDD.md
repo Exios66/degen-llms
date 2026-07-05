@@ -34,6 +34,8 @@ Phase 1 proves the loop: **walk → talk → play blackjack → earn chips → s
 | Chip HUD | ✅ | `js/scenes/TitleScreen.js` → `renderHud()` |
 | Title / save picker | ✅ | `js/scenes/TitleScreen.js` |
 | 3 NPCs (Chip Chandler, Dealer Dana, Tourist Tina) | ✅ | `js/systems/MapData.js` |
+| Charismatic dealer roster + rotation | ✅ | `docs/js/dealers.js`, `mandalay_bay/dealers.py` |
+| Pit NPCs, bar, pavilion staff | ✅ | `js/systems/MapData.js`, `js/data/dialogues.json` |
 
 ### Phase 1 map layout
 
@@ -43,8 +45,8 @@ North (y=0)
 │  WALL / future expansion       │  y 2–5
 ├────────────────────────────────┤
 │     CASINO CARPET + FELT       │  y 6–19
-│       (blackjack pit)          │  felt y 6–14, x 10–20
-│         Dealer Dana            │
+│       (blackjack / hold'em / roulette pits) │
+│     Betty's bar (west) · Pavilion (NE)      │
 ├────────────────────────────────┤
 │     LOBBY (gold marble)        │  y 20–28
 │  Chip Chandler · Tourist Tina  │

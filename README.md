@@ -38,7 +38,7 @@ The site source lives in [`docs/`](docs/) on **`main`**. GitHub Actions mirrors 
 - **Every hour** (UTC) — checks for drift and republishes only when files differ
 - Manual run via **Actions → Deploy GitHub Pages → Run workflow**
 
-Each run appends a line to [`logs/gh-pages-sync.log`](logs/gh-pages-sync.log) (format in [`logs/README.md`](logs/README.md)).
+Each run appends a sync ping to [`logs/gh-pages-sync.log`](logs/gh-pages-sync.log) and a build outcome line to [`logs/gh-pages-build-status.log`](logs/gh-pages-build-status.log) (formats and error codes in [`logs/README.md`](logs/README.md)).
 
 **Manual sync:**
 

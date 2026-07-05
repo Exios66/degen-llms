@@ -334,7 +334,7 @@ function menu(options, title, onSelect, { showCasinoBanner = true } = {}) {
   return el("div", { className: "panel" }, frag);
 }
 
-function enterCasino(nextSession) {
+function enterCasino(nextSession, options = {}) {
   session = nextSession;
   resetSportsbookFromSession();
   blackjackGame = null;
@@ -346,6 +346,11 @@ function enterCasino(nextSession) {
   viewStack = [{ name: "hub", data: {} }];
   clearStatus();
   mountRewardsPhone();
+  const view = options.initialView;
+  if (view?.startsWith("hotel-")) {
+    ensureHotel(session);
+    viewStack = [{ name: view, data: {} }];
+  }
   render();
 }
 
@@ -705,6 +710,14 @@ function renderHub() {
           className: "hub-feature",
           innerHTML: `<strong>${floor}</strong> — ${acts.map((a) => a.name).join(", ")}`,
         });
+      }),
+      el("div", {
+        className: "hub-feature",
+        innerHTML: "<strong>Hotel Experience</strong> — reservations, suite upgrades, hallway mini-game (Exit to Hotel · P for MGM Rewards)",
+      }),
+      el("div", {
+        className: "hub-feature",
+        innerHTML: "<strong>Pixel RPG</strong> — explore the resort open world (Explore Resort)",
       }),
     ]),
     el("div", { className: "panel" }, [
@@ -2291,11 +2304,12 @@ viewStack = [{ name: "save-picker", data: {} }];
 
 function applyLaunchParams() {
   const params = new URLSearchParams(window.location.search);
+  const initialView = params.get("view") ?? undefined;
   if (params.get("guest") === "1") {
     enterCasino(createGuestSession({
       playerName: params.get("name") || "Guest",
       chips: Math.max(0, parseInt(params.get("chips") || "1000", 10)),
-    }));
+    }), { initialView });
     return true;
   }
   const slotParam = params.get("slot");
@@ -2308,7 +2322,7 @@ function applyLaunchParams() {
       }
       const loaded = loadSlot(slotId);
       if (loaded) {
-        enterCasino(loaded);
+        enterCasino(loaded, { initialView });
         return true;
       }
       pushView("save-create", { slotId });

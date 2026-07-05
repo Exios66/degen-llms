@@ -9,6 +9,7 @@ from pathlib import Path
 from mandalay_bay.chips import ChipWallet, TransactionKind
 from mandalay_bay.display import TerminalUI, fmt_chips
 from mandalay_bay.hotel import HotelState, ensure_hotel
+from mandalay_bay.rewards import RewardsState, SAVE_VERSION_WITH_REWARDS, ensure_rewards, migrate_session_rewards
 from mandalay_bay.session import ActivityStats, PlayerSession
 
 MAX_SLOTS = 5
@@ -177,6 +178,8 @@ class SaveLibrary:
             slot_id=slot_id,
             slot_label=label or f"Slot {slot_id}",
         )
+        ensure_hotel(session)
+        ensure_rewards(session)
         self.save_slot(session)
         return session
 
@@ -202,7 +205,7 @@ def session_to_dict(session: PlayerSession) -> dict:
             }
         )
     payload = {
-        "version": 1,
+        "version": SAVE_VERSION_WITH_REWARDS,
         "player_name": session.player_name,
         "slot_id": session.slot_id,
         "slot_label": session.slot_label,
@@ -214,6 +217,8 @@ def session_to_dict(session: PlayerSession) -> dict:
     }
     if hasattr(session, "hotel") and session.hotel is not None:
         payload["hotel"] = asdict(session.hotel)
+    if hasattr(session, "rewards") and session.rewards is not None:
+        payload["rewards"] = asdict(session.rewards)
     return payload
 
 
@@ -257,6 +262,11 @@ def session_from_dict(data: dict) -> PlayerSession:
         session.hotel = HotelState(**data["hotel"])
     else:
         ensure_hotel(session)
+    data_version = data.get("version", 1)
+    if "rewards" in data:
+        session.rewards = RewardsState(**data["rewards"])
+    else:
+        migrate_session_rewards(session, data_version)
     return session
 
 

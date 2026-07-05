@@ -43,7 +43,7 @@ if [[ "$GH_SHA" != "none" ]]; then
   GH_STAGING="$(mktemp -d)"
   git archive "origin/$TARGET_BRANCH" docs 2>/dev/null | tar -x -C "$GH_STAGING" || true
   if [[ -d "$GH_STAGING/docs" ]]; then
-    CHANGED_FILES="$(diff -rq "$STAGING/docs" "$GH_STAGING/docs" 2>/dev/null | wc -l | tr -d ' ')"
+    CHANGED_FILES="$(diff -rq "$STAGING/docs" "$GH_STAGING/docs" 2>/dev/null | wc -l | tr -d ' ' || true)"
   else
     CHANGED_FILES="all"
   fi

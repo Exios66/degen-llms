@@ -288,7 +288,7 @@ function horsePaddockCard(horse, { selected = false, onClick = null } = {}) {
   const card = el("div", {
     className: `horse-paddock-card${selected ? " horse-paddock-card--selected" : ""}`,
   }, [
-    createHorseSpriteCanvas(horse.spriteId, { size: 96, animate: true }),
+    createHorseSpriteCanvas(horse.spriteId, { size: 80, animate: true, animation: "idle" }),
     el("div", { className: "horse-paddock-num", textContent: `#${horse.number}` }),
     el("div", { className: "horse-paddock-name", textContent: horse.name }),
     el("div", { className: "horse-paddock-sprite-label", textContent: spriteMeta.label }),
@@ -1893,7 +1893,7 @@ function renderHorseRacingSettle() {
       const h = horseRacingState.card.horses.find((x) => x.number === num);
       finishLine.appendChild(el("div", { className: "racing-finish-entry" }, [
         el("span", { className: "racing-finish-pos", textContent: `${i + 1}.` }),
-        createHorseSpriteCanvas(h.spriteId, { size: 72, frame: i % 4 }),
+        createHorseSpriteCanvas(h.spriteId, { size: 64, frame: i % 4, animation: "trot" }),
         el("span", { className: "racing-finish-name", textContent: `#${num} ${h.name}` }),
       ]));
     });

@@ -1786,18 +1786,11 @@ body {
 
 .racing-paddock {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
-  gap: 0.75rem;
-  padding: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(136px, 1fr));
+  gap: 0.65rem;
+  padding: 0.85rem;
   background:
-    radial-gradient(ellipse at 50% 0%, rgba(61, 214, 140, 0.12) 0%, transparent 55%),
-    repeating-linear-gradient(
-      90deg,
-      rgba(42, 104, 56, 0.15) 0px,
-      rgba(42, 104, 56, 0.15) 4px,
-      rgba(50, 120, 64, 0.1) 4px,
-      rgba(50, 120, 64, 0.1) 8px
-    ),
+    radial-gradient(ellipse at 50% 0%, rgba(61, 214, 140, 0.1) 0%, transparent 55%),
     linear-gradient(180deg, #1a3020 0%, #0d2018 100%);
   border: 2px solid var(--felt-dark);
   border-radius: 8px;
@@ -1808,23 +1801,12 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.25rem;
-  padding: 0.65rem 0.45rem 0.75rem;
-  background:
-    radial-gradient(ellipse at 50% 85%, rgba(42, 104, 56, 0.35) 0%, transparent 70%),
-    rgba(0, 0, 0, 0.28);
+  gap: 0.2rem;
+  padding: 0.55rem 0.4rem 0.65rem;
+  background: rgba(0, 0, 0, 0.28);
   border: 2px solid rgba(255, 255, 255, 0.08);
   border-radius: 8px;
   transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
-  animation: paddock-bob 2.4s ease-in-out infinite;
-}
-
-.horse-paddock-card:nth-child(2n) { animation-delay: 0.4s; }
-.horse-paddock-card:nth-child(3n) { animation-delay: 0.8s; }
-
-@keyframes paddock-bob {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-3px); }
 }
 
 .horse-paddock-card:hover,
@@ -1832,14 +1814,12 @@ body {
   border-color: var(--gold);
   box-shadow: 0 0 12px rgba(255, 215, 0, 0.2);
   transform: translateY(-2px);
-  animation: none;
 }
 
 .horse-sprite-canvas {
   image-rendering: pixelated;
   image-rendering: crisp-edges;
   display: block;
-  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.35));
 }
 
 .horse-paddock-num {

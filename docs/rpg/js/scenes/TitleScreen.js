@@ -7,7 +7,7 @@ import {
   createGuestSession,
   formatSaveTime,
   fmtChips,
-} from "../../js/core.js";
+} from "../../../js/core.js";
 import { SaveAdapter, initSessionRpg } from "../systems/SaveAdapter.js";
 
 /**
@@ -172,7 +172,7 @@ export function renderHud(hudRoot, saveAdapter) {
     <div class="hud-bar">
       <span class="hud-name">${lines.name}</span>
       <span class="hud-chips">${lines.chips}</span>
-      <span class="hud-hint">WASD · E talk · Shift run</span>
+      <span class="hud-hint">WASD · E talk · P phone · Shift run</span>
     </div>
   `;
 }

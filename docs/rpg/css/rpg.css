@@ -82,6 +82,10 @@ body {
   font-style: italic;
 }
 
+.hud-chips {
+  color: var(--gold);
+}
+
 .hud-name {
   color: var(--cyan);
 }

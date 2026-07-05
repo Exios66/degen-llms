@@ -20,6 +20,9 @@ import { HAND_CLASS_NAMES } from "./holdem/hand_eval.js";
 import { BET_TYPES, spinWheel, wheelColor, resolveBet, RED_NUMBERS } from "./roulette.js";
 import { generateRace, simulateRace, settleTicket, fmtOdds as fmtRaceOdds } from "./horse_racing.js";
 import { getSessionDealer, pickQuip } from "./dealers.js";
+import { RewardsPhone } from "./RewardsPhone.js";
+import { buildHotelRenderers } from "./hotel-ui.js";
+import { ensureHotel } from "./hotel.js";
 import {
   STAKE_TIERS, TIER_ORDER, getTier, formatTierLabel, effectiveTableStakes, effectiveSlotStakes,
   formatStakeRange, tierUsesSalonLimits,
@@ -28,6 +31,7 @@ import {
 const app = document.getElementById("app");
 
 let session = new PlayerSession();
+let rewardsPhone = null;
 let sportsbook = new SportsbookState();
 let blackjackGame = null;
 let blackjackSessionNet = 0;
@@ -52,7 +56,16 @@ function resetSportsbookFromSession() {
 
 function persist() {
   syncSportsbookToSession();
+  rewardsPhone?.tracker.syncFromWallet();
   if (session.slotId != null) saveSlot(session);
+}
+
+function mountRewardsPhone() {
+  const root = document.getElementById("rewards-phone");
+  if (!root) return;
+  ensureHotel(session);
+  rewardsPhone = new RewardsPhone(root, session, { onPersist: persist });
+  rewardsPhone.sync();
 }
 
 function showStatus(text, type = "success") {
@@ -304,11 +317,13 @@ function enterCasino(nextSession) {
   horseRacingState = { card: null, pending: [], sessionNet: 0, races: 0 };
   viewStack = [{ name: "hub", data: {} }];
   clearStatus();
+  mountRewardsPhone();
   render();
 }
 
 function returnToSavePicker() {
   persist();
+  rewardsPhone?.close();
   sportsbook = new SportsbookState();
   blackjackGame = null;
   holdemState = null;
@@ -665,7 +680,7 @@ function renderSaveDelete() {
 }
 
 function renderHub() {
-  const floors = [...FLOOR_ORDER, "Cashier", "Player Stats", "Save Game", "Explore Resort (RPG)", "Leave Casino"];
+  const floors = [...FLOOR_ORDER, "Cashier", "Player Stats", "Save Game", "Exit to Hotel", "Explore Resort (RPG)", "Leave Casino"];
   const options = floors.map((f) => (FLOOR_ORDER.includes(f) ? `Explore ${f}` : f));
 
   const wrap = el("div", {}, [
@@ -739,6 +754,9 @@ function renderHub() {
         showStatus("No save slot active — pick a slot at entry or play as guest.", "error");
       }
     } else if (choice === FLOOR_ORDER.length + 4) {
+      ensureHotel(session);
+      pushView("hotel-lobby");
+    } else if (choice === FLOOR_ORDER.length + 5) {
       const rpgUrl = session.slotId != null
         ? `./rpg/?slot=${session.slotId}`
         : "./rpg/?guest=1";
@@ -2092,6 +2110,20 @@ function renderNotFound({ requestedView } = {}) {
   ]);
 }
 
+const hotelRenderers = buildHotelRenderers({
+  get session() { return session; },
+  get rewardsPhone() { return rewardsPhone; },
+  pushView,
+  goBack,
+  persist,
+  render,
+  el,
+  banner,
+  chipLine,
+  statusBanner,
+  viewStack,
+});
+
 const RENDERERS = {
   "save-picker": renderSavePicker,
   "save-create": renderSaveCreate,
@@ -2119,6 +2151,7 @@ const RENDERERS = {
   "horse-racing": renderHorseRacing,
   "horse-racing-wager": renderHorseRacingWager,
   "horse-racing-settle": renderHorseRacingSettle,
+  ...hotelRenderers,
   "not-found": renderNotFound,
 };
 
@@ -2177,6 +2210,15 @@ if (!applyLaunchParams()) {
 }
 
 document.addEventListener("keydown", (e) => {
+  if (e.key === "p" || e.key === "P") {
+    const inCasino = viewStack.some((v) => v.name !== "save-picker" && v.name !== "save-create");
+    const blackjackNeedsP = viewStack.at(-1)?.name === "blackjack-play" && blackjackGame?.pendingAction;
+    if (inCasino && rewardsPhone && !blackjackNeedsP) {
+      rewardsPhone.toggle();
+      e.preventDefault();
+      return;
+    }
+  }
   if (!blackjackGame?.pendingAction) return;
   const map = { h: Action.HIT, s: Action.STAND, d: Action.DOUBLE, p: Action.SPLIT, u: Action.SURRENDER };
   const act = map[e.key.toLowerCase()];

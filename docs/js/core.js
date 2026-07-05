@@ -1,5 +1,8 @@
+import { attachRewardsToSession } from "./rewards.js";
+import { attachHotelToSession } from "./hotel.js";
+
 export const CASINO_NAME = "The Mandalay Bay";
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 4;
 
 /** Default RPG overworld state for pixel mode (Phase 1+). */
 export function defaultRpgState(overrides = {}) {
@@ -156,6 +159,8 @@ export class PlayerSession {
     this.sportsbookData = null;
     this.rpg = null;
     this.rpgData = null;
+    this.rewards = null;
+    this.hotel = null;
     this.progressivePools = {};
   }
 
@@ -196,6 +201,8 @@ export class PlayerSession {
       progressivePools: this.progressivePools ?? {},
     };
     if (this.rpg) payload.rpg = this.rpg;
+    if (this.rewards) payload.rewards = this.rewards;
+    if (this.hotel) payload.hotel = this.hotel;
     return payload;
   }
 
@@ -214,6 +221,8 @@ export class PlayerSession {
     s.progressivePools = data.progressivePools ?? {};
     s.rpg = data.rpg ? { ...defaultRpgState(), ...data.rpg } : null;
     s.rpgData = data.rpgData ?? null;
+    attachRewardsToSession(s, data);
+    attachHotelToSession(s, data);
     return s;
   }
 }

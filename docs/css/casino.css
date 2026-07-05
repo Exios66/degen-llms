@@ -1837,6 +1837,32 @@ body {
   font-size: 0.75rem;
 }
 
+.slot-bet-row .bet-stepper {
+  display: flex;
+  align-items: stretch;
+  gap: 0.35rem;
+  max-width: 320px;
+}
+
+.slot-bet-row .bet-stepper-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: none;
+  width: auto;
+  text-align: center;
+}
+
+.slot-bet-row .bet-step-btn {
+  flex: 0 0 auto;
+  min-width: 2.5rem;
+  padding: 0.45rem 0.55rem;
+}
+
+.slot-bet-row .bet-max-btn {
+  min-width: 3rem;
+  font-size: 0.7rem;
+}
+
 .slot-cabinet-base .btn {
   font-size: 0.8rem;
   font-weight: 700;

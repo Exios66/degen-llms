@@ -135,6 +135,7 @@ function el(tag, attrs = {}, children = []) {
     if (k === "className") node.className = v;
     else if (k === "textContent") node.textContent = v;
     else if (k === "innerHTML") node.innerHTML = v;
+    else if (k === "disabled" || k === "checked" || k === "readonly" || k === "selected") node[k] = Boolean(v);
     else if (k.startsWith("on")) node[k.toLowerCase()] = v;
     else node.setAttribute(k, v);
   }
@@ -1132,7 +1133,18 @@ function renderSlotsMenu() {
       el("div", { className: "slot-machine-grid" }, machines.map((m) =>
         slotMachineCard(m, () => {
           clearSlotsSpinTimers();
-          slotsState = { machine: m, sessionNet: 0, spins: 0, bet: null, spinning: false, reelsRevealed: 3, lastWin: false, lastReels: null, lastMessage: null };
+          slotsState = {
+            machine: m,
+            sessionNet: 0,
+            spins: 0,
+            bet: null,
+            spinning: false,
+            reelsRevealed: 3,
+            lastWin: false,
+            lastReels: null,
+            lastMessage: null,
+            tier: slotsState.tier ?? currentStakeTier,
+          };
           pushView("slots-play");
         })
       )),
@@ -1153,11 +1165,79 @@ function renderSlotsPlay() {
   const stakes = effectiveSlotStakes(machine, tier, session.wallet.balance);
   const minBet = stakes.minBet;
   const maxBet = stakes.maxBet;
+
+  if (maxBet < minBet) {
+    return el("div", { className: "panel" }, [
+      banner(machine.name),
+      el("p", {
+        className: "error",
+        textContent: `This machine requires at least ${minBet.toLocaleString()} chips per spin at ${tier.name}.`,
+      }),
+      el("div", { className: "action-bar" }, [
+        el("button", {
+          className: "btn",
+          textContent: "Back to machines",
+          onclick: () => { popView(); render(); },
+        }),
+      ]),
+    ]);
+  }
+
+  const betStep = minBet;
   const defaultBet = Math.min(Math.max(slotsState.bet ?? minBet, minBet), maxBet);
+
+  function clampSlotBet(value) {
+    const n = parseInt(value, 10);
+    if (Number.isNaN(n)) return minBet;
+    return Math.min(Math.max(n, minBet), maxBet);
+  }
+
+  function setSlotBet(value) {
+    const clamped = clampSlotBet(value);
+    betInput.value = String(clamped);
+    slotsState.bet = clamped;
+  }
+
   const betInput = el("input", {
-    type: "number", min: String(minBet), max: String(maxBet), value: String(defaultBet),
-    oninput: (e) => { slotsState.bet = parseInt(e.target.value, 10) || minBet; },
+    type: "number",
+    className: "bet-stepper-input",
+    min: String(minBet),
+    max: String(maxBet),
+    step: String(betStep),
+    value: String(defaultBet),
+    disabled: slotsState.spinning,
+    oninput: (e) => { slotsState.bet = clampSlotBet(e.target.value); },
   });
+
+  const betStepper = el("div", { className: "bet-stepper" }, [
+    el("button", {
+      className: "btn bet-step-btn",
+      type: "button",
+      textContent: "−",
+      title: `Decrease bet by ${betStep.toLocaleString()}`,
+      disabled: slotsState.spinning,
+      onclick: () => setSlotBet((parseInt(betInput.value, 10) || minBet) - betStep),
+    }),
+    betInput,
+    el("button", {
+      className: "btn bet-step-btn",
+      type: "button",
+      textContent: "+",
+      title: `Increase bet by ${betStep.toLocaleString()}`,
+      disabled: slotsState.spinning,
+      onclick: () => setSlotBet((parseInt(betInput.value, 10) || minBet) + betStep),
+    }),
+    maxBet > minBet
+      ? el("button", {
+        className: "btn bet-step-btn bet-max-btn",
+        type: "button",
+        textContent: "Max",
+        title: `Set bet to ${maxBet.toLocaleString()}`,
+        disabled: slotsState.spinning,
+        onclick: () => setSlotBet(maxBet),
+      })
+      : null,
+  ].filter(Boolean));
   const msgEl = el("p", {
     className: `slot-result ${slotsState.lastMessage?.type ?? "dim"}`,
     textContent: slotsState.spinning
@@ -1268,9 +1348,9 @@ function renderSlotsPlay() {
     ],
     baseChildren: [
       el("p", { className: "chip-line", textContent: `Chips: ${fmtChips(session.wallet.balance)}` }),
-      el("div", { className: "form-row" }, [
-        el("label", { textContent: `Spin amount (${minBet}–${maxBet}, 0 to leave)` }),
-        betInput,
+      el("div", { className: "form-row slot-bet-row" }, [
+        el("label", { textContent: `Spin amount (${minBet}–${maxBet}, step ${betStep}, 0 to leave)` }),
+        betStepper,
       ]),
       el("div", { className: "action-bar" }, [
         el("button", { className: "btn primary", textContent: "Spin", onclick: doSpin, disabled: slotsState.spinning }),

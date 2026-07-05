@@ -1,4 +1,5 @@
 import { TransactionKind, secureRandomInt } from "./core.js";
+import { getTierExperience } from "./rewards-perks.js";
 
 export const SAVE_VERSION_WITH_REWARDS = 3;
 
@@ -147,10 +148,11 @@ export class RewardsTracker {
         rewards.unlockedComps.push(newTier.comp);
       }
       const compLabel = newTier.comp ? COMP_CATALOG[newTier.comp]?.title : "exclusive offers";
+      const exp = getTierExperience(newTier.id);
       const note = {
         id: `tier_${newTier.id}_${Date.now()}`,
         title: `${newTier.label} Tier Unlocked!`,
-        body: `You've reached ${newTier.label} status. ${compLabel ? `New comp: ${compLabel}.` : "Check Resort Offers on your phone."}`,
+        body: `You've reached ${newTier.label} status. ${compLabel ? `New comp: ${compLabel}. ` : ""}${exp.tagline}`,
         read: false,
         timestamp: nowIso(),
       };

@@ -8,7 +8,8 @@ from pathlib import Path
 
 from mandalay_bay.chips import ChipWallet, TransactionKind
 from mandalay_bay.display import TerminalUI, fmt_chips
-from mandalay_bay.hotel import HotelState, ensure_hotel
+from mandalay_bay.hotel import HotelState, RoomAmenitiesState, ensure_hotel
+from mandalay_bay.pool_complex import PoolComplexState, ensure_pool_complex
 from mandalay_bay.rewards import RewardsState, SAVE_VERSION_WITH_REWARDS, ensure_rewards, migrate_session_rewards
 from mandalay_bay.session import ActivityStats, PlayerSession
 
@@ -217,6 +218,8 @@ def session_to_dict(session: PlayerSession) -> dict:
     }
     if hasattr(session, "hotel") and session.hotel is not None:
         payload["hotel"] = asdict(session.hotel)
+    if hasattr(session, "pool_complex") and session.pool_complex is not None:
+        payload["pool_complex"] = asdict(session.pool_complex)
     if hasattr(session, "rewards") and session.rewards is not None:
         payload["rewards"] = asdict(session.rewards)
     return payload
@@ -259,9 +262,17 @@ def session_from_dict(data: dict) -> PlayerSession:
         progressive_pools=dict(data.get("progressive_pools", {})),
     )
     if "hotel" in data:
-        session.hotel = HotelState(**data["hotel"])
+        hotel_data = dict(data["hotel"])
+        ra_data = hotel_data.pop("room_amenities", None)
+        session.hotel = HotelState(**hotel_data)
+        if ra_data:
+            session.hotel.room_amenities = RoomAmenitiesState(**ra_data)
     else:
         ensure_hotel(session)
+    if "pool_complex" in data:
+        session.pool_complex = PoolComplexState(**data["pool_complex"])
+    else:
+        ensure_pool_complex(session)
     data_version = data.get("version", 1)
     if "rewards" in data:
         session.rewards = RewardsState(**data["rewards"])

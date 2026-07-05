@@ -225,3 +225,24 @@
   cursor: pointer;
   font-family: inherit;
 }
+
+.rewards-member-cost {
+  margin-top: 4px;
+  font-size: 5px;
+  color: #5a9c5a;
+}
+
+.rewards-member-card--noir {
+  border-color: #c678dd;
+}
+
+.rewards-member-card--chairman {
+  border-color: #ffd700;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.25);
+  background: rgba(40, 32, 8, 0.35);
+}
+
+.rewards-tier-chairman .rewards-lcd-header {
+  color: #ffd700;
+  text-shadow: 0 0 6px rgba(255, 215, 0, 0.35);
+}

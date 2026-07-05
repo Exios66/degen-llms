@@ -12,6 +12,12 @@ from mandalay_bay.rewards import (
     sync_rewards_from_wallet,
     tier_for_wagered,
 )
+from mandalay_bay.rewards_perks import (
+    RESORT_OFFERS,
+    activity_timing,
+    get_tier_experience,
+    tier_index,
+)
 from mandalay_bay.session import PlayerSession
 
 
@@ -30,6 +36,7 @@ def run_rewards_phone(session: PlayerSession, ui: TerminalUI) -> None:
             [
                 "Member card",
                 "My comps",
+                "VIP perks",
                 "Reservation",
                 "Notifications",
                 "Resort offers",
@@ -44,21 +51,26 @@ def run_rewards_phone(session: PlayerSession, ui: TerminalUI) -> None:
         elif choice == 2:
             _show_comps(session, ui)
         elif choice == 3:
-            _show_reservation(session, ui)
+            _show_perks(session, ui)
         elif choice == 4:
-            _show_notifications(session, ui)
+            _show_reservation(session, ui)
         elif choice == 5:
+            _show_notifications(session, ui)
+        elif choice == 6:
             _show_offers(session, ui)
 
 
 def _show_member_card(session: PlayerSession, ui: TerminalUI) -> None:
     rewards = ensure_rewards(session)
     tier = tier_for_wagered(rewards.lifetime_wagered)
+    exp = get_tier_experience(tier.id)
     prog = progress_to_next_tier(rewards)
     ui.banner("Member Card")
     ui.print(f"  {tier.label.upper()} — {session.player_name}")
     ui.print(f"  {rewards.member_id}")
     ui.print(f"  {fmt_chips(rewards.lifetime_wagered)} lifetime wagered")
+    ui.dim(f"  {exp.monthly_amortized_cost}")
+    ui.dim(f"  {exp.pit_boss_line}")
     if prog["next"]:
         ui.dim(
             f"  Progress to {prog['next'].label}: {prog['pct']}% "
@@ -66,6 +78,27 @@ def _show_member_card(session: PlayerSession, ui: TerminalUI) -> None:
         )
     else:
         ui.dim("  Chairman status — you've arrived.")
+    ui.pause()
+
+
+def _show_perks(session: PlayerSession, ui: TerminalUI) -> None:
+    rewards = ensure_rewards(session)
+    tier = tier_for_wagered(rewards.lifetime_wagered)
+    exp = get_tier_experience(tier.id)
+    timing = activity_timing(tier.id)
+    ui.banner(f"{exp.label} VIP Perks")
+    ui.print(f"  {exp.tagline}")
+    ui.dim(f"  Amortized cost: {exp.monthly_amortized_cost}")
+    ui.dim(f"  Floor speed: {round((1 / timing['speed_multiplier']) * 100)}% VIP")
+    ui.print("")
+    for perk in exp.perks:
+        ui.print(f"  • {perk}")
+    ui.print("")
+    ui.dim(f"  {exp.pit_boss_line}")
+    if tier.id != "chairman":
+        idx = tier_index(tier.id)
+        if idx < len(TIERS) - 1:
+            ui.dim(f"  Rank up to {TIERS[idx + 1].label} for more absurdity.")
     ui.pause()
 
 
@@ -126,17 +159,14 @@ def _show_notifications(session: PlayerSession, ui: TerminalUI) -> None:
 def _show_offers(session: PlayerSession, ui: TerminalUI) -> None:
     rewards = ensure_rewards(session)
     tier = tier_for_wagered(rewards.lifetime_wagered)
-    tier_idx = next(i for i, t in enumerate(TIERS) if t.id == tier.id)
-    offers = [
-        "Pool cabana — 20% off for Pearl+",
-        "House of Blues — priority line for Gold+",
-        "Spa day — comped upgrade for Platinum+",
-        "Foundation Room — Noir members only",
-        "Penthouse fantasy package — Chairman",
-    ]
+    tier_idx = tier_index(tier.id)
     ui.banner("Resort Offers")
-    for i, offer in enumerate(offers):
-        locked = i > tier_idx
-        line = f"  {'[locked] ' if locked else ''}{offer}"
-        ui.dim(line) if locked else ui.print(line)
+    for offer in RESORT_OFFERS:
+        locked = tier_idx < offer["min_tier_index"]
+        line = f"  {'[locked] ' if locked else ''}{offer['title']}"
+        if locked:
+            ui.dim(line)
+        else:
+            ui.print(line)
+        ui.dim(f"    {offer['detail']}")
     ui.pause()

@@ -144,10 +144,14 @@ def notify_tier_promotion(session_rewards: RewardsState, prev: int, new: int) ->
     if new_tier.comp and new_tier.comp not in session_rewards.unlocked_comps:
         session_rewards.unlocked_comps.append(new_tier.comp)
     comp_label = COMP_CATALOG.get(new_tier.comp or "", {}).get("title", "exclusive offers")
+    from mandalay_bay.rewards_perks import get_tier_experience
+
+    exp = get_tier_experience(new_tier.id)
     title = f"{new_tier.label} Tier Unlocked!"
     body = f"You've reached {new_tier.label} status."
     if new_tier.comp:
         body += f" New comp: {comp_label}."
+    body += f" {exp.tagline}"
     session_rewards.notifications.insert(0, {"title": title, "body": body, "read": False})
     return [title]
 

@@ -22,6 +22,9 @@ import { generateRace, simulateRace, settleTicket, fmtOdds as fmtRaceOdds, loadB
 import { createHorseSpriteCanvas, getHorseSprite } from "./horse-sprites.js";
 import { getSessionDealer, pickQuip } from "./dealers.js";
 import { RewardsPhone } from "./RewardsPhone.js";
+import {
+  applyTierSpeedCss, getActivityTiming, getSessionTierExperience, maybePitBossTopUp, rewardsTierId,
+} from "./rewards-perks.js";
 import { buildHotelRenderers } from "./hotel-ui.js";
 import { buildPoolRenderers } from "./pool-complex-ui.js";
 import { ensureHotel } from "./hotel.js";
@@ -60,7 +63,12 @@ function resetSportsbookFromSession() {
 function persist() {
   syncSportsbookToSession();
   rewardsPhone?.tracker.syncFromWallet();
+  syncRewardsExperience();
   if (session.slotId != null) saveSlot(session);
+}
+
+function syncRewardsExperience() {
+  applyTierSpeedCss(rewardsTierId(session));
 }
 
 function mountRewardsPhone() {
@@ -69,6 +77,7 @@ function mountRewardsPhone() {
   ensureHotel(session);
   rewardsPhone = new RewardsPhone(root, session, { onPersist: persist });
   rewardsPhone.sync();
+  syncRewardsExperience();
 }
 
 function showStatus(text, type = "success") {
@@ -94,6 +103,29 @@ function statusBanner() {
       onclick: () => { clearStatus(); render(); },
     }),
   ]);
+}
+
+function tierExperienceBanner() {
+  const exp = getSessionTierExperience(session);
+  const timing = getActivityTiming(rewardsTierId(session));
+  const speedPct = Math.round((1 / timing.speedMultiplier) * 100);
+  return el("div", {
+    className: `tier-experience-banner tier-experience-banner--${exp.id}`,
+  }, [
+    el("p", { className: "tier-experience-label", textContent: `${exp.label} experience` }),
+    el("p", { className: "tier-experience-tagline", textContent: exp.tagline }),
+    el("p", {
+      className: "dim tier-experience-meta",
+      textContent: `${exp.monthlyAmortizedCost} · Floor speed ${speedPct}% VIP`,
+    }),
+  ]);
+}
+
+function notifyPitBossTopUp(activityId, lossAmount) {
+  const topup = maybePitBossTopUp(session, activityId, lossAmount);
+  if (!topup) return;
+  rewardsPhone?.tracker.pushNotification("Pit Boss Comp", topup.line);
+  showStatus(topup.line, "success");
 }
 
 function el(tag, attrs = {}, children = []) {
@@ -509,8 +541,11 @@ function renderHoldemTable(table) {
   return felt;
 }
 
-function renderRouletteWheel(lastNumber = null, spinning = false) {
+function renderRouletteWheel(lastNumber = null, spinning = false, spinMs = 1200) {
   const wheel = el("div", { className: `roulette-wheel${spinning ? " roulette-wheel--spinning" : ""}` });
+  if (spinning) {
+    wheel.style.animationDuration = `${spinMs}ms`;
+  }
   const wrap = el("div", { className: "roulette-wheel-panel" }, [
     el("div", { className: "roulette-wheel-wrap" }, [
       el("div", { className: "roulette-wheel-pointer" }),
@@ -718,6 +753,7 @@ function renderHub() {
 
   const wrap = el("div", {}, [
     statusBanner(),
+    tierExperienceBanner(),
     settingsBar(),
     banner(CASINO_NAME),
     session.slotId != null
@@ -1162,14 +1198,15 @@ function renderSlotsPlay() {
     slotsState.lastMessage = { text: "Spinning…", type: "dim" };
     render();
 
+    const spinTiming = getActivityTiming(rewardsTierId(session));
     scheduleSlotsSpin(() => {
       slotsState.reelsRevealed = 1;
       render();
-    }, 350);
+    }, spinTiming.slotsReel1);
     scheduleSlotsSpin(() => {
       slotsState.reelsRevealed = 2;
       render();
-    }, 700);
+    }, spinTiming.slotsReel2);
     scheduleSlotsSpin(() => {
       slotsState.spinning = false;
       slotsState.reelsRevealed = 3;
@@ -1186,10 +1223,11 @@ function renderSlotsPlay() {
       } else {
         slotsState.sessionNet -= bet;
         slotsState.lastMessage = { text: "No win this spin.", type: "dim" };
+        notifyPitBossTopUp("slots", bet);
       }
       persist();
       render();
-    }, 1050);
+    }, spinTiming.slotsReel3);
   }
 
   return slotCabinet(machine, {
@@ -1731,7 +1769,11 @@ function renderRoulette() {
   };
 
   const rouletteDisplay = el("div", { className: "roulette-display" }, [
-    renderRouletteWheel(rouletteState.lastNumber, rouletteState.spinning),
+    renderRouletteWheel(
+      rouletteState.lastNumber,
+      rouletteState.spinning,
+      getActivityTiming(rewardsTierId(session)).rouletteSpin,
+    ),
     renderRouletteBetMat(straightInput, onMatPick),
   ]);
 
@@ -1754,6 +1796,7 @@ function renderRoulette() {
     rouletteState.spinning = true;
     render();
 
+    const spinMs = getActivityTiming(rewardsTierId(session)).rouletteSpin;
     setTimeout(() => {
       const number = spinWheel();
       const straightPick = bet.kind === "straight" ? parseInt(straightInput.value, 10) : null;
@@ -1769,11 +1812,12 @@ function renderRoulette() {
         rouletteState.sessionNet += win - amount;
       } else {
         rouletteState.sessionNet -= amount;
+        notifyPitBossTopUp("roulette", amount);
       }
       summaryEl.textContent = `Session: ${signedChips(rouletteState.sessionNet)} over ${rouletteState.spins} spin(s)`;
       persist();
       render();
-    }, 1200);
+    }, spinMs);
   }
 
   return videoMachine("roulette", {

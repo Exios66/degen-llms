@@ -26,6 +26,7 @@
   --roulette-red: #c41e3a;
   --roulette-black: #1a1a2e;
   --roulette-green: #0d6b3a;
+  --rewards-speed-mult: 1;
 }
 
 *,
@@ -428,6 +429,57 @@ body {
 
 .status-dismiss:hover {
   opacity: 1;
+}
+
+.tier-experience-banner {
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: linear-gradient(135deg, rgba(17, 24, 32, 0.95) 0%, rgba(26, 34, 48, 0.95) 100%);
+}
+
+.tier-experience-label {
+  margin: 0 0 0.25rem;
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cyan);
+}
+
+.tier-experience-tagline {
+  margin: 0 0 0.35rem;
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+.tier-experience-meta {
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.tier-experience-banner--gold .tier-experience-label,
+.tier-experience-banner--platinum .tier-experience-label {
+  color: var(--gold);
+}
+
+.tier-experience-banner--noir .tier-experience-label {
+  color: var(--magenta);
+}
+
+.tier-experience-banner--chairman {
+  border-color: var(--gold);
+  background: linear-gradient(135deg, rgba(40, 32, 8, 0.95) 0%, rgba(17, 24, 32, 0.98) 55%, rgba(60, 20, 40, 0.9) 100%);
+  box-shadow: 0 0 18px rgba(255, 215, 0, 0.15);
+}
+
+.tier-experience-banner--chairman .tier-experience-label {
+  color: var(--gold);
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.35);
+}
+
+.tier-experience-banner--chairman .tier-experience-tagline {
+  color: #fff8dc;
 }
 
 .hub-features {
@@ -1683,9 +1735,9 @@ body {
   animation-delay: var(--reel-delay, 0s);
 }
 
-.slot-reel:nth-child(1).slot-reel--spinning .slot-reel-symbol { animation-duration: 0.18s; }
-.slot-reel:nth-child(2).slot-reel--spinning .slot-reel-symbol { animation-duration: 0.22s; }
-.slot-reel:nth-child(3).slot-reel--spinning .slot-reel-symbol { animation-duration: 0.26s; }
+.slot-reel:nth-child(1).slot-reel--spinning .slot-reel-symbol { animation-duration: calc(0.18s * var(--rewards-speed-mult, 1)); }
+.slot-reel:nth-child(2).slot-reel--spinning .slot-reel-symbol { animation-duration: calc(0.22s * var(--rewards-speed-mult, 1)); }
+.slot-reel:nth-child(3).slot-reel--spinning .slot-reel-symbol { animation-duration: calc(0.26s * var(--rewards-speed-mult, 1)); }
 
 @keyframes reel-blur {
   0% { transform: translateY(-35%); opacity: 0.45; filter: blur(1px); }

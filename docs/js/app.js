@@ -20,6 +20,10 @@ import { HAND_CLASS_NAMES } from "./holdem/hand_eval.js";
 import { BET_TYPES, spinWheel, wheelColor, resolveBet, RED_NUMBERS } from "./roulette.js";
 import { generateRace, simulateRace, settleTicket, fmtOdds as fmtRaceOdds } from "./horse_racing.js";
 import { getSessionDealer, pickQuip } from "./dealers.js";
+import {
+  STAKE_TIERS, TIER_ORDER, getTier, formatTierLabel, effectiveTableStakes, effectiveSlotStakes,
+  formatStakeRange, tierUsesSalonLimits,
+} from "./stakes.js";
 
 const app = document.getElementById("app");
 
@@ -27,10 +31,11 @@ let session = new PlayerSession();
 let sportsbook = new SportsbookState();
 let blackjackGame = null;
 let blackjackSessionNet = 0;
-let slotsState = { machine: null, sessionNet: 0, spins: 0, spinning: false, lastWin: false, lastReels: null, lastMessage: null };
+let slotsState = { machine: null, sessionNet: 0, spins: 0, tier: null };
 let holdemState = null;
-let rouletteState = { sessionNet: 0, spins: 0, lastNumber: null, spinning: false };
-let horseRacingState = { card: null, pending: [], sessionNet: 0, races: 0 };
+let rouletteState = { sessionNet: 0, spins: 0, lastNumber: null, spinning: false, tier: null };
+let horseRacingState = { card: null, pending: [], sessionNet: 0, races: 0, tier: null };
+let currentStakeTier = null;
 let activeTableDealer = null;
 let viewStack = [];
 let statusMessage = null;
@@ -373,6 +378,29 @@ function renderTable(snapshot) {
       el("span", { className: "bj-hand-value", textContent: `(${d.value})` }),
     ]);
     container.appendChild(dealerRow);
+  }
+
+  const seatsEl = el("div", { className: "bj-seats" });
+  for (const row of snapshot.rows) {
+    const badges = [];
+    if (row.surrendered) badges.push(el("span", { className: "bj-seat-badge bj-seat-badge--surrender", textContent: "SURR" }));
+    else if (row.bust) badges.push(el("span", { className: "bj-seat-badge bj-seat-badge--bust", textContent: "BUST" }));
+    else if (row.blackjack) badges.push(el("span", { className: "bj-seat-badge bj-seat-badge--bj", textContent: "BJ" }));
+
+    const seatEl = el("div", { className: row.highlight ? "bj-seat bj-seat--active" : "bj-seat" }, [
+      el("div", { className: "bj-seat-info" }, [
+        el("div", { className: "bj-seat-name", textContent: `Seat ${row.seat} ${row.label}` }),
+        el("div", {
+          className: "bj-seat-meta",
+          textContent: `${fmtChips(row.bankroll)} · bet ${fmtChips(row.bet)}`,
+        }),
+      ]),
+      cardRow(row.cards),
+      el("span", { className: "bj-hand-value", textContent: `(${row.value})` }),
+      ...badges,
+    ]);
+    seatsEl.appendChild(seatEl);
+  }
   }
 
   const seatsEl = el("div", { className: "bj-seats" });
@@ -757,12 +785,12 @@ function renderFloor({ floor }) {
       showStatus(`You need at least ${act.minBet} chips to enter ${act.name}.`, "error");
       return;
     }
-    if (act.id === "blackjack") pushView("blackjack-menu");
-    else if (act.id === "holdem") pushView("holdem-menu");
-    else if (act.id === "roulette") pushView("roulette");
-    else if (act.id === "slots") pushView("slots-menu");
-    else if (act.id === "sportsbook") pushView("sportsbook");
-    else if (act.id === "horse_racing") pushView("horse-racing");
+    if (act.id === "blackjack") pushView("stake-tier", { activityId: "blackjack", nextView: "blackjack-menu" });
+    else if (act.id === "holdem") pushView("stake-tier", { activityId: "holdem", nextView: "holdem-menu" });
+    else if (act.id === "roulette") pushView("stake-tier", { activityId: "roulette", nextView: "roulette" });
+    else if (act.id === "slots") pushView("stake-tier", { activityId: "slots", nextView: "slots-menu" });
+    else if (act.id === "sportsbook") pushView("stake-tier", { activityId: "sportsbook", nextView: "sportsbook" });
+    else if (act.id === "horse_racing") pushView("stake-tier", { activityId: "horse_racing", nextView: "horse-racing" });
   }
 }
 
@@ -920,6 +948,36 @@ function renderLeave() {
   ]);
 }
 
+function renderStakeTier({ activityId, nextView }) {
+  const act = ACTIVITIES[activityId];
+  const balance = session.wallet.balance;
+  const options = TIER_ORDER.map((id) => {
+    const tier = STAKE_TIERS[id];
+    if (balance < tier.minBet) {
+      return `${tier.name} — requires ${tier.minBet.toLocaleString()} chips`;
+    }
+    return formatTierLabel(tier, balance);
+  });
+  return el("div", { className: "panel" }, [
+    banner(`${act?.name ?? "Activity"} — Stake Tier`),
+    el("p", { className: "dim", textContent: "Pick a stake tier before sitting down. Salon tiers (401K, No Limit) apply across every machine and table." }),
+    chipLine(),
+    menu(options, "Choose stake tier:", (choice) => {
+      if (choice === 0) { goBack(); return; }
+      const tier = getTier(TIER_ORDER[choice - 1]);
+      if (balance < tier.minBet) {
+        showStatus(`You need at least ${tier.minBet.toLocaleString()} chips for ${tier.name}.`, "error");
+        return;
+      }
+      currentStakeTier = tier;
+      if (activityId === "slots") slotsState.tier = tier;
+      if (activityId === "roulette") rouletteState.tier = tier;
+      if (activityId === "horse_racing") horseRacingState.tier = tier;
+      pushView(nextView);
+    }),
+  ]);
+}
+
 function renderSlotsMenu() {
   const act = ACTIVITIES.slots;
   if (session.wallet.balance < act.minBet) {
@@ -933,9 +991,11 @@ function renderSlotsMenu() {
   }
   session.recordVisit("slots");
   persist();
-
-  const floor = el("div", { className: "slot-floor" }, [
+  const tier = slotsState.tier ?? currentStakeTier;
+  const options = MACHINES.map((m) => formatMachineLabel(m, session, tier));
+  return el("div", {}, [
     banner("Slot Machines — Mandalay Bay"),
+    el("p", { className: "dim", textContent: tier ? `${tier.name}: ${tier.description}` : "Penny slots to high-limit progressives — pick your machine." }),
     chipLine(),
     el("p", {
       className: "slot-floor-intro",
@@ -967,9 +1027,12 @@ function renderSlotsMenu() {
 
 function renderSlotsPlay() {
   const machine = slotsState.machine;
-  const maxBet = Math.min(machine.maxBet, session.wallet.balance);
+  const tier = slotsState.tier ?? currentStakeTier ?? getTier("standard");
+  const stakes = effectiveSlotStakes(machine, tier, session.wallet.balance);
+  const minBet = stakes.minBet;
+  const maxBet = stakes.maxBet;
   const betInput = el("input", {
-    type: "number", min: String(machine.minBet), max: String(maxBet), value: String(machine.minBet),
+    type: "number", min: String(minBet), max: String(maxBet), value: String(minBet),
   });
   const msgEl = el("p", {
     className: `slot-result ${slotsState.lastMessage?.type ?? "dim"}`,
@@ -1007,10 +1070,27 @@ function renderSlotsPlay() {
       render();
       return;
     }
-    if (bet < machine.minBet) {
-      msgEl.className = "slot-result error";
-      msgEl.textContent = `Minimum spin is ${machine.minBet}.`;
-      return;
+    if (bet < minBet) { msgEl.className = "error"; msgEl.textContent = `Minimum spin is ${minBet}.`; return; }
+    if (bet > maxBet) { msgEl.className = "error"; msgEl.textContent = `Maximum spin is ${maxBet}.`; return; }
+    if (!session.wallet.debit(bet, "slots", `${machine.name} spin ${fmtChips(bet)}`)) {
+      msgEl.className = "error"; msgEl.textContent = "Insufficient chips."; return;
+    }
+    contributeToProgressive(session, machine, bet);
+    const reels = spinReels(machine);
+    const shown = reels.map((r) => displaySymbol(r, session.useUnicode)).join(" | ");
+    reelsEl.textContent = shown;
+    const jackpotAmount = tryJackpot(session, machine, reels, bet, maxBet);
+    const { win, reason } = calculatePayout(reels, bet, machine, jackpotAmount);
+    slotsState.spins += 1;
+    if (win > 0) {
+      session.wallet.credit(win, "slots", reason);
+      slotsState.sessionNet += win - bet;
+      msgEl.className = jackpotAmount != null ? "jackpot-win" : "success";
+      msgEl.textContent = `${reason}${jackpotAmount == null ? ` — Won ${win.toLocaleString()} chips!` : ""}`;
+    } else {
+      slotsState.sessionNet -= bet;
+      msgEl.className = "dim";
+      msgEl.textContent = "No win this spin.";
     }
     if (!session.wallet.debit(bet, "slots", `${machine.name} spin ${fmtChips(bet)}`)) {
       msgEl.className = "slot-result error";
@@ -1018,66 +1098,44 @@ function renderSlotsPlay() {
       return;
     }
 
-    slotsState.spinning = true;
-    slotsState.lastWin = false;
-    render();
+  const chipDisplay = el("p", { className: "chip-line", textContent: `Chips: ${fmtChips(session.wallet.balance)}` });
+  const paytableEl = el("p", { className: "dim", textContent: formatPaytableText(machine) });
+  const taglineEl = machine.tagline
+    ? el("p", { className: "dim", textContent: machine.tagline })
+    : null;
+  const maxBetNote = machine.jackpotRequiresMaxBet
+    ? el("p", { className: "dim", textContent: `Max bet (${maxBet.toLocaleString()} chips) required to qualify for the progressive jackpot.` })
+    : null;
 
-    setTimeout(() => {
-      contributeToProgressive(session, machine, bet);
-      const reels = spinReels(machine);
-      const jackpotAmount = tryJackpot(session, machine, reels, bet);
-      const { win, reason } = calculatePayout(reels, bet, machine, jackpotAmount);
-      slotsState.spins += 1;
-      slotsState.spinning = false;
-      slotsState.lastReels = reels;
-      slotsState.lastWin = win > 0;
-
-      if (win > 0) {
-        session.wallet.credit(win, "slots", reason);
-        slotsState.sessionNet += win - bet;
-        slotsState.lastMessage = {
-          text: `${reason}${jackpotAmount == null ? ` — Won ${win.toLocaleString()} chips!` : ""}`,
-          type: jackpotAmount != null ? "jackpot-win" : "success",
-        };
-      } else {
-        slotsState.sessionNet -= bet;
-        slotsState.lastMessage = { text: "No win this spin.", type: "dim" };
-      }
-      persist();
-      render();
-    }, 500);
-  }
-
-  return slotCabinet(machine, {
-    screenChildren: [
-      jackpotEl,
-      maxBetNote,
-      slotPaytablePanel(machine),
-      reelsEl,
-      msgEl,
-      summaryEl,
-    ],
-    baseChildren: [
-      el("p", { className: "chip-line", textContent: `Chips: ${fmtChips(session.wallet.balance)}` }),
-      el("div", { className: "form-row" }, [
-        el("label", { textContent: `Spin amount (${machine.minBet}–${maxBet}, 0 to leave)` }),
-        betInput,
-      ]),
-      el("div", { className: "action-bar" }, [
-        el("button", { className: "btn primary", textContent: "Spin", onclick: doSpin, disabled: slotsState.spinning }),
-        el("button", {
-          className: "btn",
-          textContent: "Leave machine",
-          onclick: () => {
-            session.recordResult("slots", slotsState.sessionNet, slotsState.spins);
-            persist();
-            popView();
-            render();
-          },
-        }),
-      ]),
-    ],
-  });
+  return el("div", { className: "panel" }, [
+    banner(`Slot Machines — ${machine.name}`),
+    tier ? el("p", { className: "dim", textContent: `Stake tier: ${tier.name}` }) : null,
+    chipDisplay,
+    taglineEl,
+    jackpotEl,
+    maxBetNote,
+    paytableEl,
+    reelsEl,
+    msgEl,
+    el("div", { className: "form-row" }, [
+      el("label", { textContent: `Spin amount (${minBet}-${maxBet}, 0 to leave)` }),
+      betInput,
+    ]),
+    el("div", { className: "action-bar" }, [
+      el("button", { className: "btn primary", textContent: "Spin", onclick: doSpin }),
+      el("button", {
+        className: "btn",
+        textContent: "Leave machine",
+        onclick: () => {
+          session.recordResult("slots", slotsState.sessionNet, slotsState.spins);
+          persist();
+          popView();
+          render();
+        },
+      }),
+    ]),
+    summaryEl,
+  ]);
 }
 
 function renderSportsbook() {
@@ -1093,6 +1151,10 @@ function renderSportsbook() {
   }
   session.recordVisit("sportsbook");
   persist();
+  const tier = currentStakeTier;
+  const wagerStakes = tier
+    ? effectiveTableStakes(tier, session.wallet.balance, act.minBet)
+    : { minBet: act.minBet, maxBet: session.wallet.balance };
 
   const board = el("div", {}, sportsbook.events.map((event, i) =>
     el("div", { className: "event-card" }, [
@@ -1117,6 +1179,7 @@ function renderSportsbook() {
   return el("div", { className: "panel" }, [
     banner("Sports Book — Mandalay Sports Book"),
     chipLine(),
+    tier ? el("p", { className: "dim", textContent: `${tier.name}: ${formatStakeRange(wagerStakes.minBet, wagerStakes.maxBet, { noCap: tier.maxBet == null })}` }) : null,
     el("p", { className: "subtitle", textContent: "Today's Board" }),
     board,
     pendingEl,
@@ -1130,6 +1193,11 @@ function renderSportsbook() {
 }
 
 function renderSportsbookWager() {
+  const act = ACTIVITIES.sportsbook;
+  const tier = currentStakeTier;
+  const wagerStakes = tier
+    ? effectiveTableStakes(tier, session.wallet.balance, act.minBet)
+    : { minBet: act.minBet, maxBet: session.wallet.balance };
   const eventSelect = el("select", {}, sportsbook.events.map((e, i) =>
     el("option", { value: String(i), textContent: `${i + 1}) ${e.label}` })
   ));
@@ -1139,7 +1207,7 @@ function renderSportsbookWager() {
   ]);
   const pickSelect = el("select");
   const amountInput = el("input", {
-    type: "number", min: "10", max: String(session.wallet.balance), value: "10",
+    type: "number", min: String(wagerStakes.minBet), max: String(wagerStakes.maxBet), value: String(wagerStakes.minBet),
   });
 
   function updatePicks() {
@@ -1179,7 +1247,8 @@ function renderSportsbookWager() {
           const betType = betTypeSelect.value;
           const pick = pickSelect.value;
           const amount = parseInt(amountInput.value, 10);
-          if (amount < 10) { alert("Minimum wager is 10 chips."); return; }
+          if (amount < wagerStakes.minBet) { alert(`Minimum wager is ${wagerStakes.minBet} chips.`); return; }
+          if (amount > wagerStakes.maxBet) { alert(`Maximum wager is ${wagerStakes.maxBet} chips.`); return; }
           let odds;
           if (betType === "moneyline") {
             odds = pick === event.away ? event.awayOdds : event.homeOdds;
@@ -1255,6 +1324,7 @@ function renderBlackjackMenu() {
     screenChildren: [
       statusBanner(),
       dealerPanel("blackjack"),
+      tier ? el("p", { className: "dim", textContent: `${tier.name}: ${formatStakeRange(tableStakes.minBet, tableStakes.maxBet, { noCap: tier.maxBet == null })}` }) : null,
       el("p", { className: "machine-screen-label", textContent: "Select table" }),
       menu(["Quick hand (solo, table minimums)", "Custom table setup"], null, (choice) => {
         if (choice === 0) { goBack(); return; }
@@ -1269,12 +1339,14 @@ function renderBlackjackMenu() {
 }
 
 function renderBlackjackCustom() {
+  const tier = currentStakeTier;
+  const tableStakes = tier ? effectiveTableStakes(tier, session.wallet.balance, 10) : { minBet: 10, maxBet: Math.min(100, session.wallet.balance) };
   const modeSelect = el("select", {}, [
     el("option", { value: "solo", textContent: "Solo" }),
     el("option", { value: "bots", textContent: "Table with bots" }),
   ]);
-  const minBet = el("input", { type: "number", value: "10", min: "1" });
-  const maxBet = el("input", { type: "number", value: String(Math.min(100, session.wallet.balance)), min: "1" });
+  const minBet = el("input", { type: "number", value: String(tableStakes.minBet), min: "1" });
+  const maxBet = el("input", { type: "number", value: String(tableStakes.maxBet), min: "1" });
   const decks = el("input", { type: "number", value: "6", min: "1", max: "8" });
   const bots = el("input", { type: "number", value: "2", min: "1", max: "6" });
   const seat = el("input", { type: "number", value: "2", min: "1", max: "7" });
@@ -1345,11 +1417,15 @@ function renderHoldemMenu() {
   }
   session.recordVisit("holdem");
   persist();
+  const tier = currentStakeTier;
+  const buyInStakes = tier
+    ? effectiveTableStakes(tier, session.wallet.balance, act.minBet)
+    : { minBet: act.minBet, maxBet: session.wallet.balance };
   const buyInInput = el("input", {
     type: "number",
-    min: String(act.minBet),
-    max: String(session.wallet.balance),
-    value: String(Math.min(200, session.wallet.balance)),
+    min: String(buyInStakes.minBet),
+    max: String(buyInStakes.maxBet),
+    value: String(Math.min(200, buyInStakes.maxBet)),
   });
   const ranksEl = el("div", {
     className: "holdem-rank-ref dim",
@@ -1372,7 +1448,8 @@ function renderHoldemMenu() {
         textContent: "Sit down",
         onclick: () => {
           const buyIn = parseInt(buyInInput.value, 10);
-          if (buyIn < act.minBet) { alert(`Minimum buy-in is ${act.minBet}.`); return; }
+          if (buyIn < buyInStakes.minBet) { alert(`Minimum buy-in is ${buyInStakes.minBet}.`); return; }
+          if (buyIn > buyInStakes.maxBet) { alert(`Maximum buy-in is ${buyInStakes.maxBet}.`); return; }
           if (!session.wallet.debit(buyIn, "holdem", `Hold'em buy-in ${fmtChips(buyIn)}`)) {
             alert("Insufficient chips."); return;
           }
@@ -1525,6 +1602,11 @@ function renderRoulette() {
   session.recordVisit("roulette");
   persist();
 
+  const tier = rouletteState.tier ?? currentStakeTier;
+  const wagerStakes = tier
+    ? effectiveTableStakes(tier, session.wallet.balance, act.minBet)
+    : { minBet: act.minBet, maxBet: session.wallet.balance };
+
   const betSelect = el("select", {}, BET_TYPES.map((b, i) =>
     el("option", { value: String(i), textContent: b.label })
   ));
@@ -1538,7 +1620,19 @@ function renderRoulette() {
   };
 
   const amountInput = el("input", {
-    type: "number", min: String(act.minBet), max: String(session.wallet.balance), value: String(act.minBet),
+    type: "number", min: String(wagerStakes.minBet), max: String(wagerStakes.maxBet), value: String(wagerStakes.minBet),
+  });
+  const resultEl = el("p", {
+    className: "dim",
+    textContent: rouletteState.lastNumber != null
+      ? `Last spin: ${rouletteState.lastNumber} (${wheelColor(rouletteState.lastNumber)})`
+      : "European wheel (0–36). Place a bet and spin.",
+  });
+  const summaryEl = el("p", {
+    className: "roulette-session",
+    textContent: rouletteState.spins
+      ? `Session: ${signedChips(rouletteState.sessionNet)} over ${rouletteState.spins} spin(s)`
+      : "",
   });
   const resultEl = el("p", {
     className: "dim",
@@ -1651,6 +1745,10 @@ function renderHorseRacing() {
   session.recordVisit("horse_racing");
   if (!horseRacingState.card) horseRacingState.card = generateRace();
   persist();
+  const tier = horseRacingState.tier ?? currentStakeTier;
+  const wagerStakes = tier
+    ? effectiveTableStakes(tier, session.wallet.balance, act.minBet)
+    : { minBet: act.minBet, maxBet: session.wallet.balance };
 
   const card = horseRacingState.card;
   const board = el("div", {}, card.horses.map((h) =>
@@ -1670,6 +1768,7 @@ function renderHorseRacing() {
   return el("div", { className: "panel" }, [
     banner("Mandalay Racing"),
     chipLine(),
+    tier ? el("p", { className: "dim", textContent: `${tier.name}: ${formatStakeRange(wagerStakes.minBet, wagerStakes.maxBet, { noCap: tier.maxBet == null })}` }) : null,
     dealerPanel("horse_racing"),
     el("p", { className: "subtitle", textContent: card.label }),
     board,
@@ -1684,6 +1783,11 @@ function renderHorseRacing() {
 }
 
 function renderHorseRacingWager() {
+  const act = ACTIVITIES.horse_racing;
+  const tier = horseRacingState.tier ?? currentStakeTier;
+  const wagerStakes = tier
+    ? effectiveTableStakes(tier, session.wallet.balance, act.minBet)
+    : { minBet: act.minBet, maxBet: session.wallet.balance };
   const card = horseRacingState.card;
   const horseSelect = el("select", {}, card.horses.map((h) =>
     el("option", { value: String(h.number), textContent: `#${h.number} ${h.name} (${fmtRaceOdds(h.odds)})` })
@@ -1694,7 +1798,7 @@ function renderHorseRacingWager() {
     el("option", { value: "show", textContent: "Show (top 3)" }),
   ]);
   const amountInput = el("input", {
-    type: "number", min: "5", max: String(session.wallet.balance), value: "5",
+    type: "number", min: String(wagerStakes.minBet), max: String(wagerStakes.maxBet), value: String(wagerStakes.minBet),
   });
 
   return el("div", { className: "panel" }, [
@@ -1711,7 +1815,8 @@ function renderHorseRacingWager() {
           const horse = parseInt(horseSelect.value, 10);
           const betType = betTypeSelect.value;
           const amount = parseInt(amountInput.value, 10);
-          if (amount < 5) { alert("Minimum wager is 5 chips."); return; }
+          if (amount < wagerStakes.minBet) { alert(`Minimum wager is ${wagerStakes.minBet} chips.`); return; }
+          if (amount > wagerStakes.maxBet) { alert(`Maximum wager is ${wagerStakes.maxBet} chips.`); return; }
           const h = card.horses.find((x) => x.number === horse);
           if (!session.wallet.debit(amount, "horse_racing", `${betType} on #${horse}`)) {
             alert("Insufficient chips."); return;
@@ -1999,6 +2104,7 @@ const RENDERERS = {
   "cashier-ledger": renderCashierLedger,
   stats: renderStats,
   leave: renderLeave,
+  "stake-tier": renderStakeTier,
   "slots-menu": renderSlotsMenu,
   "slots-play": renderSlotsPlay,
   sportsbook: renderSportsbook,

@@ -3,6 +3,7 @@ from __future__ import annotations
 from mandalay_bay.activities.base import Activity, ActivityInfo
 from mandalay_bay.dealers import announce_dealer, pick_quip
 from mandalay_bay.session import PlayerSession
+from mandalay_bay.stakes import effective_table_stakes, pick_stake_tier
 from poker.hand_eval import HAND_CLASS_NAMES
 from poker.holdem import BettingAction, HoldemTable, human_net_change
 
@@ -27,13 +28,21 @@ class HoldemActivity(Activity):
             ui.pause()
             return
 
-        buy_in = ui.prompt_int(
-            f"Buy-in amount ({self.info.min_bet}-{session.wallet.balance}, 0 to leave)",
-            0,
-            session.wallet.balance,
-            default=min(200, session.wallet.balance),
+        tier = pick_stake_tier(session, ui, title="Choose stake tier:")
+        if tier is None:
+            return
+        ui.dim(tier.description)
+        buy_in_min, buy_in_max = effective_table_stakes(
+            tier, session.wallet.balance, activity_min=self.info.min_bet
         )
-        if buy_in == 0 or buy_in < self.info.min_bet:
+
+        buy_in = ui.prompt_int(
+            f"Buy-in amount ({buy_in_min}-{buy_in_max}, 0 to leave)",
+            0,
+            buy_in_max,
+            default=min(200, buy_in_max),
+        )
+        if buy_in == 0 or buy_in < buy_in_min:
             return
         if not session.wallet.debit(buy_in, self.info.id, f"Hold'em buy-in ${buy_in}"):
             ui.error("Insufficient chips.")

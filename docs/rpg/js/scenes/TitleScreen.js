@@ -168,10 +168,15 @@ export class TitleScreen {
 
 export function renderHud(hudRoot, saveAdapter) {
   const lines = saveAdapter.hudLines();
+  const session = saveAdapter.session;
+  const hotelUrl = session.slotId != null
+    ? `../index.html?slot=${session.slotId}&view=hotel-lobby`
+    : "../index.html?guest=1&view=hotel-lobby";
   hudRoot.innerHTML = `
     <div class="hud-bar">
       <span class="hud-name">${lines.name}</span>
       <span class="hud-chips">${lines.chips}</span>
+      <a class="hud-link" href="${hotelUrl}">Hotel</a>
       <span class="hud-hint">WASD · E talk · P phone · Shift run</span>
     </div>
   `;

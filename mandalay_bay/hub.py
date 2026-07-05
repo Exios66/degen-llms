@@ -8,6 +8,8 @@ from mandalay_bay.chips import ChipTransaction
 from mandalay_bay.display import TerminalUI, fmt_chips
 from mandalay_bay.help_text import SECTIONS
 from mandalay_bay.hotel_experience import run_hotel_lobby
+from mandalay_bay.rewards import sync_rewards_from_wallet
+from mandalay_bay.rewards_experience import run_rewards_phone
 from mandalay_bay.session import PlayerSession
 
 if TYPE_CHECKING:
@@ -17,8 +19,25 @@ LOW_BALANCE_THRESHOLD = 50
 
 
 def _autosave(session: PlayerSession, library: SaveLibrary | None) -> None:
+    sync_rewards_from_wallet(session)
     if library is not None and session.has_save_slot:
         library.save_slot(session)
+
+
+RPG_PAGES_URL = "https://exios66.github.io/degen-llms/rpg/"
+
+
+def run_rpg_link(session: PlayerSession, ui: TerminalUI) -> None:
+    ui.banner("Explore Resort (RPG)")
+    ui.print("The pixel RPG open world runs in your web browser.")
+    if session.has_save_slot:
+        url = f"{RPG_PAGES_URL}?slot={session.slot_id}"
+        ui.print(f"\n  {url}")
+        ui.dim("Same save slot and chip wallet as this terminal session.")
+    else:
+        ui.print(f"\n  {RPG_PAGES_URL}?guest=1")
+        ui.dim("Guest mode — pick a save slot in the RPG title screen to persist progress.")
+    ui.pause()
 
 
 def show_welcome(session: PlayerSession, ui: TerminalUI) -> None:
@@ -194,7 +213,16 @@ def run_hub(
 
         lobby_options = (
             [f"Explore {floor}" for floor in FLOOR_ORDER]
-            + ["Cashier", "Player Stats", "Save Game", "Exit to Hotel", "Casino Guide", "Leave Casino"]
+            + [
+                "Cashier",
+                "Player Stats",
+                "Save Game",
+                "Exit to Hotel",
+                "MGM Rewards",
+                "Explore Resort (RPG)",
+                "Casino Guide",
+                "Leave Casino",
+            ]
         )
         choice = ui.menu_choice(
             lobby_options,
@@ -218,6 +246,11 @@ def run_hub(
             run_hotel_lobby(session, ui)
             _autosave(session, library)
         elif choice == floor_count + 5:
+            run_rewards_phone(session, ui)
+            _autosave(session, library)
+        elif choice == floor_count + 6:
+            run_rpg_link(session, ui)
+        elif choice == floor_count + 7:
             run_help(ui)
         else:
             if ui.prompt_yes_no("Leave The Mandalay Bay?", default=False):

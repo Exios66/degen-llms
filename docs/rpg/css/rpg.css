@@ -62,6 +62,10 @@ body {
   z-index: 10;
 }
 
+#hud .hud-link {
+  pointer-events: auto;
+}
+
 .hud-bar {
   display: flex;
   justify-content: space-between;
@@ -83,6 +87,16 @@ body {
 }
 
 .hud-chips {
+  color: var(--gold);
+}
+
+.hud-link {
+  color: var(--cyan);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.hud-link:hover {
   color: var(--gold);
 }
 

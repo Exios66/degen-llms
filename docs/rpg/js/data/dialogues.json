@@ -9,10 +9,17 @@
     "text": "Your chip balance carries everywhere on the floor. Press P for your MGM Rewards phone — comps ping in as you play. Talk to NPCs with E or Enter. Betty runs the lobby bar west side; Paula handles the Racing Pavilion northeast. Good luck — the house is patient.",
     "setFlag": "met_chip_chandler",
     "choices": [
+      { "label": "Where's my room?", "next": "chip_chandler_room" },
       { "label": "Any secrets?", "next": "chip_chandler_secret" },
       { "label": "Who's dealing tonight?", "next": "chip_chandler_dealers" },
       { "label": "Thanks!", "next": "chip_chandler_bye" }
     ]
+  },
+  "chip_chandler_room": {
+    "speaker": "Chip Chandler",
+    "text": "Your reservation is in the hotel system. Click Hotel in the HUD bar above to reach the lobby — front desk, hallway, and your room. Press P → Reservation first if you need your tower and floor.",
+    "setFlag": "hotel_directions_given",
+    "next": "chip_chandler_bye"
   },
   "chip_chandler_secret": {
     "speaker": "Chip Chandler",

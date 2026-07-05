@@ -20,7 +20,7 @@ import { HoldemTable, BettingAction } from "./holdem/game.js";
 import { HAND_CLASS_NAMES } from "./holdem/hand_eval.js";
 import { BET_TYPES, spinWheel, wheelColor, resolveBet, RED_NUMBERS } from "./roulette.js";
 import { generateRace, simulateRace, settleTicket, fmtOdds as fmtRaceOdds, loadBundledHorseNames, parseHorseNamesCSV, setCustomHorseNames, getHorseNamePool } from "./horse_racing.js";
-import { createHorseSpriteCanvas, getHorseSprite, getJockeySilks } from "./horse-sprites.js";
+import { createHorseSpriteCanvas, getHorseSprite, getJockeySilks, HORSE_SPRITE_ROSTER } from "./horse-sprites.js";
 import { createRaceTrackView, createRacePreview } from "./horse-race-track.js";
 import { getSessionDealer, pickQuip } from "./dealers.js";
 import {
@@ -2096,6 +2096,95 @@ function renderRoulette() {
   });
 }
 
+// ── Horse Stables ──────────────────────────────────────────────────────────
+const STABLE_HORSE_DATA = [
+  { id: "black",       name: "Midnight",    stall: 1, note: "Calm at dawn, electric at the gate." },
+  { id: "tan",         name: "Biscuit",     stall: 2, note: "Loves apples. Will follow you anywhere." },
+  { id: "grey",        name: "Sterling",    stall: 3, note: "Three-time distance champion. Retired hero." },
+  { id: "chestnut",    name: "Ember",       stall: 4, note: "Fastest quarter-mile in Mandalay history." },
+  { id: "light_brown", name: "Hazel",       stall: 5, note: "Gentle giant. Prefers morning workouts." },
+  { id: "dark_brown",  name: "Cacao",       stall: 6, note: "Suspicious of hats. Loves carrots." },
+  { id: "bay",         name: "Sovereign",   stall: 7, note: "Racing royalty. Eleven wins this season." },
+  { id: "dapple",      name: "Cloudberry",  stall: 8, note: "Newest arrival. Still learning the track." },
+];
+
+function renderHorseStables() {
+  session.recordVisit("horse_stables");
+  return el("div", { className: "panel racing-pavilion" }, [
+    banner("Mandalay Stables"),
+    chipLine(),
+    el("p", { className: "horse-stables-intro", textContent: "Behind the Racing Pavilion, past the clockers' stand, eight residents call the Mandalay Stables home. Step through the barn doors to meet them in the pasture or visit them in their stalls." }),
+    menu(
+      ["Visit the Pasture", "Visit the Stalls"],
+      "Stables:",
+      (choice) => {
+        if (choice === 0) { goBack(); return; }
+        if (choice === 1) pushView("horse-stables-pasture");
+        if (choice === 2) pushView("horse-stables-stalls");
+      },
+      { showCasinoBanner: false },
+    ),
+  ]);
+}
+
+function renderHorseStablesPasture() {
+  const cards = STABLE_HORSE_DATA.map((horse) =>
+    el("div", { className: "horse-pasture-card" }, [
+      createHorseSpriteCanvas(horse.id, {
+        size: 128,
+        animate: true,
+        animation: "walk",
+        direction: "front",
+        withJockey: false,
+      }),
+      el("div", { className: "horse-pasture-name", textContent: horse.name }),
+      el("div", { className: "horse-pasture-coat", textContent: getHorseSprite(horse.id).label }),
+    ])
+  );
+
+  return el("div", { className: "panel racing-pavilion" }, [
+    banner("The Pasture"),
+    el("p", { className: "horse-stables-intro", textContent: "Morning light across the south field. The horses roam free between training sessions — no riders, no timers, just open turf." }),
+    el("p", { className: "horse-stables-label", textContent: "Current Residents" }),
+    el("div", { className: "horse-pasture" }, cards),
+    el("div", { className: "action-bar" }, [
+      el("button", { className: "btn", textContent: "Back to Stables", onclick: () => goBack() }),
+    ]),
+  ]);
+}
+
+function renderHorseStablesStalls() {
+  const cards = STABLE_HORSE_DATA.map((horse) => {
+    const spriteMeta = getHorseSprite(horse.id);
+    return el("div", { className: "horse-stall-card" }, [
+      el("div", { className: "horse-stall-header" }, [
+        el("span", { className: "horse-stall-num", textContent: `STALL ${horse.stall}` }),
+        el("span", { className: "horse-stall-badge" }),
+      ]),
+      createHorseSpriteCanvas(horse.id, {
+        size: 80,
+        animate: true,
+        animation: "walk",
+        direction: "front",
+        withJockey: false,
+      }),
+      el("div", { className: "horse-stall-name", textContent: horse.name }),
+      el("div", { className: "horse-stall-coat", textContent: spriteMeta.label }),
+      el("div", { className: "horse-stall-note", textContent: horse.note }),
+    ]);
+  });
+
+  return el("div", { className: "panel racing-pavilion" }, [
+    banner("The Stalls"),
+    el("p", { className: "horse-stables-intro", textContent: "Eight stalls line the east barn, each swept and bedded fresh. The green indicator means your horse is in — settled, fed, and ready for tomorrow." }),
+    el("p", { className: "horse-stables-label", textContent: "Barn — East Wing" }),
+    el("div", { className: "horse-stalls-grid" }, cards),
+    el("div", { className: "action-bar" }, [
+      el("button", { className: "btn", textContent: "Back to Stables", onclick: () => goBack() }),
+    ]),
+  ]);
+}
+
 function renderHorseRacing() {
   const act = ACTIVITIES.horse_racing;
   if (session.wallet.balance < act.minBet && !horseRacingState.pending.length) {
@@ -2146,7 +2235,7 @@ function renderHorseRacing() {
     renderHorsePaddock(card.horses),
     pendingEl,
     menu(
-      ["Place a wager", "Run race & settle", "New race card", "Manage horse names"],
+      ["Place a wager", "Run race & settle", "New race card", "Manage horse names", "Visit the Stables"],
       "Racing pavilion:",
       (choice) => {
         if (choice === 0) { goBack(); return; }
@@ -2154,6 +2243,7 @@ function renderHorseRacing() {
         else if (choice === 2) pushView("horse-racing-settle");
         else if (choice === 3) { horseRacingState.card = generateRace(session); render(); }
         else if (choice === 4) pushView("horse-racing-names");
+        else if (choice === 5) pushView("horse-stables");
       },
       { showCasinoBanner: false },
     ),
@@ -2262,7 +2352,7 @@ function renderHorseRacingSettle() {
             el("span", { className: "racing-finish-pos", textContent: `${i + 1}.` }),
             createHorseSpriteCanvas(h.spriteId, {
               size: 64,
-              frame: i % 4,
+              frame: i % 6,
               animation: "gallop",
               direction: "right",
               horseNumber: num,
@@ -2661,6 +2751,9 @@ const RENDERERS = {
   "horse-racing-wager": renderHorseRacingWager,
   "horse-racing-settle": renderHorseRacingSettle,
   "horse-racing-names": renderHorseRacingNames,
+  "horse-stables": renderHorseStables,
+  "horse-stables-pasture": renderHorseStablesPasture,
+  "horse-stables-stalls": renderHorseStablesStalls,
   ...hotelRenderers,
   "not-found": renderNotFound,
 };

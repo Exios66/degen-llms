@@ -1,4 +1,7 @@
-/** Kawaii pixel horse sprite roster and canvas renderer for the racing paddock. */
+/** Kawaii high-density pixel horse sprite roster and canvas renderer for the racing paddock. */
+
+export const HORSE_NATIVE_W = 48;
+export const HORSE_NATIVE_H = 36;
 
 export const HORSE_SPRITE_ROSTER = [
   // Classic coat colors
@@ -61,196 +64,362 @@ export function getHorseSprite(spriteId) {
   return SPRITE_BY_ID[spriteId] ?? HORSE_SPRITE_ROSTER[0];
 }
 
+function shadeColor(hex, amount) {
+  const n = parseInt(hex.slice(1), 16);
+  let r = (n >> 16) & 0xff;
+  let g = (n >> 8) & 0xff;
+  let b = n & 0xff;
+  if (amount > 0) {
+    r = Math.round(r + (255 - r) * amount);
+    g = Math.round(g + (255 - g) * amount);
+    b = Math.round(b + (255 - b) * amount);
+  } else {
+    const f = 1 + amount;
+    r = Math.max(0, Math.round(r * f));
+    g = Math.max(0, Math.round(g * f));
+    b = Math.max(0, Math.round(b * f));
+  }
+  return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, "0")}`;
+}
+
 function px(ctx, x, y, w, h, color, scale) {
   ctx.fillStyle = color;
   ctx.fillRect(x * scale, y * scale, w * scale, h * scale);
 }
 
-function drawMark(ctx, mark, ox, oy, accent, scale) {
-  if (mark === "star") {
-    px(ctx, ox + 4, oy + 3, 1, 1, accent, scale);
-    px(ctx, ox + 3, oy + 4, 3, 1, accent, scale);
-    px(ctx, ox + 4, oy + 5, 1, 1, accent, scale);
-  } else if (mark === "heart") {
-    px(ctx, ox + 3, oy + 4, 1, 1, accent, scale);
-    px(ctx, ox + 5, oy + 4, 1, 1, accent, scale);
-    px(ctx, ox + 3, oy + 5, 3, 1, accent, scale);
-    px(ctx, ox + 4, oy + 6, 1, 1, accent, scale);
-  } else if (mark === "moon") {
-    px(ctx, ox + 4, oy + 3, 2, 1, accent, scale);
-    px(ctx, ox + 3, oy + 4, 1, 2, accent, scale);
-    px(ctx, ox + 5, oy + 5, 1, 1, accent, scale);
-  } else if (mark === "snow") {
-    px(ctx, ox + 4, oy + 3, 1, 1, "#fff", scale);
-    px(ctx, ox + 3, oy + 4, 3, 1, "#fff", scale);
-    px(ctx, ox + 4, oy + 5, 1, 1, "#fff", scale);
-    px(ctx, ox + 2, oy + 4, 1, 1, "#fff", scale);
-    px(ctx, ox + 6, oy + 4, 1, 1, "#fff", scale);
-  } else if (mark === "cloud") {
-    px(ctx, ox + 3, oy + 4, 3, 1, accent, scale);
-    px(ctx, ox + 4, oy + 3, 1, 1, accent, scale);
-  } else if (mark === "patch") {
-    px(ctx, ox + 2, oy + 6, 3, 2, accent, scale);
-    px(ctx, ox + 6, oy + 8, 2, 2, accent, scale);
-  } else if (mark === "bolt") {
-    px(ctx, ox + 4, oy + 3, 1, 2, accent, scale);
-    px(ctx, ox + 3, oy + 5, 2, 1, accent, scale);
-    px(ctx, ox + 4, oy + 6, 1, 1, accent, scale);
-  } else if (mark === "crown") {
-    px(ctx, ox + 3, oy + 3, 3, 1, accent, scale);
-    px(ctx, ox + 3, oy + 2, 1, 1, accent, scale);
-    px(ctx, ox + 5, oy + 2, 1, 1, accent, scale);
-  } else if (mark === "horn") {
-    px(ctx, ox + 8, oy + 1, 1, 2, accent, scale);
-    px(ctx, ox + 7, oy + 2, 1, 1, accent, scale);
-  } else if (mark === "stripe") {
-    px(ctx, ox + 3, oy + 7, 1, 3, accent, scale);
-    px(ctx, ox + 5, oy + 8, 1, 2, accent, scale);
-  } else if (mark === "scale") {
-    px(ctx, ox + 4, oy + 7, 1, 1, accent, scale);
-    px(ctx, ox + 6, oy + 8, 1, 1, accent, scale);
-    px(ctx, ox + 3, oy + 9, 1, 1, accent, scale);
-  } else if (mark === "diamond") {
-    px(ctx, ox + 4, oy + 3, 1, 1, accent, scale);
-    px(ctx, ox + 3, oy + 4, 3, 1, accent, scale);
-    px(ctx, ox + 4, oy + 5, 1, 1, accent, scale);
-  } else if (mark === "flame") {
-    px(ctx, ox + 4, oy + 2, 1, 1, accent, scale);
-    px(ctx, ox + 3, oy + 3, 3, 1, accent, scale);
-    px(ctx, ox + 4, oy + 4, 1, 2, accent, scale);
-    px(ctx, ox + 3, oy + 5, 1, 1, accent, scale);
-    px(ctx, ox + 5, oy + 5, 1, 1, accent, scale);
-  } else if (mark === "leaf") {
-    px(ctx, ox + 3, oy + 4, 1, 1, accent, scale);
-    px(ctx, ox + 4, oy + 3, 1, 1, accent, scale);
-    px(ctx, ox + 5, oy + 4, 1, 1, accent, scale);
-    px(ctx, ox + 4, oy + 5, 1, 1, accent, scale);
-    px(ctx, ox + 4, oy + 6, 1, 1, accent, scale);
-  } else if (mark === "clover") {
-    px(ctx, ox + 3, oy + 3, 1, 1, accent, scale);
-    px(ctx, ox + 5, oy + 3, 1, 1, accent, scale);
-    px(ctx, ox + 4, oy + 4, 1, 1, accent, scale);
-    px(ctx, ox + 4, oy + 5, 1, 1, accent, scale);
+function dots(ctx, pixels, ox, oy, scale) {
+  for (const [x, y, color] of pixels) {
+    px(ctx, ox + x, oy + y, 1, 1, color, scale);
   }
+}
+
+/** Turf strip beneath the pony — gives paddock/track context. */
+function drawTrackGround(ctx, scale) {
+  const turf = ["#2a6838", "#327840", "#286830", "#3a8848"];
+  for (let x = 0; x < HORSE_NATIVE_W; x++) {
+    px(ctx, x, 33, 1, 1, turf[x % turf.length], scale);
+    if (x % 3 === 0) px(ctx, x, 34, 1, 1, turf[(x + 1) % turf.length], scale);
+  }
+  px(ctx, 6, 32, 1, 1, "#58c868", scale);
+  px(ctx, 22, 32, 1, 1, "#ffe878", scale);
+  px(ctx, 38, 32, 1, 1, "#ff90b0", scale);
+  px(ctx, 4, 33, 2, 1, "rgba(0,0,0,0.18)", scale);
+  px(ctx, 10, 33, 28, 1, "rgba(0,0,0,0.12)", scale);
+}
+
+function drawMark(ctx, mark, ox, oy, accent, scale) {
+  if (!mark || mark === "none") return;
+
+  const m = {
+    star: [
+      [8, 4, accent], [7, 5, accent], [8, 5, "#fff"], [9, 5, accent], [8, 6, accent],
+      [7, 7, accent], [9, 7, accent],
+    ],
+    heart: [
+      [7, 5, accent], [9, 5, accent], [6, 6, accent], [10, 6, accent],
+      [7, 7, accent], [8, 7, "#fff"], [9, 7, accent], [8, 8, accent],
+    ],
+    moon: [
+      [8, 4, accent], [9, 4, accent], [7, 5, accent], [7, 6, accent], [7, 7, accent],
+      [10, 7, accent],
+    ],
+    snow: [
+      [8, 4, "#fff"], [7, 5, "#fff"], [8, 5, "#fff"], [9, 5, "#fff"],
+      [6, 6, "#fff"], [8, 6, "#fff"], [10, 6, "#fff"], [8, 7, "#fff"],
+    ],
+    cloud: [
+      [7, 5, accent], [8, 5, "#fff"], [9, 5, accent], [8, 4, accent],
+      [6, 6, accent], [10, 6, accent],
+    ],
+    patch: [
+      [5, 10, accent], [6, 10, accent], [5, 11, accent], [6, 11, accent], [7, 11, accent],
+      [12, 14, accent], [13, 14, accent], [12, 15, accent],
+    ],
+    bolt: [
+      [8, 3, accent], [8, 4, accent], [7, 5, accent], [8, 5, accent],
+      [6, 6, accent], [7, 6, accent], [8, 7, accent],
+    ],
+    crown: [
+      [7, 3, accent], [9, 3, accent], [6, 4, accent], [8, 4, "#fff"], [10, 4, accent],
+      [6, 5, accent], [7, 5, accent], [8, 5, accent], [9, 5, accent], [10, 5, accent],
+    ],
+    horn: [
+      [17, 2, accent], [17, 3, accent], [16, 4, accent], [17, 4, "#fff"],
+      [16, 5, accent], [15, 6, accent],
+    ],
+    stripe: [
+      [6, 12, accent], [6, 13, accent], [6, 14, accent], [6, 15, accent],
+      [10, 14, accent], [10, 15, accent], [10, 16, accent],
+    ],
+    scale: [
+      [8, 12, accent], [10, 13, accent], [7, 14, accent], [11, 15, accent], [9, 16, accent],
+    ],
+    diamond: [
+      [8, 4, accent], [7, 5, accent], [8, 5, "#fff"], [9, 5, accent], [8, 6, accent],
+    ],
+    flame: [
+      [8, 2, accent], [7, 3, accent], [8, 3, "#fff"], [9, 3, accent],
+      [7, 4, accent], [8, 4, accent], [9, 4, accent], [8, 5, accent],
+      [7, 6, accent], [9, 6, accent],
+    ],
+    leaf: [
+      [7, 5, accent], [8, 4, accent], [9, 5, accent], [8, 6, accent], [8, 7, accent], [8, 8, accent],
+    ],
+    clover: [
+      [7, 4, accent], [9, 4, accent], [8, 5, accent], [7, 6, accent], [9, 6, accent], [8, 7, accent],
+    ],
+  };
+  dots(ctx, m[mark] ?? [], ox, oy, scale);
 }
 
 function drawPattern(ctx, pattern, ox, oy, accent, body, scale) {
   if (!pattern || pattern === "none") return;
 
-  if (pattern === "spots") {
-    px(ctx, ox + 5, oy + 8, 1, 1, accent, scale);
-    px(ctx, ox + 8, oy + 9, 1, 1, accent, scale);
-    px(ctx, ox + 6, oy + 10, 1, 1, accent, scale);
-    px(ctx, ox + 9, oy + 7, 1, 1, accent, scale);
-  } else if (pattern === "blaze") {
-    px(ctx, ox + 14, oy + 6, 1, 3, accent, scale);
-    px(ctx, ox + 15, oy + 7, 1, 2, accent, scale);
-  } else if (pattern === "feather") {
-    px(ctx, ox + 4, oy + 15, 2, 1, accent, scale);
-    px(ctx, ox + 7, oy + 15, 2, 1, accent, scale);
-    px(ctx, ox + 11, oy + 15, 2, 1, accent, scale);
-    px(ctx, ox + 14, oy + 15, 2, 1, accent, scale);
-  } else if (pattern === "dapple") {
-    px(ctx, ox + 5, oy + 8, 1, 1, accent, scale);
-    px(ctx, ox + 8, oy + 9, 1, 1, accent, scale);
-    px(ctx, ox + 7, oy + 7, 1, 1, accent, scale);
-    px(ctx, ox + 10, oy + 8, 1, 1, accent, scale);
-  } else if (pattern === "stripe") {
-    px(ctx, ox + 8, oy + 7, 1, 5, accent, scale);
-  } else if (pattern === "socks") {
-    px(ctx, ox + 4, oy + 15, 2, 1, accent, scale);
-    px(ctx, ox + 14, oy + 15, 2, 1, accent, scale);
-  } else if (pattern === "pinto") {
-    px(ctx, ox + 4, oy + 7, 3, 3, accent, scale);
-    px(ctx, ox + 9, oy + 10, 2, 2, accent, scale);
-  } else if (pattern === "flames") {
-    px(ctx, ox + 2, oy + 8, 1, 1, accent, scale);
-    px(ctx, ox + 1, oy + 9, 1, 1, accent, scale);
-    px(ctx, ox + 7, oy + 7, 1, 1, accent, scale);
-    px(ctx, ox + 10, oy + 10, 1, 1, accent, scale);
-  } else if (pattern === "galaxy") {
-    px(ctx, ox + 5, oy + 8, 1, 1, "#fff", scale);
-    px(ctx, ox + 9, oy + 9, 1, 1, accent, scale);
-    px(ctx, ox + 7, oy + 7, 1, 1, "#fff", scale);
-    px(ctx, ox + 11, oy + 8, 1, 1, accent, scale);
-  } else if (pattern === "petals") {
-    px(ctx, ox + 6, oy + 8, 1, 1, accent, scale);
-    px(ctx, ox + 8, oy + 9, 1, 1, accent, scale);
-    px(ctx, ox + 5, oy + 10, 1, 1, accent, scale);
-  }
+  const bodyLight = shadeColor(body, 0.15);
+  const p = {
+    spots: [
+      [10, 16, accent], [11, 16, accent], [18, 17, accent], [12, 18, accent],
+      [19, 15, accent], [14, 19, accent], [20, 18, accent],
+    ],
+    blaze: [
+      [28, 12, bodyLight], [28, 13, bodyLight], [29, 14, bodyLight], [29, 15, bodyLight],
+      [30, 16, bodyLight], [30, 17, bodyLight],
+    ],
+    feather: [
+      [8, 30, accent], [9, 30, accent], [10, 31, accent],
+      [14, 30, accent], [15, 30, accent], [16, 31, accent],
+      [22, 30, accent], [23, 30, accent], [24, 31, accent],
+      [28, 30, accent], [29, 30, accent], [30, 31, accent],
+    ],
+    dapple: [
+      [10, 16, accent], [13, 17, accent], [16, 16, accent], [18, 18, accent],
+      [14, 19, accent], [20, 17, accent], [11, 18, accent],
+    ],
+    stripe: [
+      [16, 14, accent], [16, 15, accent], [16, 16, accent], [16, 17, accent],
+      [16, 18, accent], [16, 19, accent], [16, 20, accent],
+    ],
+    socks: [
+      [8, 30, accent], [9, 30, accent], [10, 30, accent],
+      [28, 30, accent], [29, 30, accent], [30, 30, accent],
+    ],
+    pinto: [
+      [8, 14, accent], [9, 14, accent], [10, 14, accent], [8, 15, accent], [9, 15, accent],
+      [10, 15, accent], [8, 16, accent], [9, 16, accent],
+      [18, 18, accent], [19, 18, accent], [18, 19, accent], [19, 19, accent],
+    ],
+    flames: [
+      [4, 16, accent], [3, 17, accent], [5, 17, accent], [14, 15, accent],
+      [20, 18, accent], [21, 19, accent], [2, 18, accent],
+    ],
+    galaxy: [
+      [10, 16, "#fff"], [14, 17, accent], [18, 16, "#fff"], [20, 18, accent],
+      [12, 19, "#fff"], [16, 15, accent], [22, 17, "#fff"],
+    ],
+    petals: [
+      [12, 16, accent], [14, 17, accent], [16, 16, accent], [13, 18, accent], [15, 19, accent],
+    ],
+  };
+  dots(ctx, p[pattern] ?? [], ox, oy, scale);
+}
+
+/** Leg pose offsets for a 4-frame trot/gallop cycle. */
+function legPose(frame) {
+  const f = frame % 4;
+  const poses = [
+    { backFar: 0, backNear: 0, frontFar: 0, frontNear: 0, tail: 0 },
+    { backFar: -1, backNear: 1, frontFar: 1, frontNear: -1, tail: 1 },
+    { backFar: 0, backNear: 0, frontFar: 0, frontNear: 0, tail: 0 },
+    { backFar: 1, backNear: -1, frontFar: -1, frontNear: 1, tail: -1 },
+  ];
+  return poses[f];
+}
+
+function drawLeg(ctx, x, y, body, hoof, scale, lift = 0) {
+  const legY = y + lift;
+  const bodyShade = shadeColor(body, -0.18);
+  px(ctx, x, legY, 3, 5, body, scale);
+  px(ctx, x + 1, legY + 5, 2, 4, bodyShade, scale);
+  px(ctx, x, legY + 9, 3, 2, hoof, scale);
+  px(ctx, x + 1, legY + 9, 1, 1, shadeColor(hoof, 0.25), scale);
+}
+
+function drawFluffyTail(ctx, ox, oy, mane, maneHi, maneLo, scale, sway = 0) {
+  const sy = oy + sway;
+  px(ctx, ox + 2, sy + 12, 3, 4, maneLo, scale);
+  px(ctx, ox + 1, sy + 14, 2, 5, mane, scale);
+  px(ctx, ox, sy + 16, 2, 4, maneHi, scale);
+  px(ctx, ox + 1, sy + 20, 1, 3, mane, scale);
+  px(ctx, ox + 2, sy + 22, 1, 2, maneHi, scale);
+  dots(ctx, [[3, 15, maneHi], [2, 18, maneHi], [1, 21, maneHi]], ox, sy, scale);
+}
+
+function drawFluffyMane(ctx, ox, oy, mane, maneHi, maneLo, scale) {
+  px(ctx, ox + 20, oy + 4, 4, 6, maneLo, scale);
+  px(ctx, ox + 21, oy + 3, 3, 8, mane, scale);
+  px(ctx, ox + 22, oy + 2, 2, 10, maneHi, scale);
+  px(ctx, ox + 23, oy + 1, 1, 8, mane, scale);
+  px(ctx, ox + 24, oy + 2, 2, 7, maneLo, scale);
+  px(ctx, ox + 25, oy + 4, 2, 5, mane, scale);
+  dots(ctx, [
+    [21, 5, maneHi], [22, 4, maneHi], [23, 3, maneHi], [24, 5, maneHi],
+    [25, 6, maneHi], [26, 7, maneHi],
+  ], ox, oy, scale);
+}
+
+function drawKawaiiFace(ctx, ox, oy, s, scale) {
+  const bodyHi = shadeColor(s.body, 0.12);
+  const bodyLo = shadeColor(s.body, -0.12);
+
+  // Ear (back)
+  px(ctx, ox + 24, oy + 2, 3, 4, s.body, scale);
+  px(ctx, ox + 25, oy + 3, 2, 2, s.blush, scale);
+
+  // Head
+  px(ctx, ox + 24, oy + 5, 8, 7, s.body, scale);
+  px(ctx, ox + 30, oy + 6, 6, 6, s.body, scale);
+  px(ctx, ox + 34, oy + 7, 4, 5, s.body, scale);
+  px(ctx, ox + 36, oy + 9, 3, 3, bodyHi, scale);
+
+  // Ear (front)
+  px(ctx, ox + 27, oy + 1, 3, 4, s.body, scale);
+  px(ctx, ox + 28, oy + 2, 2, 2, s.blush, scale);
+
+  // Muzzle
+  px(ctx, ox + 36, oy + 12, 5, 4, bodyHi, scale);
+  px(ctx, ox + 39, oy + 13, 3, 3, shadeColor(s.accent, 0.2), scale);
+  px(ctx, ox + 40, oy + 14, 1, 1, bodyLo, scale);
+  px(ctx, ox + 41, oy + 15, 2, 1, bodyLo, scale);
+
+  // Big sparkly kawaii eye
+  px(ctx, ox + 31, oy + 8, 4, 4, "#fff", scale);
+  px(ctx, ox + 32, oy + 9, 3, 3, s.eye, scale);
+  px(ctx, ox + 32, oy + 9, 1, 1, "#fff", scale);
+  px(ctx, ox + 34, oy + 10, 1, 1, "#fff", scale);
+  px(ctx, ox + 33, oy + 11, 1, 1, shadeColor(s.eye, 0.3), scale);
+
+  // Cheek blush
+  px(ctx, ox + 29, oy + 12, 2, 1, s.blush, scale);
+  px(ctx, ox + 30, oy + 13, 1, 1, s.blush, scale);
+  px(ctx, ox + 35, oy + 12, 2, 1, s.blush, scale);
+  px(ctx, ox + 36, oy + 13, 1, 1, s.blush, scale);
+
+  // Cute smile
+  px(ctx, ox + 38, oy + 15, 2, 1, s.blush, scale);
+  px(ctx, ox + 39, oy + 16, 1, 1, bodyLo, scale);
+}
+
+function drawSaddle(ctx, ox, oy, accent, scale) {
+  const saddle = shadeColor(accent, -0.15);
+  const strap = shadeColor(accent, -0.35);
+  px(ctx, ox + 14, oy + 16, 10, 4, accent, scale);
+  px(ctx, ox + 15, oy + 15, 8, 1, saddle, scale);
+  px(ctx, ox + 14, oy + 20, 10, 1, strap, scale);
+  px(ctx, ox + 16, oy + 17, 6, 2, shadeColor(accent, 0.2), scale);
+  px(ctx, ox + 18, oy + 17, 2, 2, "#fff", scale);
+  px(ctx, ox + 19, oy + 18, 1, 1, strap, scale);
+}
+
+function drawFantasySparkles(ctx, ox, oy, accent, scale, spriteId) {
+  const fantasy = ["unicorn", "galaxy", "aurora", "golden", "phoenix", "frost", "neon"];
+  if (!fantasy.includes(spriteId)) return;
+  dots(ctx, [
+    [4, 6, accent], [42, 8, accent], [38, 2, accent], [6, 20, accent],
+  ], ox, oy, scale);
 }
 
 /**
  * Draw a kawaii side-view pony into a canvas context.
- * Native resolution is 24×18 logical pixels.
+ * Native resolution is 48×36 logical pixels (high-density pixel art).
  */
-export function drawHorseSprite(ctx, spriteId, { scale = 3, frame = 0 } = {}) {
+export function drawHorseSprite(ctx, spriteId, { scale = 2, frame = 0 } = {}) {
   const s = getHorseSprite(spriteId);
-  const bounce = frame % 2 === 0 ? 0 : 1;
-  const ox = 2;
-  const oy = 3 - bounce;
+  const bounce = frame % 2 === 0 ? 0 : -1;
+  const pose = legPose(frame);
+  const ox = 4;
+  const oy = 4 + bounce;
+
+  const bodyHi = shadeColor(s.body, 0.14);
+  const bodyLo = shadeColor(s.body, -0.16);
+  const maneHi = shadeColor(s.mane, 0.22);
+  const maneLo = shadeColor(s.mane, -0.18);
+  const hoof = shadeColor(s.mane, -0.35);
 
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
-  // Shadow
-  px(ctx, ox + 2, oy + 15, 14, 1, "rgba(0,0,0,0.25)", scale);
+  drawTrackGround(ctx, scale);
 
-  // Tail
-  px(ctx, ox + 1, oy + 7, 2, 4, s.mane, scale);
-  px(ctx, ox, oy + 8, 1, 3, s.mane, scale);
+  // Soft shadow on turf
+  px(ctx, ox + 6, oy + 29, 28, 2, "rgba(0,0,0,0.2)", scale);
+  px(ctx, ox + 10, oy + 30, 22, 1, "rgba(0,0,0,0.12)", scale);
+
+  // Tail (behind body)
+  drawFluffyTail(ctx, ox, oy, s.mane, maneHi, maneLo, scale, pose.tail);
 
   // Back legs
-  px(ctx, ox + 4, oy + 12, 2, 4, s.accent, scale);
-  px(ctx, ox + 7, oy + 12, 2, 4, s.accent, scale);
+  drawLeg(ctx, ox + 10, oy + 18, s.body, hoof, scale, pose.backFar);
+  drawLeg(ctx, ox + 16, oy + 18, s.body, hoof, scale, pose.backNear);
 
-  // Body
-  px(ctx, ox + 3, oy + 7, 10, 6, s.body, scale);
-  px(ctx, ox + 4, oy + 8, 8, 4, s.body, scale);
+  // Body — round chibi barrel
+  px(ctx, ox + 8, oy + 12, 22, 12, s.body, scale);
+  px(ctx, ox + 10, oy + 10, 18, 14, s.body, scale);
+  px(ctx, ox + 12, oy + 14, 16, 10, bodyHi, scale);
+  px(ctx, ox + 8, oy + 20, 4, 4, bodyLo, scale);
+  px(ctx, ox + 26, oy + 20, 4, 4, bodyLo, scale);
+  px(ctx, ox + 14, oy + 22, 12, 2, bodyLo, scale);
 
-  // Mane
-  px(ctx, ox + 10, oy + 4, 2, 5, s.mane, scale);
-  px(ctx, ox + 11, oy + 3, 1, 3, s.mane, scale);
+  // Neck
+  px(ctx, ox + 22, oy + 8, 6, 10, s.body, scale);
+  px(ctx, ox + 24, oy + 7, 4, 8, bodyHi, scale);
 
-  // Neck + head
-  px(ctx, ox + 10, oy + 6, 4, 4, s.body, scale);
-  px(ctx, ox + 12, oy + 5, 5, 4, s.body, scale);
-  px(ctx, ox + 14, oy + 6, 3, 3, s.body, scale);
+  // Mane (over neck)
+  drawFluffyMane(ctx, ox, oy, s.mane, maneHi, maneLo, scale);
 
-  // Snout
-  px(ctx, ox + 16, oy + 8, 2, 2, s.accent, scale);
+  // Head & cute face
+  drawKawaiiFace(ctx, ox, oy, s, scale);
 
   // Front legs
-  px(ctx, ox + 11, oy + 12, 2, 4, s.accent, scale);
-  px(ctx, ox + 14, oy + 12, 2, 4, s.accent, scale);
+  drawLeg(ctx, ox + 22, oy + 18, s.body, hoof, scale, pose.frontFar);
+  drawLeg(ctx, ox + 28, oy + 18, s.body, hoof, scale, pose.frontNear);
 
-  // Big kawaii eye
-  px(ctx, ox + 14, oy + 6, 2, 2, "#fff", scale);
-  px(ctx, ox + 15, oy + 7, 1, 1, s.eye, scale);
-  px(ctx, ox + 14, oy + 6, 1, 1, "#fff", scale);
+  // Racing saddle
+  drawSaddle(ctx, ox, oy, s.accent, scale);
 
-  // Blush
-  px(ctx, ox + 13, oy + 8, 1, 1, s.blush, scale);
-  px(ctx, ox + 16, oy + 8, 1, 1, s.blush, scale);
-
-  // Saddle cloth
-  px(ctx, ox + 6, oy + 8, 4, 2, s.accent, scale);
-
+  // Coat patterns & forehead marks
   drawPattern(ctx, s.pattern, ox, oy, s.accent, s.body, scale);
-  drawMark(ctx, s.mark, ox + 5, oy + 2, s.accent, scale);
+  drawMark(ctx, s.mark, ox + 18, oy, s.accent, scale);
+
+  // Fantasy sparkle accents
+  drawFantasySparkles(ctx, ox, oy, s.accent, scale, spriteId);
 }
 
-export function createHorseSpriteCanvas(spriteId, { size = 72, frame = 0 } = {}) {
-  const nativeW = 24;
-  const nativeH = 18;
-  const scale = Math.floor(size / nativeW);
+export function createHorseSpriteCanvas(spriteId, { size = 96, frame = 0, animate = false } = {}) {
+  const scale = Math.max(1, Math.floor(size / HORSE_NATIVE_W));
   const canvas = document.createElement("canvas");
-  canvas.width = nativeW * scale;
-  canvas.height = nativeH * scale;
+  canvas.width = HORSE_NATIVE_W * scale;
+  canvas.height = HORSE_NATIVE_H * scale;
   canvas.className = "horse-sprite-canvas";
   const ctx = canvas.getContext("2d");
   ctx.imageSmoothingEnabled = false;
   drawHorseSprite(ctx, spriteId, { scale, frame });
+  if (animate) startHorseCanvasAnimation(canvas, spriteId);
   return canvas;
+}
+
+/** Cycle gallop frames on an existing horse canvas (paddock idle trot). */
+export function startHorseCanvasAnimation(canvas, spriteId, { fps = 5 } = {}) {
+  const scale = canvas.width / HORSE_NATIVE_W;
+  const ctx = canvas.getContext("2d");
+  ctx.imageSmoothingEnabled = false;
+  let frame = 0;
+  const tick = () => {
+    drawHorseSprite(ctx, spriteId, { scale, frame });
+    frame = (frame + 1) % 4;
+  };
+  tick();
+  const id = setInterval(tick, 1000 / fps);
+  canvas.dataset.animateId = String(id);
+  return id;
 }
 
 export function assignHorseSprites(count, startOffset = 0) {

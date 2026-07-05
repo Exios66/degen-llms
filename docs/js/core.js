@@ -3,6 +3,7 @@ import { attachHotelToSession } from "./hotel.js";
 import { attachAmenitiesToSession } from "./casino-amenities.js";
 import { attachPoolComplexToSession } from "./pool-complex.js";
 import { attachWorldCycleToSession } from "./world-cycle.js";
+import { attachIntoxicationToSession } from "./intoxication-effects.js";
 import {
   getActiveSlotId,
   mirrorLibraryToCache,
@@ -11,7 +12,7 @@ import {
 } from "./profileCache.js";
 
 export const CASINO_NAME = "The Mandalay Bay";
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 6;
 
 /** Default RPG overworld state for pixel mode (Phase 1+). */
 export function defaultRpgState(overrides = {}) {
@@ -173,6 +174,7 @@ export class PlayerSession {
     this.amenities = null;
     this.poolComplex = null;
     this.worldCycle = null;
+    this.intoxication = null;
     this.progressivePools = {};
     this.horseRacingCustomNames = null;
     this.horseRacingNameOffset = 0;
@@ -224,6 +226,7 @@ export class PlayerSession {
     if (this.amenities) payload.amenities = this.amenities;
     if (this.poolComplex) payload.poolComplex = this.poolComplex;
     if (this.worldCycle) payload.worldCycle = this.worldCycle;
+    if (this.intoxication) payload.intoxication = this.intoxication;
     return payload;
   }
 
@@ -250,6 +253,7 @@ export class PlayerSession {
     attachAmenitiesToSession(s, data);
     attachPoolComplexToSession(s, data);
     attachWorldCycleToSession(s, data);
+    attachIntoxicationToSession(s, data);
     return s;
   }
 }

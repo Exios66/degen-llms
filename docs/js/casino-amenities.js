@@ -1,5 +1,7 @@
 /** Casino floor amenities — The Shoppes at Mandalay Place and full-service bars. */
 
+import { recordConsumption } from "./intoxication-effects.js";
+
 export const MALL_NAME = "The Shoppes at Mandalay Place";
 export const MALL_TAGLINE =
   "Sky-bridge retail between Mandalay Bay and Luxor — flagship designer row opens directly onto the casino carpet.";
@@ -209,6 +211,7 @@ export function orderBarDrink(session, drinkId) {
   const amenities = ensureAmenities(session);
   amenities.barOrders.push(drinkId);
   session.recordVisit("bar");
+  recordConsumption(session, drinkId, { source: "bar" });
   return {
     ok: true,
     message: `${drink.name} served at ${bar.name} — $${drink.price.toLocaleString()}. Balance: $${session.wallet.balance.toLocaleString()}.`,

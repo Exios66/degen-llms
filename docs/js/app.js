@@ -3,6 +3,7 @@ import {
   saveSlot, loadSlot, createSlot, deleteSlot, listSlots, recentSlots, formatSaveTime,
   createGuestSession, PlayerSession,
 } from "./core.js";
+import { applyIntoxicationEffects } from "./intoxication-effects.js";
 import {
   MACHINES,
   spinReels,
@@ -354,6 +355,7 @@ function enterCasino(nextSession) {
   viewStack = [{ name: "hub", data: {} }];
   clearStatus();
   mountRewardsPhone();
+  applyIntoxicationEffects(session);
   render();
 }
 

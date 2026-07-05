@@ -13,7 +13,7 @@ import {
   MINIBAR_ITEMS, ROOM_EVENTS,
   tuneTvChannel, purchaseMinibarItem, makePhoneCall, makeRoomDecision,
   getUnlockedEvents, getRoomAmenitiesSummary, ensureRoomAmenities,
-  filterTvChannels, filterPhoneCalls, filterRoomDecisions,
+  filterTvChannels, filterPhoneCalls, filterRoomDecisions, filterMinibarItems,
   getSessionResortPhase, getEventHint, conciergeMinibarNudge,
 } from "./room-amenities.js";
 import { getResortCompletion, maybeAutoSignGuestBook } from "./resort-completion.js";
@@ -476,7 +476,7 @@ export function buildHotelRenderers(ctx) {
     const log = el("div", { className: "log-area hotel-log minibar-neon" });
     const nudge = conciergeMinibarNudge(session);
 
-    const itemButtons = Object.values(MINIBAR_ITEMS).map((item) =>
+    const itemButtons = filterMinibarItems(session, hotel).map((item) =>
       menuBtn(`${item.label} — $${item.price}`, () => {
         const res = purchaseMinibarItem(session, item.id);
         log.replaceChildren();

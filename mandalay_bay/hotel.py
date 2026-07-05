@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from mandalay_bay.chips import ChipWallet, TransactionKind
+from mandalay_bay.rewards import RewardsState, has_unredeemed_comp, redeem_comp
 from mandalay_bay.session import PlayerSession
 
 ROOM_TYPES = {
@@ -28,6 +29,21 @@ class HallwayBeat:
 
 
 @dataclass
+class RoomAmenitiesState:
+    tv_channel: str | None = None
+    channels_watched: list[str] = field(default_factory=list)
+    minibar_purchases: list[str] = field(default_factory=list)
+    minibar_tab: int = 0
+    phone_calls: list[str] = field(default_factory=list)
+    decisions: list[str] = field(default_factory=list)
+    unlocked_events: list[str] = field(default_factory=list)
+    event_log: list[str] = field(default_factory=list)
+    amenity_actions: int = 0
+    wake_up_scheduled: bool = False
+    checked_out: bool = False
+
+
+@dataclass
 class HotelState:
     property_id: str = "mandalay_bay"
     reservation_code: str = "MB-0000"
@@ -40,6 +56,12 @@ class HotelState:
     reached_room: bool = False
     hallway_progress: int = 0
     hallway_log: list[str] = field(default_factory=list)
+    room_amenities: RoomAmenitiesState | None = None
+    resort_time: int = 0
+    folio_reviewed: bool = False
+    late_checkout_used: bool = False
+    reservation_confirmed_desk: bool = False
+    room_evicted: bool = False
 
 
 @dataclass
@@ -69,6 +91,9 @@ def default_hotel_state() -> HotelState:
 def ensure_hotel(session: PlayerSession) -> HotelState:
     if not hasattr(session, "hotel") or session.hotel is None:
         session.hotel = default_hotel_state()
+    from mandalay_bay.world_cycle import sync_world_cycle
+
+    sync_world_cycle(session)
     return session.hotel
 
 
@@ -122,13 +147,29 @@ def _hallway_beats(hotel: HotelState) -> list[HallwayBeat]:
 
 
 def find_reservation(session: PlayerSession) -> ReservationResult:
+    from mandalay_bay.world_cycle import locate_reservation_via_phone
+
+    result = locate_reservation_via_phone(session)
     hotel = ensure_hotel(session)
     hint = reservation_hint(hotel)
-    if hotel.found_reservation:
+    if result.already:
         return ReservationResult(hint=hint, already=True)
-    hotel.found_reservation = True
-    clue = f"Head to the {hotel.wing.upper()} tower. Gold elevator to floor {hotel.floor}."
-    return ReservationResult(hint=hint, clue=clue)
+    if not result.ok:
+        return ReservationResult(hint=hint, clue=result.message)
+    return ReservationResult(hint=hint, clue=result.message)
+
+
+def find_reservation_at_desk(session: PlayerSession) -> ReservationResult:
+    from mandalay_bay.world_cycle import confirm_reservation_at_desk
+
+    result = confirm_reservation_at_desk(session)
+    hotel = ensure_hotel(session)
+    hint = reservation_hint(hotel)
+    if result.already:
+        return ReservationResult(hint=hint, already=True)
+    if not result.ok:
+        return ReservationResult(hint=hint, clue=result.message)
+    return ReservationResult(hint=hint, clue=result.message)
 
 
 def current_hallway_beat(session: PlayerSession) -> HallwayBeat | None:
@@ -147,9 +188,15 @@ class HallwayResult:
 
 
 def hallway_choice(session: PlayerSession, choice_index: int) -> HallwayResult:
+    from mandalay_bay.world_cycle import reservation_access_met, sync_world_cycle
+
+    sync_world_cycle(session)
     hotel = ensure_hotel(session)
-    if not hotel.found_reservation:
-        return HallwayResult(False, "Locate reservation first.")
+    wc = getattr(session, "world_cycle", None)
+    if wc and wc.room_evicted:
+        return HallwayResult(False, "Settle overdue charges at the front desk.")
+    if not reservation_access_met(session):
+        return HallwayResult(False, "Complete today's reservation requirement first.")
     beat = current_hallway_beat(session)
     if beat is None:
         hotel.reached_room = True
@@ -179,11 +226,10 @@ def upgrade_room(session: PlayerSession, target: str) -> ActionResult:
     spec = ROOM_TYPES.get(target)
     if not spec:
         return ActionResult(False, "Unknown room type.")
-    rewards = getattr(session, "rewards", None)
+    rewards: RewardsState | None = getattr(session, "rewards", None)
     comp_id = spec["comp_id"]
-    has_comp = rewards and comp_id in rewards.get("unlocked_comps", []) and comp_id not in rewards.get("redeemed_comps", [])
-    if has_comp and rewards is not None:
-        rewards.setdefault("redeemed_comps", []).append(comp_id)
+    if rewards and has_unredeemed_comp(rewards, comp_id):
+        redeem_comp(rewards, comp_id)
         _apply_room(session, target, spec)
         return ActionResult(True, f"Comp applied — {spec['label']}.")
     if is_net_positive(session) and target == "suite":
@@ -203,9 +249,9 @@ def upgrade_room(session: PlayerSession, target: str) -> ActionResult:
 
 def extend_stay(session: PlayerSession, nights: int = 1) -> ActionResult:
     hotel = ensure_hotel(session)
-    rewards = getattr(session, "rewards", None)
-    if rewards and "room_night" in rewards.get("unlocked_comps", []) and "room_night" not in rewards.get("redeemed_comps", []):
-        rewards.setdefault("redeemed_comps", []).append("room_night")
+    rewards: RewardsState | None = getattr(session, "rewards", None)
+    if rewards and has_unredeemed_comp(rewards, "room_night"):
+        redeem_comp(rewards, "room_night")
         hotel.nights_remaining += nights
         return ActionResult(True, f"{hotel.nights_remaining} night(s) remaining.")
     if is_net_positive(session):
@@ -231,3 +277,97 @@ def _apply_room(session: PlayerSession, room_type: str, spec: dict) -> None:
 
 def fmt_chips(amount: int) -> str:
     return f"${amount:,}"
+
+
+def build_folio_lines(session: PlayerSession) -> list[str]:
+    """Satirical checkout folio — minibar, room service, shopping."""
+    hotel = ensure_hotel(session)
+    ra = hotel.room_amenities or RoomAmenitiesState()
+    lines = [f"Folio — Room {hotel.room_number} · Conf {hotel.reservation_code}"]
+
+    if ra.minibar_tab > 0:
+        lines.append(f"Minibar tab: {fmt_chips(ra.minibar_tab)} (sensor-enabled hospitality)")
+
+    room_service_total = 0
+    if "room_service" in ra.decisions:
+        room_service_total += 35
+    if "tip_maid" in ra.decisions:
+        room_service_total += 25
+    if room_service_total:
+        lines.append(f"In-room services: {fmt_chips(room_service_total)}")
+
+    amenities = getattr(session, "amenities", None)
+    if amenities and amenities.purchased_items:
+        lines.append(f"Mandalay Place deliveries: {len(amenities.purchased_items)} item(s) to your room")
+
+    if len(lines) == 1:
+        lines.append("No charges. Suspiciously responsible for Vegas.")
+    return lines
+
+
+def review_folio(session: PlayerSession) -> ActionResult:
+    hotel = ensure_hotel(session)
+    hotel.folio_reviewed = True
+    body = "\n".join(build_folio_lines(session))
+    return ActionResult(True, body)
+
+
+def late_checkout(session: PlayerSession) -> ActionResult:
+    hotel = ensure_hotel(session)
+    if hotel.late_checkout_used:
+        return ActionResult(False, "You already negotiated late checkout.")
+    hotel.late_checkout_used = True
+    if is_net_positive(session):
+        return ActionResult(True, "Carmen comps an extra two hours. The minibar sensor sleeps.")
+    cost = 75
+    if session.wallet.debit(cost, "hotel", "Late checkout"):
+        return ActionResult(True, f"Paid {fmt_chips(cost)} for two extra hours. Worth it.")
+    return ActionResult(False, f"Need {fmt_chips(cost)} or net-positive floor status.")
+
+
+def wake_up_call(session: PlayerSession) -> ActionResult:
+    import random
+
+    hotel = ensure_hotel(session)
+    ra = hotel.room_amenities or RoomAmenitiesState()
+    alarms = [
+        "Steve Harvey: \"Rise and shine! Survey says… you're late for brunch!\"",
+        "Shark Reef feed narration: \"The sand tiger approaches… your alarm clock.\"",
+        "Convention keynote: \"Synergy waits for no one. Especially not you.\"",
+    ]
+    msg = random.choice(alarms)
+    ra.wake_up_scheduled = False
+    return ActionResult(True, msg)
+
+
+def checkout_stay(session: PlayerSession) -> ActionResult:
+    hotel = ensure_hotel(session)
+    ra = hotel.room_amenities or RoomAmenitiesState()
+    if ra.checked_out:
+        return ActionResult(False, "You already checked out. The carpet misses you.")
+    ra.checked_out = True
+    hotel.nights_remaining = max(0, hotel.nights_remaining - 1)
+    folio = "\n".join(build_folio_lines(session))
+    if hotel.nights_remaining == 0:
+        return ActionResult(
+            True,
+            f"{folio}\n\nCheckout complete. Nights remaining: 0 — Carmen offers extend-stay or casino floor exile.",
+        )
+    return ActionResult(True, f"{folio}\n\nCheckout complete. {hotel.nights_remaining} night(s) remaining on your stay.")
+
+
+def express_checkout(session: PlayerSession) -> ActionResult:
+    from mandalay_bay.resort_bridge import get_session_tier_index
+
+    tier_idx = get_session_tier_index(session)
+    hotel = ensure_hotel(session)
+    ra = hotel.room_amenities or RoomAmenitiesState()
+    if ra.checked_out:
+        return ActionResult(False, "Already checked out.")
+    ra.checked_out = True
+    hotel.nights_remaining = max(0, hotel.nights_remaining - 1)
+    if tier_idx >= 5:
+        return ActionResult(True, "Chairman express — folio waived spiritually. Chauffeur waiting.")
+    if tier_idx >= 1:
+        return ActionResult(True, "Express checkout — line skipped. Folio emailed to guilt@vegas.com.")
+    return ActionResult(False, "Pearl+ required for express checkout. Join the regular line.")

@@ -1,4 +1,5 @@
 import { TransactionKind, secureRandomInt } from "./core.js";
+import { getTierExperience } from "./rewards-perks.js";
 
 export const SAVE_VERSION_WITH_REWARDS = 3;
 
@@ -111,10 +112,19 @@ export class RewardsTracker {
   }
 
   ensureRewards() {
+    const defaults = defaultRewardsState();
     if (!this.session.rewards) {
-      this.session.rewards = defaultRewardsState();
+      this.session.rewards = defaults;
+      return this.session.rewards;
     }
-    return this.session.rewards;
+    const rewards = this.session.rewards;
+    if (!rewards.memberId) rewards.memberId = defaults.memberId;
+    if (!rewards.tier) rewards.tier = defaults.tier;
+    if (typeof rewards.lifetimeWagered !== "number") rewards.lifetimeWagered = 0;
+    if (!Array.isArray(rewards.unlockedComps)) rewards.unlockedComps = [...defaults.unlockedComps];
+    if (!Array.isArray(rewards.redeemedComps)) rewards.redeemedComps = [];
+    if (!Array.isArray(rewards.notifications)) rewards.notifications = [...defaults.notifications];
+    return rewards;
   }
 
   /** @returns {object[]} newly created notifications */
@@ -138,10 +148,11 @@ export class RewardsTracker {
         rewards.unlockedComps.push(newTier.comp);
       }
       const compLabel = newTier.comp ? COMP_CATALOG[newTier.comp]?.title : "exclusive offers";
+      const exp = getTierExperience(newTier.id);
       const note = {
         id: `tier_${newTier.id}_${Date.now()}`,
         title: `${newTier.label} Tier Unlocked!`,
-        body: `You've reached ${newTier.label} status. ${compLabel ? `New comp: ${compLabel}.` : "Check Resort Offers on your phone."}`,
+        body: `You've reached ${newTier.label} status. ${compLabel ? `New comp: ${compLabel}. ` : ""}${exp.tagline}`,
         read: false,
         timestamp: nowIso(),
       };

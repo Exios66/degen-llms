@@ -280,6 +280,57 @@ In-game help with six sections:
 
 ---
 
+## Mandalay Bay Hotel Experience
+
+Exit the casino floor to the **hotel lobby** (web: hub menu or RPG HUD link; deep link: `?view=hotel-lobby`).
+
+### Hotel flow
+
+1. **MGM Rewards (P)** → Reservation — locate your tower and floor
+2. **Hallway mini-game** — three beats of directional choices (wrong turns are comedic)
+3. **Your room** — TV, minibar, phone, decisions, unlockable Vegas vignettes
+
+### In-room amenities
+
+| Amenity | Highlights |
+|---------|------------|
+| TV | Shark Reef (ch. 47), wave pool cam, ULTRA Arena boxing, House of Blues (Gold+) |
+| Minibar | Sensor-enabled charges; concierge suggests items |
+| Phone | Concierge, bookie, Foundation Room (Noir+ penthouse), spa, Delano |
+| Decisions | Balcony, sky bridge to Mandalay Place, suite/penthouse perks, wake-up roulette |
+
+**17 unlockable room events** chain across pool visits, shopping (LUSH bath bomb), tier status, and bad decisions. Locked events show cryptic hints in the event log.
+
+### World day/night cycle
+
+**2 hours real time = 1 resort day.** The hub and hotel lobby show the current phase and time until the next day.
+
+Each new day:
+- **Daily charges** post automatically (room rate + resort fee + parking — higher for suites/penthouse)
+- **Reservation requirement rotates:** phone only → desk only → phone + desk → net-positive whale check-in
+- **Insufficient chips** locks room access until you settle overdue charges at the front desk or win on the casino floor
+
+Platinum+ tiers reduce resort fees; Chairman tier waives them narratively.
+
+### Stay lifecycle (Front Desk)
+
+- **Review folio** — minibar + room service + Mandalay Place deliveries
+- **Late checkout** — comp if net-positive, else $75
+- **Express checkout** — Pearl+ skips the line; Chairman waives the folio narratively
+- **Standard checkout** — decrements nights; at 0 nights Carmen offers extend-stay
+
+### Resort completion tracker
+
+The hotel lobby and in-room hub show progress: room vignettes, pool vignettes, TV channels sampled, guest book signed. Unlock all room events to auto-sign the guest directory.
+
+### RPG maps (Phase 3)
+
+From the casino lobby overworld:
+- **East lobby tile** → Hotel Tower (Clerk Carmen, room door)
+- **West lobby tile** → Mandalay Beach pool map (wave pool, shark reef, beach rave NPCs sync pool-complex saves)
+
+---
+
 ## Global shortcuts & tips
 
 | Context | Shortcut |

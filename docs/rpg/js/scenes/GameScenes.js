@@ -1,7 +1,8 @@
 import Phaser from "phaser";
 import { createGameTextures } from "../systems/TextureFactory.js";
 import {
-  TILE_SIZE, MAP_WIDTH, MAP_HEIGHT, buildMapLayers, NPCS, SPAWN_DEFAULT, TILE,
+  TILE_SIZE, MAP_WIDTH, MAP_HEIGHT, buildMapLayersForId, getNpcsForMap,
+  DOOR_TRIGGERS, getMapDefinition, SPAWN_DEFAULT, TILE,
 } from "../systems/MapData.js";
 import { getOnDutyDealer, dealerShiftSeed } from "../../../js/dealers.js";
 
@@ -26,7 +27,9 @@ export class OverworldScene extends Phaser.Scene {
       this.dialogue.setFlags(this.saveAdapter.rpg.flags ?? {});
     }
 
-    const { ground, collision, decor } = buildMapLayers();
+    const mapId = this.saveAdapter.rpg.mapId ?? "main_resort";
+    this.currentMapId = mapId;
+    const { ground, collision, decor } = buildMapLayersForId(mapId);
     this.collisionGrid = collision;
 
     this.groundLayer = this.add.group();
@@ -47,8 +50,9 @@ export class OverworldScene extends Phaser.Scene {
     }
 
     const spawn = this.saveAdapter.rpg;
-    const px = spawn.x ?? SPAWN_DEFAULT.x;
-    const py = spawn.y ?? SPAWN_DEFAULT.y;
+    const mapDef = getMapDefinition(mapId);
+    const px = spawn.x ?? mapDef.spawn.x ?? SPAWN_DEFAULT.x;
+    const py = spawn.y ?? mapDef.spawn.y ?? SPAWN_DEFAULT.y;
 
     this.player = this.physics.add.sprite(px * TILE_SIZE + TILE_SIZE / 2, py * TILE_SIZE + TILE_SIZE / 2, "player");
     this.player.setCollideWorldBounds(true);
@@ -59,7 +63,8 @@ export class OverworldScene extends Phaser.Scene {
 
     this.npcSprites = new Map();
     this.npcLabels = new Map();
-    for (const npc of NPCS) {
+    this.currentNpcs = getNpcsForMap(mapId);
+    for (const npc of this.currentNpcs) {
       const sprite = this.add.sprite(
         npc.x * TILE_SIZE + TILE_SIZE / 2,
         npc.y * TILE_SIZE + TILE_SIZE / 2,
@@ -103,6 +108,7 @@ export class OverworldScene extends Phaser.Scene {
     this.facing = "down";
     this.canMove = true;
     this.nearbyNpc = null;
+    this._lastDoorTile = null;
 
     this.onHudUpdate?.();
     this.scale.on("resize", this._fitCamera, this);
@@ -151,6 +157,7 @@ export class OverworldScene extends Phaser.Scene {
 
     this._resolveCollision();
     this._updateNearbyNpc();
+    this._checkDoorTriggers();
 
     if (Phaser.Input.Keyboard.JustDown(this.keys.e) ||
         Phaser.Input.Keyboard.JustDown(this.keys.enter) ||
@@ -190,7 +197,7 @@ export class OverworldScene extends Phaser.Scene {
     let closest = null;
     let closestDist = 999;
 
-    for (const npc of NPCS) {
+    for (const npc of this.currentNpcs ?? []) {
       const dx = this.player.x - (npc.x * TILE_SIZE + TILE_SIZE / 2);
       const dy = this.player.y - (npc.y * TILE_SIZE + TILE_SIZE / 2);
       const dist = Math.sqrt(dx * dx + dy * dy);
@@ -246,6 +253,35 @@ export class OverworldScene extends Phaser.Scene {
     const greetId = `${dealerId}_greet`;
     if (baseKind === "return" && this.dialogues[returnId]) return returnId;
     return this.dialogues[greetId] ? greetId : greetId;
+  }
+
+  _checkDoorTriggers() {
+    const tx = Math.floor(this.player.x / TILE_SIZE);
+    const ty = Math.floor(this.player.y / TILE_SIZE);
+    const key = `${tx},${ty}`;
+    if (this._lastDoorTile === key) return;
+    this._lastDoorTile = key;
+    const trigger = DOOR_TRIGGERS.find((d) =>
+      d.mapId === this.currentMapId && d.x === tx && d.y === ty);
+    if (!trigger) return;
+    this._transitionMap(trigger.targetMap, trigger.targetX, trigger.targetY, trigger.message);
+  }
+
+  _transitionMap(targetMapId, targetX, targetY, message) {
+    this.canMove = false;
+    this.saveAdapter.updatePosition(targetX, targetY, targetMapId);
+    this.saveAdapter.persist();
+    if (message) {
+      this.dialogue.showSystemMessage?.(message) ?? null;
+    }
+    this.scene.restart({
+      session: this.session,
+      saveAdapter: this.saveAdapter,
+      dialogue: this.dialogue,
+      encounters: this.encounters,
+      dialogues: this.dialogues,
+      onHudUpdate: this.onHudUpdate,
+    });
   }
 
   async _tryInteract() {

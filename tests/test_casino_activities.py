@@ -6,6 +6,7 @@ from mandalay_bay.activities.slots import (
     _contribute_to_progressive,
     _payout,
     _try_jackpot,
+    estimate_base_game_rtp,
     get_machine,
     progressive_pool,
 )
@@ -104,3 +105,16 @@ def test_megabucks_no_jackpot_below_max_bet() -> None:
     jackpot = _try_jackpot(session, machine, reels, bet=1, effective_max=3)
     assert jackpot is None
     assert session.progressive_pools["megabucks"] == 500_000
+
+
+def test_fortune_parody_rtp_band() -> None:
+    machine = get_machine("fortune")
+    rtp, hit_frequency = estimate_base_game_rtp(machine)
+    assert 0.90 <= rtp <= 0.98
+    assert hit_frequency >= 0.28
+
+
+def test_megabucks_has_cherry_teaser_rules() -> None:
+    machine = get_machine("megabucks")
+    assert machine.cherry_rules is True
+    assert "cherry|cherry" in machine.paytable

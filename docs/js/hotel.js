@@ -1,4 +1,40 @@
 import { secureRandomInt, fmtChips } from "./core.js";
+import { defaultRewardsState } from "./rewards.js";
+import { getSessionTierIndex } from "./resort-bridge.js";
+import {
+  syncWorldCycle,
+  locateReservationViaPhone,
+  confirmReservationAtDesk,
+  reservationAccessMet,
+  reservationStatusMessage,
+  settleHotelOverdue,
+  getWorldCycleSummary,
+  canAccessHotelRoom,
+} from "./world-cycle.js";
+
+function resolveRewards(session, rewardsTracker) {
+  if (rewardsTracker?.ensureRewards) return rewardsTracker.ensureRewards();
+  if (!session.rewards) {
+    session.rewards = defaultRewardsState();
+    return session.rewards;
+  }
+  const defaults = defaultRewardsState();
+  const rewards = session.rewards;
+  if (!Array.isArray(rewards.unlockedComps)) rewards.unlockedComps = [...defaults.unlockedComps];
+  if (!Array.isArray(rewards.redeemedComps)) rewards.redeemedComps = [];
+  if (!Array.isArray(rewards.notifications)) rewards.notifications = [...defaults.notifications];
+  return rewards;
+}
+
+function redeemRoomComp(session, rewardsTracker, compId) {
+  if (rewardsTracker?.redeemComp) {
+    rewardsTracker.redeemComp(compId);
+    return;
+  }
+  const rewards = resolveRewards(session, rewardsTracker);
+  if (!rewards.unlockedComps.includes(compId) || rewards.redeemedComps.includes(compId)) return;
+  rewards.redeemedComps.push(compId);
+}
 
 /** @typedef {"mandalay_bay"} PropertyId */
 /** @typedef {"standard" | "suite" | "penthouse"} RoomTypeId */
@@ -90,6 +126,24 @@ export function defaultHotelState(overrides = {}) {
     hallwayProgress: overrides.hallwayProgress ?? 0,
     hallwayLog: overrides.hallwayLog ?? [],
     frontDeskVisits: overrides.frontDeskVisits ?? 0,
+    resortTime: overrides.resortTime ?? 0,
+    folioReviewed: overrides.folioReviewed ?? false,
+    lateCheckoutUsed: overrides.lateCheckoutUsed ?? false,
+    reservationConfirmedDesk: overrides.reservationConfirmedDesk ?? false,
+    roomEvicted: overrides.roomEvicted ?? false,
+    roomAmenities: overrides.roomAmenities ?? {
+      tvChannel: null,
+      channelsWatched: [],
+      minibarPurchases: [],
+      minibarTab: 0,
+      phoneCalls: [],
+      decisions: [],
+      unlockedEvents: [],
+      eventLog: [],
+      amenityActions: 0,
+      wakeUpScheduled: false,
+      checkedOut: false,
+    },
     ...overrides,
   };
 }
@@ -126,6 +180,7 @@ export function ensureHotel(session) {
   if (!session.hotel) {
     session.hotel = defaultHotelState();
   }
+  syncWorldCycle(session);
   return session.hotel;
 }
 
@@ -137,27 +192,28 @@ export function attachHotelToSession(session, data) {
   ensureHotel(session);
 }
 
-/** Reveal reservation details in MGM Rewards app. */
+/** Reveal reservation via phone (MGM Rewards) — requirement varies by in-game day. */
 export function findReservation(session) {
-  const hotel = ensureHotel(session);
-  if (hotel.foundReservation) {
-    return { already: true, hint: reservationHint(hotel) };
-  }
-  hotel.foundReservation = true;
-  return {
-    already: false,
-    hint: reservationHint(hotel),
-    clue: `Head to the ${hotel.wing.toUpperCase()} tower. Gold elevator to floor ${hotel.floor}.`,
-  };
+  return locateReservationViaPhone(session);
 }
+
+/** Front desk reservation confirmation — requirement varies by in-game day. */
+export function findReservationAtDesk(session) {
+  return confirmReservationAtDesk(session);
+}
+
+export { getWorldCycleSummary, settleHotelOverdue, reservationStatusMessage, canAccessHotelRoom };
 
 /**
  * @returns {{ success: boolean, quip?: string, done?: boolean }}
  */
 export function hallwayChoice(session, choiceIndex) {
   const hotel = ensureHotel(session);
-  if (!hotel.foundReservation) {
-    return { success: false, quip: "Open MGM Rewards (P) and locate your reservation first." };
+  if (hotel.roomEvicted ?? session.worldCycle?.roomEvicted) {
+    return { success: false, quip: "Room access revoked — settle overdue charges at the front desk." };
+  }
+  if (!reservationAccessMet(session)) {
+    return { success: false, quip: reservationStatusMessage(session) };
   }
   const beat = HALLWAY_BEATS[hotel.hallwayProgress];
   if (!beat) {
@@ -190,16 +246,16 @@ export function upgradeRoom(session, targetType, rewardsTracker) {
   const hotel = ensureHotel(session);
   const target = ROOM_TYPES[targetType];
   if (!target) return { ok: false, message: "Unknown room type." };
-  const rewards = rewardsTracker?.ensureRewards?.() ?? session.rewards;
-  const hasComp = rewards?.unlockedComps?.includes(target.compId) &&
-    !rewards?.redeemedComps?.includes(target.compId);
+  const rewards = resolveRewards(session, rewardsTracker);
+  const hasComp = rewards.unlockedComps.includes(target.compId) &&
+    !rewards.redeemedComps.includes(target.compId);
   const netPositive = isNetPositive(session);
 
   if (targetType === "standard") {
     return { ok: false, message: "You're already at baseline luxury." };
   }
   if (hasComp) {
-    rewardsTracker?.redeemComp?.(target.compId);
+    redeemRoomComp(session, rewardsTracker, target.compId);
     hotel.roomType = targetType;
     hotel.wing = target.wing;
     hotel.floor = target.floor;
@@ -246,13 +302,13 @@ export function upgradeRoom(session, targetType, rewardsTracker) {
 /** @returns {{ ok: boolean, message: string }} */
 export function extendStay(session, nights = 1, rewardsTracker) {
   const hotel = ensureHotel(session);
-  const rewards = rewardsTracker?.ensureRewards?.() ?? session.rewards;
-  const hasRoomComp = rewards?.unlockedComps?.includes("room_night") &&
-    !rewards?.redeemedComps?.includes("room_night");
+  const rewards = resolveRewards(session, rewardsTracker);
+  const hasRoomComp = rewards.unlockedComps.includes("room_night") &&
+    !rewards.redeemedComps.includes("room_night");
   const netPositive = isNetPositive(session);
 
-  if (hasComp) {
-    rewardsTracker?.redeemComp?.("room_night");
+  if (hasRoomComp) {
+    redeemRoomComp(session, rewardsTracker, "room_night");
     hotel.nightsRemaining += nights;
     return { ok: true, message: `Comp night applied! ${hotel.nightsRemaining} night(s) remaining.` };
   }
@@ -272,4 +328,109 @@ export function resetHallway(session) {
   hotel.hallwayProgress = 0;
   hotel.hallwayLog = [];
   hotel.reachedRoom = false;
+}
+
+/** Build satirical folio lines for checkout. */
+export function buildFolioLines(session) {
+  const hotel = ensureHotel(session);
+  const ra = hotel.roomAmenities ?? {};
+  const lines = [`Folio — Room ${hotel.roomNumber} · Conf ${hotel.reservationCode}`];
+
+  if (ra.minibarTab > 0) {
+    lines.push(`Minibar tab: ${fmtChips(ra.minibarTab)} (sensor-enabled hospitality)`);
+  }
+  let serviceTotal = 0;
+  if (ra.decisions?.includes("room_service")) serviceTotal += 35;
+  if (ra.decisions?.includes("tip_maid")) serviceTotal += 25;
+  if (serviceTotal > 0) {
+    lines.push(`In-room services: ${fmtChips(serviceTotal)}`);
+  }
+  const purchased = session.amenities?.purchasedItems?.length ?? 0;
+  if (purchased > 0) {
+    lines.push(`Mandalay Place deliveries: ${purchased} item(s) to your room`);
+  }
+  if (lines.length === 1) {
+    lines.push("No charges. Suspiciously responsible for Vegas.");
+  }
+  return lines;
+}
+
+/** @returns {{ ok: boolean, message: string }} */
+export function reviewFolio(session) {
+  const hotel = ensureHotel(session);
+  hotel.folioReviewed = true;
+  return { ok: true, message: buildFolioLines(session).join("\n") };
+}
+
+/** @returns {{ ok: boolean, message: string }} */
+export function lateCheckout(session, rewardsTracker) {
+  const hotel = ensureHotel(session);
+  if (hotel.lateCheckoutUsed) {
+    return { ok: false, message: "You already negotiated late checkout." };
+  }
+  hotel.lateCheckoutUsed = true;
+  if (isNetPositive(session)) {
+    return { ok: true, message: "Carmen comps an extra two hours. The minibar sensor sleeps." };
+  }
+  const cost = 75;
+  if (session.wallet.debit(cost, "hotel", "Late checkout")) {
+    return { ok: true, message: `Paid ${fmtChips(cost)} for two extra hours. Worth it.` };
+  }
+  return { ok: false, message: `Need ${fmtChips(cost)} or net-positive floor status.` };
+}
+
+const WAKE_UP_ALARMS = [
+  "Steve Harvey: \"Rise and shine! Survey says… you're late for brunch!\"",
+  "Shark Reef feed narration: \"The sand tiger approaches… your alarm clock.\"",
+  "Convention keynote: \"Synergy waits for no one. Especially not you.\"",
+];
+
+/** @returns {{ ok: boolean, message: string }} */
+export function triggerWakeUpCall(session) {
+  const hotel = ensureHotel(session);
+  const ra = hotel.roomAmenities ?? {};
+  const msg = WAKE_UP_ALARMS[secureRandomInt(0, WAKE_UP_ALARMS.length - 1)];
+  if (ra.wakeUpScheduled !== undefined) ra.wakeUpScheduled = false;
+  return { ok: true, message: msg };
+}
+
+/** @returns {{ ok: boolean, message: string }} */
+export function checkoutStay(session) {
+  const hotel = ensureHotel(session);
+  const ra = hotel.roomAmenities ?? {};
+  if (ra.checkedOut) {
+    return { ok: false, message: "You already checked out. The carpet misses you." };
+  }
+  ra.checkedOut = true;
+  hotel.nightsRemaining = Math.max(0, hotel.nightsRemaining - 1);
+  const folio = buildFolioLines(session).join("\n");
+  if (hotel.nightsRemaining === 0) {
+    return {
+      ok: true,
+      message: `${folio}\n\nCheckout complete. Nights remaining: 0 — Carmen offers extend-stay or casino floor exile.`,
+    };
+  }
+  return {
+    ok: true,
+    message: `${folio}\n\nCheckout complete. ${hotel.nightsRemaining} night(s) remaining on your stay.`,
+  };
+}
+
+/** @returns {{ ok: boolean, message: string }} */
+export function expressCheckout(session) {
+  const tierIdx = getSessionTierIndex(session);
+  const hotel = ensureHotel(session);
+  const ra = hotel.roomAmenities ?? {};
+  if (ra.checkedOut) {
+    return { ok: false, message: "Already checked out." };
+  }
+  if (tierIdx < 1) {
+    return { ok: false, message: "Pearl+ required for express checkout. Join the regular line." };
+  }
+  ra.checkedOut = true;
+  hotel.nightsRemaining = Math.max(0, hotel.nightsRemaining - 1);
+  if (tierIdx >= 5) {
+    return { ok: true, message: "Chairman express — folio waived spiritually. Chauffeur waiting." };
+  }
+  return { ok: true, message: "Express checkout — line skipped. Folio emailed to guilt@vegas.com." };
 }

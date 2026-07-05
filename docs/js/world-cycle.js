@@ -156,12 +156,13 @@ function applyDayRollover(session, dayIndex) {
   let message = `Day ${dayIndex + 1} — ${req.label}.`;
 
   const totalDue = charges.total + wc.overdueBalance;
+  const hadOverdue = wc.overdueBalance > 0;
   if (session.wallet.debit(totalDue, "hotel", `Day ${dayIndex + 1} resort charges`)) {
     wc.overdueBalance = 0;
     wc.roomEvicted = false;
     hotel.roomEvicted = false;
     message += ` ${fmtChips(charges.total)} posted`;
-    if (wc.overdueBalance > 0) message += ` (includes overdue)`;
+    if (hadOverdue) message += ` (includes overdue)`;
     message += ".";
   } else {
     const paid = session.wallet.balance;

@@ -364,10 +364,10 @@ def express_checkout(session: PlayerSession) -> ActionResult:
     ra = hotel.room_amenities or RoomAmenitiesState()
     if ra.checked_out:
         return ActionResult(False, "Already checked out.")
+    if tier_idx < 1:
+        return ActionResult(False, "Pearl+ required for express checkout. Join the regular line.")
     ra.checked_out = True
     hotel.nights_remaining = max(0, hotel.nights_remaining - 1)
     if tier_idx >= 5:
         return ActionResult(True, "Chairman express — folio waived spiritually. Chauffeur waiting.")
-    if tier_idx >= 1:
-        return ActionResult(True, "Express checkout — line skipped. Folio emailed to guilt@vegas.com.")
-    return ActionResult(False, "Pearl+ required for express checkout. Join the regular line.")
+    return ActionResult(True, "Express checkout — line skipped. Folio emailed to guilt@vegas.com.")

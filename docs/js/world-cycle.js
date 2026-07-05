@@ -1,7 +1,7 @@
 /** Real-time day/night cycle — 2 hours real time = 1 in-game day. */
 
 import { fmtChips } from "./core.js";
-import { defaultHotelState, isNetPositive } from "./hotel.js";
+import { defaultHotelState, ensureHotel, isNetPositive } from "./hotel.js";
 import { getSessionTierIndex } from "./resort-bridge.js";
 
 /** 2 hours of real time = one in-game day. */
@@ -57,7 +57,6 @@ export function defaultWorldCycle(overrides = {}) {
     clockAnchorMs: overrides.clockAnchorMs ?? Date.now(),
     processedDay: overrides.processedDay ?? 0,
     reservationConfirmedDesk: overrides.reservationConfirmedDesk ?? false,
-    roomEvicted: overrides.roomEvicted ?? false,
     roomEvicted: overrides.roomEvicted ?? false,
     overdueBalance: overrides.overdueBalance ?? 0,
     lastRolloverMessages: overrides.lastRolloverMessages ?? [],
@@ -317,7 +316,7 @@ export function settleHotelOverdue(session) {
   }
   wc.overdueBalance = 0;
   wc.roomEvicted = false;
-  hotel = ensureHotel(session);
+  const hotel = ensureHotel(session);
   hotel.roomEvicted = false;
   return { ok: true, message: `${fmtChips(amount)} settled. Room access restored. Try to stay ahead tomorrow.` };
 }

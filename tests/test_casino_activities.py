@@ -84,7 +84,7 @@ def test_megabucks_jackpot_at_max_bet() -> None:
         Symbol("megabuck", "💵", 1),
         Symbol("megabuck", "💵", 1),
     ]
-    jackpot = _try_jackpot(session, machine, reels, bet=3)
+    jackpot = _try_jackpot(session, machine, reels, bet=3, effective_max=3)
     assert jackpot == 500_000
     assert session.progressive_pools["megabucks"] == machine.progressive_seed
     win, reason = _payout(reels, 3, machine, jackpot_amount=jackpot)
@@ -101,6 +101,6 @@ def test_megabucks_no_jackpot_below_max_bet() -> None:
         Symbol("megabuck", "💵", 1),
         Symbol("megabuck", "💵", 1),
     ]
-    jackpot = _try_jackpot(session, machine, reels, bet=1)
+    jackpot = _try_jackpot(session, machine, reels, bet=1, effective_max=3)
     assert jackpot is None
     assert session.progressive_pools["megabucks"] == 500_000

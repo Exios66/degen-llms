@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import json
 import os
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
 from mandalay_bay.chips import ChipWallet, TransactionKind
 from mandalay_bay.display import TerminalUI, fmt_chips
+from mandalay_bay.hotel import HotelState, ensure_hotel
 from mandalay_bay.session import ActivityStats, PlayerSession
 
 MAX_SLOTS = 5
@@ -200,7 +201,7 @@ def session_to_dict(session: PlayerSession) -> dict:
                 "balance_after": tx.balance_after,
             }
         )
-    return {
+    payload = {
         "version": 1,
         "player_name": session.player_name,
         "slot_id": session.slot_id,
@@ -211,6 +212,9 @@ def session_to_dict(session: PlayerSession) -> dict:
         "activity_stats": stats,
         "progressive_pools": dict(session.progressive_pools),
     }
+    if hasattr(session, "hotel") and session.hotel is not None:
+        payload["hotel"] = asdict(session.hotel)
+    return payload
 
 
 def session_from_dict(data: dict) -> PlayerSession:
@@ -239,7 +243,7 @@ def session_from_dict(data: dict) -> PlayerSession:
             net_winnings=raw.get("net_winnings", 0),
         )
 
-    return PlayerSession(
+    session = PlayerSession(
         player_name=data.get("player_name", "Guest"),
         wallet=wallet,
         use_color=data.get("use_color", True),
@@ -249,6 +253,11 @@ def session_from_dict(data: dict) -> PlayerSession:
         slot_label=data.get("slot_label", ""),
         progressive_pools=dict(data.get("progressive_pools", {})),
     )
+    if "hotel" in data:
+        session.hotel = HotelState(**data["hotel"])
+    else:
+        ensure_hotel(session)
+    return session
 
 
 def _format_updated(when: datetime | None) -> str:

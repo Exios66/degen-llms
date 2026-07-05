@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from blackjack.rng import SECURE_RANDOM
 from mandalay_bay.activities.base import Activity, ActivityInfo
 from mandalay_bay.session import PlayerSession
+from mandalay_bay.stakes import effective_table_stakes, pick_stake_tier
 
 
 @dataclass
@@ -69,6 +70,14 @@ class SportsbookActivity(Activity):
             ui.pause()
             return
 
+        tier = pick_stake_tier(session, ui, title="Choose stake tier:")
+        if tier is None:
+            return
+        ui.dim(tier.description)
+        wager_min, wager_max = effective_table_stakes(
+            tier, session.wallet.balance, activity_min=self.info.min_bet
+        )
+
         session_net = 0
         bets_placed = 0
 
@@ -95,7 +104,7 @@ class SportsbookActivity(Activity):
             if choice == 0:
                 break
             if choice == 1:
-                net, count = self._place_wager(session, ui)
+                net, count = self._place_wager(session, ui, wager_min, wager_max)
                 session_net += net
                 bets_placed += count
             elif choice == 2:
@@ -141,7 +150,13 @@ class SportsbookActivity(Activity):
             spread_away_odds=-110,
         )
 
-    def _place_wager(self, session: PlayerSession, ui) -> tuple[int, int]:
+    def _place_wager(
+        self,
+        session: PlayerSession,
+        ui,
+        wager_min: int,
+        wager_max: int,
+    ) -> tuple[int, int]:
         idx = ui.prompt_int("Event number", 1, len(self._events), default=1) - 1
         event = self._events[idx]
         bet_type = ui.menu_choice(["Moneyline", "Spread"], title="Bet type:")
@@ -166,10 +181,10 @@ class SportsbookActivity(Activity):
             btype = "spread"
 
         amount = ui.prompt_int(
-            f"Wager ({self.info.min_bet}-{session.wallet.balance})",
-            self.info.min_bet,
-            session.wallet.balance,
-            default=self.info.min_bet,
+            f"Wager ({wager_min}-{wager_max})",
+            wager_min,
+            wager_max,
+            default=wager_min,
         )
         if not session.wallet.debit(amount, self.info.id, f"{btype} on {team}"):
             ui.error("Insufficient chips.")

@@ -54,6 +54,13 @@ Classic & high limit:
   Mandalay Fortune     5–50 chips per spin
   High Roller          25–500 chips per spin
 
+Stake tiers (choose before playing any machine or table):
+  Penny & Low Limit    $1–$25 per wager
+  Standard             $5–$100 per wager
+  High Limit           $25–$500 per wager
+  401K Contribution    $542–$6,500 per wager (avg employee deferral)
+  High Roller / No Limit  $2,500 minimum, no table maximum
+
 Progressives (max bet required for jackpot):
   Megabucks            1–3 chips   — Three 💵 at max bet wins the pool
   Monte Carlo          1–5 chips   — Linked progressive (👑 x3)

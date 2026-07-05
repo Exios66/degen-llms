@@ -7,6 +7,7 @@ from mandalay_bay.activities.registry import ACTIVITIES_BY_ID, ALL_ACTIVITIES, F
 from mandalay_bay.chips import ChipTransaction
 from mandalay_bay.display import TerminalUI, fmt_chips
 from mandalay_bay.help_text import SECTIONS
+from mandalay_bay.hotel_experience import run_hotel_lobby
 from mandalay_bay.session import PlayerSession
 
 if TYPE_CHECKING:
@@ -193,7 +194,7 @@ def run_hub(
 
         lobby_options = (
             [f"Explore {floor}" for floor in FLOOR_ORDER]
-            + ["Cashier", "Player Stats", "Save Game", "Casino Guide", "Leave Casino"]
+            + ["Cashier", "Player Stats", "Save Game", "Exit to Hotel", "Casino Guide", "Leave Casino"]
         )
         choice = ui.menu_choice(
             lobby_options,
@@ -214,6 +215,9 @@ def run_hub(
         elif choice == floor_count + 3:
             _save_game(session, ui, library)
         elif choice == floor_count + 4:
+            run_hotel_lobby(session, ui)
+            _autosave(session, library)
+        elif choice == floor_count + 5:
             run_help(ui)
         else:
             if ui.prompt_yes_no("Leave The Mandalay Bay?", default=False):

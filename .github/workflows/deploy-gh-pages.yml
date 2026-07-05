@@ -1,0 +1,63 @@
+name: Deploy GitHub Pages
+
+# Live site: gh-pages branch /docs/ (legacy GitHub Pages root = /docs on that branch).
+# Full mirror of main/docs/ — casino CSS, slot skins, horse sprites, hotel, RPG, etc.
+# Build outcomes: logs/gh-pages-build-status.log (see logs/README.md).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "scripts/sync-gh-pages.sh"
+      - "scripts/verify-gh-pages-live.sh"
+      - "scripts/log-gh-pages-workflow-failure.sh"
+      - "scripts/lib/gh-pages-build-log.sh"
+      - ".github/workflows/deploy-gh-pages.yml"
+  schedule:
+    # Hourly drift check — sync only when docs/ differs from main
+    - cron: "0 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pages-sync
+  cancel-in-progress: false
+
+jobs:
+  sync-gh-pages:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - name: Full sync docs/ to gh-pages and log build status
+        id: sync
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: bash scripts/sync-gh-pages.sh
+
+      - name: Site URL
+        if: success()
+        run: echo "Live at https://exios66.github.io/degen-llms/"
+
+      - name: Log workflow failure to build status log
+        if: failure()
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          if [[ "${{ steps.sync.outcome }}" == "success" ]]; then
+            echo "Sync step succeeded; build status already logged."
+            exit 0
+          fi
+          bash scripts/log-gh-pages-workflow-failure.sh failure \
+            "Deploy GitHub Pages workflow failed before or during sync (see Actions run for billing/checkout errors)"

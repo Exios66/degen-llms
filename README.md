@@ -28,13 +28,23 @@ Shares the same save slots and chip wallet as the terminal web app. See [`docs/r
 
 The web app in [`docs/`](docs/) mirrors the terminal experience. Session progress saves per slot in your browser via `localStorage`.
 
-The site source lives in the [`docs/`](docs/) folder on the **`gh-pages`** branch. GitHub Pages uses the default branch publisher (no custom deploy workflow).
+The site source lives in [`docs/`](docs/) on **`main`**. GitHub Actions mirrors the entire `docs/` tree to the **`gh-pages`** branch (see [`.github/workflows/deploy-gh-pages.yml`](.github/workflows/deploy-gh-pages.yml)).
 
-**Enable Pages (one-time):** Repository **Settings → Pages → Build and deployment → Source: Deploy from a branch → Branch: `gh-pages` → Folder: `/docs` → Save.**
+**Enable Pages (one-time):** Repository **Settings → Pages → Build and deployment → Deploy from branch → `gh-pages` → `/docs`.**
 
-After editing `docs/` on `main`, sync to `gh-pages` and push:
+**Automatic sync:**
+
+- On every push to `main` that touches `docs/**`
+- **Every hour** (UTC) — checks for drift and republishes only when files differ
+- Manual run via **Actions → Deploy GitHub Pages → Run workflow**
+
+Each run appends a sync ping to [`logs/gh-pages-sync.log`](logs/gh-pages-sync.log) and a build outcome line to [`logs/gh-pages-build-status.log`](logs/gh-pages-build-status.log) (formats and error codes in [`logs/README.md`](logs/README.md)).
+
+**Manual sync:**
 
 ```bash
+./scripts/sync-gh-pages.sh
+# or
 ./scripts/deploy-gh-pages.sh
 ```
 

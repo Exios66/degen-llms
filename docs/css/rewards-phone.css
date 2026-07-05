@@ -1,0 +1,227 @@
+/* MGM Rewards flip-phone — shared by digital casino + pixel RPG */
+
+.rewards-phone-root {
+  position: fixed;
+  z-index: 1200;
+  pointer-events: none;
+  bottom: 16px;
+  right: 16px;
+}
+
+.rewards-phone-root.compact {
+  bottom: 12px;
+  right: 12px;
+}
+
+.rewards-phone-root * {
+  pointer-events: auto;
+}
+
+.rewards-phone-fab {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  border: 2px solid #5a5040;
+  border-radius: 8px;
+  background: linear-gradient(145deg, #c8c8d0 0%, #888890 100%);
+  font-size: 22px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+  font-family: inherit;
+}
+
+.rewards-phone-fab:hover {
+  filter: brightness(1.08);
+}
+
+.rewards-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: #f07178;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+  font-family: "JetBrains Mono", "Press Start 2P", monospace;
+}
+
+.rewards-badge[hidden] {
+  display: none;
+}
+
+.rewards-toast {
+  position: absolute;
+  bottom: 60px;
+  right: 0;
+  max-width: 240px;
+  padding: 8px 10px;
+  background: rgba(20, 16, 31, 0.95);
+  border: 2px solid #e8c547;
+  color: #e6e1cf;
+  font-size: 9px;
+  line-height: 1.5;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  font-family: "JetBrains Mono", "Press Start 2P", monospace;
+}
+
+.rewards-toast[hidden] {
+  display: none;
+}
+
+.rewards-phone {
+  position: absolute;
+  bottom: 64px;
+  right: 0;
+}
+
+.rewards-phone-shell {
+  width: 148px;
+  padding: 8px 6px 12px;
+  background: linear-gradient(160deg, #d8d8e0 0%, #909098 55%, #686870 100%);
+  border-radius: 14px 14px 18px 18px;
+  border: 2px solid #505058;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
+}
+
+.rewards-phone-hinge {
+  width: 28px;
+  height: 4px;
+  margin: 0 auto 6px;
+  background: #606068;
+  border-radius: 2px;
+}
+
+.rewards-lcd {
+  background: #1a3d2a;
+  border: 2px inset #0d2818;
+  border-radius: 4px;
+  padding: 6px;
+  min-height: 200px;
+  max-height: 280px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  color: #7cfc7c;
+  font-family: "Press Start 2P", "JetBrains Mono", monospace;
+  font-size: 6px;
+  line-height: 1.7;
+}
+
+.rewards-lcd-header {
+  text-align: center;
+  color: #e8c547;
+  margin-bottom: 6px;
+  font-size: 7px;
+  letter-spacing: 1px;
+}
+
+.rewards-lcd-body {
+  flex: 1;
+  overflow-y: auto;
+  margin-bottom: 4px;
+}
+
+.rewards-lcd-body p {
+  margin: 0 0 4px;
+}
+
+.rewards-lcd-body p.dim {
+  color: #5a9c5a;
+}
+
+.rewards-lcd-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin-top: 4px;
+}
+
+.rewards-tab {
+  flex: 1 1 40%;
+  min-width: 40px;
+  padding: 3px 2px;
+  font-size: 5px;
+  background: #0d2818;
+  border: 1px solid #3a7c4a;
+  color: #7cfc7c;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.rewards-tab.active {
+  background: #2a5c3a;
+  color: #e8c547;
+}
+
+.rewards-lcd-close {
+  margin-top: 4px;
+  text-align: center;
+}
+
+.rewards-lcd-close button {
+  font-size: 6px;
+  padding: 4px 8px;
+  background: #0d2818;
+  border: 1px solid #3a7c4a;
+  color: #7cfc7c;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.rewards-progress {
+  height: 6px;
+  background: #0d2818;
+  border: 1px solid #3a7c4a;
+  margin: 4px 0;
+}
+
+.rewards-progress-fill {
+  height: 100%;
+  background: #e8c547;
+}
+
+.rewards-member-card {
+  border: 1px solid #e8c547;
+  padding: 6px;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.rewards-tier {
+  color: #e8c547;
+  font-size: 8px;
+  margin-bottom: 4px;
+}
+
+.rewards-comp-row,
+.rewards-note {
+  border-bottom: 1px solid #2a5c3a;
+  padding: 4px 0;
+  margin-bottom: 4px;
+}
+
+.rewards-note {
+  cursor: pointer;
+}
+
+.rewards-note.read {
+  opacity: 0.65;
+}
+
+.rewards-comp-row button,
+.rewards-lcd-body button {
+  margin-top: 4px;
+  font-size: 5px;
+  padding: 3px 6px;
+  background: #0d2818;
+  border: 1px solid #e8c547;
+  color: #e8c547;
+  cursor: pointer;
+  font-family: inherit;
+}

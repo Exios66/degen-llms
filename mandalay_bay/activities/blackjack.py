@@ -6,6 +6,7 @@ from blackjack.config import GameConfig, make_bot_names
 from mandalay_bay.activities.base import Activity, ActivityInfo
 from mandalay_bay.dealers import announce_dealer, pick_quip
 from mandalay_bay.session import PlayerSession
+from mandalay_bay.stakes import effective_table_stakes, pick_stake_tier
 
 
 class BlackjackActivity(Activity):
@@ -31,6 +32,14 @@ class BlackjackActivity(Activity):
             ui.pause()
             return
 
+        tier = pick_stake_tier(session, ui, title="Choose stake tier:")
+        if tier is None:
+            return
+        ui.dim(tier.description)
+        table_min, table_max = effective_table_stakes(
+            tier, session.wallet.balance, activity_min=self.info.min_bet
+        )
+
         mode = ui.menu_choice(
             ["Quick hand (solo, table minimums)", "Custom table setup"],
             title="Choose your table:",
@@ -41,8 +50,8 @@ class BlackjackActivity(Activity):
         if mode == 1:
             config = GameConfig(
                 starting_bankroll=session.wallet.balance,
-                min_bet=self.info.min_bet,
-                max_bet=min(100, max(self.info.min_bet, session.wallet.balance)),
+                min_bet=table_min,
+                max_bet=table_max,
                 use_color=session.use_color,
                 use_unicode=session.use_unicode,
             )
@@ -68,8 +77,8 @@ class BlackjackActivity(Activity):
         if mode == 0:
             mode = 1
         bankroll = session.wallet.balance
-        min_bet = ui.prompt_int("Minimum bet", 1, bankroll, default=min(10, bankroll))
-        max_bet = ui.prompt_int("Maximum bet", min_bet, bankroll, default=min(100, bankroll))
+        min_bet = ui.prompt_int("Minimum bet", 1, bankroll, default=min(table_min, bankroll))
+        max_bet = ui.prompt_int("Maximum bet", min_bet, bankroll, default=min(table_max, bankroll))
         num_decks = ui.prompt_int("Decks in shoe (1-8)", 1, 8, default=6)
         if mode == 2:
             num_bots = ui.prompt_int("Simulated players (1-6)", 1, 6, default=2)

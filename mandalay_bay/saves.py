@@ -8,7 +8,11 @@ from pathlib import Path
 
 from mandalay_bay.chips import ChipWallet, TransactionKind
 from mandalay_bay.display import TerminalUI, fmt_chips
-from mandalay_bay.hotel import HotelState, ensure_hotel
+from mandalay_bay.casino_amenities import CasinoAmenitiesState, ensure_amenities
+from mandalay_bay.hotel import HotelState, RoomAmenitiesState, default_hotel_state, ensure_hotel
+from mandalay_bay.pool_complex import PoolComplexState, ensure_pool_complex
+from mandalay_bay.world_cycle import WorldCycleState, ensure_world_cycle
+from mandalay_bay.rewards import RewardsState, SAVE_VERSION_WITH_REWARDS, ensure_rewards, migrate_session_rewards
 from mandalay_bay.session import ActivityStats, PlayerSession
 
 MAX_SLOTS = 5
@@ -177,6 +181,10 @@ class SaveLibrary:
             slot_id=slot_id,
             slot_label=label or f"Slot {slot_id}",
         )
+        ensure_hotel(session)
+        ensure_rewards(session)
+        ensure_pool_complex(session)
+        ensure_amenities(session)
         self.save_slot(session)
         return session
 
@@ -202,7 +210,7 @@ def session_to_dict(session: PlayerSession) -> dict:
             }
         )
     payload = {
-        "version": 1,
+        "version": SAVE_VERSION_WITH_REWARDS,
         "player_name": session.player_name,
         "slot_id": session.slot_id,
         "slot_label": session.slot_label,
@@ -214,6 +222,14 @@ def session_to_dict(session: PlayerSession) -> dict:
     }
     if hasattr(session, "hotel") and session.hotel is not None:
         payload["hotel"] = asdict(session.hotel)
+    if hasattr(session, "pool_complex") and session.pool_complex is not None:
+        payload["pool_complex"] = asdict(session.pool_complex)
+    if hasattr(session, "rewards") and session.rewards is not None:
+        payload["rewards"] = asdict(session.rewards)
+    if hasattr(session, "amenities") and session.amenities is not None:
+        payload["amenities"] = asdict(session.amenities)
+    if hasattr(session, "world_cycle") and session.world_cycle is not None:
+        payload["world_cycle"] = asdict(session.world_cycle)
     return payload
 
 
@@ -254,9 +270,30 @@ def session_from_dict(data: dict) -> PlayerSession:
         progressive_pools=dict(data.get("progressive_pools", {})),
     )
     if "hotel" in data:
-        session.hotel = HotelState(**data["hotel"])
+        hotel_data = dict(data["hotel"])
+        ra_data = hotel_data.pop("room_amenities", None)
+        session.hotel = HotelState(**hotel_data)
+        if ra_data:
+            session.hotel.room_amenities = RoomAmenitiesState(**ra_data)
     else:
         ensure_hotel(session)
+    if "pool_complex" in data:
+        session.pool_complex = PoolComplexState(**data["pool_complex"])
+    else:
+        ensure_pool_complex(session)
+    data_version = data.get("version", 1)
+    if "rewards" in data:
+        session.rewards = RewardsState(**data["rewards"])
+    else:
+        migrate_session_rewards(session, data_version)
+    if "amenities" in data:
+        session.amenities = CasinoAmenitiesState(**data["amenities"])
+    else:
+        ensure_amenities(session)
+    if "world_cycle" in data:
+        session.world_cycle = WorldCycleState(**data["world_cycle"])
+    else:
+        ensure_world_cycle(session)
     return session
 
 

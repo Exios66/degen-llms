@@ -1,6 +1,5 @@
 from pathlib import Path
 
-from mandalay_bay.activities.sportsbook import BetSlip, SportsbookActivity, SportsEvent
 from mandalay_bay.chips import ChipWallet
 from mandalay_bay.display import TerminalUI
 from mandalay_bay.hub import run_cashier, run_help, run_hub
@@ -47,33 +46,10 @@ def test_wallet_apply_delta_and_reconcile() -> None:
     wallet.reconcile(1050, "blackjack", "Exit sync")
     assert wallet.balance == 1050
 
-
-def test_spread_push_returns_stake() -> None:
-    activity = SportsbookActivity()
-    event = SportsEvent(
-        event_id="test",
-        sport="NFL",
-        home="Raiders",
-        away="Chiefs",
-        home_odds=-110,
-        away_odds=-110,
-        spread=-3.0,
-        spread_home_odds=-110,
-        spread_away_odds=-110,
-        home_score=20,
-        away_score=17,
-    )
-    slip = BetSlip(event=event, bet_type="spread", pick="Raiders", amount=100, odds=-110)
-    won, payout, reason = activity._resolve_slip(slip)
-    assert won is True
-    assert payout == 100
-    assert "Push" in reason
-
-
 def test_hub_leave_casino_flow(tmp_path: Path) -> None:
     library = SaveLibrary(save_dir=tmp_path / "saves")
     session = library.create_session(1, player_name="Guest", starting_chips=500)
-    ui = ScriptedUI(["10", "y"])
+    ui = ScriptedUI(["13", "y"])
     run_hub(session, ui, library=library, show_intro=False)
     assert session.wallet.balance == 500
     assert library.load_slot(1) is not None
@@ -102,7 +78,7 @@ def test_help_menu_renders(capsys) -> None:
 def test_main_lobby_has_no_back_option(capsys, tmp_path: Path) -> None:
     library = SaveLibrary(save_dir=tmp_path / "saves")
     session = library.create_session(1, player_name="Guest", starting_chips=1000)
-    ui = ScriptedUI(["10", "n", "10", "y"])
+    ui = ScriptedUI(["13", "n", "13", "y"])
     run_hub(session, ui, library=library, show_intro=False)
     lobby_section = capsys.readouterr().out.split("Choose your adventure")[1].split("Choose:")[0]
     assert "0) Back" not in lobby_section

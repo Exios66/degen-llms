@@ -9,10 +9,17 @@
     "text": "Your chip balance carries everywhere on the floor. Press P for your MGM Rewards phone — comps ping in as you play. Talk to NPCs with E or Enter. Betty runs the lobby bar west side; Paula handles the Racing Pavilion northeast. Good luck — the house is patient.",
     "setFlag": "met_chip_chandler",
     "choices": [
+      { "label": "Where's my room?", "next": "chip_chandler_room" },
       { "label": "Any secrets?", "next": "chip_chandler_secret" },
       { "label": "Who's dealing tonight?", "next": "chip_chandler_dealers" },
       { "label": "Thanks!", "next": "chip_chandler_bye" }
     ]
+  },
+  "chip_chandler_room": {
+    "speaker": "Chip Chandler",
+    "text": "Your reservation is in the hotel system. Click Hotel in the HUD bar above to reach the lobby — front desk, hallway, and your room. Press P → Reservation first if you need your tower and floor.",
+    "setFlag": "hotel_directions_given",
+    "next": "chip_chandler_bye"
   },
   "chip_chandler_secret": {
     "speaker": "Chip Chandler",
@@ -33,28 +40,40 @@
 
   "steve_harvey_greet": {
     "speaker": "Steve Harvey",
-    "text": "Welcome to Table 9! I'm Steve Harvey — yes, THAT Steve Harvey — and this wheel does not play. Minimum ten chips. Survey says… that's a bargain.",
+    "text": "Welcome to Table 9! I'm Steve Harvey — yes, THAT Steve Harvey — and this wheel does not play. Minimum ten chips. Survey says… that's a bargain. Show me 'Reasons You Came to Vegas' — top answer on the board is 'bad decisions.'",
     "choices": [
       { "label": "Just watching for now.", "next": "steve_harvey_watch" },
-      { "label": "Where's the Pavilion?", "next": "steve_harvey_pavilion" }
+      { "label": "Where's the Pavilion?", "next": "steve_harvey_pavilion" },
+      { "label": "Any advice from your comedy days?", "next": "steve_harvey_comedy" }
     ]
   },
   "steve_harvey_return": {
     "speaker": "Steve Harvey",
-    "text": "Back again? Survey says… the wheel missed you. Paula at the Pavilion has race cards if you want action without the spin.",
+    "text": "Back again? Survey says… the wheel missed you. Paula at the Pavilion has race cards if you want action without the spin. Family Feud taught me patience — roulette taught me pain.",
     "choices": [
       { "label": "Tell me about the Pavilion.", "next": "steve_harvey_pavilion" },
+      { "label": "Game show wisdom?", "next": "steve_harvey_feud" },
       { "label": "I'll wander.", "next": "steve_harvey_watch" }
     ]
   },
   "steve_harvey_watch": {
     "speaker": "Steve Harvey",
-    "text": "Smart. Watch the wheel, learn the rhythm. Come back when you're ready — I'll be here or calling races. The house is patient. I'm not.",
+    "text": "Smart. Watch the wheel, learn the rhythm. Come back when you're ready — I'll be here or calling races. The house is patient. I'm not. In stand-up I said you gotta jump — same at this table.",
     "setFlag": "steve_harvey_seen"
   },
   "steve_harvey_pavilion": {
     "speaker": "Steve Harvey",
-    "text": "Northeast corner — Pavilion Paula runs the window. When I'm on duty there, Survey says… bet the long shot. When I'm not, still bet the long shot. Entertainment!",
+    "text": "Northeast corner — Pavilion Paula runs the window. When I'm on duty there, Survey says… bet the long shot. When I'm not, still bet the long shot. Entertainment! And down the stretch they come!",
+    "next": "steve_harvey_watch"
+  },
+  "steve_harvey_comedy": {
+    "speaker": "Steve Harvey",
+    "text": "Before the suits and the surveys, I was on stage talking about marriage, money, and mustard. Same lessons apply: don't bet the rent, don't marry someone who hates casinos, and never argue with a roulette wheel.",
+    "next": "steve_harvey_watch"
+  },
+  "steve_harvey_feud": {
+    "speaker": "Steve Harvey",
+    "text": "Name something you shout when you win big. Survey says… 'OH NO!' because half of Vegas wins loud and loses quiet. Top answer: 'I CAN'T BELIEVE IT!' Second answer: 'I CAN BELIEVE IT — I NEED A DRINK.'",
     "next": "steve_harvey_watch"
   },
 
@@ -244,7 +263,7 @@
   },
   "pavilion_paula_steve": {
     "speaker": "Pavilion Paula",
-    "text": "When Steve's on duty, you'll hear him before you see him. 'Survey says… Royal Flush in the stretch!' He rotates in from roulette. The man loves a long shot.",
+    "text": "When Steve's on duty, you'll hear him before you see him. 'Royal Flush in the stretch!' and 'Survey says… bet the long shot!' He rotates in from roulette. The man loves a long shot — says it beats Family Feud applause every time.",
     "next": "pavilion_paula_bye"
   },
   "pavilion_paula_tips": {
@@ -282,5 +301,92 @@
     "speaker": "Tourist Tina",
     "text": "If you find the shark aquarium, tell me — I got lost twice already!",
     "setFlag": "met_tina"
+  },
+
+  "clerk_carmen_greet": {
+    "speaker": "Clerk Carmen",
+    "text": "Welcome to the hotel tower. Reservation on file? The hallway is that way — or use the web Hotel HUD for the full room experience.",
+    "choices": [
+      { "label": "Where's my room?", "next": "clerk_carmen_room" },
+      { "label": "Checkout?", "next": "clerk_carmen_checkout" },
+      { "label": "Thanks", "next": "clerk_carmen_bye" }
+    ]
+  },
+  "clerk_carmen_room": {
+    "speaker": "Clerk Carmen",
+    "text": "Press Hotel in the HUD — hallway mini-game, minibar, aquarium TV, the works. Press P first if you need your tower.",
+    "setFlag": "hotel_tower_visit",
+    "next": "clerk_carmen_bye"
+  },
+  "clerk_carmen_checkout": {
+    "speaker": "Clerk Carmen",
+    "text": "Folio review, late checkout, express for Pearl+ — all in the front desk menu. Minibar sensor never sleeps.",
+    "next": "clerk_carmen_bye"
+  },
+  "clerk_carmen_bye": {
+    "speaker": "Clerk Carmen",
+    "text": "Elevator down returns you to the casino lobby.",
+    "setFlag": "met_carmen"
+  },
+
+  "hotel_room_door": {
+    "speaker": "Room Door",
+    "text": "Room key works on the third try. For in-room amenities — TV, minibar, phone — open the Hotel HUD from the bar above.",
+    "setFlag": "found_hotel_room",
+    "next": "hotel_room_door_bye"
+  },
+  "hotel_room_door_bye": {
+    "speaker": "Room Door",
+    "text": "The bay glitters below. Bad decisions await inside."
+  },
+
+  "lifeguard_lou_greet": {
+    "speaker": "Lifeguard Lou",
+    "text": "Eleven acres of chlorinated ambition. Wave pool's center stage — timing matters.",
+    "choices": [
+      { "label": "Ride the wave", "next": "lifeguard_lou_wave" },
+      { "label": "Pool complex menu?", "next": "lifeguard_lou_menu" },
+      { "label": "Thanks", "next": "lifeguard_lou_bye" }
+    ]
+  },
+  "lifeguard_lou_wave": {
+    "speaker": "Lifeguard Lou",
+    "text": "You splash in perfectly. Chlorinated triumph.",
+    "setFlag": "pool_wave_pool",
+    "next": "lifeguard_lou_bye"
+  },
+  "lifeguard_lou_menu": {
+    "speaker": "Lifeguard Lou",
+    "text": "Full pool complex — cabanas, shark reef, beach rave — lives in the Hotel HUD under Pool Complex. Same save, same debauchery.",
+    "next": "lifeguard_lou_bye"
+  },
+  "lifeguard_lou_bye": {
+    "speaker": "Lifeguard Lou",
+    "text": "Walk south to the lobby elevator when you're pruned.",
+    "setFlag": "met_lifeguard_lou"
+  },
+
+  "shark_reef_guide_greet": {
+    "speaker": "Reef Guide",
+    "text": "Sand tiger sharks circle the acrylic tunnel. Channel 47 in your room plays this feed live.",
+    "setFlag": "pool_shark_reef",
+    "next": "shark_reef_guide_bye"
+  },
+  "shark_reef_guide_bye": {
+    "speaker": "Reef Guide",
+    "text": "The shark makes eye contact. It has seen worse nights than yours.",
+    "setFlag": "met_shark_guide"
+  },
+
+  "beach_dj_greet": {
+    "speaker": "Beach DJ",
+    "text": "Neon after dark — glow sticks, bass drops, wave pool lit like a fever dream.",
+    "setFlag": "pool_beach_rave",
+    "next": "beach_dj_bye"
+  },
+  "beach_dj_bye": {
+    "speaker": "Beach DJ",
+    "text": "Rave til dawn. Survey says… dance.",
+    "setFlag": "met_beach_dj"
   }
 }

@@ -1,5 +1,10 @@
 name: Deploy GitHub Pages
 
+# The live site is served from the gh-pages branch (/docs) via legacy Pages
+# build. The github-pages Actions environment only allows gh-pages/pages
+# branches, so we sync docs/ from main onto gh-pages instead of using
+# actions/deploy-pages from main.
+
 on:
   push:
     branches: [main]
@@ -9,49 +14,36 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
-  group: pages
-  cancel-in-progress: true
+  group: pages-sync
+  cancel-in-progress: false
 
 jobs:
-  deploy:
+  sync-gh-pages:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Checkout
+      - name: Checkout main
         uses: actions/checkout@v4
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
         with:
-          path: docs
+          ref: main
+          fetch-depth: 0
 
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
-        with:
-          timeout: 900000
-          error_count: 15
-          reporting_interval: 10000
+      - name: Sync docs to gh-pages branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin gh-pages
+          git checkout gh-pages
+          git checkout origin/main -- docs/
+          if git diff --quiet; then
+            echo "docs/ already up to date on gh-pages"
+          else
+            git add docs/
+            git commit -m "Sync gh-pages/docs/ from main (${GITHUB_SHA:0:7})"
+            git push origin gh-pages
+          fi
 
-      - name: Wait before retry
-        if: failure() && steps.deployment.outcome == 'failure'
-        run: sleep 60
-
-      - name: Retry deploy (transient Pages failures)
-        if: failure() && steps.deployment.outcome == 'failure'
-        id: deployment-retry
-        uses: actions/deploy-pages@v4
-        with:
-          timeout: 900000
-          error_count: 15
-          reporting_interval: 10000
+      - name: Site URL
+        run: echo "Live at https://exios66.github.io/degen-llms/"

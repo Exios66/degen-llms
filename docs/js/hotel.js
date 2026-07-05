@@ -251,7 +251,7 @@ export function extendStay(session, nights = 1, rewardsTracker) {
     !rewards?.redeemedComps?.includes("room_night");
   const netPositive = isNetPositive(session);
 
-  if (hasComp) {
+  if (hasRoomComp) {
     rewardsTracker?.redeemComp?.("room_night");
     hotel.nightsRemaining += nights;
     return { ok: true, message: `Comp night applied! ${hotel.nightsRemaining} night(s) remaining.` };

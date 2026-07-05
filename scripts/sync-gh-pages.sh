@@ -76,6 +76,11 @@ else
   cp -a "$STAGING/docs/." docs/
   touch docs/.nojekyll
 
+  # Bust browser caches after each deploy (index.html only on gh-pages).
+  if [[ -f docs/index.html ]]; then
+    sed -i "s/__ASSET_SHA__/${MAIN_SHA_SHORT}/g" docs/index.html
+  fi
+
   git add -A docs/
   git commit -m "Sync gh-pages/docs/ from $SOURCE_BRANCH ($MAIN_SHA_SHORT)
 

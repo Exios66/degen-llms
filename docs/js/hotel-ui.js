@@ -74,6 +74,7 @@ export function buildHotelRenderers(ctx) {
           menuBtn("Front Desk — Clerk Carmen", () => pushView("hotel-front-desk")),
           menuBtn("Guest Directory — lobby guest book", () => pushView("hotel-guest-directory")),
           menuBtn("Find my room (hallway)", () => pushView("hotel-hallway")),
+          menuBtn("Pool Complex — 11-acre expansion pack", () => pushView("pool-complex")),
           hotel.reachedRoom ? menuBtn("Enter your room", () => pushView("hotel-room")) : null,
           menuBtn("Return to Casino Floor", () => { viewToHub(ctx); }),
           menuBtn("Back", goBack, true),

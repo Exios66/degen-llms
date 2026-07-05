@@ -1,5 +1,6 @@
 import { attachRewardsToSession } from "./rewards.js";
 import { attachHotelToSession } from "./hotel.js";
+import { attachPoolComplexToSession } from "./pool-complex.js";
 import {
   getActiveSlotId,
   mirrorLibraryToCache,
@@ -215,6 +216,7 @@ export class PlayerSession {
     if (this.rpg) payload.rpg = this.rpg;
     if (this.rewards) payload.rewards = this.rewards;
     if (this.hotel) payload.hotel = this.hotel;
+    if (this.poolComplex) payload.poolComplex = this.poolComplex;
     return payload;
   }
 
@@ -238,6 +240,7 @@ export class PlayerSession {
     s.rpgData = data.rpgData ?? null;
     attachRewardsToSession(s, data);
     attachHotelToSession(s, data);
+    attachPoolComplexToSession(s, data);
     return s;
   }
 }

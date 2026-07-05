@@ -30,8 +30,8 @@ TV_CHANNELS = {
     },
     "steve_harvey": {
         "label": "Channel 88 — Steve Harvey Race Replay",
-        "description": "Steve Harvey calls a photo finish with theatrical certainty.",
-        "flavor": "You already bet the trifecta. Results pending.",
+        "description": "Steve Harvey calls a photo finish with theatrical certainty — Family Feud energy on a racetrack.",
+        "flavor": "And the winner is— Results pending. Survey says… bet the long shot!",
         "requires_net_positive": True,
     },
     "foreign_films": {

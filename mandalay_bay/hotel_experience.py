@@ -40,25 +40,30 @@ def run_hotel_lobby(session: PlayerSession, ui: TerminalUI) -> None:
             ui.print("Locate your reservation via MGM Rewards or the front desk.")
         if is_net_positive(session):
             ui.success(f"Floor net: {session_net_chips(session):+,} — upgrades available.")
-        choice = ui.menu_choice(
-            [
-                "Front Desk — Clerk Carmen",
-                "Guest Directory — lobby guest book",
-                "Find my room (hallway)",
-                "Enter room" if hotel.reached_room else None,
-                "Return to casino floor",
-            ],
-            title="Hotel lobby:",
-        )
+        options = [
+            "Front Desk — Clerk Carmen",
+            "Guest Directory — lobby guest book",
+            "Find my room (hallway)",
+            "Pool Complex — 11-acre expansion pack",
+        ]
+        if hotel.reached_room:
+            options.append("Enter room")
+        options.append("Return to casino floor")
+        choice = ui.menu_choice(options, title="Hotel lobby:")
         if choice == 0:
             return
-        if choice == 1:
+        label = options[choice - 1]
+        if label.startswith("Front Desk"):
             run_front_desk(session, ui)
-        elif choice == 2:
+        elif label.startswith("Guest Directory"):
             run_guest_directory(session, ui)
-        elif choice == 3:
+        elif label.startswith("Find my room"):
             run_hallway(session, ui)
-        elif choice == 4 and hotel.reached_room:
+        elif label.startswith("Pool Complex"):
+            from mandalay_bay.pool_experience import run_pool_complex
+
+            run_pool_complex(session, ui)
+        elif label.startswith("Enter room"):
             run_room(session, ui)
         else:
             return

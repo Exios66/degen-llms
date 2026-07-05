@@ -4,6 +4,9 @@ import {
   currentHallwayBeat, hallwayChoice, upgradeRoom, extendStay, resetHallway,
   isNetPositive, sessionNetChips,
 } from "./hotel.js";
+import {
+  loadGuestRegistry, listAllGuests, signGuestDirectory, hasSigned, formatSignedAt,
+} from "./guest-directory.js";
 
 /**
  * Hotel view renderers for the digital casino.
@@ -64,6 +67,7 @@ export function buildHotelRenderers(ctx) {
         netLine,
         el("ul", { className: "menu-list" }, [
           menuBtn("Front Desk — Clerk Carmen", () => pushView("hotel-front-desk")),
+          menuBtn("Guest Directory — lobby guest book", () => pushView("hotel-guest-directory")),
           menuBtn("Find my room (hallway)", () => pushView("hotel-hallway")),
           hotel.reachedRoom ? menuBtn("Enter your room", () => pushView("hotel-room")) : null,
           menuBtn("Return to Casino Floor", () => { viewToHub(ctx); }),
@@ -109,6 +113,7 @@ export function buildHotelRenderers(ctx) {
             persist();
             render();
           }),
+          menuBtn("Guest Directory — sign the lobby book", () => pushView("hotel-guest-directory")),
           netPositive
             ? el("p", { className: "dim", textContent: "Net-positive — paid upgrades available if comps are spent." })
             : el("p", { className: "dim", textContent: "Unlock room comps via MGM Rewards tier play." }),
@@ -179,6 +184,102 @@ export function buildHotelRenderers(ctx) {
     ]);
   }
 
+  function renderGuestDirectoryPanel(container, { showSignForm = true } = {}) {
+    container.replaceChildren(el("p", { className: "dim", textContent: "Opening the guest book…" }));
+    Promise.all([loadGuestRegistry(), listAllGuests()]).then(([registry, guests]) => {
+      container.replaceChildren();
+      container.appendChild(el("p", { className: "subtitle", textContent: registry.title }));
+      if (registry.subtitle) {
+        container.appendChild(el("p", { className: "dim guest-directory-intro", textContent: registry.subtitle }));
+      }
+      container.appendChild(el("p", {
+        className: "dim guest-directory-count",
+        textContent: `${guests.length} signature${guests.length === 1 ? "" : "s"} on record — past guests remain visible to everyone.`,
+      }));
+
+      const list = el("ol", { className: "guest-directory-list" });
+      for (const guest of guests) {
+        list.appendChild(el("li", { className: "guest-directory-entry" + (guest.seed ? " seed" : "") }, [
+          el("span", { className: "guest-directory-name", textContent: guest.name }),
+          el("span", { className: "guest-directory-date dim", textContent: formatSignedAt(guest.signedAt) }),
+          guest.note ? el("p", { className: "guest-directory-note dim", textContent: guest.note }) : null,
+        ].filter(Boolean)));
+      }
+      container.appendChild(list);
+
+      if (showSignForm) {
+        const playerName = session.playerName?.trim() || "Guest";
+        const alreadySigned = hasSigned(playerName);
+        const form = el("div", { className: "guest-directory-sign" });
+        form.appendChild(el("p", { className: "subtitle", textContent: "Sign the guest book" }));
+        const nameInput = el("input", {
+          className: "guest-directory-input",
+          type: "text",
+          maxLength: 64,
+          value: playerName,
+          placeholder: "Your name",
+          disabled: alreadySigned,
+        });
+        const noteInput = el("input", {
+          className: "guest-directory-input",
+          type: "text",
+          maxLength: 160,
+          placeholder: "Optional note (room, occasion, etc.)",
+          disabled: alreadySigned,
+        });
+        const feedback = el("div", { className: "log-area guest-directory-feedback" });
+        const signBtn = el("button", {
+          className: "btn primary",
+          textContent: alreadySigned ? "Already signed" : "Sign guest book",
+          disabled: alreadySigned,
+          onclick: () => {
+            feedback.replaceChildren();
+            const result = signGuestDirectory(nameInput.value, noteInput.value);
+            if (!result.ok) {
+              feedback.appendChild(el("div", { className: "line error", textContent: result.message }));
+              return;
+            }
+            feedback.appendChild(el("div", {
+              className: "line success",
+              textContent: `${result.entry.name} signed the guest directory.`,
+            }));
+            renderGuestDirectoryPanel(container, { showSignForm: true });
+          },
+        });
+        form.appendChild(nameInput);
+        form.appendChild(noteInput);
+        form.appendChild(signBtn);
+        form.appendChild(feedback);
+        if (alreadySigned) {
+          form.appendChild(el("p", {
+            className: "dim",
+            textContent: `"${playerName}" is already in the directory. Every past signature stays on the list.`,
+          }));
+        }
+        container.appendChild(form);
+      }
+    }).catch(() => {
+      container.replaceChildren(el("p", { className: "error", textContent: "Could not load the guest directory." }));
+    });
+  }
+
+  function renderHotelGuestDirectory() {
+    const book = el("div", { className: "guest-directory-book" });
+    renderGuestDirectoryPanel(book);
+    return el("div", {}, [
+      banner("Guest Directory"),
+      chipLine(),
+      el("div", { className: "panel hotel-panel guest-directory-panel" }, [
+        el("p", { className: "dim", textContent: "Leather-bound lobby guest book — hardcoded roster plus every visitor signature." }),
+        book,
+        el("ul", { className: "menu-list" }, [
+          menuBtn("Back to hotel lobby", () => pushView("hotel-lobby")),
+          menuBtn("Back", goBack, true),
+        ]),
+      ]),
+    ]);
+  }
+
   function renderHotelRoom() {
     const hotel = ensureHotel(session);
     const room = getRoomType(hotel);
@@ -190,6 +291,7 @@ export function buildHotelRenderers(ctx) {
         el("p", { textContent: room.description }),
         el("p", { className: "dim", textContent: `${hotel.nightsRemaining} night(s) remaining. The bay glitters below.` }),
         el("ul", { className: "menu-list" }, [
+          menuBtn("Guest Directory — bedside guest book", () => pushView("hotel-guest-directory")),
           menuBtn("Return to casino floor", () => viewToHub(ctx)),
           menuBtn("Hotel lobby", () => pushView("hotel-lobby")),
           menuBtn("Back", goBack, true),
@@ -201,6 +303,7 @@ export function buildHotelRenderers(ctx) {
   return {
     "hotel-lobby": renderHotelLobby,
     "hotel-front-desk": renderHotelFrontDesk,
+    "hotel-guest-directory": renderHotelGuestDirectory,
     "hotel-hallway": renderHotelHallway,
     "hotel-room": renderHotelRoom,
   };

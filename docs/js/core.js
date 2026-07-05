@@ -1,5 +1,8 @@
+import { attachRewardsToSession } from "./rewards.js";
+import { attachHotelToSession } from "./hotel.js";
+
 export const CASINO_NAME = "The Mandalay Bay";
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 4;
 
 /** Default RPG overworld state for pixel mode (Phase 1+). */
 export function defaultRpgState(overrides = {}) {
@@ -156,7 +159,12 @@ export class PlayerSession {
     this.sportsbookData = null;
     this.rpg = null;
     this.rpgData = null;
+    this.rewards = null;
+    this.hotel = null;
     this.progressivePools = {};
+    this.horseRacingCustomNames = null;
+    this.horseRacingNameOffset = 0;
+    this.horseRacingSpriteOffset = 0;
   }
 
   statFor(activity) {
@@ -194,8 +202,13 @@ export class PlayerSession {
       sportsbook: this.sportsbookData ?? null,
       rpgData: this.rpgData ?? null,
       progressivePools: this.progressivePools ?? {},
+      horseRacingCustomNames: this.horseRacingCustomNames ?? null,
+      horseRacingNameOffset: this.horseRacingNameOffset ?? 0,
+      horseRacingSpriteOffset: this.horseRacingSpriteOffset ?? 0,
     };
     if (this.rpg) payload.rpg = this.rpg;
+    if (this.rewards) payload.rewards = this.rewards;
+    if (this.hotel) payload.hotel = this.hotel;
     return payload;
   }
 
@@ -212,8 +225,13 @@ export class PlayerSession {
     s.activityStats = data.activityStats ?? {};
     s.sportsbookData = data.sportsbook ?? null;
     s.progressivePools = data.progressivePools ?? {};
+    s.horseRacingCustomNames = data.horseRacingCustomNames ?? null;
+    s.horseRacingNameOffset = data.horseRacingNameOffset ?? 0;
+    s.horseRacingSpriteOffset = data.horseRacingSpriteOffset ?? 0;
     s.rpg = data.rpg ? { ...defaultRpgState(), ...data.rpg } : null;
     s.rpgData = data.rpgData ?? null;
+    attachRewardsToSession(s, data);
+    attachHotelToSession(s, data);
     return s;
   }
 }

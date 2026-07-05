@@ -8,19 +8,22 @@ import {
   spinReels,
   displaySymbol,
   calculatePayout,
-  formatPaytableText,
-  formatMachineLabel,
   contributeToProgressive,
   tryJackpot,
   progressivePool,
 } from "./slots.js";
+import { getMachineUI, paytableEntries, SLOT_CATEGORIES } from "./slots-ui.js";
 import { SportsbookState, fmtOdds } from "./sportsbook.js";
 import { BlackjackGame, defaultConfig, Action } from "./blackjack/game.js";
 import { HoldemTable, BettingAction } from "./holdem/game.js";
 import { HAND_CLASS_NAMES } from "./holdem/hand_eval.js";
 import { BET_TYPES, spinWheel, wheelColor, resolveBet, RED_NUMBERS } from "./roulette.js";
-import { generateRace, simulateRace, settleTicket, fmtOdds as fmtRaceOdds } from "./horse_racing.js";
+import { generateRace, simulateRace, settleTicket, fmtOdds as fmtRaceOdds, loadBundledHorseNames, parseHorseNamesCSV, setCustomHorseNames, getHorseNamePool } from "./horse_racing.js";
+import { createHorseSpriteCanvas, getHorseSprite } from "./horse-sprites.js";
 import { getSessionDealer, pickQuip } from "./dealers.js";
+import { RewardsPhone } from "./RewardsPhone.js";
+import { buildHotelRenderers } from "./hotel-ui.js";
+import { ensureHotel } from "./hotel.js";
 import {
   STAKE_TIERS, TIER_ORDER, getTier, formatTierLabel, effectiveTableStakes, effectiveSlotStakes,
   formatStakeRange, tierUsesSalonLimits,
@@ -29,6 +32,7 @@ import {
 const app = document.getElementById("app");
 
 let session = new PlayerSession();
+let rewardsPhone = null;
 let sportsbook = new SportsbookState();
 let blackjackGame = null;
 let blackjackSessionNet = 0;
@@ -53,7 +57,16 @@ function resetSportsbookFromSession() {
 
 function persist() {
   syncSportsbookToSession();
+  rewardsPhone?.tracker.syncFromWallet();
   if (session.slotId != null) saveSlot(session);
+}
+
+function mountRewardsPhone() {
+  const root = document.getElementById("rewards-phone");
+  if (!root) return;
+  ensureHotel(session);
+  rewardsPhone = new RewardsPhone(root, session, { onPersist: persist });
+  rewardsPhone.sync();
 }
 
 function showStatus(text, type = "success") {
@@ -194,6 +207,109 @@ function machineLog(lines, { max = 12, lineClass = "dim" } = {}) {
   return log;
 }
 
+function slotMachineCard(machine, onSelect) {
+  const ui = getMachineUI(machine);
+  const meta = [el("span", { className: "slot-machine-card-bet", textContent: `${machine.minBet}–${machine.maxBet} chips` })];
+  if (machine.progressive && machine.progressivePoolId) {
+    meta.push(el("span", {
+      className: "slot-machine-card-jackpot",
+      textContent: `JP ${progressivePool(session, machine.progressivePoolId, machine.progressiveSeed).toLocaleString()}`,
+    }));
+  }
+  return el("button", {
+    type: "button",
+    className: `slot-machine-card ${ui.themeClass}`,
+    onclick: onSelect,
+  }, [
+    el("div", { className: "slot-machine-card-header" }, [
+      el("span", { className: "slot-machine-card-icon", textContent: ui.icon }),
+      el("span", { className: "slot-machine-card-badge", textContent: ui.badge }),
+    ]),
+    el("p", { className: "slot-machine-card-name", textContent: machine.name }),
+    el("p", { className: "slot-machine-card-tagline", textContent: machine.tagline }),
+    el("div", { className: "slot-machine-card-meta" }, meta),
+    el("p", { className: "slot-machine-card-playstyle", textContent: ui.playstyle }),
+  ]);
+}
+
+function slotPaytablePanel(machine) {
+  const rows = paytableEntries(machine).map((entry) =>
+    el("div", {
+      className: `slot-paytable-row${entry.progressive ? " slot-paytable-row--jackpot" : ""}`,
+    }, [
+      el("span", { textContent: entry.label }),
+      el("span", {
+        className: "slot-paytable-mult",
+        textContent: entry.progressive ? `PROGRESSIVE (${entry.note})` : `${entry.mult}x`,
+      }),
+    ])
+  );
+  return el("div", { className: "slot-paytable-panel" }, [
+    el("div", { className: "slot-paytable-title", textContent: "Paytable" }),
+    el("div", { className: "slot-paytable-grid" }, rows),
+  ]);
+}
+
+function slotReelWindow(machine, reels, { spinning = false, win = false } = {}) {
+  const ui = getMachineUI(machine);
+  const symbols = reels?.length === 3
+    ? reels.map((r) => displaySymbol(r, session.useUnicode))
+    : ["—", "—", "—"];
+  const windowEl = el("div", {
+    className: `slot-reel-window slot-reel-window--${ui.reelFrame}${win ? " slot-reel-window--win" : ""}${spinning ? " slot-reel--spinning" : ""}`,
+  });
+  for (const sym of symbols) {
+    windowEl.appendChild(el("div", { className: "slot-reel" }, [
+      el("span", { className: "slot-reel-symbol", textContent: sym }),
+    ]));
+  }
+  return windowEl;
+}
+
+function slotCabinet(machine, { screenChildren = [], baseChildren = [] }) {
+  const ui = getMachineUI(machine);
+  const badges = [
+    el("span", { className: "slot-cabinet-badge", textContent: ui.category }),
+    el("span", { className: "slot-cabinet-badge", textContent: ui.badge }),
+  ];
+  return el("div", { className: `slot-cabinet ${ui.themeClass}` }, [
+    el("div", { className: "slot-cabinet-topper" }, [
+      el("div", { className: "slot-cabinet-name", textContent: `${ui.icon}  ${machine.name}` }),
+      machine.tagline ? el("p", { className: "slot-cabinet-tagline", textContent: machine.tagline }) : null,
+      el("div", { className: "slot-cabinet-badges" }, badges),
+    ]),
+    el("div", { className: "slot-cabinet-screen" }, screenChildren.filter(Boolean)),
+    el("div", { className: "slot-cabinet-base" }, baseChildren.filter(Boolean)),
+  ]);
+}
+
+function horsePaddockCard(horse, { selected = false, onClick = null } = {}) {
+  const spriteMeta = getHorseSprite(horse.spriteId);
+  const card = el("div", {
+    className: `horse-paddock-card${selected ? " horse-paddock-card--selected" : ""}`,
+  }, [
+    createHorseSpriteCanvas(horse.spriteId, { size: 72 }),
+    el("div", { className: "horse-paddock-num", textContent: `#${horse.number}` }),
+    el("div", { className: "horse-paddock-name", textContent: horse.name }),
+    el("div", { className: "horse-paddock-sprite-label", textContent: spriteMeta.label }),
+    el("div", { className: "horse-paddock-odds", textContent: fmtRaceOdds(horse.odds) }),
+  ]);
+  if (onClick) {
+    card.style.cursor = "pointer";
+    card.onclick = onClick;
+  }
+  return card;
+}
+
+function renderHorsePaddock(horses, { selectedNumber = null, onSelect = null } = {}) {
+  return el("div", { className: "racing-paddock" }, horses.map((h) =>
+    horsePaddockCard(h, {
+      selected: selectedNumber === h.number,
+      onClick: onSelect ? () => onSelect(h.number) : null,
+    })
+  ));
+}
+
 function menu(options, title, onSelect, { showCasinoBanner = true } = {}) {
   const items = options.map((opt, i) =>
     el("li", {}, [
@@ -223,17 +339,19 @@ function enterCasino(nextSession) {
   resetSportsbookFromSession();
   blackjackGame = null;
   blackjackSessionNet = 0;
-  slotsState = { machine: null, sessionNet: 0, spins: 0 };
+  slotsState = { machine: null, sessionNet: 0, spins: 0, spinning: false, lastWin: false, lastReels: null, lastMessage: null };
   holdemState = null;
   rouletteState = { sessionNet: 0, spins: 0, lastNumber: null, spinning: false };
   horseRacingState = { card: null, pending: [], sessionNet: 0, races: 0 };
   viewStack = [{ name: "hub", data: {} }];
   clearStatus();
+  mountRewardsPhone();
   render();
 }
 
 function returnToSavePicker() {
   persist();
+  rewardsPhone?.close();
   sportsbook = new SportsbookState();
   blackjackGame = null;
   holdemState = null;
@@ -303,6 +421,29 @@ function renderTable(snapshot) {
       el("span", { className: "bj-hand-value", textContent: `(${d.value})` }),
     ]);
     container.appendChild(dealerRow);
+  }
+
+  const seatsEl = el("div", { className: "bj-seats" });
+  for (const row of snapshot.rows) {
+    const badges = [];
+    if (row.surrendered) badges.push(el("span", { className: "bj-seat-badge bj-seat-badge--surrender", textContent: "SURR" }));
+    else if (row.bust) badges.push(el("span", { className: "bj-seat-badge bj-seat-badge--bust", textContent: "BUST" }));
+    else if (row.blackjack) badges.push(el("span", { className: "bj-seat-badge bj-seat-badge--bj", textContent: "BJ" }));
+
+    const seatEl = el("div", { className: row.highlight ? "bj-seat bj-seat--active" : "bj-seat" }, [
+      el("div", { className: "bj-seat-info" }, [
+        el("div", { className: "bj-seat-name", textContent: `Seat ${row.seat} ${row.label}` }),
+        el("div", {
+          className: "bj-seat-meta",
+          textContent: `${fmtChips(row.bankroll)} · bet ${fmtChips(row.bet)}`,
+        }),
+      ]),
+      cardRow(row.cards),
+      el("span", { className: "bj-hand-value", textContent: `(${row.value})` }),
+      ...badges,
+    ]);
+    seatsEl.appendChild(seatEl);
+  }
   }
 
   const seatsEl = el("div", { className: "bj-seats" });
@@ -567,7 +708,7 @@ function renderSaveDelete() {
 }
 
 function renderHub() {
-  const floors = [...FLOOR_ORDER, "Cashier", "Player Stats", "Save Game", "Explore Resort (RPG)", "Leave Casino"];
+  const floors = [...FLOOR_ORDER, "Cashier", "Player Stats", "Save Game", "Exit to Hotel", "Explore Resort (RPG)", "Leave Casino"];
   const options = floors.map((f) => (FLOOR_ORDER.includes(f) ? `Explore ${f}` : f));
 
   const wrap = el("div", {}, [
@@ -641,6 +782,9 @@ function renderHub() {
         showStatus("No save slot active — pick a slot at entry or play as guest.", "error");
       }
     } else if (choice === FLOOR_ORDER.length + 4) {
+      ensureHotel(session);
+      pushView("hotel-lobby");
+    } else if (choice === FLOOR_ORDER.length + 5) {
       const rpgUrl = session.slotId != null
         ? `./rpg/?slot=${session.slotId}`
         : "./rpg/?guest=1";
@@ -899,12 +1043,32 @@ function renderSlotsMenu() {
     banner("Slot Machines — Mandalay Bay"),
     el("p", { className: "dim", textContent: tier ? `${tier.name}: ${tier.description}` : "Penny slots to high-limit progressives — pick your machine." }),
     chipLine(),
-    menu(options, "Pick a machine:", (choice) => {
-      if (choice === 0) { goBack(); return; }
-      slotsState = { machine: MACHINES[choice - 1], sessionNet: 0, spins: 0 };
-      pushView("slots-play");
+    el("p", {
+      className: "slot-floor-intro",
+      textContent: "Penny slots to high-limit progressives — each machine has its own cabinet theme and playstyle.",
     }),
   ]);
+
+  for (const cat of SLOT_CATEGORIES) {
+    const machines = MACHINES.filter((m) => getMachineUI(m).category === cat.id);
+    if (!machines.length) continue;
+    const section = el("div", { className: "slot-category" }, [
+      el("h3", { className: "slot-category-title", textContent: cat.label }),
+      el("div", { className: "slot-machine-grid" }, machines.map((m) =>
+        slotMachineCard(m, () => {
+          slotsState = { machine: m, sessionNet: 0, spins: 0, spinning: false, lastWin: false, lastReels: null, lastMessage: null };
+          pushView("slots-play");
+        })
+      )),
+    ]);
+    floor.appendChild(section);
+  }
+
+  floor.appendChild(el("div", { className: "action-bar", style: "margin-top:1.5rem;" }, [
+    el("button", { className: "btn", textContent: "Back to floor", onclick: () => goBack() }),
+  ]));
+
+  return floor;
 }
 
 function renderSlotsPlay() {
@@ -916,22 +1080,38 @@ function renderSlotsPlay() {
   const betInput = el("input", {
     type: "number", min: String(minBet), max: String(maxBet), value: String(minBet),
   });
-  const reelsEl = el("div", { className: "reels", textContent: "— — —" });
-  const msgEl = el("p", { className: "dim", textContent: "Place your bet and spin." });
-  const summaryEl = el("p", { textContent: "" });
-  const jackpotEl = el("p", {
-    className: "jackpot-line",
-    textContent: machine.progressive && machine.progressivePoolId
-      ? `Progressive jackpot: ${progressivePool(session, machine.progressivePoolId, machine.progressiveSeed).toLocaleString()} chips`
-      : "",
+  const msgEl = el("p", {
+    className: `slot-result ${slotsState.lastMessage?.type ?? "dim"}`,
+    textContent: slotsState.spinning
+      ? "Spinning…"
+      : (slotsState.lastMessage?.text ?? "Place your bet and spin."),
   });
+  const summaryEl = el("p", {
+    className: "dim",
+    textContent: slotsState.spins ? `Session: ${signedChips(slotsState.sessionNet)} over ${slotsState.spins} spin(s)` : "",
+  });
+
+  const reelsEl = slotReelWindow(machine, slotsState.lastReels, {
+    spinning: slotsState.spinning,
+    win: slotsState.lastWin,
+  });
+
+  const jackpotEl = machine.progressive && machine.progressivePoolId
+    ? el("div", {
+      className: "slot-jackpot-ticker",
+      textContent: `★ PROGRESSIVE ${progressivePool(session, machine.progressivePoolId, machine.progressiveSeed).toLocaleString()} ★`,
+    })
+    : null;
+
+  const maxBetNote = machine.jackpotRequiresMaxBet
+    ? el("p", { className: "dim", textContent: `Max bet (${machine.maxBet} chips) required for progressive jackpot.` })
+    : null;
 
   function doSpin() {
     const bet = parseInt(betInput.value, 10);
     if (bet === 0) {
       session.recordResult("slots", slotsState.sessionNet, slotsState.spins);
       persist();
-      summaryEl.textContent = `Slots session: ${slotsState.sessionNet >= 0 ? "+" : ""}${slotsState.sessionNet.toLocaleString()} chips over ${slotsState.spins} spin(s)`;
       popView();
       render();
       return;
@@ -958,12 +1138,11 @@ function renderSlotsPlay() {
       msgEl.className = "dim";
       msgEl.textContent = "No win this spin.";
     }
-    if (machine.progressive && machine.progressivePoolId) {
-      jackpotEl.textContent = `Progressive jackpot: ${progressivePool(session, machine.progressivePoolId, machine.progressiveSeed).toLocaleString()} chips`;
+    if (!session.wallet.debit(bet, "slots", `${machine.name} spin ${fmtChips(bet)}`)) {
+      msgEl.className = "slot-result error";
+      msgEl.textContent = "Insufficient chips.";
+      return;
     }
-    persist();
-    chipDisplay.textContent = `Chips: ${fmtChips(session.wallet.balance)}`;
-  }
 
   const chipDisplay = el("p", { className: "chip-line", textContent: `Chips: ${fmtChips(session.wallet.balance)}` });
   const paytableEl = el("p", { className: "dim", textContent: formatPaytableText(machine) });
@@ -1186,8 +1365,6 @@ function renderBlackjackMenu() {
   }
   session.recordVisit("blackjack");
   persist();
-  const tier = currentStakeTier;
-  const tableStakes = tier ? effectiveTableStakes(tier, session.wallet.balance, act.minBet) : null;
   return videoMachine("blackjack", {
     title: "BLACKJACK",
     screenChildren: [
@@ -1198,7 +1375,7 @@ function renderBlackjackMenu() {
       menu(["Quick hand (solo, table minimums)", "Custom table setup"], null, (choice) => {
         if (choice === 0) { goBack(); return; }
         if (choice === 1) {
-          startBlackjack(defaultConfig(session.wallet.balance, tier));
+          startBlackjack(defaultConfig(session.wallet.balance));
         } else {
           pushView("blackjack-custom");
         }
@@ -1304,11 +1481,10 @@ function renderHoldemMenu() {
     title: "TEXAS HOLD'EM",
     screenChildren: [
       dealerPanel("holdem"),
-      tier ? el("p", { className: "dim", textContent: `${tier.name}: ${tier.description}` }) : null,
       el("p", { className: "machine-screen-label", textContent: "Hand rankings" }),
       ranksEl,
       el("div", { className: "form-row" }, [
-        el("label", { textContent: `Buy-in (${buyInStakes.minBet}–${buyInStakes.maxBet})` }),
+        el("label", { textContent: `Buy-in (${act.minBet}–${session.wallet.balance})` }),
         buyInInput,
       ]),
     ],
@@ -1504,6 +1680,18 @@ function renderRoulette() {
       ? `Session: ${signedChips(rouletteState.sessionNet)} over ${rouletteState.spins} spin(s)`
       : "",
   });
+  const resultEl = el("p", {
+    className: "dim",
+    textContent: rouletteState.lastNumber != null
+      ? `Last spin: ${rouletteState.lastNumber} (${wheelColor(rouletteState.lastNumber)})`
+      : "European wheel (0–36). Place a bet and spin.",
+  });
+  const summaryEl = el("p", {
+    className: "roulette-session",
+    textContent: rouletteState.spins
+      ? `Session: ${signedChips(rouletteState.sessionNet)} over ${rouletteState.spins} spin(s)`
+      : "",
+  });
 
   const onMatPick = (n) => {
     betSelect.value = "0";
@@ -1519,14 +1707,9 @@ function renderRoulette() {
   function doSpin() {
     const bet = BET_TYPES[parseInt(betSelect.value, 10)];
     const amount = parseInt(amountInput.value, 10);
-    if (amount < wagerStakes.minBet) {
+    if (amount < act.minBet) {
       resultEl.className = "error";
-      resultEl.textContent = `Minimum bet is ${wagerStakes.minBet}.`;
-      return;
-    }
-    if (amount > wagerStakes.maxBet) {
-      resultEl.className = "error";
-      resultEl.textContent = `Maximum bet is ${wagerStakes.maxBet}.`;
+      resultEl.textContent = `Minimum bet is ${act.minBet}.`;
       return;
     }
     if (!session.wallet.debit(amount, "roulette", `Roulette ${bet.kind}`)) {
@@ -1566,7 +1749,6 @@ function renderRoulette() {
     title: "ROULETTE",
     screenChildren: [
       dealerPanel("roulette"),
-      tier ? el("p", { className: "dim", textContent: `${tier.name}: ${formatStakeRange(wagerStakes.minBet, wagerStakes.maxBet, { noCap: tier.maxBet == null })}` }) : null,
       rouletteDisplay,
       el("div", { className: "roulette-outside-bets" }, [
         el("div", { className: "form-row" }, [el("label", { textContent: "Bet type" }), betSelect]),
@@ -1607,7 +1789,7 @@ function renderHorseRacing() {
     ]);
   }
   session.recordVisit("horse_racing");
-  if (!horseRacingState.card) horseRacingState.card = generateRace();
+  if (!horseRacingState.card) horseRacingState.card = generateRace(session);
   persist();
   const tier = horseRacingState.tier ?? currentStakeTier;
   const wagerStakes = tier
@@ -1615,34 +1797,45 @@ function renderHorseRacing() {
     : { minBet: act.minBet, maxBet: session.wallet.balance };
 
   const card = horseRacingState.card;
-  const board = el("div", {}, card.horses.map((h) =>
-    el("div", { className: "event-card", innerHTML: `<strong>#${h.number} ${h.name}</strong> <span class="dim">${fmtRaceOdds(h.odds)}</span>` })
-  ));
+  const namePool = getHorseNamePool(session);
+  const poolLabel = session.horseRacingCustomNames
+    ? `Custom roster (${namePool.length} horses)`
+    : `Default roster (${namePool.length} horses)`;
+
   const pendingEl = el("div", { className: "pending-tickets" });
   if (horseRacingState.pending.length) {
     pendingEl.appendChild(el("p", { className: "subtitle", textContent: "Open tickets:" }));
     for (const slip of horseRacingState.pending) {
+      const h = card.horses.find((x) => x.number === slip.horse);
       pendingEl.appendChild(el("div", {
         className: "ticket",
-        textContent: `${slip.amount} chips on #${slip.horse} (${slip.betType})`,
+        textContent: `${slip.amount} chips on #${slip.horse} ${h?.name ?? ""} (${slip.betType})`,
       }));
     }
   }
 
-  return el("div", { className: "panel" }, [
+  return el("div", { className: "panel racing-pavilion" }, [
     banner("Mandalay Racing"),
     chipLine(),
     tier ? el("p", { className: "dim", textContent: `${tier.name}: ${formatStakeRange(wagerStakes.minBet, wagerStakes.maxBet, { noCap: tier.maxBet == null })}` }) : null,
     dealerPanel("horse_racing"),
     el("p", { className: "subtitle", textContent: card.label }),
-    board,
+    el("p", { className: "racing-roster-note dim", textContent: `${poolLabel} — study the paddock before you wager.` }),
+    el("p", { className: "racing-paddock-label", textContent: "Paddock" }),
+    renderHorsePaddock(card.horses),
     pendingEl,
-    menu(["Place a wager", "Run race & settle", "New race card"], "Racing pavilion:", (choice) => {
-      if (choice === 0) { goBack(); return; }
-      if (choice === 1) pushView("horse-racing-wager");
-      else if (choice === 2) pushView("horse-racing-settle");
-      else if (choice === 3) { horseRacingState.card = generateRace(); render(); }
-    }),
+    menu(
+      ["Place a wager", "Run race & settle", "New race card", "Manage horse names"],
+      "Racing pavilion:",
+      (choice) => {
+        if (choice === 0) { goBack(); return; }
+        if (choice === 1) pushView("horse-racing-wager");
+        else if (choice === 2) pushView("horse-racing-settle");
+        else if (choice === 3) { horseRacingState.card = generateRace(session); render(); }
+        else if (choice === 4) pushView("horse-racing-names");
+      },
+      { showCasinoBanner: false },
+    ),
   ]);
 }
 
@@ -1653,9 +1846,31 @@ function renderHorseRacingWager() {
     ? effectiveTableStakes(tier, session.wallet.balance, act.minBet)
     : { minBet: act.minBet, maxBet: session.wallet.balance };
   const card = horseRacingState.card;
+  let selectedHorse = card.horses[0]?.number ?? 1;
+  const paddockContainer = el("div", {});
+
   const horseSelect = el("select", {}, card.horses.map((h) =>
     el("option", { value: String(h.number), textContent: `#${h.number} ${h.name} (${fmtRaceOdds(h.odds)})` })
   ));
+  horseSelect.value = String(selectedHorse);
+
+  function refreshPaddock() {
+    paddockContainer.innerHTML = "";
+    paddockContainer.appendChild(renderHorsePaddock(card.horses, {
+      selectedNumber: selectedHorse,
+      onSelect: (num) => {
+        selectedHorse = num;
+        horseSelect.value = String(num);
+        refreshPaddock();
+      },
+    }));
+  }
+  horseSelect.onchange = () => {
+    selectedHorse = parseInt(horseSelect.value, 10);
+    refreshPaddock();
+  };
+  refreshPaddock();
+
   const betTypeSelect = el("select", {}, [
     el("option", { value: "win", textContent: "Win" }),
     el("option", { value: "place", textContent: "Place (top 2)" }),
@@ -1665,9 +1880,11 @@ function renderHorseRacingWager() {
     type: "number", min: String(wagerStakes.minBet), max: String(wagerStakes.maxBet), value: String(wagerStakes.minBet),
   });
 
-  return el("div", { className: "panel" }, [
+  return el("div", { className: "panel racing-pavilion" }, [
     banner("Place Wager"),
     chipLine(),
+    el("p", { className: "racing-paddock-label", textContent: "Choose your pony" }),
+    paddockContainer,
     el("div", { className: "form-row" }, [el("label", { textContent: "Horse" }), horseSelect]),
     el("div", { className: "form-row" }, [el("label", { textContent: "Bet type" }), betTypeSelect]),
     el("div", { className: "form-row" }, [el("label", { textContent: "Amount" }), amountInput]),
@@ -1685,9 +1902,9 @@ function renderHorseRacingWager() {
           if (!session.wallet.debit(amount, "horse_racing", `${betType} on #${horse}`)) {
             alert("Insufficient chips."); return;
           }
-          horseRacingState.pending.push({ horse, horseName: h.name, odds: h.odds, betType, amount });
+          horseRacingState.pending.push({ horse, horseName: h.name, odds: h.odds, betType, amount, spriteId: h.spriteId });
           persist();
-          showStatus(`Ticket placed: ${amount} chips on #${horse} (${betType}).`);
+          showStatus(`Ticket placed: ${amount} chips on #${horse} ${h.name} (${betType}).`);
           goBack();
         },
       }),
@@ -1703,10 +1920,21 @@ function renderHorseRacingSettle() {
   } else {
     const results = simulateRace(horseRacingState.card);
     log.appendChild(el("p", { className: "subtitle", textContent: "FINISH ORDER" }));
+    const finishLine = el("div", { className: "racing-finish-line" });
+    results.forEach((num, i) => {
+      const h = horseRacingState.card.horses.find((x) => x.number === num);
+      finishLine.appendChild(el("div", { className: "racing-finish-entry" }, [
+        el("span", { className: "racing-finish-pos", textContent: `${i + 1}.` }),
+        createHorseSpriteCanvas(h.spriteId, { size: 56 }),
+        el("span", { className: "racing-finish-name", textContent: `#${num} ${h.name}` }),
+      ]));
+    });
+    log.appendChild(finishLine);
     results.forEach((num, i) => {
       const h = horseRacingState.card.horses.find((x) => x.number === num);
       log.appendChild(el("div", { className: "line", textContent: `${i + 1}. #${num} ${h.name}` }));
     });
+
     for (const slip of horseRacingState.pending) {
       const r = settleTicket(slip, results);
       if (r.won) {
@@ -1724,11 +1952,89 @@ function renderHorseRacingSettle() {
     persist();
   }
 
-  return el("div", { className: "panel" }, [
+  return el("div", { className: "panel racing-pavilion" }, [
     banner("Race Results"),
     chipLine(),
     log,
     el("div", { className: "action-bar" }, [
+      el("button", { className: "btn", textContent: "Back", onclick: () => goBack() }),
+    ]),
+  ]);
+}
+
+function renderHorseRacingNames() {
+  const pool = getHorseNamePool(session);
+  const statusEl = el("p", {
+    className: "dim",
+    textContent: session.horseRacingCustomNames
+      ? `Using custom roster: ${pool.length} horse names.`
+      : `Using default roster: ${pool.length} horse names (from bundled CSV).`,
+  });
+  const previewEl = el("div", { className: "racing-name-preview" });
+  const previewNames = pool.slice(0, 12);
+  for (const name of previewNames) {
+    previewEl.appendChild(el("span", { className: "racing-name-chip", textContent: name }));
+  }
+  if (pool.length > 12) {
+    previewEl.appendChild(el("span", { className: "racing-name-chip dim", textContent: `+${pool.length - 12} more…` }));
+  }
+
+  const textarea = el("textarea", {
+    className: "racing-names-input",
+    rows: "8",
+    placeholder: "Paste horse names here — one per line, or CSV with a Name column.\n\nSugar Cube\nStarlight Trot\nMarshmallow Mane",
+  });
+  const fileInput = el("input", { type: "file", accept: ".csv,.txt,text/csv,text/plain" });
+  fileInput.onchange = async () => {
+    const file = fileInput.files?.[0];
+    if (!file) return;
+    textarea.value = await file.text();
+    statusEl.textContent = `Loaded ${file.name} — review and save to apply.`;
+    statusEl.className = "success";
+  };
+
+  return el("div", { className: "panel racing-pavilion" }, [
+    banner("Horse Name Roster"),
+    chipLine(),
+    el("p", { className: "dim", textContent: "Upload or paste a custom horse name list. Names cycle through the paddock on each new race card." }),
+    statusEl,
+    previewEl,
+    el("div", { className: "form-row" }, [
+      el("label", { textContent: "Import CSV / text file" }),
+      fileInput,
+    ]),
+    el("div", { className: "form-row" }, [
+      el("label", { textContent: "Or paste names" }),
+      textarea,
+    ]),
+    el("div", { className: "action-bar" }, [
+      el("button", {
+        className: "btn primary",
+        textContent: "Save custom roster",
+        onclick: () => {
+          const names = parseHorseNamesCSV(textarea.value);
+          if (names.length < 6) {
+            alert("Please provide at least 6 unique horse names.");
+            return;
+          }
+          setCustomHorseNames(session, names);
+          horseRacingState.card = null;
+          persist();
+          showStatus(`Saved ${names.length} custom horse names. New race cards will cycle through your roster.`);
+          goBack();
+        },
+      }),
+      el("button", {
+        className: "btn",
+        textContent: "Reset to default",
+        onclick: () => {
+          setCustomHorseNames(session, null);
+          horseRacingState.card = null;
+          persist();
+          showStatus("Restored default horse name roster.");
+          render();
+        },
+      }),
       el("button", { className: "btn", textContent: "Back", onclick: () => goBack() }),
     ]),
   ]);
@@ -1956,6 +2262,20 @@ function renderNotFound({ requestedView } = {}) {
   ]);
 }
 
+const hotelRenderers = buildHotelRenderers({
+  get session() { return session; },
+  get rewardsPhone() { return rewardsPhone; },
+  pushView,
+  goBack,
+  persist,
+  render,
+  el,
+  banner,
+  chipLine,
+  statusBanner,
+  viewStack,
+});
+
 const RENDERERS = {
   "save-picker": renderSavePicker,
   "save-create": renderSaveCreate,
@@ -1983,6 +2303,8 @@ const RENDERERS = {
   "horse-racing": renderHorseRacing,
   "horse-racing-wager": renderHorseRacingWager,
   "horse-racing-settle": renderHorseRacingSettle,
+  "horse-racing-names": renderHorseRacingNames,
+  ...hotelRenderers,
   "not-found": renderNotFound,
 };
 
@@ -2037,10 +2359,21 @@ window.addEventListener("beforeunload", () => {
 });
 
 if (!applyLaunchParams()) {
-  render();
+  loadBundledHorseNames().finally(() => render());
+} else {
+  loadBundledHorseNames();
 }
 
 document.addEventListener("keydown", (e) => {
+  if (e.key === "p" || e.key === "P") {
+    const inCasino = viewStack.some((v) => v.name !== "save-picker" && v.name !== "save-create");
+    const blackjackNeedsP = viewStack.at(-1)?.name === "blackjack-play" && blackjackGame?.pendingAction;
+    if (inCasino && rewardsPhone && !blackjackNeedsP) {
+      rewardsPhone.toggle();
+      e.preventDefault();
+      return;
+    }
+  }
   if (!blackjackGame?.pendingAction) return;
   const map = { h: Action.HIT, s: Action.STAND, d: Action.DOUBLE, p: Action.SPLIT, u: Action.SURRENDER };
   const act = map[e.key.toLowerCase()];

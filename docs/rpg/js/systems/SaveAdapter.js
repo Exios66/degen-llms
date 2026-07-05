@@ -2,14 +2,14 @@ import {
   fmtChips,
   saveSlot,
   defaultRpgState,
-} from "../../js/core.js";
+} from "../../../js/core.js";
 
 /**
  * Persist RPG position/state alongside the shared casino save library.
  */
 export class SaveAdapter {
   /**
-   * @param {import("../../js/core.js").PlayerSession} session
+   * @param {import("../../../js/core.js").PlayerSession} session
    */
   constructor(session) {
     this.session = session;

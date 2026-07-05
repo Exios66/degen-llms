@@ -1,0 +1,370 @@
+import { secureRandomInt, fmtChips } from "./core.js";
+import { ensureHotel, isNetPositive } from "./hotel.js";
+
+/** @typedef {{ ok: boolean, message: string, unlock?: string }} AmenityResult */
+
+export const TV_CHANNELS = {
+  news: {
+    id: "news",
+    label: "Channel 4 — Financial News Loop",
+    description: "A pundit explains why your vacation is inflationary. You change the channel.",
+    flavor: "Markets are jittery. So are you.",
+  },
+  aquarium: {
+    id: "aquarium",
+    label: "Channel 47 — Shark Reef Live",
+    description: "Sand tiger sharks circle the acrylic tunnel. A school group presses their faces to the glass.",
+    flavor: "The shark makes eye contact. It has seen worse nights than yours.",
+  },
+  wave_pool: {
+    id: "wave_pool",
+    label: "Channel 12 — Wave Pool Cam",
+    description: "Artificial surf rolls across eleven acres of chlorinated ambition.",
+    flavor: "Someone loses a hat every thirty seconds. Vegas efficiency.",
+  },
+  vegas_loop: {
+    id: "vegas_loop",
+    label: "Channel 99 — Sin City Highlights",
+    description: "Montage of neon, fountains, and questionable life choices on a ten-minute loop.",
+    flavor: "The montage knows what you did last night. It doesn't judge. Much.",
+  },
+  steve_harvey: {
+    id: "steve_harvey",
+    label: "Channel 88 — Steve Harvey Race Replay",
+    description: "Steve Harvey calls a photo finish with theatrical certainty.",
+    flavor: "\"And the winner is—\" You already bet the trifecta. Results pending.",
+    requiresNetPositive: true,
+  },
+  foreign_films: {
+    id: "foreign_films",
+    label: "Channel 203 — Untranslated Cinema",
+    description: "A French noir at 2 AM. No subtitles. You understand perfectly anyway.",
+    flavor: "The protagonist also made bad decisions in a hotel room.",
+  },
+};
+
+export const MINIBAR_ITEMS = {
+  mini_vodka: {
+    id: "mini_vodka",
+    label: "Mini vodka",
+    price: 12,
+    flavor: "Tastes like regret and complimentary ice.",
+  },
+  salted_almonds: {
+    id: "salted_almonds",
+    label: "Salted almonds",
+    price: 18,
+    flavor: "Sustainably sourced from your wallet.",
+  },
+  champagne_split: {
+    id: "champagne_split",
+    label: "Champagne split",
+    price: 45,
+    flavor: "Pop the cork. The minibar sensor applauds silently.",
+  },
+  energy_drink: {
+    id: "energy_drink",
+    label: "Energy drink",
+    price: 9,
+    flavor: "For when the casino floor is still winning.",
+  },
+  bottled_water: {
+    id: "bottled_water",
+    label: "Bottled water",
+    price: 8,
+    flavor: "Somehow costs almost as much as the vodka. Capitalism.",
+  },
+  stare_at_minibar: {
+    id: "stare_at_minibar",
+    label: "Open the door without taking anything",
+    price: 50,
+    flavor: "The sensor charges you for proximity. Classic Vegas hospitality.",
+  },
+};
+
+export const PHONE_CALLS = {
+  home: {
+    id: "home",
+    label: "Call home (unlimited)",
+    destination: "Mom in Ohio",
+    flavor: "\"Are you winning, honey?\" You lie beautifully. She knows.",
+  },
+  tokyo: {
+    id: "tokyo",
+    label: "Call Tokyo at 3 AM",
+    destination: "Tokyo — wrong timezone, right energy",
+    flavor: "A salaryman answers. You discuss fish markets and existential dread.",
+  },
+  ex: {
+    id: "ex",
+    label: "Call your ex",
+    destination: "Voicemail — full",
+    flavor: "The mailbox is full. So is your minibar, soon.",
+  },
+  concierge: {
+    id: "concierge",
+    label: "Call concierge",
+    destination: "Front desk — actually helpful",
+    flavor: "\"Pool party on the 11th floor tonight. Dress code: confident.\"",
+  },
+  bookie: {
+    id: "bookie",
+    label: "Call Pete the bookie",
+    destination: "Off-strip, picks up first ring",
+    flavor: "\"The three horse is live. You still good for two hundred?\"",
+  },
+  paris: {
+    id: "paris",
+    label: "Call Paris — romantic wrong number",
+    destination: "A café near the Seine",
+    flavor: "Someone answers in French. You order a croissant anyway. They hang up.",
+  },
+  random_foreign: {
+    id: "random_foreign",
+    label: "Dial a random foreign number",
+    destination: "Unknown international prefix",
+    flavor: "A butler answers. \"Buckingham Palace, good evening.\" You apologize and order room service instead.",
+  },
+};
+
+export const ROOM_DECISIONS = {
+  do_not_disturb: {
+    id: "do_not_disturb",
+    label: "Hang the Do Not Disturb sign",
+    flavor: "Privacy secured. The pool party will find you anyway.",
+  },
+  balcony: {
+    id: "balcony",
+    label: "Step onto the balcony",
+    flavor: "The Strip glitters below. You feel briefly like a chairman. The feeling passes.",
+  },
+  room_service: {
+    id: "room_service",
+    label: "Order room service instead of the minibar",
+    flavor: "A burger arrives in forty-five minutes. The minibar feels neglected.",
+    price: 35,
+  },
+  tip_maid: {
+    id: "tip_maid",
+    label: "Leave a chip tip for housekeeping",
+    flavor: "You tuck a red chip under the pillow. Tomorrow's towels will be fluffier.",
+    price: 25,
+  },
+};
+
+/** Unlockable in-room Vegas vignettes — requirements checked after each action. */
+export const ROOM_EVENTS = {
+  shark_whisperer: {
+    id: "shark_whisperer",
+    label: "Shark Whisperer",
+    narrative: "You narrate the aquarium feed in a hushed sportscaster voice. The shark nods. Probably.",
+    requires: { channels: ["aquarium"], minibar: ["salted_almonds"] },
+  },
+  midnight_ocean: {
+    id: "midnight_ocean",
+    label: "Midnight Ocean Conference",
+    narrative: "Tokyo and the shark reef are on speakerphone together. Nobody hangs up first.",
+    requires: { channels: ["aquarium"], calls: ["tokyo"] },
+  },
+  champagne_sunset: {
+    id: "champagne_sunset",
+    label: "Champagne Sunset",
+    narrative: "Wave pool on the TV, champagne in hand, bay windows open. Briefly, you are the main character.",
+    requires: { channels: ["wave_pool"], minibar: ["champagne_split"] },
+  },
+  pool_party_vip: {
+    id: "pool_party_vip",
+    label: "Pool Party VIP",
+    narrative: "Concierge sends a wristband via bellhop. The 11th-floor party has a ice luge shaped like a shark.",
+    requires: { calls: ["concierge"], minibar: ["champagne_split"] },
+  },
+  what_happens: {
+    id: "what_happens",
+    label: "What Happens in Vegas…",
+    narrative: "The night blurs. You wake up with confetti, a room key that isn't yours, and no regrets you can remember.",
+    requires: { minibar: ["mini_vodka", "mini_vodka"], calls: ["ex"], decisions: ["balcony"] },
+  },
+  high_roller_crawl: {
+    id: "high_roller_crawl",
+    label: "High-Roller Suite Crawl",
+    narrative: "Suite neighbors invite you door-to-door. Someone's penthouse has a telescope pointed at the sportsbook.",
+    requires: { roomTypes: ["suite", "penthouse"], minibar: ["champagne_split"] },
+  },
+  hangover_brunch: {
+    id: "hangover_brunch",
+    label: "Hangover Brunch Comp",
+    narrative: "Room service sends a Bloody Mary the size of the bay. The minibar sends its regards.",
+    requires: { events: ["what_happens"] },
+  },
+  buckingham_moment: {
+    id: "buckingham_moment",
+    label: "Wrong Number, Right Palace",
+    narrative: "You tell the story at the casino bar later. Nobody believes you. The bartender comped your drink anyway.",
+    requires: { calls: ["random_foreign"] },
+  },
+  steve_harvey_hotline: {
+    id: "steve_harvey_hotline",
+    label: "Steve Harvey Hotline",
+    narrative: "You call the sportsbook while Steve loops on TV. The universe aligns. Your horse hits.",
+    requires: { channels: ["steve_harvey"], calls: ["bookie"], netPositive: true },
+  },
+};
+
+function defaultRoomAmenities(overrides = {}) {
+  return {
+    tvChannel: overrides.tvChannel ?? null,
+    channelsWatched: overrides.channelsWatched ?? [],
+    minibarPurchases: overrides.minibarPurchases ?? [],
+    minibarTab: overrides.minibarTab ?? 0,
+    phoneCalls: overrides.phoneCalls ?? [],
+    decisions: overrides.decisions ?? [],
+    unlockedEvents: overrides.unlockedEvents ?? [],
+    eventLog: overrides.eventLog ?? [],
+    ...overrides,
+  };
+}
+
+export function ensureRoomAmenities(hotel) {
+  if (!hotel.roomAmenities) {
+    hotel.roomAmenities = defaultRoomAmenities();
+  }
+  const defaults = defaultRoomAmenities();
+  const ra = hotel.roomAmenities;
+  for (const key of Object.keys(defaults)) {
+    if (ra[key] === undefined) ra[key] = defaults[key];
+  }
+  return ra;
+}
+
+function hasAll(haystack, needles) {
+  return needles.every((n) => haystack.includes(n));
+}
+
+function eventRequirementsMet(session, hotel, event) {
+  const ra = ensureRoomAmenities(hotel);
+  const req = event.requires;
+  if (req.channels && !hasAll(ra.channelsWatched, req.channels)) return false;
+  if (req.minibar && !hasAll(ra.minibarPurchases, req.minibar)) return false;
+  if (req.calls && !hasAll(ra.phoneCalls, req.calls)) return false;
+  if (req.decisions && !hasAll(ra.decisions, req.decisions)) return false;
+  if (req.roomTypes && !req.roomTypes.includes(hotel.roomType)) return false;
+  if (req.events && !hasAll(ra.unlockedEvents, req.events)) return false;
+  if (req.netPositive && !isNetPositive(session)) return false;
+  return true;
+}
+
+function tryUnlockEvents(session) {
+  const hotel = ensureHotel(session);
+  const ra = ensureRoomAmenities(hotel);
+  const unlocked = [];
+  for (const event of Object.values(ROOM_EVENTS)) {
+    if (ra.unlockedEvents.includes(event.id)) continue;
+    if (!eventRequirementsMet(session, hotel, event)) continue;
+    ra.unlockedEvents.push(event.id);
+    ra.eventLog.push(event.narrative);
+    unlocked.push(event);
+  }
+  return unlocked;
+}
+
+/** @returns {AmenityResult} */
+export function tuneTvChannel(session, channelId) {
+  const channel = TV_CHANNELS[channelId];
+  if (!channel) return { ok: false, message: "Static. No signal." };
+  if (channel.requiresNetPositive && !isNetPositive(session)) {
+    return { ok: false, message: "Premium channel locked until you're net-positive on the floor." };
+  }
+  const hotel = ensureHotel(session);
+  const ra = ensureRoomAmenities(hotel);
+  ra.tvChannel = channelId;
+  if (!ra.channelsWatched.includes(channelId)) {
+    ra.channelsWatched.push(channelId);
+  }
+  const unlocked = tryUnlockEvents(session);
+  let message = `${channel.label}\n${channel.description}\n${channel.flavor}`;
+  if (unlocked.length) {
+    message += `\n\n✦ Unlocked: ${unlocked.map((e) => e.label).join(", ")}`;
+  }
+  return { ok: true, message, unlock: unlocked[0]?.id };
+}
+
+/** @returns {AmenityResult} */
+export function purchaseMinibarItem(session, itemId) {
+  const item = MINIBAR_ITEMS[itemId];
+  if (!item) return { ok: false, message: "The minibar judges silently." };
+  const hotel = ensureHotel(session);
+  const ra = ensureRoomAmenities(hotel);
+  if (!session.wallet.debit(item.price, "hotel", `Minibar: ${item.label}`)) {
+    return { ok: false, message: `Need ${fmtChips(item.price)} — the minibar doesn't accept IOUs.` };
+  }
+  ra.minibarPurchases.push(itemId);
+  ra.minibarTab += item.price;
+  const unlocked = tryUnlockEvents(session);
+  let message = `${item.label} — ${fmtChips(item.price)} charged to the room.\n${item.flavor}`;
+  if (unlocked.length) {
+    message += `\n\n✦ Unlocked: ${unlocked.map((e) => e.label).join(", ")}`;
+  }
+  return { ok: true, message, unlock: unlocked[0]?.id };
+}
+
+/** @returns {AmenityResult} */
+export function makePhoneCall(session, callId) {
+  const call = PHONE_CALLS[callId];
+  if (!call) return { ok: false, message: "Dead line. Try again." };
+  const hotel = ensureHotel(session);
+  const ra = ensureRoomAmenities(hotel);
+  if (!ra.phoneCalls.includes(callId)) {
+    ra.phoneCalls.push(callId);
+  }
+  const unlocked = tryUnlockEvents(session);
+  let message = `${call.label} → ${call.destination}\n${call.flavor}\n(Unlimited foreign calls — the hotel absorbs the guilt.)`;
+  if (unlocked.length) {
+    message += `\n\n✦ Unlocked: ${unlocked.map((e) => e.label).join(", ")}`;
+  }
+  return { ok: true, message, unlock: unlocked[0]?.id };
+}
+
+/** @returns {AmenityResult} */
+export function makeRoomDecision(session, decisionId) {
+  const decision = ROOM_DECISIONS[decisionId];
+  if (!decision) return { ok: false, message: "Indecision is also a choice." };
+  const hotel = ensureHotel(session);
+  const ra = ensureRoomAmenities(hotel);
+  if (decision.price) {
+    if (!session.wallet.debit(decision.price, "hotel", decision.label)) {
+      return { ok: false, message: `Need ${fmtChips(decision.price)}.` };
+    }
+  }
+  if (!ra.decisions.includes(decisionId)) {
+    ra.decisions.push(decisionId);
+  }
+  const unlocked = tryUnlockEvents(session);
+  let message = `${decision.label}\n${decision.flavor}`;
+  if (unlocked.length) {
+    message += `\n\n✦ Unlocked: ${unlocked.map((e) => e.label).join(", ")}`;
+  }
+  return { ok: true, message, unlock: unlocked[0]?.id };
+}
+
+export function getUnlockedEvents(hotel) {
+  const ra = ensureRoomAmenities(hotel);
+  return ra.unlockedEvents.map((id) => ROOM_EVENTS[id]).filter(Boolean);
+}
+
+export function getRoomAmenitiesSummary(hotel) {
+  const ra = ensureRoomAmenities(hotel);
+  const parts = [];
+  if (ra.tvChannel) {
+    const ch = TV_CHANNELS[ra.tvChannel];
+    parts.push(`TV: ${ch?.label ?? ra.tvChannel}`);
+  }
+  if (ra.minibarTab > 0) parts.push(`Minibar tab: ${fmtChips(ra.minibarTab)}`);
+  if (ra.phoneCalls.length) parts.push(`${ra.phoneCalls.length} call(s) logged`);
+  if (ra.unlockedEvents.length) parts.push(`${ra.unlockedEvents.length} event(s) unlocked`);
+  return parts.length ? parts.join(" · ") : "The room awaits your bad decisions.";
+}
+
+export function randomMinibarSuggestion() {
+  const ids = Object.keys(MINIBAR_ITEMS);
+  return MINIBAR_ITEMS[ids[secureRandomInt(0, ids.length - 1)]];
+}

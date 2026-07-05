@@ -8,7 +8,7 @@ from pathlib import Path
 
 from mandalay_bay.chips import ChipWallet, TransactionKind
 from mandalay_bay.display import TerminalUI, fmt_chips
-from mandalay_bay.hotel import HotelState, ensure_hotel
+from mandalay_bay.hotel import HotelState, RoomAmenitiesState, ensure_hotel
 from mandalay_bay.rewards import RewardsState, SAVE_VERSION_WITH_REWARDS, ensure_rewards, migrate_session_rewards
 from mandalay_bay.session import ActivityStats, PlayerSession
 
@@ -259,7 +259,11 @@ def session_from_dict(data: dict) -> PlayerSession:
         progressive_pools=dict(data.get("progressive_pools", {})),
     )
     if "hotel" in data:
-        session.hotel = HotelState(**data["hotel"])
+        hotel_data = dict(data["hotel"])
+        ra_data = hotel_data.pop("room_amenities", None)
+        session.hotel = HotelState(**hotel_data)
+        if ra_data:
+            session.hotel.room_amenities = RoomAmenitiesState(**ra_data)
     else:
         ensure_hotel(session)
     data_version = data.get("version", 1)

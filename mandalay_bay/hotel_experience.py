@@ -163,9 +163,118 @@ def run_hallway(session: PlayerSession, ui: TerminalUI) -> None:
 
 
 def run_room(session: PlayerSession, ui: TerminalUI) -> None:
+    from mandalay_bay.room_amenities import (
+        MINIBAR_ITEMS,
+        PHONE_CALLS,
+        ROOM_DECISIONS,
+        ROOM_EVENTS,
+        TV_CHANNELS,
+        ensure_room_amenities,
+        get_room_amenities_summary,
+        make_phone_call,
+        make_room_decision,
+        purchase_minibar_item,
+        tune_tv_channel,
+    )
+
     hotel = ensure_hotel(session)
     room = get_room_type(hotel)
-    ui.banner(room["label"])
-    ui.print(f"Room {hotel.room_number} · Floor {hotel.floor}")
-    ui.dim(f"{hotel.nights_remaining} night(s) remaining.")
+    ensure_room_amenities(hotel)
+
+    while True:
+        ui.banner(room["label"])
+        ui.chip_line(session.wallet.balance)
+        ui.print(f"Room {hotel.room_number} · Floor {hotel.floor}")
+        ui.dim(f"{hotel.nights_remaining} night(s) remaining.")
+        ui.dim(get_room_amenities_summary(hotel))
+        ra = ensure_room_amenities(hotel)
+        if ra.unlocked_events:
+            ui.success(f"{len(ra.unlocked_events)} Vegas event(s) unlocked.")
+        choice = ui.menu_choice(
+            [
+                "TV — aquarium channel & resort loops",
+                "Minibar — sensor-enabled debauchery",
+                "Room phone — unlimited foreign calls",
+                "Room decisions — balcony, DND, room service",
+                "Event log — Vegas highlight reel",
+                "Back to hotel lobby",
+            ],
+            title="Your room:",
+        )
+        if choice == 0:
+            return
+        if choice == 1:
+            _run_room_tv(session, ui, TV_CHANNELS, tune_tv_channel)
+        elif choice == 2:
+            _run_room_minibar(session, ui, MINIBAR_ITEMS, purchase_minibar_item)
+        elif choice == 3:
+            _run_room_phone(session, ui, PHONE_CALLS, make_phone_call)
+        elif choice == 4:
+            _run_room_decisions(session, ui, ROOM_DECISIONS, make_room_decision)
+        elif choice == 5:
+            _run_room_events(ui, ra, ROOM_EVENTS)
+
+
+def _run_room_tv(session, ui, channels, tune_fn) -> None:
+    labels = [ch["label"] for ch in channels.values()]
+    pick = ui.menu_choice(labels + ["Back"], title="In-room TV:")
+    if pick == 0 or pick > len(labels):
+        return
+    channel_id = list(channels.keys())[pick - 1]
+    res = tune_fn(session, channel_id)
+    ui.success(res.message) if res.ok else ui.error(res.message)
+    ui.pause()
+
+
+def _run_room_minibar(session, ui, items, purchase_fn) -> None:
+    labels = [f"{it['label']} — ${it['price']}" for it in items.values()]
+    pick = ui.menu_choice(labels + ["Back"], title="Minibar:")
+    if pick == 0 or pick > len(labels):
+        return
+    item_id = list(items.keys())[pick - 1]
+    res = purchase_fn(session, item_id)
+    ui.success(res.message) if res.ok else ui.error(res.message)
+    ui.pause()
+
+
+def _run_room_phone(session, ui, calls, call_fn) -> None:
+    labels = [c["label"] for c in calls.values()]
+    pick = ui.menu_choice(labels + ["Back"], title="Room phone (unlimited foreign calls):")
+    if pick == 0 or pick > len(labels):
+        return
+    call_id = list(calls.keys())[pick - 1]
+    res = call_fn(session, call_id)
+    ui.success(res.message) if res.ok else ui.error(res.message)
+    ui.pause()
+
+
+def _run_room_decisions(session, ui, decisions, decide_fn) -> None:
+    labels = []
+    for dec in decisions.values():
+        price = dec.get("price")
+        labels.append(f"{dec['label']}" + (f" — ${price}" if price else ""))
+    pick = ui.menu_choice(labels + ["Back"], title="Room decisions:")
+    if pick == 0 or pick > len(labels):
+        return
+    decision_id = list(decisions.keys())[pick - 1]
+    res = decide_fn(session, decision_id)
+    ui.success(res.message) if res.ok else ui.error(res.message)
+    ui.pause()
+
+
+def _run_room_events(ui, ra, events) -> None:
+    ui.banner("Vegas Event Log")
+    if ra.unlocked_events:
+        ui.print("Unlocked:")
+        for event_id in ra.unlocked_events:
+            evt = events.get(event_id, {})
+            ui.success(f"  {evt.get('label', event_id)} — {evt.get('narrative', '')}")
+    else:
+        ui.dim("Nothing unlocked yet.")
+    locked = [e for k, e in events.items() if k not in ra.unlocked_events]
+    if locked:
+        ui.print("")
+        ui.dim("Still on the table:")
+        for evt in locked:
+            ui.dim(f"  {evt['label']}")
     ui.pause()

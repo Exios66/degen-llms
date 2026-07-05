@@ -13,7 +13,15 @@ import {
   progressivePool,
 } from "./slots.js";
 import { getMachineUI, paytableEntries, SLOT_CATEGORIES } from "./slots-ui.js";
-import { SportsbookState, fmtOdds } from "./sportsbook.js";
+import {
+  SportsbookState, fmtOdds, filterEvents, getUniqueSports,
+  formatEventScore, oddsForSelection,
+} from "./sportsbook.js";
+import {
+  PredictionMarketsState, MARKET_CATEGORIES, filterMarkets,
+  categoryLabel, predictionPayout,
+} from "./predictionMarkets.js";
+import { fetchLiveFixtures, mergeLiveFixtures } from "./sportsDataProvider.js";
 import { BlackjackGame, defaultConfig, Action } from "./blackjack/game.js";
 import { HoldemTable, BettingAction } from "./holdem/game.js";
 import { HAND_CLASS_NAMES } from "./holdem/hand_eval.js";
@@ -39,6 +47,8 @@ const app = document.getElementById("app");
 let session = new PlayerSession();
 let rewardsPhone = null;
 let sportsbook = new SportsbookState();
+let predictions = new PredictionMarketsState();
+let sportsbookInitPromise = null;
 let blackjackGame = null;
 let blackjackSessionNet = 0;
 let slotsState = { machine: null, sessionNet: 0, spins: 0, bet: null, spinning: false, reelsRevealed: 3, lastWin: false, lastReels: null, lastMessage: null };
@@ -53,12 +63,115 @@ let statusMessage = null;
 
 function syncSportsbookToSession() {
   if (session.slotId != null) {
-    session.sportsbookData = sportsbook.toJSON();
+    session.sportsbookData = {
+      ...sportsbook.toJSON(),
+      predictionMarkets: predictions.toJSON(),
+    };
   }
 }
 
 function resetSportsbookFromSession() {
   sportsbook = SportsbookState.fromJSON(session.sportsbookData);
+  predictions = PredictionMarketsState.fromJSON(session.sportsbookData?.predictionMarkets);
+  sportsbookInitPromise = null;
+}
+
+async function ensureSportsbookReady(forceRefresh = false) {
+  if (sportsbookInitPromise && !forceRefresh) return sportsbookInitPromise;
+  sportsbookInitPromise = (async () => {
+    await sportsbook.ensureCatalog();
+    await sportsbook.init(!sportsbook.events.length);
+    try {
+      const cache = await fetchLiveFixtures(sportsbook.catalog, sportsbook.liveCache);
+      sportsbook.liveCache = cache;
+      if (cache.fixtures?.length) {
+        sportsbook.events = mergeLiveFixtures(sportsbook.events, cache, sportsbook.catalog);
+      }
+    } catch {
+      // Simulator fallback
+    }
+    predictions.syncMarkets(sportsbook.events, forceRefresh);
+  })();
+  return sportsbookInitPromise;
+}
+
+function sportsbookWagerStakes() {
+  const act = ACTIVITIES.sportsbook;
+  const tier = currentStakeTier;
+  return tier
+    ? effectiveTableStakes(tier, session.wallet.balance, act.minBet)
+    : { minBet: act.minBet, maxBet: session.wallet.balance };
+}
+
+function renderUnifiedSlip() {
+  const slipEl = el("div", { className: "unified-slip" });
+  const totalOpen = sportsbook.pending.length + predictions.positions.length;
+  if (!totalOpen) return null;
+
+  slipEl.appendChild(el("p", { className: "subtitle", textContent: `Open positions (${totalOpen})` }));
+  for (const slip of sportsbook.pending) {
+    slipEl.appendChild(el("div", {
+      className: "ticket",
+      textContent: `${slip.amount.toLocaleString()} on ${slip.pick} (${slip.betType}) — ${slip.event.label}`,
+    }));
+  }
+  for (const pos of predictions.positions) {
+    slipEl.appendChild(el("div", {
+      className: "ticket",
+      textContent: `${pos.amount.toLocaleString()} on ${pos.side.toUpperCase()} @ ${pos.priceCents}¢ — ${pos.question}`,
+    }));
+  }
+  return slipEl;
+}
+
+function placeSportsTicket(event, betType, pick, amount, extra = {}) {
+  const wagerStakes = sportsbookWagerStakes();
+  if (amount < wagerStakes.minBet) {
+    alert(`Minimum wager is ${wagerStakes.minBet} chips.`);
+    return false;
+  }
+  if (amount > wagerStakes.maxBet) {
+    alert(`Maximum wager is ${wagerStakes.maxBet} chips.`);
+    return false;
+  }
+  const odds = oddsForSelection(event, betType, pick, extra.propId);
+  if (!session.wallet.debit(amount, "sportsbook", `${betType} on ${pick}`)) {
+    alert("Insufficient chips.");
+    return false;
+  }
+  sportsbook.addTicket({ event, betType, pick, amount, odds, ...extra });
+  persist();
+  showStatus(`Ticket placed: ${amount.toLocaleString()} chips on ${pick}.`);
+  return true;
+}
+
+function placePredictionContract(market, side, amount) {
+  const wagerStakes = sportsbookWagerStakes();
+  if (amount < wagerStakes.minBet) {
+    alert(`Minimum wager is ${wagerStakes.minBet} chips.`);
+    return false;
+  }
+  if (amount > wagerStakes.maxBet) {
+    alert(`Maximum wager is ${wagerStakes.maxBet} chips.`);
+    return false;
+  }
+  const priceCents = side === "yes" ? market.yesPrice : market.noPrice;
+  if (!session.wallet.debit(amount, "sportsbook", `Prediction ${side.toUpperCase()} @ ${priceCents}¢`)) {
+    alert("Insufficient chips.");
+    return false;
+  }
+  const maxPayout = predictionPayout(amount, priceCents);
+  predictions.addPosition({
+    marketId: market.marketId,
+    question: market.question,
+    side,
+    priceCents,
+    amount,
+    maxPayout,
+  });
+  persist();
+  showStatus(`${side.toUpperCase()} @ ${priceCents}¢ — max payout ${maxPayout.toLocaleString()} chips.`);
+  return true;
 }
 
 function persist() {
@@ -135,6 +248,7 @@ function el(tag, attrs = {}, children = []) {
     if (k === "className") node.className = v;
     else if (k === "textContent") node.textContent = v;
     else if (k === "innerHTML") node.innerHTML = v;
+    else if (k === "disabled" || k === "checked" || k === "readonly" || k === "selected") node[k] = Boolean(v);
     else if (k.startsWith("on")) node[k.toLowerCase()] = v;
     else node.setAttribute(k, v);
   }
@@ -414,6 +528,8 @@ function returnToSavePicker() {
   persist();
   rewardsPhone?.close();
   sportsbook = new SportsbookState();
+  predictions = new PredictionMarketsState();
+  sportsbookInitPromise = null;
   blackjackGame = null;
   holdemState = null;
   session = new PlayerSession();
@@ -1132,7 +1248,18 @@ function renderSlotsMenu() {
       el("div", { className: "slot-machine-grid" }, machines.map((m) =>
         slotMachineCard(m, () => {
           clearSlotsSpinTimers();
-          slotsState = { machine: m, sessionNet: 0, spins: 0, bet: null, spinning: false, reelsRevealed: 3, lastWin: false, lastReels: null, lastMessage: null };
+          slotsState = {
+            machine: m,
+            sessionNet: 0,
+            spins: 0,
+            bet: null,
+            spinning: false,
+            reelsRevealed: 3,
+            lastWin: false,
+            lastReels: null,
+            lastMessage: null,
+            tier: slotsState.tier ?? currentStakeTier,
+          };
           pushView("slots-play");
         })
       )),
@@ -1153,11 +1280,79 @@ function renderSlotsPlay() {
   const stakes = effectiveSlotStakes(machine, tier, session.wallet.balance);
   const minBet = stakes.minBet;
   const maxBet = stakes.maxBet;
+
+  if (maxBet < minBet) {
+    return el("div", { className: "panel" }, [
+      banner(machine.name),
+      el("p", {
+        className: "error",
+        textContent: `This machine requires at least ${minBet.toLocaleString()} chips per spin at ${tier.name}.`,
+      }),
+      el("div", { className: "action-bar" }, [
+        el("button", {
+          className: "btn",
+          textContent: "Back to machines",
+          onclick: () => { popView(); render(); },
+        }),
+      ]),
+    ]);
+  }
+
+  const betStep = minBet;
   const defaultBet = Math.min(Math.max(slotsState.bet ?? minBet, minBet), maxBet);
+
+  function clampSlotBet(value) {
+    const n = parseInt(value, 10);
+    if (Number.isNaN(n)) return minBet;
+    return Math.min(Math.max(n, minBet), maxBet);
+  }
+
+  function setSlotBet(value) {
+    const clamped = clampSlotBet(value);
+    betInput.value = String(clamped);
+    slotsState.bet = clamped;
+  }
+
   const betInput = el("input", {
-    type: "number", min: String(minBet), max: String(maxBet), value: String(defaultBet),
-    oninput: (e) => { slotsState.bet = parseInt(e.target.value, 10) || minBet; },
+    type: "number",
+    className: "bet-stepper-input",
+    min: String(minBet),
+    max: String(maxBet),
+    step: String(betStep),
+    value: String(defaultBet),
+    disabled: slotsState.spinning,
+    oninput: (e) => { slotsState.bet = clampSlotBet(e.target.value); },
   });
+
+  const betStepper = el("div", { className: "bet-stepper" }, [
+    el("button", {
+      className: "btn bet-step-btn",
+      type: "button",
+      textContent: "−",
+      title: `Decrease bet by ${betStep.toLocaleString()}`,
+      disabled: slotsState.spinning,
+      onclick: () => setSlotBet((parseInt(betInput.value, 10) || minBet) - betStep),
+    }),
+    betInput,
+    el("button", {
+      className: "btn bet-step-btn",
+      type: "button",
+      textContent: "+",
+      title: `Increase bet by ${betStep.toLocaleString()}`,
+      disabled: slotsState.spinning,
+      onclick: () => setSlotBet((parseInt(betInput.value, 10) || minBet) + betStep),
+    }),
+    maxBet > minBet
+      ? el("button", {
+        className: "btn bet-step-btn bet-max-btn",
+        type: "button",
+        textContent: "Max",
+        title: `Set bet to ${maxBet.toLocaleString()}`,
+        disabled: slotsState.spinning,
+        onclick: () => setSlotBet(maxBet),
+      })
+      : null,
+  ].filter(Boolean));
   const msgEl = el("p", {
     className: `slot-result ${slotsState.lastMessage?.type ?? "dim"}`,
     textContent: slotsState.spinning
@@ -1268,9 +1463,9 @@ function renderSlotsPlay() {
     ],
     baseChildren: [
       el("p", { className: "chip-line", textContent: `Chips: ${fmtChips(session.wallet.balance)}` }),
-      el("div", { className: "form-row" }, [
-        el("label", { textContent: `Spin amount (${minBet}–${maxBet}, 0 to leave)` }),
-        betInput,
+      el("div", { className: "form-row slot-bet-row" }, [
+        el("label", { textContent: `Spin amount (${minBet}–${maxBet}, step ${betStep}, 0 to leave)` }),
+        betStepper,
       ]),
       el("div", { className: "action-bar" }, [
         el("button", { className: "btn primary", textContent: "Spin", onclick: doSpin, disabled: slotsState.spinning }),
@@ -1293,7 +1488,8 @@ function renderSlotsPlay() {
 
 function renderSportsbook() {
   const act = ACTIVITIES.sportsbook;
-  if (session.wallet.balance < act.minBet && !sportsbook.pending.length) {
+  const openCount = sportsbook.pending.length + predictions.positions.length;
+  if (session.wallet.balance < act.minBet && !openCount) {
     return el("div", { className: "panel" }, [
       banner("Sports Book"),
       el("p", { className: "error", textContent: `You need at least ${act.minBet} chips to wager.` }),
@@ -1302,122 +1498,400 @@ function renderSportsbook() {
       ]),
     ]);
   }
+
+  ensureSportsbookReady().then(() => render()).catch(() => render());
+
+  if (!sportsbook.catalog || !sportsbook.events.length) {
+    return el("div", { className: "panel" }, [
+      banner("Sports Book — Mandalay Sports Book"),
+      chipLine(),
+      el("p", { className: "sportsbook-loading", textContent: "Loading lines and markets…" }),
+      el("div", { className: "action-bar" }, [
+        el("button", { className: "btn", textContent: "Back", onclick: () => { popView(); render(); } }),
+      ]),
+    ]);
+  }
+
   session.recordVisit("sportsbook");
   persist();
   const tier = currentStakeTier;
-  const wagerStakes = tier
-    ? effectiveTableStakes(tier, session.wallet.balance, act.minBet)
-    : { minBet: act.minBet, maxBet: session.wallet.balance };
+  const wagerStakes = sportsbookWagerStakes();
+  const tab = sportsbook.activeTab ?? "sports";
 
-  const board = el("div", {}, sportsbook.events.map((event, i) =>
-    el("div", { className: "event-card" }, [
-      el("div", { className: "sport", textContent: event.sport }),
-      el("div", { innerHTML: `<strong>${i + 1}) ${event.label}</strong>` }),
-      el("div", { className: "dim", innerHTML: `ML: ${event.away} ${fmtOdds(event.awayOdds)} | ${event.home} ${fmtOdds(event.homeOdds)}` }),
-      el("div", { className: "dim", innerHTML: `Spread: ${event.home} ${event.spread >= 0 ? "+" : ""}${event.spread} (${fmtOdds(event.spreadHomeOdds)}) | ${event.away} ${(-event.spread) >= 0 ? "+" : ""}${-event.spread} (${fmtOdds(event.spreadAwayOdds)})` }),
-    ])
-  ));
+  const tabs = el("div", { className: "sportsbook-tabs" }, [
+    el("button", {
+      className: `sportsbook-tab${tab === "sports" ? " active" : ""}`,
+      textContent: "Sports",
+      onclick: () => { sportsbook.activeTab = "sports"; persist(); render(); },
+    }),
+    el("button", {
+      className: `sportsbook-tab${tab === "predictions" ? " active" : ""}`,
+      textContent: "Predictions",
+      onclick: () => { sportsbook.activeTab = "predictions"; persist(); render(); },
+    }),
+  ]);
 
-  const pendingEl = el("div", { className: "pending-tickets" });
-  if (sportsbook.pending.length) {
-    pendingEl.appendChild(el("p", { className: "subtitle", textContent: "Open tickets:" }));
-    for (const slip of sportsbook.pending) {
-      pendingEl.appendChild(el("div", {
-        className: "ticket",
-        textContent: `${slip.amount.toLocaleString()} chips on ${slip.pick} (${slip.betType}, ${fmtOdds(slip.odds)}) — ${slip.event.label}`,
-      }));
-    }
+  const content = el("div", {});
+
+  if (tab === "sports") {
+    const sports = getUniqueSports(sportsbook.events);
+    const chips = el("div", { className: "sport-filter-chips" }, [
+      el("button", {
+        className: `filter-chip${sportsbook.sportFilter === "all" ? " active" : ""}`,
+        textContent: "All",
+        onclick: () => { sportsbook.sportFilter = "all"; persist(); render(); },
+      }),
+      ...sports.map((s) => el("button", {
+        className: `filter-chip${sportsbook.sportFilter === s ? " active" : ""}`,
+        textContent: s,
+        onclick: () => { sportsbook.sportFilter = s; persist(); render(); },
+      })),
+    ]);
+
+    const filtered = filterEvents(sportsbook.events, sportsbook.sportFilter);
+    const board = el("div", {}, filtered.map((event, i) => {
+      const statusClass = event.live ? "event-status live" : "event-status";
+      const statusText = event.live ? "Live" : event.status === "final" ? "Final" : "Scheduled";
+      const cardChildren = [
+        el("div", { className: "event-card-header" }, [
+          el("div", {}, [
+            el("div", { className: "sport", textContent: event.sportLabel || event.sport }),
+            el("div", { innerHTML: `<strong>${i + 1}) ${event.label}</strong>` }),
+          ]),
+          el("span", { className: statusClass, textContent: statusText }),
+        ]),
+      ];
+
+      if (event.eventType === "outright") {
+        cardChildren.push(el("div", { className: "event-lines dim", innerHTML:
+          `Outright: ${event.home} ${fmtOdds(event.homeOdds)} | ${event.away} ${fmtOdds(event.awayOdds)}` }));
+        cardChildren.push(el("div", { className: "event-bet-row" }, [
+          el("button", {
+            className: "outcome-chip yes",
+            textContent: `Bet ${event.home}`,
+            onclick: () => pushView("sportsbook-wager", { eventId: event.eventId, betType: "outright", pick: event.home }),
+          }),
+        ]));
+      } else {
+        cardChildren.push(el("div", { className: "event-lines" }, [
+          el("div", { className: "dim", innerHTML: `ML: ${event.away} ${fmtOdds(event.awayOdds)} | ${event.home} ${fmtOdds(event.homeOdds)}` }),
+          el("div", { className: "dim", innerHTML: `Spread: ${event.home} ${event.spread >= 0 ? "+" : ""}${event.spread} | ${event.away} ${(-event.spread) >= 0 ? "+" : ""}${-event.spread}` }),
+          el("div", { className: "dim", innerHTML: `Total: O/U ${event.total}` }),
+        ]));
+        cardChildren.push(el("div", { className: "event-bet-row" }, [
+          el("button", {
+            className: "outcome-chip yes",
+            textContent: `${event.home} ML`,
+            onclick: () => pushView("sportsbook-wager", { eventId: event.eventId, betType: "moneyline", pick: event.home }),
+          }),
+          el("button", {
+            className: "outcome-chip yes",
+            textContent: `${event.away} ML`,
+            onclick: () => pushView("sportsbook-wager", { eventId: event.eventId, betType: "moneyline", pick: event.away }),
+          }),
+          el("button", {
+            className: "outcome-chip yes",
+            textContent: `Over ${event.total}`,
+            onclick: () => pushView("sportsbook-wager", { eventId: event.eventId, betType: "total", pick: "over" }),
+          }),
+          el("button", {
+            className: "outcome-chip no",
+            textContent: `Under ${event.total}`,
+            onclick: () => pushView("sportsbook-wager", { eventId: event.eventId, betType: "total", pick: "under" }),
+          }),
+          el("button", {
+            className: "btn",
+            textContent: "More bets",
+            onclick: () => pushView("sportsbook-wager", { eventId: event.eventId }),
+          }),
+        ]));
+        if (event.props?.length) {
+          const propsEl = el("div", { className: "event-props" });
+          propsEl.appendChild(el("span", { className: "dim", textContent: "Props: " }));
+          for (const prop of event.props) {
+            propsEl.appendChild(el("button", {
+              className: "outcome-chip yes",
+              textContent: prop.label,
+              onclick: () => pushView("sportsbook-wager", {
+                eventId: event.eventId, betType: "prop", propId: prop.id, propLabel: prop.label, pick: "yes",
+              }),
+            }));
+          }
+          cardChildren.push(propsEl);
+        }
+      }
+
+      return el("div", { className: "event-card event-card--expanded" }, cardChildren);
+    }));
+
+    content.appendChild(chips);
+    content.appendChild(board);
+  } else {
+    content.appendChild(el("div", { className: "volatility-banner", textContent:
+      "Prediction markets are high-volatility. Prices move fast; you can lose your entire stake." }));
+
+    const catChips = el("div", { className: "sport-filter-chips" }, [
+      el("button", {
+        className: `filter-chip${predictions.categoryFilter === "all" ? " active" : ""}`,
+        textContent: "All",
+        onclick: () => { predictions.categoryFilter = "all"; persist(); render(); },
+      }),
+      ...MARKET_CATEGORIES.map((c) => el("button", {
+        className: `filter-chip${predictions.categoryFilter === c.id ? " active" : ""}`,
+        textContent: c.label,
+        onclick: () => { predictions.categoryFilter = c.id; persist(); render(); },
+      })),
+    ]);
+    content.appendChild(catChips);
+
+    const markets = filterMarkets(predictions.markets, predictions.categoryFilter);
+    const marketBoard = el("div", {}, markets.map((market) => {
+      const yesPct = market.yesPrice;
+      return el("div", { className: "market-card" }, [
+        el("div", { className: "market-category", textContent: categoryLabel(market.category) }),
+        el("div", { className: "market-question", textContent: market.question }),
+        el("div", { className: "prob-bar" }, [
+          el("div", { className: "prob-yes", style: { width: `${yesPct}%` } }),
+          el("div", { className: "prob-no" }),
+        ]),
+        el("div", { className: "market-prices", innerHTML:
+          `YES ${market.yesPrice}¢ · NO ${market.noPrice}¢ · Vol ${market.volume.toLocaleString()}` }),
+        el("div", { className: "market-actions" }, [
+          el("button", {
+            className: "outcome-chip yes",
+            textContent: `YES ${market.yesPrice}¢`,
+            onclick: () => pushView("sportsbook-prediction", { marketId: market.marketId, side: "yes" }),
+          }),
+          el("button", {
+            className: "outcome-chip no",
+            textContent: `NO ${market.noPrice}¢`,
+            onclick: () => pushView("sportsbook-prediction", { marketId: market.marketId, side: "no" }),
+          }),
+        ]),
+      ]);
+    }));
+    content.appendChild(marketBoard);
   }
+
+  const slip = renderUnifiedSlip();
+  const liveNote = sportsbook.liveCache?.fixtures?.length
+    ? el("p", { className: "live-badge", textContent: "● Live fixtures synced" })
+    : null;
 
   return el("div", { className: "panel" }, [
     banner("Sports Book — Mandalay Sports Book"),
     chipLine(),
     tier ? el("p", { className: "dim", textContent: `${tier.name}: ${formatStakeRange(wagerStakes.minBet, wagerStakes.maxBet, { noCap: tier.maxBet == null })}` }) : null,
-    el("p", { className: "subtitle", textContent: "Today's Board" }),
-    board,
-    pendingEl,
-    menu(["Place a wager", "Settle all open bets (simulate results)", "Refresh lines"], "Sports Book:", (choice) => {
+    liveNote,
+    tabs,
+    content,
+    slip,
+    menu([
+      "Settle all open positions",
+      tab === "sports" ? "Refresh lines" : "Refresh market prices",
+      "View bet slip",
+    ], "Sports Book:", (choice) => {
       if (choice === 0) { goBack(); return; }
-      if (choice === 1) pushView("sportsbook-wager");
-      else if (choice === 2) pushView("sportsbook-settle");
-      else if (choice === 3) { sportsbook.refreshBoard(true); render(); }
+      if (choice === 1) pushView("sportsbook-settle");
+      else if (choice === 2) {
+        if (tab === "sports") {
+          sportsbookInitPromise = null;
+          ensureSportsbookReady(true).then(() => render());
+        } else {
+          predictions.refreshPrices();
+          persist();
+          render();
+        }
+      } else if (choice === 3) pushView("sportsbook-slip");
     }),
   ]);
 }
 
 function renderSportsbookWager() {
-  const act = ACTIVITIES.sportsbook;
-  const tier = currentStakeTier;
-  const wagerStakes = tier
-    ? effectiveTableStakes(tier, session.wallet.balance, act.minBet)
-    : { minBet: act.minBet, maxBet: session.wallet.balance };
-  const eventSelect = el("select", {}, sportsbook.events.map((e, i) =>
-    el("option", { value: String(i), textContent: `${i + 1}) ${e.label}` })
+  const ctx = viewStack[viewStack.length - 1]?.data ?? {};
+  const wagerStakes = sportsbookWagerStakes();
+  const event = ctx.eventId
+    ? sportsbook.events.find((e) => e.eventId === ctx.eventId)
+    : sportsbook.events[0];
+
+  if (!event) {
+    return el("div", { className: "panel" }, [
+      banner("Place Wager"),
+      el("p", { className: "error", textContent: "No event available." }),
+      el("button", { className: "btn", textContent: "Back", onclick: () => { popView(); render(); } }),
+    ]);
+  }
+
+  const eventSelect = el("select", {}, sportsbook.events.map((e) =>
+    el("option", {
+      value: e.eventId,
+      textContent: `${e.sportLabel || e.sport}: ${e.label}`,
+      selected: e.eventId === event.eventId,
+    })
   ));
-  const betTypeSelect = el("select", {}, [
-    el("option", { value: "moneyline", textContent: "Moneyline" }),
-    el("option", { value: "spread", textContent: "Spread" }),
-  ]);
+  eventSelect.value = event.eventId;
+
+  let selectedEvent = event;
+  eventSelect.onchange = () => {
+    selectedEvent = sportsbook.events.find((e) => e.eventId === eventSelect.value) ?? event;
+    render();
+  };
+
+  const betType = ctx.betType ?? (selectedEvent.eventType === "outright" ? "outright" : "moneyline");
+  const betOptions = selectedEvent.eventType === "outright"
+    ? [{ value: "outright", text: "Outright winner" }]
+    : [
+      { value: "moneyline", text: "Moneyline" },
+      { value: "spread", text: "Spread" },
+      { value: "total", text: "Total (O/U)" },
+      { value: "prop", text: "Game prop" },
+    ];
+  const betTypeSelect = el("select", {}, betOptions.map((o) =>
+    el("option", { value: o.value, textContent: o.text, selected: o.value === betType })
+  ));
+
   const pickSelect = el("select");
+  const propSelect = el("select");
   const amountInput = el("input", {
-    type: "number", min: String(wagerStakes.minBet), max: String(wagerStakes.maxBet), value: String(wagerStakes.minBet),
+    type: "number",
+    min: String(wagerStakes.minBet),
+    max: String(wagerStakes.maxBet),
+    value: String(wagerStakes.minBet),
   });
 
-  function updatePicks() {
-    const event = sportsbook.events[parseInt(eventSelect.value, 10)];
+  function rebuildPicks() {
     pickSelect.innerHTML = "";
-    if (betTypeSelect.value === "moneyline") {
-      pickSelect.appendChild(el("option", { value: event.away, textContent: event.away }));
-      pickSelect.appendChild(el("option", { value: event.home, textContent: event.home }));
-    } else {
-      pickSelect.appendChild(el("option", {
-        value: event.home,
-        textContent: `${event.home} ${event.spread >= 0 ? "+" : ""}${event.spread}`,
-      }));
-      pickSelect.appendChild(el("option", {
-        value: event.away,
-        textContent: `${event.away} ${(-event.spread) >= 0 ? "+" : ""}${-event.spread}`,
-      }));
+    propSelect.innerHTML = "";
+    const bt = betTypeSelect.value;
+    const ev = sportsbook.events.find((e) => e.eventId === eventSelect.value) ?? selectedEvent;
+    if (bt === "moneyline" || bt === "outright") {
+      const names = bt === "outright" ? (ev.field ?? [ev.home, ev.away]) : [ev.away, ev.home];
+      for (const name of names) {
+        pickSelect.appendChild(el("option", { value: name, textContent: name, selected: ctx.pick === name }));
+      }
+    } else if (bt === "spread") {
+      pickSelect.appendChild(el("option", { value: ev.home, textContent: `${ev.home} ${ev.spread >= 0 ? "+" : ""}${ev.spread}` }));
+      pickSelect.appendChild(el("option", { value: ev.away, textContent: `${ev.away} ${(-ev.spread) >= 0 ? "+" : ""}${-ev.spread}` }));
+    } else if (bt === "total") {
+      pickSelect.appendChild(el("option", { value: "over", textContent: `Over ${ev.total}`, selected: ctx.pick === "over" }));
+      pickSelect.appendChild(el("option", { value: "under", textContent: `Under ${ev.total}`, selected: ctx.pick === "under" }));
+    } else if (bt === "prop") {
+      for (const p of ev.props ?? []) {
+        propSelect.appendChild(el("option", { value: p.id, textContent: p.label, selected: ctx.propId === p.id }));
+      }
+      pickSelect.appendChild(el("option", { value: "yes", textContent: "Yes", selected: ctx.pick === "yes" }));
+      pickSelect.appendChild(el("option", { value: "no", textContent: "No" }));
     }
   }
-  eventSelect.onchange = updatePicks;
-  betTypeSelect.onchange = updatePicks;
-  updatePicks();
+  betTypeSelect.onchange = rebuildPicks;
+  eventSelect.onchange = () => { rebuildPicks(); };
+  rebuildPicks();
+
+  const formRows = [
+    el("div", { className: "form-row" }, [el("label", { textContent: "Event" }), eventSelect]),
+    el("div", { className: "form-row" }, [el("label", { textContent: "Bet type" }), betTypeSelect]),
+  ];
+  if (betTypeSelect.value === "prop") {
+    formRows.push(el("div", { className: "form-row" }, [el("label", { textContent: "Prop" }), propSelect]));
+  }
+  formRows.push(el("div", { className: "form-row" }, [el("label", { textContent: "Pick" }), pickSelect]));
+  formRows.push(el("div", { className: "form-row" }, [el("label", { textContent: "Wager amount" }), amountInput]));
 
   return el("div", { className: "panel" }, [
     banner("Place Wager"),
     chipLine(),
-    el("div", { className: "form-row" }, [el("label", { textContent: "Event" }), eventSelect]),
-    el("div", { className: "form-row" }, [el("label", { textContent: "Bet type" }), betTypeSelect]),
-    el("div", { className: "form-row" }, [el("label", { textContent: "Pick" }), pickSelect]),
-    el("div", { className: "form-row" }, [el("label", { textContent: "Wager amount" }), amountInput]),
+    ...formRows,
     el("div", { className: "action-bar" }, [
       el("button", {
         className: "btn primary",
         textContent: "Place ticket",
         onclick: () => {
-          const event = sportsbook.events[parseInt(eventSelect.value, 10)];
-          const betType = betTypeSelect.value;
+          const ev = sportsbook.events.find((e) => e.eventId === eventSelect.value);
+          if (!ev) return;
+          const bt = betTypeSelect.value;
           const pick = pickSelect.value;
           const amount = parseInt(amountInput.value, 10);
-          if (amount < wagerStakes.minBet) { alert(`Minimum wager is ${wagerStakes.minBet} chips.`); return; }
-          if (amount > wagerStakes.maxBet) { alert(`Maximum wager is ${wagerStakes.maxBet} chips.`); return; }
-          let odds;
-          if (betType === "moneyline") {
-            odds = pick === event.away ? event.awayOdds : event.homeOdds;
-          } else {
-            odds = pick === event.home ? event.spreadHomeOdds : event.spreadAwayOdds;
+          const extra = {};
+          if (bt === "prop") {
+            const prop = ev.props?.find((p) => p.id === propSelect.value);
+            extra.propId = prop?.id;
+            extra.propLabel = prop?.label;
           }
-          if (!session.wallet.debit(amount, "sportsbook", `${betType} on ${pick}`)) {
-            alert("Insufficient chips."); return;
+          if (placeSportsTicket(ev, bt, pick, amount, extra)) {
+            popView();
+            render();
           }
-          sportsbook.addTicket({ event, betType, pick, amount, odds });
-          persist();
-          showStatus(`Ticket placed: ${amount.toLocaleString()} chips on ${pick}. Settle when ready.`);
-          popView();
-          render();
         },
       }),
+      el("button", { className: "btn", textContent: "Back", onclick: () => { popView(); render(); } }),
+    ]),
+  ]);
+}
+
+function renderSportsbookPrediction() {
+  const ctx = viewStack[viewStack.length - 1]?.data ?? {};
+  const market = predictions.markets.find((m) => m.marketId === ctx.marketId);
+  const side = ctx.side ?? "yes";
+  const wagerStakes = sportsbookWagerStakes();
+
+  if (!market) {
+    return el("div", { className: "panel" }, [
+      banner("Prediction Contract"),
+      el("p", { className: "error", textContent: "Market not found." }),
+      el("button", { className: "btn", textContent: "Back", onclick: () => { popView(); render(); } }),
+    ]);
+  }
+
+  const priceCents = side === "yes" ? market.yesPrice : market.noPrice;
+  const amountInput = el("input", {
+    type: "number",
+    min: String(wagerStakes.minBet),
+    max: String(wagerStakes.maxBet),
+    value: String(wagerStakes.minBet),
+  });
+
+  return el("div", { className: "panel" }, [
+    banner("Buy Prediction Contract"),
+    chipLine(),
+    el("div", { className: "volatility-banner", textContent:
+      "High-volatility contract — you can lose your entire stake." }),
+    el("p", { innerHTML: `<strong>${market.question}</strong>` }),
+    el("p", { className: "dim", textContent: `${categoryLabel(market.category)} · ${side.toUpperCase()} @ ${priceCents}¢` }),
+    el("div", { className: "prob-bar" }, [
+      el("div", { className: "prob-yes", style: { width: `${market.yesPrice}%` } }),
+      el("div", { className: "prob-no" }),
+    ]),
+    el("div", { className: "form-row" }, [el("label", { textContent: "Stake (chips)" }), amountInput]),
+    el("p", {
+      className: "dim",
+      id: "pred-payout-preview",
+      textContent: `Max payout if ${side.toUpperCase()}: ${predictionPayout(wagerStakes.minBet, priceCents).toLocaleString()} chips`,
+    }),
+    el("div", { className: "action-bar" }, [
+      el("button", {
+        className: "btn primary",
+        textContent: `Buy ${side.toUpperCase()}`,
+        onclick: () => {
+          const amount = parseInt(amountInput.value, 10);
+          if (placePredictionContract(market, side, amount)) {
+            popView();
+            render();
+          }
+        },
+      }),
+      el("button", { className: "btn", textContent: "Back", onclick: () => { popView(); render(); } }),
+    ]),
+  ]);
+}
+
+function renderSportsbookSlip() {
+  const slip = renderUnifiedSlip();
+  return el("div", { className: "panel" }, [
+    banner("Bet Slip"),
+    chipLine(),
+    slip ?? el("p", { className: "dim", textContent: "No open positions." }),
+    el("div", { className: "action-bar" }, [
+      el("button", { className: "btn primary", textContent: "Settle all", onclick: () => pushView("sportsbook-settle") }),
       el("button", { className: "btn", textContent: "Back", onclick: () => { popView(); render(); } }),
     ]),
   ]);
@@ -1426,29 +1900,54 @@ function renderSportsbookWager() {
 function renderSportsbookSettle() {
   const log = el("div", { className: "log-area" });
   let sessionNet = 0;
+  let totalCount = 0;
 
-  if (!sportsbook.pending.length) {
-    log.appendChild(el("p", { className: "error", textContent: "No open tickets. Place a wager first." }));
+  if (!sportsbook.pending.length && !predictions.positions.length) {
+    log.appendChild(el("p", { className: "error", textContent: "No open positions." }));
   } else {
-    const { results, count } = sportsbook.settleAll();
-    log.appendChild(el("p", { className: "subtitle", textContent: "FINAL SCORES" }));
-    for (const r of results) {
-      log.appendChild(el("div", { className: "line", innerHTML: `<strong>${r.event.label}:</strong> ${r.event.away} ${r.event.awayScore} — ${r.event.home} ${r.event.homeScore}` }));
-      if (r.won) {
-        session.wallet.credit(r.payout, "sportsbook", r.reason);
-        sessionNet += r.payout - r.slip.amount;
-        log.appendChild(el("div", { className: "line success", textContent: `  WIN: ${r.reason} (+${(r.payout - r.slip.amount).toLocaleString()} chips)` }));
-      } else {
-        sessionNet -= r.slip.amount;
-        log.appendChild(el("div", { className: "line error", textContent: `  LOSE: ${r.reason} (-${r.slip.amount.toLocaleString()} chips)` }));
+    if (sportsbook.pending.length) {
+      const { results, count } = sportsbook.settleAll(sportsbook.catalog);
+      log.appendChild(el("p", { className: "subtitle", textContent: "FINAL SCORES" }));
+      for (const r of results) {
+        log.appendChild(el("div", {
+          className: "line",
+          innerHTML: `<strong>${r.event.label}:</strong> ${formatEventScore(r.event)}`,
+        }));
+        if (r.won) {
+          session.wallet.credit(r.payout, "sportsbook", r.reason);
+          sessionNet += r.payout - r.slip.amount;
+          log.appendChild(el("div", { className: "line success", textContent: `  WIN: ${r.reason} (+${(r.payout - r.slip.amount).toLocaleString()} chips)` }));
+        } else {
+          sessionNet -= r.slip.amount;
+          log.appendChild(el("div", { className: "line error", textContent: `  LOSE: ${r.reason} (-${r.slip.amount.toLocaleString()} chips)` }));
+        }
       }
+      totalCount += count;
     }
-    session.recordResult("sportsbook", sessionNet, count);
+
+    if (predictions.positions.length) {
+      const { results, count } = predictions.settleAll(sportsbook.events);
+      log.appendChild(el("p", { className: "subtitle", textContent: "PREDICTION MARKET RESULTS" }));
+      for (const r of results) {
+        log.appendChild(el("div", { className: "line", innerHTML: `<strong>${r.market.question}</strong> → ${r.resolution.toUpperCase()}` }));
+        if (r.won) {
+          session.wallet.credit(r.payout, "sportsbook", r.reason);
+          sessionNet += r.payout - r.position.amount;
+          log.appendChild(el("div", { className: "line success", textContent: `  WIN: ${r.reason}` }));
+        } else {
+          sessionNet -= r.position.amount;
+          log.appendChild(el("div", { className: "line error", textContent: `  LOSE: ${r.reason} (-${r.position.amount.toLocaleString()} chips)` }));
+        }
+      }
+      totalCount += count;
+    }
+
+    session.recordResult("sportsbook", sessionNet, totalCount);
     persist();
   }
 
   return el("div", { className: "panel" }, [
-    banner("Settle Bets"),
+    banner("Settle Positions"),
     chipLine(),
     log,
     el("div", { className: "action-bar" }, [
@@ -2418,6 +2917,8 @@ const RENDERERS = {
   "slots-play": renderSlotsPlay,
   sportsbook: renderSportsbook,
   "sportsbook-wager": renderSportsbookWager,
+  "sportsbook-prediction": renderSportsbookPrediction,
+  "sportsbook-slip": renderSportsbookSlip,
   "sportsbook-settle": renderSportsbookSettle,
   "blackjack-menu": renderBlackjackMenu,
   "blackjack-custom": renderBlackjackCustom,

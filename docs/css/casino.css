@@ -347,7 +347,225 @@ body {
   font-size: 0.9rem;
 }
 
-.settings-bar {
+.sportsbook-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin: 1rem 0 0.75rem;
+  flex-wrap: wrap;
+}
+
+.sportsbook-tab {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  color: var(--dim);
+  padding: 0.45rem 0.9rem;
+  border-radius: 3px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.85rem;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.sportsbook-tab.active {
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
+
+.sportsbook-tab:hover {
+  border-color: var(--cyan);
+}
+
+.sport-filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.75rem 0;
+}
+
+.filter-chip {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--dim);
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.filter-chip.active {
+  border-color: var(--yellow);
+  color: var(--yellow);
+}
+
+.volatility-banner {
+  background: rgba(255, 107, 107, 0.1);
+  border: 1px solid rgba(255, 107, 107, 0.35);
+  color: var(--red);
+  padding: 0.6rem 0.85rem;
+  margin: 0.75rem 0;
+  font-size: 0.82rem;
+  border-radius: 3px;
+}
+
+.event-card--expanded {
+  border-color: rgba(57, 197, 207, 0.35);
+}
+
+.event-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.event-status {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  padding: 0.15rem 0.4rem;
+  border-radius: 2px;
+  border: 1px solid var(--border);
+  color: var(--dim);
+}
+
+.event-status.live {
+  border-color: var(--green);
+  color: var(--green);
+}
+
+.event-lines {
+  display: grid;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.event-props {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed var(--border);
+  font-size: 0.8rem;
+}
+
+.market-card {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.85rem 1rem;
+  margin: 0.5rem 0;
+}
+
+.market-card:hover {
+  border-color: rgba(57, 197, 207, 0.4);
+}
+
+.market-category {
+  display: inline-block;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  color: var(--yellow);
+  margin-bottom: 0.35rem;
+}
+
+.market-question {
+  font-weight: 600;
+  margin-bottom: 0.6rem;
+  line-height: 1.35;
+}
+
+.prob-bar {
+  display: flex;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: rgba(255, 107, 107, 0.25);
+  margin-bottom: 0.5rem;
+}
+
+.prob-yes {
+  background: var(--green);
+  transition: width 0.2s;
+}
+
+.prob-no {
+  background: var(--red);
+  flex: 1;
+}
+
+.market-prices {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--dim);
+  margin-bottom: 0.6rem;
+}
+
+.market-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.outcome-chip {
+  border: 1px solid var(--border);
+  background: var(--bg-panel);
+  padding: 0.35rem 0.75rem;
+  border-radius: 3px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.82rem;
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+
+.outcome-chip.yes {
+  border-color: rgba(80, 200, 120, 0.5);
+  color: var(--green);
+}
+
+.outcome-chip.no {
+  border-color: rgba(255, 107, 107, 0.5);
+  color: var(--red);
+}
+
+.outcome-chip:hover {
+  box-shadow: 0 0 8px rgba(57, 197, 207, 0.25);
+}
+
+.outcome-chip.yes:hover {
+  box-shadow: 0 0 10px rgba(80, 200, 120, 0.35);
+}
+
+.outcome-chip.no:hover {
+  box-shadow: 0 0 10px rgba(255, 107, 107, 0.35);
+}
+
+.event-bet-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+}
+
+.live-badge {
+  color: var(--green);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.unified-slip {
+  margin: 1rem 0;
+  padding: 0.75rem;
+  background: rgba(57, 197, 207, 0.05);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.sportsbook-loading {
+  color: var(--dim);
+  padding: 1rem 0;
+  text-align: center;
+}
+
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
@@ -1835,6 +2053,32 @@ body {
 
 .slot-cabinet-base .form-row label {
   font-size: 0.75rem;
+}
+
+.slot-bet-row .bet-stepper {
+  display: flex;
+  align-items: stretch;
+  gap: 0.35rem;
+  max-width: 320px;
+}
+
+.slot-bet-row .bet-stepper-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: none;
+  width: auto;
+  text-align: center;
+}
+
+.slot-bet-row .bet-step-btn {
+  flex: 0 0 auto;
+  min-width: 2.5rem;
+  padding: 0.45rem 0.55rem;
+}
+
+.slot-bet-row .bet-max-btn {
+  min-width: 3rem;
+  font-size: 0.7rem;
 }
 
 .slot-cabinet-base .btn {

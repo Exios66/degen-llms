@@ -6,6 +6,7 @@ from blackjack.rng import SECURE_RANDOM
 from mandalay_bay.activities.base import Activity, ActivityInfo
 from mandalay_bay.dealers import announce_dealer, pick_quip
 from mandalay_bay.session import PlayerSession
+from mandalay_bay.stakes import effective_table_stakes, pick_stake_tier
 
 RED_NUMBERS = {
     1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36,
@@ -75,6 +76,14 @@ class RouletteActivity(Activity):
             ui.pause()
             return
 
+        tier = pick_stake_tier(session, ui, title="Choose stake tier:")
+        if tier is None:
+            return
+        ui.dim(tier.description)
+        wager_min, wager_max = effective_table_stakes(
+            tier, session.wallet.balance, activity_min=self.info.min_bet
+        )
+
         ui.print("European wheel (0–36). 0 is green; red/black and dozens exclude zero.")
         session_net = 0
         spins = 0
@@ -86,14 +95,13 @@ class RouletteActivity(Activity):
             if choice == 0:
                 break
             bet_type = BET_TYPES[choice - 1]
-            max_bet = session.wallet.balance
             amount = ui.prompt_int(
-                f"Wager ({self.info.min_bet}-{max_bet}, 0 to cancel)",
+                f"Wager ({wager_min}-{wager_max}, 0 to cancel)",
                 0,
-                max_bet,
-                default=self.info.min_bet,
+                wager_max,
+                default=wager_min,
             )
-            if amount == 0 or amount < self.info.min_bet:
+            if amount == 0 or amount < wager_min:
                 continue
             straight_pick = None
             if bet_type.kind == "straight":

@@ -1,3 +1,5 @@
+/** Keep in sync with mandalay_bay/activities/slots.py */
+import { effectiveSlotStakes, formatStakeRange, tierUsesSalonLimits } from "./stakes.js";
 import { secureRandomInt } from "./core.js";
 
 /** Keep in sync with mandalay_bay/activities/slots.py */
@@ -381,16 +383,16 @@ export function displaySymbol(symObj, useUnicode) {
   return symObj.display;
 }
 
-function jackpotEligible(machine, bet) {
+function jackpotEligible(machine, bet, effectiveMax) {
   if (!machine.jackpotRequiresMaxBet) return true;
-  return bet >= machine.maxBet;
+  return bet >= effectiveMax;
 }
 
-export function tryJackpot(session, machine, reels, bet) {
+export function tryJackpot(session, machine, reels, bet, effectiveMax) {
   if (!machine.progressive || !machine.jackpotKey || !machine.progressivePoolId) return null;
   const line = reels.map((r) => r.name).join("|");
   if (line !== machine.jackpotKey) return null;
-  if (!jackpotEligible(machine, bet)) return null;
+  if (!jackpotEligible(machine, bet, effectiveMax)) return null;
   const poolId = machine.progressivePoolId;
   const amount = progressivePool(session, poolId, machine.progressiveSeed);
   if (!session.progressivePools) session.progressivePools = {};
@@ -456,8 +458,17 @@ export function formatPaytableText(machine) {
   return parts.join(" | ");
 }
 
-export function formatMachineLabel(machine, session) {
-  const range = `${machine.minBet}-${machine.maxBet} chips`;
+export function formatMachineLabel(machine, session, tier = null) {
+  const balance = session?.wallet?.balance ?? machine.maxBet;
+  let range;
+  if (tier) {
+    const stakes = effectiveSlotStakes(machine, tier, balance);
+    range = formatStakeRange(stakes.minBet, stakes.maxBet, {
+      noCap: tier.maxBet == null && tierUsesSalonLimits(tier),
+    });
+  } else {
+    range = `${machine.minBet}-${machine.maxBet} chips`;
+  }
   if (machine.progressive && machine.progressivePoolId && session) {
     const pool = progressivePool(session, machine.progressivePoolId, machine.progressiveSeed);
     return `${machine.name} (${range}) — Jackpot: ${pool.toLocaleString()}`;

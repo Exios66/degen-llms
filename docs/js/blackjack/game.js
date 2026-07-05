@@ -5,10 +5,23 @@ import {
 } from "./rules.js";
 import { settleHand, settleInsurance, computeBotBet } from "./bankroll.js";
 import { basicStrategyAction } from "./strategy.js";
+import { effectiveTableStakes } from "../stakes.js";
 
 const BOT_NAMES = ["Alex", "Sam", "Jordan", "Casey", "Riley", "Morgan"];
 
-export function defaultConfig(balance) {
+export function defaultConfig(balance, tier = null) {
+  if (tier) {
+    const { minBet, maxBet } = effectiveTableStakes(tier, balance, 10);
+    return {
+      startingBankroll: balance,
+      minBet,
+      maxBet,
+      numDecks: 6,
+      dealerHitsSoft17: true,
+      numBots: 0,
+      humanSeat: 1,
+    };
+  }
   return {
     startingBankroll: balance,
     minBet: 10,

@@ -78,6 +78,7 @@ def run_hotel_lobby(session: PlayerSession, ui: TerminalUI) -> None:
 
 def run_front_desk(session: PlayerSession, ui: TerminalUI) -> None:
     hotel = ensure_hotel(session)
+    hotel.front_desk_visits = getattr(hotel, "front_desk_visits", 0) + 1
     while True:
         ui.banner("Front Desk — Clerk Carmen")
         ui.print(f"Conf {hotel.reservation_code} · {get_room_type(hotel)['label']}")
@@ -94,6 +95,7 @@ def run_front_desk(session: PlayerSession, ui: TerminalUI) -> None:
                 "Express checkout (Pearl+)",
                 "Standard checkout",
                 "Guest Directory — sign the lobby book",
+                "Dining recommendations — Resort restaurants",
                 "Back",
             ],
             title="Clerk Carmen:",
@@ -136,6 +138,8 @@ def run_front_desk(session: PlayerSession, ui: TerminalUI) -> None:
             ui.success(res.message) if res.ok else ui.error(res.message)
         elif choice == 11:
             run_guest_directory(session, ui)
+        elif choice == 12:
+            _run_dining_recommendations(ui)
         ui.pause()
 
 
@@ -316,3 +320,55 @@ def _run_room_events(ui, ra, events) -> None:
         for evt in locked:
             ui.dim(f"  {evt['label']}")
     ui.pause()
+
+
+_DINING_PICKS = [
+    {
+        "name": "Aureole",
+        "chef": "Charlie Palmer",
+        "type": "American fine dining",
+        "price": "$$$$$",
+        "hours": "Dinner nightly",
+        "blurb": (
+            "Four-story wine tower staffed by harness-rigged 'wine angels.' Seasonal tasting menus, "
+            "dry-aged beef, and the most theatrical wine service on the Strip."
+        ),
+        "location": "East lobby, Mandalay Bay Resort",
+    },
+    {
+        "name": "Border Grill",
+        "chef": "Mary Sue Milliken & Susan Feniger",
+        "type": "Modern Mexican",
+        "price": "$$$$",
+        "hours": "Brunch & dinner daily",
+        "blurb": (
+            "Bold chef-driven Mexican from the 'Too Hot Tamales.' Poolside windows overlook Mandalay "
+            "Beach — famous for Border Brunch. House-made tortillas since 1990."
+        ),
+        "location": "Poolside, Mandalay Bay Resort",
+    },
+    {
+        "name": "Stripsteak",
+        "chef": "Michael Mina",
+        "type": "Contemporary steakhouse",
+        "price": "$$$$$",
+        "hours": "Dinner nightly",
+        "blurb": (
+            "USDA prime and wagyu, duck-fat fries, and a cocktail program to match. "
+            "Consistently ranked among Vegas's top steakhouses — reserve ahead."
+        ),
+        "location": "Casino level, Mandalay Bay Resort",
+    },
+]
+
+
+def _run_dining_recommendations(ui: TerminalUI) -> None:
+    ui.banner("Resort Dining — Clerk Carmen Recommends")
+    ui.print('"Three tables you actually need a reservation for."')
+    ui.print("")
+    for i, r in enumerate(_DINING_PICKS, start=1):
+        ui.print(f"{i}. {r['name']}  ({r['chef']})")
+        ui.dim(f"   {r['type']}  ·  {r['price']}  ·  {r['hours']}")
+        ui.print(f"   {r['blurb']}")
+        ui.dim(f"   📍 {r['location']}")
+        ui.print("")

@@ -309,7 +309,7 @@ export class RewardsPhone {
       btn.textContent = "Locate reservation";
       btn.onclick = () => {
         const r = findReservation(this.session);
-        this.tracker.pushNotification("Reservation Found", r.clue ?? r.hint);
+        this.tracker.pushNotification("Reservation Found", r.message);
         this.onPersist?.();
         this._renderScreen();
       };

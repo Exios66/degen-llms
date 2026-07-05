@@ -43,6 +43,60 @@ Occupied slots show player name, chip balance, and last played time. **Most rece
 | Display preferences | Yes |
 | RPG position & quest flags ([pixel mode](rpg/GDD.md)) | Yes, when present |
 | Open sports book tickets | No (settle before saving) |
+| Hotel state & room amenities (v4+) | Yes |
+| Pool complex progress | Yes |
+| Shopping / bar purchases | Yes |
+
+## Hotel save schema (v4+)
+
+When present, `hotel` includes:
+
+```json
+{
+  "propertyId": "mandalay_bay",
+  "reservationCode": "MB-4821",
+  "roomType": "standard",
+  "nightsRemaining": 2,
+  "resortTime": 0,
+  "roomAmenities": {
+    "tvChannel": "aquarium",
+    "channelsWatched": ["aquarium"],
+    "minibarPurchases": ["salted_almonds"],
+    "minibarTab": 18,
+    "phoneCalls": ["concierge"],
+    "decisions": ["balcony"],
+    "unlockedEvents": ["shark_whisperer"],
+    "eventLog": ["You narrate the aquarium feed…"],
+    "amenityActions": 4,
+    "wakeUpScheduled": false,
+    "checkedOut": false
+  }
+}
+```
+
+Cross-system event requirements also read `poolComplex.visitedZones`, `amenities.purchasedItems`, and MGM Rewards tier from `rewards.lifetimeWagered`.
+
+## World cycle (real-time day/night)
+
+**2 hours real time = 1 in-game resort day.** Phase within the day: dawn → midday → neon dusk → 2 AM clarity.
+
+```json
+{
+  "worldCycle": {
+    "clockAnchorMs": 1717580000000,
+    "processedDay": 3,
+    "roomEvicted": false,
+    "overdueBalance": 0,
+    "lastRolloverMessages": ["Day 3 — Phone then desk…"]
+  }
+}
+```
+
+Each new day:
+- Posts daily room + resort + parking charges (varies by room type)
+- Rotates reservation requirement (phone / desk / both / net-positive whale check-in)
+- Resets hallway and reservation confirmation
+- Evicts room access if charges cannot be paid (settle at front desk or win on the floor)
 
 ## Auto-save
 

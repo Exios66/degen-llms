@@ -759,6 +759,111 @@ body {
 
 .hotel-room-view {
   min-height: 12rem;
+  transition: box-shadow 0.4s ease, border-color 0.4s ease;
+}
+
+.hotel-room-view.resort-time-0 {
+  box-shadow: inset 0 0 40px rgba(255, 200, 120, 0.08);
+}
+
+.hotel-room-view.resort-time-1 {
+  box-shadow: inset 0 0 40px rgba(255, 230, 150, 0.06);
+}
+
+.hotel-room-view.resort-time-2 {
+  box-shadow: inset 0 0 50px rgba(180, 80, 255, 0.1);
+  border-color: rgba(180, 80, 255, 0.25);
+}
+
+.hotel-room-view.resort-time-3 {
+  box-shadow: inset 0 0 60px rgba(40, 120, 200, 0.12);
+  border-color: rgba(40, 120, 200, 0.3);
+}
+
+.tv-glow {
+  box-shadow: inset 0 0 30px rgba(100, 180, 255, 0.15);
+}
+
+.minibar-neon {
+  box-shadow: inset 0 0 24px rgba(255, 60, 120, 0.12);
+}
+
+.concierge-nudge {
+  font-style: italic;
+  margin-bottom: 0.5rem;
+}
+
+.room-schematic {
+  margin: 1rem 0;
+  padding: 0.75rem;
+  border: 1px dashed rgba(232, 197, 71, 0.25);
+  border-radius: 4px;
+}
+
+.room-schematic-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.room-schematic-zone {
+  padding: 0.65rem;
+  background: rgba(232, 197, 71, 0.08);
+  border: 1px solid rgba(232, 197, 71, 0.25);
+  color: inherit;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.85em;
+}
+
+.room-schematic-zone:hover {
+  background: rgba(232, 197, 71, 0.16);
+}
+
+.world-cycle-banner,
+.world-cycle-hud {
+  margin: 0.75rem 0;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid rgba(232, 197, 71, 0.2);
+  border-radius: 4px;
+}
+
+.world-cycle-hud {
+  background: rgba(232, 197, 71, 0.05);
+}
+
+.world-cycle-banner.resort-time-2,
+.world-cycle-hud.resort-time-2 {
+  border-color: rgba(180, 80, 255, 0.25);
+}
+
+.world-cycle-banner.resort-time-3,
+.world-cycle-hud.resort-time-3 {
+  border-color: rgba(40, 120, 200, 0.3);
+  background: rgba(40, 120, 200, 0.06);
+}
+
+.resort-completion-panel {
+  margin: 1rem 0;
+  padding: 0.75rem;
+  background: rgba(232, 197, 71, 0.04);
+  border: 1px solid rgba(232, 197, 71, 0.15);
+}
+
+.resort-completion-list {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+}
+
+.resort-completion-list li {
+  padding: 0.25rem 0;
+}
+
+.event-hint {
+  font-style: italic;
+  opacity: 0.85;
 }
 
 .room-amenities-summary {
@@ -2237,11 +2342,11 @@ body {
 
 .racing-paddock {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
-  gap: 0.75rem;
-  padding: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(136px, 1fr));
+  gap: 0.65rem;
+  padding: 0.85rem;
   background:
-    radial-gradient(ellipse at 50% 0%, rgba(61, 214, 140, 0.12) 0%, transparent 55%),
+    radial-gradient(ellipse at 50% 0%, rgba(61, 214, 140, 0.1) 0%, transparent 55%),
     repeating-linear-gradient(
       90deg,
       rgba(42, 104, 56, 0.15) 0px,
@@ -2267,15 +2372,6 @@ body {
   border: 2px solid rgba(255, 255, 255, 0.08);
   border-radius: 8px;
   transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
-  animation: paddock-bob 2.4s ease-in-out infinite;
-}
-
-.horse-paddock-card:nth-child(2n) { animation-delay: 0.4s; }
-.horse-paddock-card:nth-child(3n) { animation-delay: 0.8s; }
-
-@keyframes paddock-bob {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-3px); }
 }
 
 .horse-paddock-card:hover,
@@ -2283,7 +2379,6 @@ body {
   border-color: var(--gold);
   box-shadow: 0 0 12px rgba(255, 215, 0, 0.2);
   transform: translateY(-2px);
-  animation: none;
 }
 
 .horse-sprite-canvas {
@@ -2348,6 +2443,113 @@ body {
 .racing-finish-name {
   font-size: 0.72rem;
   text-align: center;
+}
+
+.racing-finish-silks {
+  font-size: 0.62rem;
+  text-align: center;
+}
+
+/* ── Atari / electric table race cabinet ── */
+
+.race-cabinet {
+  margin: 0.75rem 0 1rem;
+  padding: 10px;
+  background: linear-gradient(180deg, #4a3020 0%, #2a1808 55%, #1a0c04 100%);
+  border: 4px solid #7a5830;
+  border-radius: 14px;
+  box-shadow:
+    inset 0 2px 0 rgba(255, 220, 160, 0.15),
+    inset 0 -4px 12px rgba(0, 0, 0, 0.45),
+    0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.race-cabinet-marquee {
+  text-align: center;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: #ffd040;
+  text-shadow: 0 0 8px rgba(255, 208, 64, 0.45);
+  margin-bottom: 6px;
+  animation: race-marquee-glow 2s ease-in-out infinite;
+}
+
+@keyframes race-marquee-glow {
+  0%, 100% { opacity: 0.85; }
+  50% { opacity: 1; }
+}
+
+.race-status-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 5px 10px;
+  margin-bottom: 6px;
+  background: linear-gradient(180deg, #f0e4cc 0%, #d8c8a8 100%);
+  border: 2px solid #8a7050;
+  border-radius: 4px;
+  color: #2a2010;
+  font-size: 0.68rem;
+  font-weight: 600;
+  font-family: "JetBrains Mono", monospace;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.race-status-left {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.race-status-right {
+  flex-shrink: 0;
+  color: #5a4020;
+  font-weight: 700;
+}
+
+.race-cabinet-screen {
+  padding: 4px;
+  background: #101010;
+  border: 3px solid #222;
+  border-radius: 6px;
+  box-shadow: inset 0 0 16px rgba(0, 0, 0, 0.8);
+  overflow: hidden;
+}
+
+.race-track-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.race-cabinet-controls {
+  display: flex;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.race-cabinet--finished .race-cabinet-marquee {
+  color: #80ff90;
+  text-shadow: 0 0 10px rgba(80, 255, 120, 0.5);
+}
+
+.race-settle-body {
+  margin: 0.5rem 0;
+}
+
+.race-results-panel {
+  margin-top: 1rem;
+  transition: opacity 0.4s ease;
+}
+
+.race-results-panel.is-hidden {
+  display: none;
 }
 
 .racing-name-preview {

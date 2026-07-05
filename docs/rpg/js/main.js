@@ -7,6 +7,7 @@ import { BlackjackOverlay, EncounterBridge } from "./systems/EncounterBridge.js"
 import { TILE_SIZE, MAP_WIDTH, MAP_HEIGHT } from "./systems/MapData.js";
 import { RewardsPhone } from "../../js/RewardsPhone.js";
 import { syncRewardsFlags } from "../../js/rewards.js";
+import { enterZone, ensurePoolComplex } from "../../js/pool-complex.js";
 
 const GAME_WIDTH = MAP_WIDTH * TILE_SIZE;
 const GAME_HEIGHT = MAP_HEIGHT * TILE_SIZE;
@@ -22,9 +23,20 @@ const dialogueRoot = document.getElementById("dialogue-overlay");
 const blackjackRoot = document.getElementById("blackjack-overlay");
 const titleRoot = document.getElementById("title-overlay");
 
+const POOL_FLAG_ZONES = {
+  pool_wave_pool: "wave_pool",
+  pool_shark_reef: "shark_reef",
+  pool_beach_rave: "beach_rave",
+};
+
 const dialogue = new DialogueManager(dialogueRoot, {
   onFlag: (flag) => {
     saveAdapter?.setFlag(flag);
+    if (POOL_FLAG_ZONES[flag] && session) {
+      ensurePoolComplex(session);
+      enterZone(session, POOL_FLAG_ZONES[flag]);
+      saveAdapter?.persist();
+    }
     if (flag === "redeemed_welcome_drink" && rewardsPhone) {
       const r = rewardsPhone.tracker.ensureRewards();
       if (!r.redeemedComps.includes("welcome_drink")) {

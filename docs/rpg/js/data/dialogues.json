@@ -301,5 +301,92 @@
     "speaker": "Tourist Tina",
     "text": "If you find the shark aquarium, tell me — I got lost twice already!",
     "setFlag": "met_tina"
+  },
+
+  "clerk_carmen_greet": {
+    "speaker": "Clerk Carmen",
+    "text": "Welcome to the hotel tower. Reservation on file? The hallway is that way — or use the web Hotel HUD for the full room experience.",
+    "choices": [
+      { "label": "Where's my room?", "next": "clerk_carmen_room" },
+      { "label": "Checkout?", "next": "clerk_carmen_checkout" },
+      { "label": "Thanks", "next": "clerk_carmen_bye" }
+    ]
+  },
+  "clerk_carmen_room": {
+    "speaker": "Clerk Carmen",
+    "text": "Press Hotel in the HUD — hallway mini-game, minibar, aquarium TV, the works. Press P first if you need your tower.",
+    "setFlag": "hotel_tower_visit",
+    "next": "clerk_carmen_bye"
+  },
+  "clerk_carmen_checkout": {
+    "speaker": "Clerk Carmen",
+    "text": "Folio review, late checkout, express for Pearl+ — all in the front desk menu. Minibar sensor never sleeps.",
+    "next": "clerk_carmen_bye"
+  },
+  "clerk_carmen_bye": {
+    "speaker": "Clerk Carmen",
+    "text": "Elevator down returns you to the casino lobby.",
+    "setFlag": "met_carmen"
+  },
+
+  "hotel_room_door": {
+    "speaker": "Room Door",
+    "text": "Room key works on the third try. For in-room amenities — TV, minibar, phone — open the Hotel HUD from the bar above.",
+    "setFlag": "found_hotel_room",
+    "next": "hotel_room_door_bye"
+  },
+  "hotel_room_door_bye": {
+    "speaker": "Room Door",
+    "text": "The bay glitters below. Bad decisions await inside."
+  },
+
+  "lifeguard_lou_greet": {
+    "speaker": "Lifeguard Lou",
+    "text": "Eleven acres of chlorinated ambition. Wave pool's center stage — timing matters.",
+    "choices": [
+      { "label": "Ride the wave", "next": "lifeguard_lou_wave" },
+      { "label": "Pool complex menu?", "next": "lifeguard_lou_menu" },
+      { "label": "Thanks", "next": "lifeguard_lou_bye" }
+    ]
+  },
+  "lifeguard_lou_wave": {
+    "speaker": "Lifeguard Lou",
+    "text": "You splash in perfectly. Chlorinated triumph.",
+    "setFlag": "pool_wave_pool",
+    "next": "lifeguard_lou_bye"
+  },
+  "lifeguard_lou_menu": {
+    "speaker": "Lifeguard Lou",
+    "text": "Full pool complex — cabanas, shark reef, beach rave — lives in the Hotel HUD under Pool Complex. Same save, same debauchery.",
+    "next": "lifeguard_lou_bye"
+  },
+  "lifeguard_lou_bye": {
+    "speaker": "Lifeguard Lou",
+    "text": "Walk south to the lobby elevator when you're pruned.",
+    "setFlag": "met_lifeguard_lou"
+  },
+
+  "shark_reef_guide_greet": {
+    "speaker": "Reef Guide",
+    "text": "Sand tiger sharks circle the acrylic tunnel. Channel 47 in your room plays this feed live.",
+    "setFlag": "pool_shark_reef",
+    "next": "shark_reef_guide_bye"
+  },
+  "shark_reef_guide_bye": {
+    "speaker": "Reef Guide",
+    "text": "The shark makes eye contact. It has seen worse nights than yours.",
+    "setFlag": "met_shark_guide"
+  },
+
+  "beach_dj_greet": {
+    "speaker": "Beach DJ",
+    "text": "Neon after dark — glow sticks, bass drops, wave pool lit like a fever dream.",
+    "setFlag": "pool_beach_rave",
+    "next": "beach_dj_bye"
+  },
+  "beach_dj_bye": {
+    "speaker": "Beach DJ",
+    "text": "Rave til dawn. Survey says… dance.",
+    "setFlag": "met_beach_dj"
   }
 }

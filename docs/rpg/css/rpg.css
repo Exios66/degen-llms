@@ -96,7 +96,16 @@ body {
 }
 
 #dialogue-overlay,
-#blackjack-overlay,
+#blackjack-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
 #title-overlay {
   position: absolute;
   inset: 0;
@@ -105,6 +114,18 @@ body {
   align-items: center;
   justify-content: center;
   padding: 16px;
+  overflow: hidden;
+}
+
+.title-overlay--intro {
+  background:
+    radial-gradient(ellipse at 50% 35%, rgba(232, 197, 71, 0.12) 0%, transparent 55%),
+    var(--bg);
+}
+
+.title-overlay--menu {
+  background: rgba(10, 8, 18, 0.88);
+  backdrop-filter: blur(4px);
 }
 
 #dialogue-overlay[hidden],
@@ -170,6 +191,227 @@ body {
 
 @keyframes blink {
   50% { opacity: 0; }
+}
+
+/* --- Title intro cinematic --- */
+.title-intro {
+  position: relative;
+  width: min(100%, 560px);
+  text-align: center;
+  padding: 32px 20px;
+  opacity: 0;
+  transform: scale(0.96);
+  transition: opacity 0.45s ease, transform 0.45s ease;
+}
+
+.title-intro--play {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.title-intro--out {
+  opacity: 0;
+  transform: scale(1.03);
+  transition: opacity 0.45s ease, transform 0.45s ease;
+}
+
+.title-intro-glow {
+  position: absolute;
+  inset: -20%;
+  background: radial-gradient(circle at 50% 40%, rgba(232, 197, 71, 0.18) 0%, transparent 62%);
+  animation: titleGlowPulse 2.8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.title-intro-content {
+  position: relative;
+  z-index: 1;
+}
+
+.title-intro-eyebrow {
+  color: var(--dim);
+  font-size: 8px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin: 0 0 12px;
+  opacity: 0;
+  animation: titleFadeUp 0.7s ease 0.15s forwards;
+}
+
+.title-intro-logo {
+  color: var(--gold);
+  font-size: 16px;
+  line-height: 1.5;
+  margin: 0 0 16px;
+  opacity: 0;
+  animation: titleFadeUp 0.8s ease 0.35s forwards, titleLogoShimmer 2.4s ease 1s infinite;
+}
+
+.title-intro-rule {
+  height: 2px;
+  width: 0;
+  margin: 0 auto 16px;
+  background: linear-gradient(90deg, transparent, var(--gold), var(--cyan), transparent);
+  animation: titleRuleDraw 0.9s ease 0.75s forwards;
+}
+
+.title-intro-tagline {
+  color: var(--magenta);
+  font-size: 8px;
+  margin: 0 0 24px;
+  opacity: 0;
+  animation: titleFadeUp 0.7s ease 1s forwards;
+}
+
+.title-intro-hint {
+  color: var(--dim);
+  font-size: 8px;
+  margin: 0;
+  animation: blink 1.2s step-end infinite;
+  opacity: 0;
+  animation: titleFadeUp 0.6s ease 1.35s forwards, blink 1.2s step-end 1.8s infinite;
+}
+
+.title-intro-chips {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.title-intro-chips .chip {
+  position: absolute;
+  font-size: 14px;
+  opacity: 0;
+  animation: titleChipFloat 3s ease-in-out infinite;
+}
+
+.title-intro-chips .chip-a {
+  left: 8%;
+  top: 18%;
+  color: var(--cyan);
+  animation-delay: 0.9s;
+}
+
+.title-intro-chips .chip-b {
+  right: 10%;
+  top: 28%;
+  color: var(--gold);
+  animation-delay: 1.2s;
+}
+
+.title-intro-chips .chip-c {
+  left: 50%;
+  bottom: 8%;
+  color: var(--magenta);
+  transform: translateX(-50%);
+  animation-delay: 1.5s;
+}
+
+@keyframes titleGlowPulse {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.06); }
+}
+
+@keyframes titleFadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes titleRuleDraw {
+  from { width: 0; opacity: 0.4; }
+  to { width: min(240px, 70%); opacity: 1; }
+}
+
+@keyframes titleLogoShimmer {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.15); }
+}
+
+@keyframes titleChipFloat {
+  0% { opacity: 0; transform: translateY(8px); }
+  20% { opacity: 0.45; }
+  50% { transform: translateY(-6px); }
+  80% { opacity: 0.35; }
+  100% { opacity: 0.2; transform: translateY(4px); }
+}
+
+/* --- Title menu panel --- */
+.title-panel--enter {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.title-panel--visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.title-resume-block {
+  margin: 8px 0 20px;
+  padding: 12px;
+  border: 2px solid rgba(232, 197, 71, 0.35);
+  background: rgba(232, 197, 71, 0.06);
+}
+
+.title-resume-label {
+  color: var(--gold);
+  font-size: 8px;
+  margin: 0 0 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.title-resume-btn {
+  width: 100%;
+  background: linear-gradient(180deg, rgba(232, 197, 71, 0.22) 0%, rgba(232, 197, 71, 0.08) 100%);
+  border: 2px solid var(--gold);
+  color: var(--gold);
+  font-family: inherit;
+  font-size: 9px;
+  padding: 12px;
+  cursor: pointer;
+  text-align: center;
+  animation: titleResumePulse 2.2s ease-in-out infinite;
+}
+
+.title-resume-btn:hover {
+  background: rgba(232, 197, 71, 0.28);
+  color: var(--text);
+}
+
+@keyframes titleResumePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(232, 197, 71, 0.25); }
+  50% { box-shadow: 0 0 16px 2px rgba(232, 197, 71, 0.18); }
+}
+
+.slot-list--stagger li {
+  opacity: 0;
+  animation: titleFadeUp 0.45s ease forwards;
+}
+
+.slot-list--stagger li:nth-child(1) { animation-delay: 0.08s; }
+.slot-list--stagger li:nth-child(2) { animation-delay: 0.14s; }
+.slot-list--stagger li:nth-child(3) { animation-delay: 0.2s; }
+.slot-list--stagger li:nth-child(4) { animation-delay: 0.26s; }
+.slot-list--stagger li:nth-child(5) { animation-delay: 0.32s; }
+.slot-list--stagger li:nth-child(6) { animation-delay: 0.38s; }
+
+.slot-list button.active-profile {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.title-input {
+  width: 100%;
+  padding: 8px;
+  margin: 8px 0;
+  font-family: inherit;
+  font-size: 8px;
+  background: #0a0812;
+  border: 2px solid #2a2438;
+  color: #e6e1cf;
 }
 
 .title-panel {

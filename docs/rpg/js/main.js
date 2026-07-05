@@ -123,8 +123,18 @@ const title = new TitleScreen(titleRoot, (s) => {
     console.error(err);
     alert(`Could not start game: ${err.message}`);
   });
-});
+}, parseRpgLaunchParams());
 title.show();
+
+function parseRpgLaunchParams() {
+  const params = new URLSearchParams(window.location.search);
+  const slotRaw = params.get("slot");
+  const slotId = slotRaw ? parseInt(slotRaw, 10) : null;
+  return {
+    launchSlotId: slotId >= 1 && slotId <= 5 ? slotId : null,
+    launchGuest: params.get("guest") === "1",
+  };
+}
 
 window.addEventListener("beforeunload", () => {
   persistAll();

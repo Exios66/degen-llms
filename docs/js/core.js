@@ -16,13 +16,23 @@ import {
   flushCasinoTime,
   formatCasinoTimeInGame,
   formatCasinoTimeLabel,
+  formatPlayTimeReal,
+  formatPlayTimeSummary,
+  formatSaveSlotPlayTimes,
   getCasinoTimeMs,
 } from "./casino-time.js";
 
 export const CASINO_NAME = "The Mandalay Bay";
 export const SAVE_VERSION = 7;
 
-export { formatCasinoTimeInGame, formatCasinoTimeLabel, getCasinoTimeMs };
+export {
+  formatCasinoTimeInGame,
+  formatCasinoTimeLabel,
+  formatPlayTimeReal,
+  formatPlayTimeSummary,
+  formatSaveSlotPlayTimes,
+  getCasinoTimeMs,
+};
 
 /** Default RPG overworld state for pixel mode (Phase 1+). */
 export function defaultRpgState(overrides = {}) {

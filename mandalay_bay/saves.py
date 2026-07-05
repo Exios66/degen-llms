@@ -16,7 +16,7 @@ from mandalay_bay.bank_account import BankAccount, BankTransaction, BankTransact
 from mandalay_bay.intoxication import attach_intoxication_to_session
 from mandalay_bay.rewards import RewardsState, SAVE_VERSION_WITH_REWARDS, ensure_rewards, migrate_session_rewards
 from mandalay_bay.session import ActivityStats, PlayerSession
-from mandalay_bay.casino_time import flush_casino_time, format_casino_time_in_game
+from mandalay_bay.casino_time import flush_casino_time, format_save_slot_play_times
 
 MAX_SLOTS = 5
 DEFAULT_STARTING_CHIPS = 1000
@@ -381,7 +381,7 @@ def run_save_picker(
             for entry in recent:
                 ui.print(
                     f"  Slot {entry.slot_id}: {entry.label} — {entry.player_name} — "
-                    f"{fmt_chips(entry.balance)} · {format_casino_time_in_game(entry.casino_time_ms)} "
+                    f"{fmt_chips(entry.balance)} · {format_save_slot_play_times(entry.casino_time_ms)} "
                     f"(last: {_format_updated(entry.updated_at)})"
                 )
 
@@ -391,7 +391,7 @@ def run_save_picker(
             if slot.occupied:
                 options.append(
                     f"Load Slot {slot.slot_id} — {slot.player_name} ({fmt_chips(slot.balance)}) · "
-                    f"{format_casino_time_in_game(slot.casino_time_ms)}"
+                    f"{format_save_slot_play_times(slot.casino_time_ms)}"
                 )
             else:
                 options.append(f"New save in Slot {slot.slot_id} (empty)")

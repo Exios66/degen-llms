@@ -35,9 +35,19 @@ def flush_casino_time(session: PlayerSession) -> None:
     session._casino_clock_start = time.time() * 1000
 
 
+def format_play_time_real(ms: int) -> str:
+    if ms <= 0:
+        return "00:00:00"
+    total_sec = ms // 1000
+    hours = total_sec // 3600
+    minutes = (total_sec % 3600) // 60
+    seconds = total_sec % 60
+    return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+
+
 def format_casino_time_in_game(ms: int) -> str:
     if ms <= 0:
-        return "0m in resort"
+        return "0m in the casino"
 
     total_game_minutes = (ms / MS_PER_GAME_DAY) * 24 * 60
     days = int(total_game_minutes // (24 * 60))
@@ -46,16 +56,28 @@ def format_casino_time_in_game(ms: int) -> str:
 
     if days > 0:
         if hours > 0:
-            return f"{days}d {hours}h in resort"
+            return f"{days}d {hours}h in the casino"
         if minutes > 0:
-            return f"{days}d {minutes}m in resort"
-        return f"{days}d in resort"
+            return f"{days}d {minutes}m in the casino"
+        return f"{days}d in the casino"
     if hours > 0:
         if minutes > 0:
-            return f"{hours}h {minutes}m in resort"
-        return f"{hours}h in resort"
-    return f"{minutes}m in resort"
+            return f"{hours}h {minutes}m in the casino"
+        return f"{hours}h in the casino"
+    return f"{minutes}m in the casino"
+
+
+def format_save_slot_play_times(ms: int) -> str:
+    return f"{format_play_time_real(ms)} played · {format_casino_time_in_game(ms)}"
+
+
+def format_play_time_label(ms: int) -> str:
+    return f"Play time: {format_play_time_real(ms)}"
 
 
 def format_casino_time_label(ms: int) -> str:
-    return f"Time in casino: {format_casino_time_in_game(ms)}"
+    return f"Casino time: {format_casino_time_in_game(ms)}"
+
+
+def format_play_time_summary(ms: int) -> str:
+    return f"{format_play_time_label(ms)} · {format_casino_time_label(ms)}"

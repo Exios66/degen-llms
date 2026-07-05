@@ -30,9 +30,19 @@ export function flushCasinoTime(session) {
   casinoClockStart = Date.now();
 }
 
-/** Format active play time using the same scale as the resort day/night cycle. */
+/** Real-world active play time as a 24-hour duration (HH:MM:SS). */
+export function formatPlayTimeReal(ms) {
+  if (!ms || ms <= 0) return "00:00:00";
+  const totalSec = Math.floor(ms / 1000);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+}
+
+/** In-game casino time using the same scale as the resort day/night cycle. */
 export function formatCasinoTimeInGame(ms) {
-  if (!ms || ms <= 0) return "0m in resort";
+  if (!ms || ms <= 0) return "0m in the casino";
 
   const totalGameMinutes = (ms / MS_PER_GAME_DAY) * 24 * 60;
   const days = Math.floor(totalGameMinutes / (24 * 60));
@@ -40,17 +50,30 @@ export function formatCasinoTimeInGame(ms) {
   const minutes = Math.floor(totalGameMinutes % 60);
 
   if (days > 0) {
-    if (hours > 0) return `${days}d ${hours}h in resort`;
-    if (minutes > 0) return `${days}d ${minutes}m in resort`;
-    return `${days}d in resort`;
+    if (hours > 0) return `${days}d ${hours}h in the casino`;
+    if (minutes > 0) return `${days}d ${minutes}m in the casino`;
+    return `${days}d in the casino`;
   }
   if (hours > 0) {
-    if (minutes > 0) return `${hours}h ${minutes}m in resort`;
-    return `${hours}h in resort`;
+    if (minutes > 0) return `${hours}h ${minutes}m in the casino`;
+    return `${hours}h in the casino`;
   }
-  return `${minutes}m in resort`;
+  return `${minutes}m in the casino`;
+}
+
+/** Compact save-slot line: real play time + in-game casino time. */
+export function formatSaveSlotPlayTimes(ms) {
+  return `${formatPlayTimeReal(ms)} played · ${formatCasinoTimeInGame(ms)}`;
+}
+
+export function formatPlayTimeLabel(ms) {
+  return `Play time: ${formatPlayTimeReal(ms)}`;
 }
 
 export function formatCasinoTimeLabel(ms) {
-  return `Time in casino: ${formatCasinoTimeInGame(ms)}`;
+  return `Casino time: ${formatCasinoTimeInGame(ms)}`;
+}
+
+export function formatPlayTimeSummary(ms) {
+  return `${formatPlayTimeLabel(ms)} · ${formatCasinoTimeLabel(ms)}`;
 }

@@ -22,7 +22,7 @@ from mandalay_bay.hotel_experience import run_hotel_lobby
 from mandalay_bay.rewards import sync_rewards_from_wallet
 from mandalay_bay.rewards_experience import run_rewards_phone
 from mandalay_bay.session import PlayerSession
-from mandalay_bay.casino_time import format_casino_time_label, get_casino_time_ms, start_casino_clock
+from mandalay_bay.casino_time import format_play_time_summary, get_casino_time_ms, start_casino_clock
 from mandalay_bay.staff_manifest import (
     clear_staff_override,
     editable_staff_entries,
@@ -63,7 +63,7 @@ def show_welcome(session: PlayerSession, ui: TerminalUI) -> None:
     ui.print(f"Your player card: {session.player_name}")
     if session.has_save_slot:
         ui.print(f"Save slot {session.slot_id}: {session.slot_label}")
-        ui.dim(format_casino_time_label(get_casino_time_ms(session)))
+        ui.dim(format_play_time_summary(get_casino_time_ms(session)))
     ui.chip_line(session.wallet.balance)
     ui.print("\nExplore table games, slots, and the sports book.")
     ui.print("Your chips travel with you. Visit the Cashier anytime.")
@@ -325,7 +325,7 @@ def run_stats(session: PlayerSession, ui: TerminalUI) -> None:
     ui.print(f"Player: {session.player_name}")
     ui.chip_line(session.wallet.balance)
     if session.has_save_slot:
-        ui.print(format_casino_time_label(get_casino_time_ms(session)))
+        ui.print(format_play_time_summary(get_casino_time_ms(session)))
     ui.print(f"Session net (excl. buy-ins): {session.wallet.net_session:+,} chips\n")
     if not session.activity_stats:
         ui.dim("No activity history yet.")
@@ -396,7 +396,7 @@ def run_hub(
         ui.print(f"Welcome, {session.player_name}")
         if session.has_save_slot:
             ui.dim(f"Save slot {session.slot_id}: {session.slot_label}")
-            ui.dim(format_casino_time_label(get_casino_time_ms(session)))
+            ui.dim(format_play_time_summary(get_casino_time_ms(session)))
         ui.chip_line(session.wallet.balance)
         _bank_line(session, ui)
         _maybe_low_balance_notice(session, ui)

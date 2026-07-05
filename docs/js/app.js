@@ -21,10 +21,12 @@ import { HAND_CLASS_NAMES } from "./holdem/hand_eval.js";
 import { BET_TYPES, spinWheel, wheelColor, resolveBet } from "./roulette.js";
 import { generateRace, simulateRace, settleTicket, fmtOdds as fmtRaceOdds } from "./horse_racing.js";
 import { getSessionDealer, pickQuip } from "./dealers.js";
+import { RewardsPhone } from "./RewardsPhone.js";
 
 const app = document.getElementById("app");
 
 let session = new PlayerSession();
+let rewardsPhone = null;
 let sportsbook = new SportsbookState();
 let blackjackGame = null;
 let blackjackSessionNet = 0;
@@ -48,7 +50,15 @@ function resetSportsbookFromSession() {
 
 function persist() {
   syncSportsbookToSession();
+  rewardsPhone?.tracker.syncFromWallet();
   if (session.slotId != null) saveSlot(session);
+}
+
+function mountRewardsPhone() {
+  const root = document.getElementById("rewards-phone");
+  if (!root) return;
+  rewardsPhone = new RewardsPhone(root, session, { onPersist: persist });
+  rewardsPhone.sync();
 }
 
 function showStatus(text, type = "success") {
@@ -145,11 +155,13 @@ function enterCasino(nextSession) {
   horseRacingState = { card: null, pending: [], sessionNet: 0, races: 0 };
   viewStack = [{ name: "hub", data: {} }];
   clearStatus();
+  mountRewardsPhone();
   render();
 }
 
 function returnToSavePicker() {
   persist();
+  rewardsPhone?.close();
   sportsbook = new SportsbookState();
   blackjackGame = null;
   holdemState = null;
@@ -1737,6 +1749,15 @@ if (!applyLaunchParams()) {
 }
 
 document.addEventListener("keydown", (e) => {
+  if (e.key === "p" || e.key === "P") {
+    const inCasino = viewStack.some((v) => v.name !== "save-picker" && v.name !== "save-create");
+    const blackjackNeedsP = viewStack.at(-1)?.name === "blackjack-play" && blackjackGame?.pendingAction;
+    if (inCasino && rewardsPhone && !blackjackNeedsP) {
+      rewardsPhone.toggle();
+      e.preventDefault();
+      return;
+    }
+  }
   if (!blackjackGame?.pendingAction) return;
   const map = { h: Action.HIT, s: Action.STAND, d: Action.DOUBLE, p: Action.SPLIT, u: Action.SURRENDER };
   const act = map[e.key.toLowerCase()];

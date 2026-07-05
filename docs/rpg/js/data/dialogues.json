@@ -6,7 +6,7 @@
   },
   "chip_chandler_tips": {
     "speaker": "Chip Chandler",
-    "text": "Your chip balance carries everywhere on the floor. Talk to NPCs with E or Enter. Betty runs the lobby bar west side; Paula handles the Racing Pavilion northeast. Good luck — the house is patient.",
+    "text": "Your chip balance carries everywhere on the floor. Press P for your MGM Rewards phone — comps ping in as you play. Talk to NPCs with E or Enter. Betty runs the lobby bar west side; Paula handles the Racing Pavilion northeast. Good luck — the house is patient.",
     "setFlag": "met_chip_chandler",
     "choices": [
       { "label": "Any secrets?", "next": "chip_chandler_secret" },
@@ -202,12 +202,19 @@
 
   "barkeep_betty_greet": {
     "speaker": "Barkeep Betty",
-    "text": "What'll it be? Betty's Bar — west lobby, best carpet views on the floor. Chips don't buy drinks here, but stories do.",
+    "text": "What'll it be? Betty's Bar — west lobby, best carpet views on the floor. Chips don't buy drinks here, but MGM Rewards comps do.",
     "choices": [
+      { "label": "Redeem welcome cocktail (MGM Rewards)", "next": "barkeep_betty_redeem_drink", "requiresFlag": "has_welcome_drink_comp", "unlessFlag": "redeemed_welcome_drink" },
       { "label": "Who's dealing tonight?", "next": "barkeep_betty_dealers" },
       { "label": "Any floor gossip?", "next": "barkeep_betty_gossip" },
       { "label": "Just passing through.", "next": "barkeep_betty_bye" }
     ]
+  },
+  "barkeep_betty_redeem_drink": {
+    "speaker": "Barkeep Betty",
+    "text": "One comp cocktail on the house — MGM Rewards sent you, didn't they? On the rocks, neon cherry, zero shame.",
+    "setFlag": "redeemed_welcome_drink",
+    "next": "barkeep_betty_bye"
   },
   "barkeep_betty_dealers": {
     "speaker": "Barkeep Betty",

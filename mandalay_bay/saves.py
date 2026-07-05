@@ -12,6 +12,7 @@ from mandalay_bay.casino_amenities import CasinoAmenitiesState, ensure_amenities
 from mandalay_bay.hotel import HotelState, RoomAmenitiesState, default_hotel_state, ensure_hotel
 from mandalay_bay.pool_complex import PoolComplexState, ensure_pool_complex
 from mandalay_bay.world_cycle import WorldCycleState, ensure_world_cycle
+from mandalay_bay.intoxication import attach_intoxication_to_session
 from mandalay_bay.rewards import RewardsState, SAVE_VERSION_WITH_REWARDS, ensure_rewards, migrate_session_rewards
 from mandalay_bay.session import ActivityStats, PlayerSession
 
@@ -230,6 +231,8 @@ def session_to_dict(session: PlayerSession) -> dict:
         payload["amenities"] = asdict(session.amenities)
     if hasattr(session, "world_cycle") and session.world_cycle is not None:
         payload["world_cycle"] = asdict(session.world_cycle)
+    if hasattr(session, "intoxication") and session.intoxication is not None:
+        payload["intoxication"] = asdict(session.intoxication)
     return payload
 
 
@@ -294,6 +297,7 @@ def session_from_dict(data: dict) -> PlayerSession:
         session.world_cycle = WorldCycleState(**data["world_cycle"])
     else:
         ensure_world_cycle(session)
+    attach_intoxication_to_session(session, data)
     return session
 
 

@@ -1,5 +1,6 @@
 import { secureRandomInt, fmtChips } from "./core.js";
 import { isNetPositive } from "./hotel.js";
+import { recordConsumption, POOL_CONSUMABLE_IDS } from "./intoxication-effects.js";
 
 /** @typedef {{ ok: boolean, message: string, unlock?: string }} PoolResult */
 
@@ -307,6 +308,9 @@ export function cabanaService(session, serviceId) {
   if (svc.price && !session.wallet.debit(svc.price, "pool", "Cabana service")) {
     return { ok: false, message: `Need ${fmtChips(svc.price)}.` };
   }
+  if (serviceId === "bottle") {
+    recordConsumption(session, POOL_CONSUMABLE_IDS.bottle, { source: "pool_cabana" });
+  }
   return { ok: true, message: svc.message };
 }
 
@@ -345,6 +349,9 @@ export function beachClubAction(session, actionId) {
   if (!act) return { ok: false, message: "Pick an action." };
   if (act.price && !session.wallet.debit(act.price, "pool", "Beach club")) {
     return { ok: false, message: `Need ${fmtChips(act.price)}.` };
+  }
+  if (actionId === "bar") {
+    recordConsumption(session, POOL_CONSUMABLE_IDS.bar, { source: "pool_beach_club" });
   }
   return { ok: true, message: act.message };
 }

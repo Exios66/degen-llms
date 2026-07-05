@@ -444,29 +444,6 @@ function renderTable(snapshot) {
     ]);
     seatsEl.appendChild(seatEl);
   }
-  }
-
-  const seatsEl = el("div", { className: "bj-seats" });
-  for (const row of snapshot.rows) {
-    const badges = [];
-    if (row.surrendered) badges.push(el("span", { className: "bj-seat-badge bj-seat-badge--surrender", textContent: "SURR" }));
-    else if (row.bust) badges.push(el("span", { className: "bj-seat-badge bj-seat-badge--bust", textContent: "BUST" }));
-    else if (row.blackjack) badges.push(el("span", { className: "bj-seat-badge bj-seat-badge--bj", textContent: "BJ" }));
-
-    const seatEl = el("div", { className: row.highlight ? "bj-seat bj-seat--active" : "bj-seat" }, [
-      el("div", { className: "bj-seat-info" }, [
-        el("div", { className: "bj-seat-name", textContent: `Seat ${row.seat} ${row.label}` }),
-        el("div", {
-          className: "bj-seat-meta",
-          textContent: `${fmtChips(row.bankroll)} · bet ${fmtChips(row.bet)}`,
-        }),
-      ]),
-      cardRow(row.cards),
-      el("span", { className: "bj-hand-value", textContent: `(${row.value})` }),
-      ...badges,
-    ]);
-    seatsEl.appendChild(seatEl);
-  }
   container.appendChild(seatsEl);
   return container;
 }
@@ -1038,8 +1015,8 @@ function renderSlotsMenu() {
   session.recordVisit("slots");
   persist();
   const tier = slotsState.tier ?? currentStakeTier;
-  const options = MACHINES.map((m) => formatMachineLabel(m, session, tier));
-  return el("div", {}, [
+
+  const floor = el("div", { className: "slot-floor" }, [
     banner("Slot Machines — Mandalay Bay"),
     el("p", { className: "dim", textContent: tier ? `${tier.name}: ${tier.description}` : "Penny slots to high-limit progressives — pick your machine." }),
     chipLine(),
@@ -1104,7 +1081,7 @@ function renderSlotsPlay() {
     : null;
 
   const maxBetNote = machine.jackpotRequiresMaxBet
-    ? el("p", { className: "dim", textContent: `Max bet (${machine.maxBet} chips) required for progressive jackpot.` })
+    ? el("p", { className: "dim", textContent: `Max bet (${maxBet.toLocaleString()} chips) required to qualify for the progressive jackpot.` })
     : null;
 
   function doSpin() {
@@ -1116,72 +1093,75 @@ function renderSlotsPlay() {
       render();
       return;
     }
-    if (bet < minBet) { msgEl.className = "error"; msgEl.textContent = `Minimum spin is ${minBet}.`; return; }
-    if (bet > maxBet) { msgEl.className = "error"; msgEl.textContent = `Maximum spin is ${maxBet}.`; return; }
-    if (!session.wallet.debit(bet, "slots", `${machine.name} spin ${fmtChips(bet)}`)) {
-      msgEl.className = "error"; msgEl.textContent = "Insufficient chips."; return;
-    }
-    contributeToProgressive(session, machine, bet);
-    const reels = spinReels(machine);
-    const shown = reels.map((r) => displaySymbol(r, session.useUnicode)).join(" | ");
-    reelsEl.textContent = shown;
-    const jackpotAmount = tryJackpot(session, machine, reels, bet, maxBet);
-    const { win, reason } = calculatePayout(reels, bet, machine, jackpotAmount);
-    slotsState.spins += 1;
-    if (win > 0) {
-      session.wallet.credit(win, "slots", reason);
-      slotsState.sessionNet += win - bet;
-      msgEl.className = jackpotAmount != null ? "jackpot-win" : "success";
-      msgEl.textContent = `${reason}${jackpotAmount == null ? ` — Won ${win.toLocaleString()} chips!` : ""}`;
-    } else {
-      slotsState.sessionNet -= bet;
-      msgEl.className = "dim";
-      msgEl.textContent = "No win this spin.";
-    }
+    if (bet < minBet) { msgEl.className = "slot-result error"; msgEl.textContent = `Minimum spin is ${minBet}.`; return; }
+    if (bet > maxBet) { msgEl.className = "slot-result error"; msgEl.textContent = `Maximum spin is ${maxBet}.`; return; }
     if (!session.wallet.debit(bet, "slots", `${machine.name} spin ${fmtChips(bet)}`)) {
       msgEl.className = "slot-result error";
       msgEl.textContent = "Insufficient chips.";
       return;
     }
 
-  const chipDisplay = el("p", { className: "chip-line", textContent: `Chips: ${fmtChips(session.wallet.balance)}` });
-  const paytableEl = el("p", { className: "dim", textContent: formatPaytableText(machine) });
-  const taglineEl = machine.tagline
-    ? el("p", { className: "dim", textContent: machine.tagline })
-    : null;
-  const maxBetNote = machine.jackpotRequiresMaxBet
-    ? el("p", { className: "dim", textContent: `Max bet (${maxBet.toLocaleString()} chips) required to qualify for the progressive jackpot.` })
-    : null;
+    slotsState.spinning = true;
+    slotsState.lastWin = false;
+    render();
 
-  return el("div", { className: "panel" }, [
-    banner(`Slot Machines — ${machine.name}`),
-    tier ? el("p", { className: "dim", textContent: `Stake tier: ${tier.name}` }) : null,
-    chipDisplay,
-    taglineEl,
-    jackpotEl,
-    maxBetNote,
-    paytableEl,
-    reelsEl,
-    msgEl,
-    el("div", { className: "form-row" }, [
-      el("label", { textContent: `Spin amount (${minBet}-${maxBet}, 0 to leave)` }),
-      betInput,
-    ]),
-    el("div", { className: "action-bar" }, [
-      el("button", { className: "btn primary", textContent: "Spin", onclick: doSpin }),
-      el("button", {
-        className: "btn",
-        textContent: "Leave machine",
-        onclick: () => {
-          session.recordResult("slots", slotsState.sessionNet, slotsState.spins);
-          persist();
-          popView();
-          render();
-        },
-      }),
-    ]),
-    summaryEl,
-  ]);
+    setTimeout(() => {
+      contributeToProgressive(session, machine, bet);
+      const reels = spinReels(machine);
+      const jackpotAmount = tryJackpot(session, machine, reels, bet, maxBet);
+      const { win, reason } = calculatePayout(reels, bet, machine, jackpotAmount);
+      slotsState.spins += 1;
+      slotsState.spinning = false;
+      slotsState.lastReels = reels;
+      slotsState.lastWin = win > 0;
+
+      if (win > 0) {
+        session.wallet.credit(win, "slots", reason);
+        slotsState.sessionNet += win - bet;
+        slotsState.lastMessage = {
+          text: `${reason}${jackpotAmount == null ? ` — Won ${win.toLocaleString()} chips!` : ""}`,
+          type: jackpotAmount != null ? "jackpot-win" : "success",
+        };
+      } else {
+        slotsState.sessionNet -= bet;
+        slotsState.lastMessage = { text: "No win this spin.", type: "dim" };
+      }
+      persist();
+      render();
+    }, 500);
+  }
+
+  return slotCabinet(machine, {
+    screenChildren: [
+      tier ? el("p", { className: "dim", textContent: `Stake tier: ${tier.name}` }) : null,
+      jackpotEl,
+      maxBetNote,
+      slotPaytablePanel(machine),
+      reelsEl,
+      msgEl,
+      summaryEl,
+    ],
+    baseChildren: [
+      el("p", { className: "chip-line", textContent: `Chips: ${fmtChips(session.wallet.balance)}` }),
+      el("div", { className: "form-row" }, [
+        el("label", { textContent: `Spin amount (${minBet}–${maxBet}, 0 to leave)` }),
+        betInput,
+      ]),
+      el("div", { className: "action-bar" }, [
+        el("button", { className: "btn primary", textContent: "Spin", onclick: doSpin, disabled: slotsState.spinning }),
+        el("button", {
+          className: "btn",
+          textContent: "Leave machine",
+          onclick: () => {
+            session.recordResult("slots", slotsState.sessionNet, slotsState.spins);
+            persist();
+            popView();
+            render();
+          },
+        }),
+      ]),
+    ],
+  });
 }
 
 function renderSportsbook() {
@@ -1667,18 +1647,6 @@ function renderRoulette() {
 
   const amountInput = el("input", {
     type: "number", min: String(wagerStakes.minBet), max: String(wagerStakes.maxBet), value: String(wagerStakes.minBet),
-  });
-  const resultEl = el("p", {
-    className: "dim",
-    textContent: rouletteState.lastNumber != null
-      ? `Last spin: ${rouletteState.lastNumber} (${wheelColor(rouletteState.lastNumber)})`
-      : "European wheel (0–36). Place a bet and spin.",
-  });
-  const summaryEl = el("p", {
-    className: "roulette-session",
-    textContent: rouletteState.spins
-      ? `Session: ${signedChips(rouletteState.sessionNet)} over ${rouletteState.spins} spin(s)`
-      : "",
   });
   const resultEl = el("p", {
     className: "dim",

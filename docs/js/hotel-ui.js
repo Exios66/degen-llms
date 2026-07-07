@@ -16,7 +16,7 @@ import {
   filterTvChannels, filterPhoneCalls, filterRoomDecisions, filterMinibarItems,
   getSessionResortPhase, getEventHint, conciergeMinibarNudge,
 } from "./room-amenities.js";
-import { reservationAccessMet } from "./world-cycle.js";
+import { getReservationRequirement } from "./world-cycle.js";
 import { getResortCompletion, maybeAutoSignGuestBook } from "./resort-completion.js";
 
 /**
@@ -121,9 +121,11 @@ export function buildHotelRenderers(ctx) {
         el("div", { className: "hotel-status" }, [
           el("p", { textContent: `Reservation: ${hotel.reservationCode}` }),
           el("p", { textContent: `Room: ${room.label} (${hotel.nightsRemaining} night(s))` }),
-          hotel.foundReservation
+          canAccessHotelRoom(session) && hotel.foundReservation
             ? el("p", { className: "dim", textContent: reservationHint(hotel) })
-            : el("p", { className: "warning", textContent: "Open MGM Rewards (P) → Reservation to locate your room." }),
+            : !canAccessHotelRoom(session)
+              ? el("p", { className: "warning", textContent: reservationStatusMessage(session) })
+              : el("p", { className: "dim", textContent: reservationStatusMessage(session) }),
           hotel.reachedRoom
             ? el("p", { className: "success", textContent: `You're in — room ${hotel.roomNumber}.` })
             : null,
@@ -229,12 +231,16 @@ export function buildHotelRenderers(ctx) {
       log.appendChild(el("div", { className: "line dim", textContent: line }));
     }
 
-    if (!hotel.foundReservation && !reservationAccessMet(session)) {
+    if (!canAccessHotelRoom(session)) {
+      const msg = session.worldCycle?.roomEvicted || hotel.roomEvicted
+        ? "Room locked — settle overdue charges at the front desk or win on the casino floor."
+        : reservationStatusMessage(session);
       return el("div", {}, [
         banner("Hotel Hallways"),
         el("div", { className: "panel" }, [
-          el("p", { className: "error", textContent: "You don't know which tower you're in. Press P → Reservation on your MGM Rewards phone." }),
+          el("p", { className: "error", textContent: msg }),
           el("div", { className: "action-bar" }, [
+            el("button", { className: "btn primary", textContent: "Front Desk — Clerk Carmen", onclick: () => pushView("hotel-front-desk") }),
             el("button", { className: "btn", textContent: "Back", onclick: goBack }),
           ]),
         ]),
@@ -393,8 +399,26 @@ export function buildHotelRenderers(ctx) {
     const time = getSessionResortPhase(session);
     const timeClass = `hotel-room-view resort-time-${time.slot}`;
 
-    if (!canAccessHotelRoom(session) && hotel.reachedRoom) {
-      hotel.reachedRoom = false;
+    if (!canAccessHotelRoom(session) || !hotel.reachedRoom) {
+      const msg = !canAccessHotelRoom(session)
+        ? (session.worldCycle?.roomEvicted || hotel.roomEvicted
+          ? "Room locked — settle overdue charges at the front desk."
+          : reservationStatusMessage(session))
+        : "Complete the hallway to reach your room door first.";
+      if (!canAccessHotelRoom(session) && hotel.reachedRoom) {
+        hotel.reachedRoom = false;
+      }
+      return el("div", {}, [
+        banner(room.label),
+        el("div", { className: "panel" }, [
+          el("p", { className: "error", textContent: msg }),
+          el("div", { className: "action-bar" }, [
+            el("button", { className: "btn primary", textContent: "Hotel lobby", onclick: () => pushView("hotel-lobby") }),
+            el("button", { className: "btn", textContent: "Front Desk", onclick: () => pushView("hotel-front-desk") }),
+            el("button", { className: "btn", textContent: "Back", onclick: goBack }),
+          ]),
+        ]),
+      ]);
     }
 
     if (unlocked.length >= Object.keys(ROOM_EVENTS).length) {

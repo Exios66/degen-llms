@@ -1,5 +1,6 @@
 /** Real-time day/night cycle — 2 hours real time = 1 in-game day. */
 
+import { fmtChips } from "./core.js";
 import { formatVegasClockLabel } from "./vegas-time.js";
 import { defaultHotelState, ensureHotel, isNetPositive } from "./hotel.js";
 import { getSessionTierIndex } from "./resort-bridge.js";
@@ -253,6 +254,12 @@ export function locateReservationViaPhone(session) {
   const hotel = session.hotel;
   const req = getReservationRequirement(session);
   if (!req.needsPhone && req.needsDesk) {
+    if (req.needsNetPositive) {
+      return {
+        ok: false,
+        message: "Whale check-in day — finish net-positive on the floor first, then visit Clerk Carmen.",
+      };
+    }
     return {
       ok: false,
       message: "Today's requirement: front desk only. Visit Clerk Carmen.",

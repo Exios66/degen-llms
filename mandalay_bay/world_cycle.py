@@ -185,6 +185,8 @@ def locate_reservation_via_phone(session: PlayerSession) -> CycleResult:
     hotel = session.hotel
     req = get_reservation_requirement(session)
     if not req.get("needs_phone") and req.get("needs_desk"):
+        if req.get("needs_net_positive"):
+            return CycleResult(False, "Whale check-in day — finish net-positive on the floor first.")
         return CycleResult(False, "Today's requirement: front desk only.")
     if hotel.found_reservation:
         return CycleResult(True, "Already located via phone.", already=True)

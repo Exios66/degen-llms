@@ -34,6 +34,8 @@ import {
 } from "./staff-manifest.js";
 import { RewardsPhone } from "./RewardsPhone.js";
 import { buildHotelRenderers } from "./hotel-ui.js";
+import { buildPoolRenderers } from "./pool-complex-ui.js";
+import { buildAmenitiesRenderers } from "./casino-amenities-ui.js";
 import { ensureHotel } from "./hotel.js";
 import {
   STAKE_TIERS, TIER_ORDER, getTier, formatTierLabel, effectiveTableStakes, effectiveSlotStakes,
@@ -763,6 +765,7 @@ function renderHub() {
     "Player Stats",
     "Save Game",
     "Exit to Hotel",
+    "Casino Amenities",
     "Explore Resort (RPG)",
     "Leave Casino",
   ];
@@ -847,6 +850,8 @@ function renderHub() {
       ensureHotel(session);
       pushView("hotel-lobby");
     } else if (choice === FLOOR_ORDER.length + 7) {
+      pushView("casino-floor");
+    } else if (choice === FLOOR_ORDER.length + 8) {
       const rpgUrl = session.slotId != null
         ? `./rpg/?slot=${session.slotId}`
         : "./rpg/?guest=1";
@@ -2304,6 +2309,7 @@ function renderHorseRacingWager() {
   const wagerStakes = tier
     ? effectiveTableStakes(tier, session.wallet.balance, act.minBet)
     : { minBet: act.minBet, maxBet: session.wallet.balance };
+  if (!horseRacingState.card) horseRacingState.card = generateRace(session);
   const card = horseRacingState.card;
   let selectedHorse = card.horses[0]?.number ?? 1;
   const paddockContainer = el("div", {});
@@ -2378,6 +2384,7 @@ function renderHorseRacingSettle() {
   if (!horseRacingState.pending.length) {
     body.appendChild(el("p", { className: "error", textContent: "No open tickets." }));
   } else {
+    if (!horseRacingState.card) horseRacingState.card = generateRace(session);
     const card = horseRacingState.card;
     const results = simulateRace(card);
     const slips = [...horseRacingState.pending];
@@ -2764,6 +2771,30 @@ const hotelRenderers = buildHotelRenderers({
   viewStack,
 });
 
+const poolRenderers = buildPoolRenderers({
+  get session() { return session; },
+  pushView,
+  goBack,
+  persist,
+  render,
+  el,
+  banner,
+  chipLine,
+});
+
+const amenitiesRenderers = buildAmenitiesRenderers({
+  get session() { return session; },
+  pushView,
+  goBack,
+  persist,
+  render,
+  el,
+  banner,
+  chipLine,
+  statusBanner,
+  showStatus,
+});
+
 const RENDERERS = {
   "save-picker": renderSavePicker,
   "save-create": renderSaveCreate,
@@ -2803,6 +2834,8 @@ const RENDERERS = {
   "horse-stables-pasture": renderHorseStablesPasture,
   "horse-stables-stalls": renderHorseStablesStalls,
   ...hotelRenderers,
+  ...poolRenderers,
+  ...amenitiesRenderers,
   "not-found": renderNotFound,
 };
 
@@ -2826,6 +2859,8 @@ function applyLaunchParams() {
       playerName: params.get("name") || "Guest",
       chips: Math.max(0, parseInt(params.get("chips") || "1000", 10)),
     }));
+    const deepView = params.get("view");
+    if (deepView && RENDERERS[deepView]) pushView(deepView);
     return true;
   }
   const slotParam = params.get("slot");
@@ -2839,6 +2874,8 @@ function applyLaunchParams() {
       const loaded = loadSlot(slotId);
       if (loaded) {
         enterCasino(loaded);
+        const deepView = params.get("view");
+        if (deepView && RENDERERS[deepView]) pushView(deepView);
         return true;
       }
       pushView("save-create", { slotId });

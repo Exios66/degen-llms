@@ -13,6 +13,7 @@ from mandalay_bay.hotel import HotelState, RoomAmenitiesState, default_hotel_sta
 from mandalay_bay.pool_complex import PoolComplexState, ensure_pool_complex
 from mandalay_bay.world_cycle import WorldCycleState, ensure_world_cycle
 from mandalay_bay.bank_account import BankAccount, BankTransaction, BankTransactionKind, ensure_bank
+from mandalay_bay.staff_manifest import set_staff_overrides
 from mandalay_bay.intoxication import attach_intoxication_to_session
 from mandalay_bay.rewards import RewardsState, SAVE_VERSION_WITH_REWARDS, ensure_rewards, migrate_session_rewards
 from mandalay_bay.session import ActivityStats, PlayerSession

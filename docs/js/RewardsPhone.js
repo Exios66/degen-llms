@@ -7,20 +7,25 @@ import {
 } from "./rewards-perks.js";
 import { ensureHotel, findReservation, reservationHint, getRoomType } from "./hotel.js";
 import {
+  advanceDialogue,
   dialWrongNumber,
   easterEggCount,
   formatMessageTime,
+  getActiveDialogueChoices,
   getContactDef,
+  getRapportSummary,
   getTextOptions,
   getThread,
   listUnlockedContacts,
   markThreadRead,
+  onIntoxicationChange,
   phoneUnreadCount,
   resolveCallChoice,
   sendText,
   startCall,
   syncContactIntros,
 } from "./phone-contacts.js";
+import { isHeightenedIntoxication } from "./intoxication-effects.js";
 
 /**
  * Era-styled flip-phone DOM widget for the MGM Rewards app.
@@ -76,6 +81,7 @@ export class RewardsPhone {
     }
     this.tracker.syncFromWallet();
     syncContactIntros(this.session);
+    onIntoxicationChange(this.session);
     this._phoneEl.hidden = false;
     this._renderScreen();
   }
@@ -95,6 +101,7 @@ export class RewardsPhone {
     }
     this.tracker.syncFromWallet();
     syncContactIntros(this.session);
+    onIntoxicationChange(this.session);
     this._phoneEl.hidden = false;
     this._renderScreen();
   }
@@ -328,6 +335,12 @@ export class RewardsPhone {
     body.appendChild(this._line(`${def.emoji ?? ""} ${def.resolveName(this.session)}`, ""));
     body.appendChild(this._line(def.resolveRole(this.session), "dim"));
 
+    const rapport = getRapportSummary(this.session, contactId);
+    body.appendChild(this._line(`Rapport: ${rapport.band.label} (${rapport.rapport})`, "dim rewards-rapport-line"));
+    if (isHeightenedIntoxication(this.session)) {
+      body.appendChild(this._line("🥴 Hidden lines unlocked — after-hours menu active", "dim rewards-intox-line"));
+    }
+
     const thread = getThread(this.session, contactId);
     const msgs = thread?.messages ?? [];
     const log = document.createElement("div");
@@ -335,7 +348,7 @@ export class RewardsPhone {
     if (!msgs.length) {
       log.appendChild(this._line("No messages yet.", "dim"));
     }
-    for (const msg of msgs.slice(-8)) {
+    for (const msg of msgs.slice(-10)) {
       const row = document.createElement("div");
       row.className = `rewards-msg rewards-msg--${msg.dir}`;
       row.textContent = `${formatMessageTime(msg.timestamp)} ${msg.body}`;
@@ -345,37 +358,74 @@ export class RewardsPhone {
 
     const actions = document.createElement("div");
     actions.className = "rewards-thread-actions";
-    const callBtn = document.createElement("button");
-    callBtn.type = "button";
-    callBtn.textContent = "📞 Call";
-    callBtn.onclick = () => {
-      const r = startCall(this.session, contactId);
-      if (!r.ok) {
-        this._showToast({ title: "Call failed", body: r.message ?? "" });
-        return;
-      }
-      this._callContactId = contactId;
-      this._callScript = r.script;
-      this._callChoicePending = false;
-      this._screen = "call";
-      this.onPersist();
-      this._renderScreen();
-    };
-    actions.appendChild(callBtn);
 
-    const textOpts = getTextOptions(contactId);
-    for (const opt of textOpts.slice(0, 3)) {
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.textContent = `💬 ${opt.label}`;
-      btn.onclick = () => {
-        sendText(this.session, contactId, opt.key);
+    const activeDialogue = getActiveDialogueChoices(this.session, contactId);
+    if (activeDialogue?.choices?.length) {
+      body.appendChild(this._line("Reply:", "dim rewards-dialogue-prompt"));
+      for (let i = 0; i < activeDialogue.choices.length; i += 1) {
+        const choice = activeDialogue.choices[i];
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "rewards-dialogue-choice";
+        btn.textContent = `↳ ${choice.label}`;
+        const idx = i;
+        btn.onclick = () => {
+          const r = advanceDialogue(this.session, contactId, idx);
+          if (!r.ok) {
+            this._showToast({ title: "Message failed", body: r.message ?? "" });
+            return;
+          }
+          this.onPersist();
+          this._renderScreen();
+          this._updateBadge();
+        };
+        actions.appendChild(btn);
+      }
+    } else {
+      const callBtn = document.createElement("button");
+      callBtn.type = "button";
+      callBtn.textContent = "📞 Call";
+      callBtn.onclick = () => {
+        const r = startCall(this.session, contactId);
+        if (!r.ok) {
+          this._showToast({ title: "Call failed", body: r.message ?? "" });
+          return;
+        }
+        this._callContactId = contactId;
+        this._callScript = r.script;
+        this._callChoicePending = false;
+        this._screen = "call";
         this.onPersist();
         this._renderScreen();
-        this._updateBadge();
       };
-      actions.appendChild(btn);
+      actions.appendChild(callBtn);
+
+      const textOpts = getTextOptions(this.session, contactId);
+      const optsWrap = document.createElement("div");
+      optsWrap.className = "rewards-text-options";
+      for (const opt of textOpts) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = [
+          opt.custom ? "rewards-text-option rewards-text-option--custom" : "rewards-text-option",
+          opt.intoxHidden ? "rewards-text-option--intox" : "",
+        ].filter(Boolean).join(" ");
+        btn.textContent = `💬 ${opt.label}`;
+        btn.onclick = () => {
+          const r = sendText(this.session, contactId, opt.key);
+          if (!r.ok) {
+            this._showToast({ title: "Text failed", body: r.message ?? "" });
+            return;
+          }
+          this.onPersist();
+          this._renderScreen();
+          this._updateBadge();
+        };
+        optsWrap.appendChild(btn);
+      }
+      actions.appendChild(optsWrap);
     }
+
     body.appendChild(actions);
 
     const backBtn = document.createElement("button");

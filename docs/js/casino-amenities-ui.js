@@ -90,7 +90,10 @@ export function buildAmenitiesRenderers(ctx) {
 
   function renderMallStore({ storeId }) {
     const store = getStoreById(storeId);
-    if (!store) return el("div", { className: "panel", textContent: "Store not found." });
+    if (!store) return el("div", { className: "panel" }, [
+      el("p", { className: "error", textContent: "Store not found." }),
+      el("ul", { className: "menu-list" }, [menuBtn('<span class="num">0)</span> Back', () => pushView("mall-lobby"), true)]),
+    ]);
     const amenities = ensureAmenities(session);
     const log = el("div", { className: "log-area" });
 
@@ -177,7 +180,10 @@ export function buildAmenitiesRenderers(ctx) {
 
   function renderBarMenu({ barId }) {
     const bar = getBarById(barId);
-    if (!bar) return el("div", { className: "panel", textContent: "Bar not found." });
+    if (!bar) return el("div", { className: "panel" }, [
+      el("p", { className: "error", textContent: "Bar not found." }),
+      el("ul", { className: "menu-list" }, [menuBtn('<span class="num">0)</span> Back', () => pushView("bar-select"), true)]),
+    ]);
     const log = el("div", { className: "log-area" });
 
     return el("div", {}, [

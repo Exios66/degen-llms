@@ -246,3 +246,17 @@
   color: #ffd700;
   text-shadow: 0 0 6px rgba(255, 215, 0, 0.35);
 }
+
+/* Responsive: move phone to bottom-left on narrow screens to avoid overlap with menus */
+@media (max-width: 480px) {
+  .rewards-phone-root {
+    bottom: 10px;
+    right: 10px;
+  }
+
+  .rewards-phone-fab {
+    width: 44px;
+    height: 44px;
+    font-size: 18px;
+  }
+}

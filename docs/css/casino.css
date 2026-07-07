@@ -319,8 +319,15 @@ body {
   margin: 1rem 0;
 }
 
+.ledger-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 .ledger-table {
   width: 100%;
+  min-width: 480px;
   border-collapse: collapse;
   font-size: 0.85rem;
 }
@@ -592,6 +599,7 @@ body {
   text-align: center;
 }
 
+.settings-bar {
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
@@ -745,6 +753,43 @@ body {
 
 .hotel-panel {
   border-left: 3px solid var(--gold-dim, #c4a030);
+}
+
+/* Hotel dining cards */
+.dining-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.dining-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.dining-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+.dining-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.dining-price {
+  margin-left: auto;
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
 }
 
 .amenities-panel {
@@ -2576,6 +2621,8 @@ body {
   image-rendering: pixelated;
   image-rendering: crisp-edges;
   display: block;
+  max-width: 100%;
+  height: auto;
   filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.35));
 }
 
@@ -2852,5 +2899,62 @@ body {
 
   .racing-paddock {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .dining-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.6rem;
+  }
+
+  .hub-features {
+    display: none;
+  }
+}
+
+/* Tablet — 601px to 900px */
+@media (min-width: 601px) and (max-width: 900px) {
+  #app {
+    padding: 1.25rem 1rem 2.5rem;
+  }
+
+  .dining-grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  }
+
+  .roulette-display {
+    grid-template-columns: 1fr;
+  }
+
+  .video-machine {
+    margin: 0.75rem 0;
+  }
+
+  .horse-pasture,
+  .horse-stalls-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+
+  .racing-paddock {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .slot-machine-grid {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  }
+}
+
+/* Scale root font slightly on small phones */
+@media (max-width: 400px) {
+  html, body {
+    font-size: 13px;
+  }
+
+  .banner-title {
+    font-size: 1.1rem;
   }
 }

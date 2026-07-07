@@ -270,6 +270,7 @@ def _apply_room(session: PlayerSession, room_type: str, spec: dict) -> None:
     hotel.floor = spec["floor"]
     hotel.room_number = _generate_room_number(spec["floor"])
     hotel.found_reservation = False
+    hotel.reservation_confirmed_desk = False
     hotel.reached_room = False
     hotel.hallway_progress = 0
     hotel.hallway_log.clear()

@@ -6,6 +6,7 @@ import {
   getActivityTiming, getTierExperience, RESORT_OFFERS, tierIndex,
 } from "./rewards-perks.js";
 import { ensureHotel, findReservation, reservationHint, getRoomType } from "./hotel.js";
+import { getReservationRequirement, reservationStatusMessage } from "./world-cycle.js";
 import {
   advanceDialogue,
   dialWrongNumber,
@@ -579,24 +580,28 @@ export class RewardsPhone {
   _renderReservation(body) {
     const hotel = ensureHotel(this.session);
     const room = getRoomType(hotel);
+    const req = getReservationRequirement(this.session);
     body.innerHTML = "";
     body.appendChild(this._line(`${room.label}`));
     body.appendChild(this._line(`Conf ${hotel.reservationCode}`, "dim"));
-    if (hotel.foundReservation) {
+    body.appendChild(this._line(reservationStatusMessage(this.session), "dim"));
+    if (hotel.foundReservation && (!req.needsDesk || hotel.reservationConfirmedDesk)) {
       body.appendChild(this._line(reservationHint(hotel), "dim"));
       body.appendChild(this._line("Head to hotel hallways from the lobby.", "dim"));
-    } else {
+    } else if (req.needsPhone && !hotel.foundReservation) {
       body.appendChild(this._line("Tap locate to reveal your tower.", "dim"));
       const btn = document.createElement("button");
       btn.type = "button";
       btn.textContent = "Locate reservation";
       btn.onclick = () => {
         const r = findReservation(this.session);
-        this.tracker.pushNotification("Reservation Found", r.message);
+        this.tracker.pushNotification(r.ok ? "Reservation Found" : "Reservation", r.message);
         this.onPersist?.();
         this._renderScreen();
       };
       body.appendChild(btn);
+    } else if (req.needsDesk && !hotel.reservationConfirmedDesk) {
+      body.appendChild(this._line("Visit Clerk Carmen at the front desk to confirm your reservation.", "dim"));
     }
   }
 

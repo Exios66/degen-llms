@@ -261,6 +261,7 @@ export function upgradeRoom(session, targetType, rewardsTracker) {
     hotel.floor = target.floor;
     hotel.roomNumber = generateRoomNumber(target.floor);
     hotel.foundReservation = false;
+    hotel.reservationConfirmedDesk = false;
     hotel.reachedRoom = false;
     hotel.hallwayProgress = 0;
     hotel.hallwayLog = [];
@@ -277,6 +278,7 @@ export function upgradeRoom(session, targetType, rewardsTracker) {
     hotel.floor = target.floor;
     hotel.roomNumber = generateRoomNumber(target.floor);
     hotel.foundReservation = false;
+    hotel.reservationConfirmedDesk = false;
     hotel.reachedRoom = false;
     hotel.hallwayProgress = 0;
     hotel.hallwayLog = [];
@@ -293,6 +295,7 @@ export function upgradeRoom(session, targetType, rewardsTracker) {
     hotel.floor = target.floor;
     hotel.roomNumber = generateRoomNumber(target.floor);
     hotel.foundReservation = false;
+    hotel.reservationConfirmedDesk = false;
     hotel.reachedRoom = false;
     hotel.hallwayProgress = 0;
     hotel.hallwayLog = [];

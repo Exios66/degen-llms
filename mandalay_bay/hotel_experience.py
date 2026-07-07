@@ -28,7 +28,7 @@ from mandalay_bay.hotel import (
     upgrade_room,
     wake_up_call,
 )
-from mandalay_bay.world_cycle import settle_hotel_overdue
+from mandalay_bay.world_cycle import reservation_access_met, settle_hotel_overdue
 from mandalay_bay.session import PlayerSession
 
 
@@ -177,8 +177,15 @@ def run_guest_directory(session: PlayerSession, ui: TerminalUI) -> None:
 
 def run_hallway(session: PlayerSession, ui: TerminalUI) -> None:
     hotel = ensure_hotel(session)
-    if not hotel.found_reservation:
-        ui.error("Locate your reservation first (front desk or MGM Rewards).")
+    from mandalay_bay.world_cycle import sync_world_cycle
+
+    sync_world_cycle(session)
+    if hotel.room_evicted or (hasattr(session, "world_cycle") and session.world_cycle and session.world_cycle.room_evicted):
+        ui.error("Room locked — settle overdue charges at the front desk or win on the casino floor.")
+        ui.pause()
+        return
+    if not reservation_access_met(session):
+        ui.error("Complete today's check-in requirement first (MGM Rewards phone and/or front desk).")
         ui.pause()
         return
 

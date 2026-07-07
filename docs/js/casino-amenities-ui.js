@@ -43,6 +43,8 @@ export function buildAmenitiesRenderers(ctx) {
           menuBtn(`<span class="num">1)</span> ${MALL_NAME}`, () => pushView("mall-lobby")),
           menuBtn("<span class=\"num\">2)</span> Full Service Bar — choose your lounge", () => pushView("bar-select")),
           menuBtn("<span class=\"num\">3)</span> View shopping bag", () => pushView("mall-bag")),
+          menuBtn(`<span class="num">4)</span> High Limit Salon <span class="dim">(10,000+ chips, high-limit tier)</span>`, () => pushView("high-limit-salon")),
+          menuBtn(`<span class="num">5)</span> Foundation Room <span class="dim">(Noir lounge)</span>`, () => pushView("foundation-room")),
           menuBtn('<span class="num">0)</span> Back', goBack, true),
         ]),
       ]),

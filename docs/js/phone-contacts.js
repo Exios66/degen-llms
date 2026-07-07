@@ -14,7 +14,7 @@ import {
 } from "./phone-rapport.js";
 import {
   getDialogueNode, getDynamicCallScript, getDynamicIntro, getDynamicTextOptions,
-  getTierRankUpMessages, INTOX_UNLOCK_MESSAGES,
+  getTierRankUpMessages, INTOX_UNLOCK_MESSAGES, getSessionSwingMessages,
 } from "./phone-dialogue-data.js";
 import { isHeightenedIntoxication } from "./intoxication-effects.js";
 
@@ -128,6 +128,10 @@ const STATIC_INTROS = {
   steve_harvey: "Steve Harvey 📺 Survey says… you sat at my table! Text SURVEY anytime. Family Feud reruns don't pay rent.",
   meryl_screech: "Meryl Screech. The felt remembers. Text OSCAR if you want table-side drama tips.",
   judi_bench: "Judi Bench — Hold'em pit. Text ALL IN only when you mean it. I fold on bad jokes.",
+  jennifer_lawless: "Jennifer Lawless on duty. Text me before you trip — I get it, literally.",
+  sofia_volume: "Sofia Volume 📣 ¡Dale! Roulette table energy in your pocket.",
+  octavia_spectacular: "Octavia Spectacular, honey. Sweetheart line open — text PEP for sugar-coated truth.",
+  nicole_widechart: "Nicole Widechart. The chips whisper. I translate. Text when composed.",
   barkeep_betty: "Betty's Bar 🍸 Comp drinks flow through tier status. Text COMP and I'll check the pour.",
   pavilion_paula: "Paula at the paddock. Text ODDS for my long-shot of the day. No guarantees — this IS racing.",
   tourist_tina: "Tina!! OMG hi!! Text LOST if you need directions. I get lost hourly so I'm qualified.",
@@ -299,6 +303,26 @@ export function onTierRankUp(session, newTierId) {
     if (!isContactUnlocked(session, contactId)) continue;
     appendMessage(session, contactId, "in", `🎉 ${body}`, { read: false });
     adjustRapport(session, contactId, 5);
+  }
+}
+
+/** Proactive texts after a big win or loss at an activity. */
+export function onSessionSwing(session, activityId, net) {
+  const pb = ensurePhoneBook(session);
+  if (!pb || net === 0) return;
+  if (!Array.isArray(pb.sessionSwings)) pb.sessionSwings = [];
+
+  const bucket = net >= 0 ? "win" : "loss";
+  const magnitude = Math.floor(Math.abs(net) / 1000);
+  const key = `${bucket}_${activityId}_${magnitude}k`;
+  if (pb.sessionSwings.includes(key)) return;
+  pb.sessionSwings.push(key);
+
+  for (const [contactId, body] of getSessionSwingMessages(session, activityId, net)) {
+    if (!isContactUnlocked(session, contactId)) continue;
+    const prefix = net >= 0 ? "🎰" : "📉";
+    appendMessage(session, contactId, "in", `${prefix} ${body}`, { read: false });
+    adjustRapport(session, contactId, net >= 0 ? 3 : 2);
   }
 }
 

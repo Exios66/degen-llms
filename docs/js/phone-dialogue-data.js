@@ -3,7 +3,7 @@
  * Content scales with rapport, tier, and play time.
  */
 
-import { resolveLine, meetsRequirements } from "./phone-rapport.js";
+import { resolveLine, meetsRequirements, buildDialogueContext } from "./phone-rapport.js";
 
 /** @typedef {{ label: string, next?: string, rapport?: number, egg?: string, requires?: object, end?: boolean }} TreeChoice */
 /** @typedef {{ text: string|Function, choices?: TreeChoice[], end?: boolean }} TreeNode */
@@ -197,6 +197,158 @@ export const DIALOGUE_TREES = {
       },
       theme: {
         text: "DING DING DING — top answer: HYDRATE. Runner-up: call Betty. Third: stop texting Steve.",
+        end: true,
+      },
+    },
+  },
+
+  meryl_screech: {
+    method_acting: {
+      start: {
+        text: "Act I: the player texts the dealer. Act II: we choose a genre.",
+        choices: [
+          { label: "Shakespeare at the felt", next: "shakespeare", rapport: 3 },
+          { label: "Noir monologue", next: "noir", rapport: 2, requires: { minTierIdx: 4 } },
+          { label: "Oscar campaign", next: "oscar", rapport: 4, requires: { minRapport: 25 } },
+        ],
+      },
+      shakespeare: {
+        text: "To hit, or not to hit — that is the question. Whether 'tis nobler to split eights…",
+        end: true,
+      },
+      noir: {
+        text: "The pit boss is a shadow. The ace is a confession. You? Still at the table. Art.",
+        end: true,
+      },
+      oscar: {
+        text: "Campaign slogan: 'Meryl Screech — Best Supporting Dealer.' Vote with your tips.",
+        end: true,
+      },
+    },
+  },
+
+  judi_bench: {
+    bond_table: {
+      start: {
+        text: "Bond. James Bond. State your poker grievance with British restraint.",
+        choices: [
+          { label: "Bad river card", next: "river", rapport: 2 },
+          { label: "Read my tell", next: "tell", rapport: 3, requires: { minRapport: 20 } },
+          { label: "All-in courage?", next: "allin", rapport: 2 },
+        ],
+      },
+      river: {
+        text: "The river giveth. Occasionally it taketh with impeccable timing. Regroup.",
+        end: true,
+      },
+      tell: {
+        text: (ctx) => ctx.isDownBad
+          ? "You sigh before the turn. Hydrate. Fold earlier. Queen's orders."
+          : "You play patient — good. Watch the eyes, not the hoodie.",
+        end: true,
+      },
+      allin: {
+        text: "Only when you mean it. I fold on bad jokes and worse math.",
+        end: true,
+      },
+    },
+  },
+
+  jennifer_lawless: {
+    relatable: {
+      start: {
+        text: "OK hi — relatable dealer hotline. What's the vibe?",
+        choices: [
+          { label: "I tripped (metaphorically)", next: "trip", rapport: 2 },
+          { label: "Hot table?", next: "hot", rapport: 2 },
+          { label: "Encourage me", next: "pep", rapport: 3, requires: { minRapport: 15 } },
+        ],
+      },
+      trip: {
+        text: "I literally tripped on the felt last Tuesday. You'll recover faster than I did.",
+        end: true,
+      },
+      hot: {
+        text: "Meryl's dramatic, I'm surgical, Octavia's sweet — pick your poison. I won't trip guiding you.",
+        end: true,
+      },
+      pep: {
+        text: "You got this! Minimum bet, maximum vibes — that's literally my tagline.",
+        end: true,
+      },
+    },
+  },
+
+  sofia_volume: {
+    dale_roulette: {
+      start: {
+        text: "¡Dale, amigo! The wheel is VOLUME tonight — pick your energy!",
+        choices: [
+          { label: "Lucky number?", next: "number", rapport: 2 },
+          { label: "Red or black?", next: "color", rapport: 2 },
+          { label: "¡Más volumen!", next: "loud", rapport: 4, requires: { minRapport: 20 }, egg: "sofia_volume_max" },
+        ],
+      },
+      number: {
+        text: "Survey says — wait, wrong host. Sofia says… 17! Or 4! Or your heart!",
+        end: true,
+      },
+      color: {
+        text: "Red is passion, black is mystery, green is… house money. Place your bets, cariño!",
+        end: true,
+      },
+      loud: {
+        text: "MAXIMUM VOLUME! The pit boss asked me to whisper. I said NO. ¡Vamos!",
+        end: true,
+      },
+    },
+  },
+
+  octavia_spectacular: {
+    sweetheart: {
+      start: {
+        text: "Honey, the table's warm and the texts are warmer. What you need, sugar?",
+        choices: [
+          { label: "Pep talk", next: "pep", rapport: 2 },
+          { label: "Hold'em or blackjack?", next: "game", rapport: 2 },
+          { label: "Sweetheart secrets", next: "secrets", rapport: 4, requires: { band: "insider" } },
+        ],
+      },
+      pep: {
+        text: "Honey, the house always wins — but you look good trying. That's half the battle.",
+        end: true,
+      },
+      game: {
+        text: "Blackjack for drama, Hold'em for patience. Either way I'll pour charm, not drinks.",
+        end: true,
+      },
+      secrets: {
+        text: "Insider tip: compliment the pit boss's shoes. Works every third Tuesday.",
+        end: true,
+      },
+    },
+  },
+
+  nicole_widechart: {
+    widechart: {
+      start: {
+        text: "The chips are whispering. I'm listening. Choose a frequency.",
+        choices: [
+          { label: "Chart the night", next: "chart", rapport: 2 },
+          { label: "Roulette poise", next: "roulette", rapport: 2 },
+          { label: "Blackjack precision", next: "blackjack", rapport: 3, requires: { minRapport: 20 } },
+        ],
+      },
+      chart: {
+        text: (ctx) => `Session trend: ${ctx.isUp ? "ascending with composure" : ctx.isDownBad ? "corrective phase advised" : "equilibrium"}.`,
+        end: true,
+      },
+      roulette: {
+        text: "Precision. Poise. Patience. Also maybe don't bet Steve's survey numbers.",
+        end: true,
+      },
+      blackjack: {
+        text: "Split eights with elegance. Double with conviction. Tip with discretion.",
         end: true,
       },
     },
@@ -523,6 +675,21 @@ function intoxTextOptions(contactId, ctx) {
   if (contactId === "meryl_screech") {
     push({ key: "drunk_drama", label: "🥴 Stage whisper to dealer", reply: "Method ACTING at 2am? The pit boss is concerned. I'm delighted.", egg: "meryl_drunk_drama", rapport: 3 });
   }
+  if (contactId === "jennifer_lawless") {
+    push({ key: "drunk_trip", label: "🥴 I fell over texting", reply: "OK same energy as me on the felt. Sit. Hydrate. You're iconic.", egg: "jennifer_drunk_trip", rapport: 3 });
+  }
+  if (contactId === "sofia_volume") {
+    push({ key: "drunk_volume", label: "🥴 TURN IT UP", reply: "¡DALE! Volume MAX! Also water. But mostly DALE!", egg: "sofia_drunk_volume", rapport: 3 });
+  }
+  if (contactId === "octavia_spectacular") {
+    push({ key: "drunk_sweet", label: "🥴 Honey I'm fine", reply: "Sugar you're NOT fine but you're loved. Sit down.", egg: "octavia_drunk_sweet", rapport: 3 });
+  }
+  if (contactId === "nicole_widechart") {
+    push({ key: "drunk_chart", label: "🥴 Chart says spin", reply: "Chart says: hydrate. Poise temporarily suspended.", egg: "nicole_drunk_chart", rapport: 3 });
+  }
+  if (contactId === "judi_bench") {
+    push({ key: "drunk_bond", label: "🥴 Shaken not stirred", reply: "Bond would fold. You should too. After this text.", egg: "judi_drunk_bond", rapport: 3 });
+  }
   if (contactId === "lifeguard_lou" || contactId === "beach_dj") {
     push({ key: "drunk_pool", label: "🥴 Pool confessions", reply: "No diving. No texting Harvey. Hydrate. The wave pool forgives.", rapport: 2 });
   }
@@ -682,10 +849,50 @@ function baseTextOptions(contactId, ctx) {
 
   if (contactId === "meryl_screech") {
     push({ key: "oscar", label: "Oscar tips?", reply: "Method dealing: whisper to the ace. The audience (pit boss) hates it.", egg: "meryl_oscar", rapport: 2 });
+    push({ key: "drama_tree", label: "🎭 Method acting desk", reply: null, startTree: { treeId: "method_acting", nodeId: "start" }, rapport: 3 });
     push({ key: "drama", label: "Table drama?", reply: band.id === "regular"
       ? "Tonight's show: 'Player vs Probability, Act III.' Standing room only."
       : "Every hand is a monologue. Some audiences boo with their wallets.", rapport: 2 });
     push({ key: "shakespeare", label: "Quote Shakespeare?", reply: "To hit, or not to hit — that is the question. Whether 'tis nobler to split eights…", requires: { minRapport: 20 }, rapport: 3 });
+  }
+
+  if (contactId === "jennifer_lawless") {
+    push({ key: "relatable", label: "Relatable check-in", reply: null, startTree: { treeId: "relatable", nodeId: "start" }, rapport: 2 });
+    push({ key: "trip", label: "Ever trip on felt?", reply: "Last Tuesday. Shoe survived. Ego didn't. You're fine.", egg: "jennifer_trip", rapport: 2 });
+    push({ key: "vibes", label: "Table vibes?", reply: "Minimum bet, maximum vibes — that's the whole brand.", rapport: 1 });
+    push({ key: "pep", label: "Pep talk?", reply: "You got this! I won't trip over your chips. Probably.", requires: { minRapport: 15 }, rapport: 3 });
+  }
+
+  if (contactId === "sofia_volume") {
+    push({ key: "dale", label: "¡Dale, amigo!", reply: null, startTree: { treeId: "dale_roulette", nodeId: "start" }, rapport: 3 });
+    push({ key: "roulette", label: "Roulette energy?", reply: "The wheel is HOT! Bet with your heart, lose with charisma!", egg: "sofia_roulette", rapport: 2 });
+    push({ key: "volume", label: "Louder tips?", reply: band.id === "confidant"
+      ? "MAXIMUM VOLUME! Steve asked me to whisper. I said SURVEY SAYS NO."
+      : "Turn up the volume after a win — the pit loves confidence.", requires: { minRapport: 20 }, rapport: 2 });
+  }
+
+  if (contactId === "octavia_spectacular") {
+    push({ key: "sweetheart", label: "Hey honey", reply: null, startTree: { treeId: "sweetheart", nodeId: "start" }, rapport: 2 });
+    push({ key: "pep", label: "Pep talk?", reply: "Honey, you look good winning OR losing. Mostly winning. Hopefully.", rapport: 2 });
+    push({ key: "game", label: "Blackjack or Hold'em?", reply: "Both tables run warm when you're polite. Sugar helps.", rapport: 1 });
+    push({ key: "insider", label: "Insider charm?", reply: "Compliment the pit boss's shoes. Third Tuesday magic.", requires: { band: "insider" }, rapport: 4 });
+  }
+
+  if (contactId === "nicole_widechart") {
+    push({ key: "widechart", label: "Read the chart", reply: null, startTree: { treeId: "widechart", nodeId: "start" }, rapport: 3 });
+    push({ key: "whisper", label: "Chips whispering?", reply: isUp
+      ? "They whisper ascent. Composure maintained. Rare."
+      : isDownBad ? "They whisper caution. Regroup with poise." : "They whisper patience. Listen.", rapport: 2 });
+    push({ key: "poise", label: "Poise check", reply: "Precision. Poise. Patience. The trilogy.", rapport: 1 });
+    push({ key: "session", label: "Session read?", reply: `${playHours}h on property — ${isDownBad ? "corrective phase advised" : "equilibrium holding"}.`, requires: { minPlayHours: 2 }, rapport: 3 });
+  }
+
+  if (contactId === "judi_bench") {
+    push({ key: "bond_tree", label: "🎬 Bond table", reply: null, startTree: { treeId: "bond_table", nodeId: "start" }, rapport: 3 });
+    push({ key: "allin", label: "All in?", reply: "Only when you mean it. I fold on bad jokes and bad river cards.", rapport: 2 });
+    push({ key: "tell", label: "Any tells?", reply: band.id === "insider"
+      ? "You tilt after coolers. Hydrate. Also stop sighing at the river."
+      : "Watch the eyes, not the hoodie. This isn't cinema.", requires: { minRapport: 25 }, rapport: 3 });
   }
 
   if (contactId === "pavilion_paula") {
@@ -696,20 +903,6 @@ function baseTextOptions(contactId, ctx) {
   }
 
   if (contactId === "clerk_carmen") {
-    push({ key: "conf", label: "Elevator gaslighting?", reply: "Floor 14 is real. The elevator disagrees for sport. Use stairs or charm.", rapport: 2 });
-    push({ key: "room", label: "Room status?", reply: tier.id === "platinum" || tier.id === "noir" || tier.id === "chairman"
-      ? `${tier.label} — I'll see what narrative upgrade Alexandra queued. Keys still with me.`
-      : "Reservation's in the system. Somewhere. Try spelling your name slower.", rapport: 1 });
-  }
-
-  if (contactId === "judi_bench") {
-    push({ key: "allin", label: "All in?", reply: "Only when you mean it. I fold on bad jokes and bad river cards.", rapport: 2 });
-    push({ key: "tell", label: "Any tells?", reply: band.id === "insider"
-      ? "You tilt after coolers. Hydrate. Also stop sighing at the river."
-      : "Watch the eyes, not the hoodie. This isn't cinema.", requires: { minRapport: 25 }, rapport: 3 });
-  }
-
-  // Dealer / NPC default fallbacks
   if (!opts.length) {
     push({ key: "hey", label: band.id === "stranger" ? "Hey!" : "Good to see you again!",
       reply: band.id === "stranger"
@@ -753,6 +946,12 @@ export function getDynamicIntro(contactId, ctx) {
     steve_harvey: band === "confidant"
       ? "Steve Harvey 📺 Survey says… my favorite regular's back! Text SURVEY anytime."
       : "Steve Harvey 📺 Survey says… you sat at my table! Text SURVEY anytime. Family Feud reruns don't pay rent.",
+    meryl_screech: "Meryl Screech. The felt remembers. Text OSCAR or start METHOD ACTING mode.",
+    judi_bench: "Judi Bench — Hold'em pit. Text BOND TABLE when you mean business.",
+    jennifer_lawless: "Jennifer Lawless — relatable dealer on duty. Text me before you trip over a chair.",
+    sofia_volume: "Sofia Volume 📣 ¡Dale! Roulette energy in text form. Volume optional but encouraged.",
+    octavia_spectacular: "Octavia Spectacular, honey. Sweetheart line open — text PEP for sugar-coated truth.",
+    nicole_widechart: "Nicole Widechart. The chips whisper; I translate. Text CHART when you're ready.",
     host_representative: `Alexandra Vale — MGM Host Services. ${ctx.tier.label} welcome. Text COMPAINT (yes, one P) and I'll escalate with a smile.`,
   };
   return intros[contactId] ?? null;
@@ -852,6 +1051,57 @@ export function getDynamicCallScript(contactId, ctx) {
         { label: "Late card?", response: playHours >= 3 ? "Night card superstition peaks at 2am. You're late enough for magic." : "Early card — optimism and bad math.", egg: null, rapport: 2 },
       ],
     },
+    meryl_screech: {
+      opening: "Meryl Screech — method dealing division. Curtain up.",
+      lines: ["The pit boss is the audience. You are the protagonist. Try not to fold in Act I."],
+      choices: [
+        { label: "Oscar tips?", response: "Whisper to the ace. The pit hates it. The crowd loves it.", egg: "meryl_call_oscar", rapport: 2 },
+        { label: "Shakespeare?", response: "To hit, or not to hit — whether 'tis nobler to split eights…", egg: null, rapport: 3 },
+        { label: "Drama level?", response: playHours >= 3 ? "Act III energy. Standing room at my table." : "Act I — establish character. Tip accordingly.", egg: null, rapport: 2 },
+      ],
+    },
+    judi_bench: {
+      opening: "Judi Bench. Hold'em pit. Speak with British restraint.",
+      lines: ["Bond. James Bond. Blinds."],
+      choices: [
+        { label: "River complaint", response: "The river giveth. Occasionally it taketh. Regroup with poise.", egg: null, rapport: 2 },
+        { label: "Read my tell", response: ctx.isDownBad ? "You sigh before the turn. Hydrate." : "Patient play. I approve quietly.", egg: null, rapport: 3, requires: { minRapport: 20 } },
+        { label: "All in?", response: "Only when you mean it. I fold on bad jokes.", egg: null, rapport: 2 },
+      ],
+    },
+    jennifer_lawless: {
+      opening: "Jennifer Lawless! Relatable dealer hotline — I didn't trip getting to the phone.",
+      lines: ["Minimum bet, maximum vibes. How can I help?"],
+      choices: [
+        { label: "Pep talk", response: "You got this! I believe in you more than gravity believes in me.", egg: null, rapport: 2 },
+        { label: "Hot table?", response: "Meryl's dramatic, I'm surgical — pick your adventure.", egg: null, rapport: 2 },
+        { label: "Trip story", response: "I tripped on the felt Tuesday. Shoe fine. Ego bruised. You'll survive.", egg: "jennifer_call_trip", rapport: 3 },
+      ],
+    },
+    sofia_volume: {
+      opening: "¡SOFIA VOLUME! The wheel called — you answered!",
+      lines: ["Dale, amigo! Place your bets with PASSION!"],
+      choices: [
+        { label: "Lucky number?", response: "17! Or 4! Or whatever your heart screams!", egg: "sofia_call_number", rapport: 2 },
+        { label: "More volume!", response: "MAXIMUM VOLUME! Pit boss asked me to whisper. I LAUGHED.", egg: "sofia_call_volume", rapport: 3 },
+      ],
+    },
+    octavia_spectacular: {
+      opening: "Octavia Spectacular, honey. The table's warm.",
+      lines: ["The house always wins — but you look good trying."],
+      choices: [
+        { label: "Pep talk", response: "Honey, you're a star tonight. Act like it at the cashier.", egg: null, rapport: 2 },
+        { label: "Sweetheart secret", response: "Compliment pit boss shoes. Third Tuesday magic.", egg: "octavia_call_secret", rapport: 4, requires: { band: "insider" } },
+      ],
+    },
+    nicole_widechart: {
+      opening: "Nicole Widechart. The chips are whispering.",
+      lines: ["Precision. Poise. Patience. Also: how may I assist?"],
+      choices: [
+        { label: "Chart the night", response: ctx.isUp ? "Ascending trend. Maintain composure." : "Corrective phase. Poise intact.", egg: null, rapport: 2 },
+        { label: "Roulette poise", response: "Bet with elegance. Lose with dignity. Tip discreetly.", egg: null, rapport: 2 },
+      ],
+    },
   };
 
   const script = scripts[contactId];
@@ -879,6 +1129,46 @@ export function getDialogueNode(contactId, treeId, nodeId, ctx) {
     .filter((c) => meetsRequirements(c.requires, ctx))
     .map((c) => ({ ...c, label: resolveLine(c.label, ctx) }));
   return { text, choices, end: Boolean(node.end) };
+}
+
+/** Proactive texts after big session wins/losses. */
+export const SESSION_SWING_WIN_THRESHOLD = 2000;
+export const SESSION_SWING_LOSS_THRESHOLD = 1000;
+export const SESSION_SWING_TIER_LOSS_THRESHOLD = 2500;
+
+/** @param {import("./core.js").PlayerSession} session @param {string} activityId @param {number} net @returns {[string, string][]} */
+export function getSessionSwingMessages(session, activityId, net) {
+  const entries = [];
+  const actLabel = activityId.replace(/_/g, " ");
+  const ctx = buildDialogueContext(session, "chip_chandler");
+
+  if (net >= SESSION_SWING_WIN_THRESHOLD) {
+    entries.push(["chip_chandler", `Floor alert: +${net.toLocaleString()} at ${actLabel}. Pits are gossiping. Respect.`]);
+    if (ctx.tierIdx >= 3) {
+      entries.push(["host_representative", `Big win at ${actLabel} (+${net.toLocaleString()}). Comping a celebratory vibe — text COMPAINT if you want it louder.`]);
+    }
+    if (activityId === "roulette" || activityId === "horse_racing") {
+      entries.push(["steve_harvey", "Survey says… WINNER! Top answer: MORE CHIPS. Number two: STEVE HARVEY."]);
+    }
+    if (activityId === "blackjack" || activityId === "holdem") {
+      entries.push(["meryl_screech", `Bravo at ${actLabel}! Standing ovation from the pit — quietly, through gritted teeth.`]);
+    }
+    entries.push(["barkeep_betty", "Victory pour incoming — don't spend it all before you text me again."]);
+  }
+
+  if (net <= -SESSION_SWING_LOSS_THRESHOLD) {
+    entries.push(["chip_chandler", `Rough ${actLabel} session (${net.toLocaleString()}). Pit weather: sympathetic. Hydrate.`]);
+    entries.push(["barkeep_betty", "Sympathy pour on standby. Third one's a cutoff with love."]);
+    if (ctx.tierIdx >= 2) {
+      entries.push(["attorney_brief", `Counsel notes ${actLabel} damages of ${Math.abs(net).toLocaleString()} chips. Objection emotionally sustained.`]);
+    }
+    if (net <= -SESSION_SWING_TIER_LOSS_THRESHOLD && ctx.tierIdx >= 4) {
+      entries.push(["host_representative", `${ctx.tier.label} tier and a rough beat — escalating to 'gentle comp' energy. Hydrate before revenge betting.`]);
+      entries.push(["chip_chandler", `${ctx.tier.label} member down bad — floor staff pretend not to stare. They are staring.`]);
+    }
+  }
+
+  return entries;
 }
 
 /** @param {string} tierId */

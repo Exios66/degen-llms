@@ -7,6 +7,7 @@ import {
   createGuestSession,
   formatSaveTime,
   fmtChips,
+  formatSaveSlotPlayTimes,
 } from "../../../js/core.js";
 import { getActiveProfileSummary, getActiveSlotId } from "../../../js/profileCache.js";
 import { SaveAdapter, initSessionRpg } from "../systems/SaveAdapter.js";
@@ -204,7 +205,7 @@ export class TitleScreen {
     const btn = document.createElement("button");
     btn.type = "button";
     if (isActive) btn.classList.add("active-profile");
-    btn.textContent = `${slot.label}: ${slot.playerName} — ${fmtChips(slot.balance)} (${formatSaveTime(slot.updatedAt)})`;
+    btn.textContent = `${slot.label}: ${slot.playerName} — ${fmtChips(slot.balance)} · ${formatSaveSlotPlayTimes(slot.casinoTimeMs)} (${formatSaveTime(slot.updatedAt)})`;
     btn.onclick = () => this._loadAndStart(slot.slotId);
     li.appendChild(btn);
     return li;

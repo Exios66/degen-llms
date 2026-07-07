@@ -1,5 +1,7 @@
 /** Mandalay Bay lobby guest directory — hardcoded roster + persistent signatures. */
 
+import { formatVegasSignedAt } from "./vegas-time.js";
+
 const REGISTRY_PATH = "data/guest_directory.json";
 const SIGNATURES_KEY = "mandalay-bay-guest-directory-signatures";
 
@@ -108,17 +110,7 @@ export function signGuestDirectory(name, note = "") {
 
 /** Format ISO timestamp for display in the guest book. */
 export function formatSignedAt(iso) {
-  try {
-    return new Date(iso).toLocaleString(undefined, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-    });
-  } catch {
-    return iso;
-  }
+  return formatVegasSignedAt(iso);
 }
 
 /** Reset cached registry (for tests). */

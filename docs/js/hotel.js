@@ -279,6 +279,7 @@ export function upgradeRoom(session, targetType, rewardsTracker) {
     hotel.foundReservation = false;
     hotel.reachedRoom = false;
     hotel.hallwayProgress = 0;
+    hotel.hallwayLog = [];
     return { ok: true, message: `Paid ${fmtChips(cost)} — welcome to the ${target.label}.` };
   }
   if (netPositive && targetType === "penthouse") {
@@ -294,6 +295,7 @@ export function upgradeRoom(session, targetType, rewardsTracker) {
     hotel.foundReservation = false;
     hotel.reachedRoom = false;
     hotel.hallwayProgress = 0;
+    hotel.hallwayLog = [];
     return { ok: true, message: `The penthouse is yours. Try not to let it go to your head.` };
   }
   return { ok: false, message: "Earn comps on the floor or finish net-positive before upgrading." };
@@ -321,6 +323,11 @@ export function extendStay(session, nights = 1, rewardsTracker) {
     return { ok: true, message: `Stay extended. ${hotel.nightsRemaining} night(s) on the books.` };
   }
   return { ok: false, message: "Extend when you're net-positive on the floor, or unlock a room-night comp." };
+}
+
+export function recordFrontDeskVisit(session) {
+  const hotel = ensureHotel(session);
+  hotel.frontDeskVisits = (hotel.frontDeskVisits ?? 0) + 1;
 }
 
 export function resetHallway(session) {

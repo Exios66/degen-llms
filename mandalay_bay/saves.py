@@ -12,8 +12,13 @@ from mandalay_bay.casino_amenities import CasinoAmenitiesState, ensure_amenities
 from mandalay_bay.hotel import HotelState, RoomAmenitiesState, default_hotel_state, ensure_hotel
 from mandalay_bay.pool_complex import PoolComplexState, ensure_pool_complex
 from mandalay_bay.world_cycle import WorldCycleState, ensure_world_cycle
+from mandalay_bay.bank_account import BankAccount, BankTransaction, BankTransactionKind, ensure_bank
+from mandalay_bay.staff_manifest import set_staff_overrides
+from mandalay_bay.intoxication import attach_intoxication_to_session
 from mandalay_bay.rewards import RewardsState, SAVE_VERSION_WITH_REWARDS, ensure_rewards, migrate_session_rewards
 from mandalay_bay.session import ActivityStats, PlayerSession
+from mandalay_bay.casino_time import flush_casino_time, format_save_slot_play_times
+from mandalay_bay.vegas_time import format_vegas_datetime
 
 MAX_SLOTS = 5
 DEFAULT_STARTING_CHIPS = 1000
@@ -33,6 +38,7 @@ class SlotSummary:
     player_name: str
     balance: int
     updated_at: datetime | None
+    casino_time_ms: int
     occupied: bool
 
 
@@ -83,6 +89,7 @@ class SaveLibrary:
             "player_name": session.player_name,
             "balance": session.wallet.balance,
             "updated_at": datetime.now(timezone.utc).isoformat(),
+            "casino_time_ms": session.casino_time_ms,
         }
 
     def list_slots(self) -> list[SlotSummary]:
@@ -100,6 +107,7 @@ class SaveLibrary:
                         player_name=meta.get("player_name", "Guest"),
                         balance=meta.get("balance", 0),
                         updated_at=updated,
+                        casino_time_ms=int(meta.get("casino_time_ms", 0)),
                         occupied=True,
                     )
                 )
@@ -111,6 +119,7 @@ class SaveLibrary:
                         player_name="",
                         balance=0,
                         updated_at=None,
+                        casino_time_ms=0,
                         occupied=False,
                     )
                 )
@@ -144,6 +153,7 @@ class SaveLibrary:
     def save_slot(self, session: PlayerSession) -> None:
         if session.slot_id is None:
             raise ValueError("Session has no slot_id — cannot save")
+        flush_casino_time(session)
         path = self._slot_path(session.slot_id)
         path.write_text(json.dumps(session_to_dict(session), indent=2), encoding="utf-8")
         self._update_summary(session)
@@ -185,6 +195,7 @@ class SaveLibrary:
         ensure_rewards(session)
         ensure_pool_complex(session)
         ensure_amenities(session)
+        ensure_bank(session)
         self.save_slot(session)
         return session
 
@@ -219,6 +230,7 @@ def session_to_dict(session: PlayerSession) -> dict:
         "wallet": {"balance": session.wallet.balance, "transactions": txs},
         "activity_stats": stats,
         "progressive_pools": dict(session.progressive_pools),
+        "casino_time_ms": session.casino_time_ms,
     }
     if hasattr(session, "hotel") and session.hotel is not None:
         payload["hotel"] = asdict(session.hotel)
@@ -230,6 +242,28 @@ def session_to_dict(session: PlayerSession) -> dict:
         payload["amenities"] = asdict(session.amenities)
     if hasattr(session, "world_cycle") and session.world_cycle is not None:
         payload["world_cycle"] = asdict(session.world_cycle)
+    if hasattr(session, "bank") and session.bank is not None:
+        bank_txs = []
+        for tx in session.bank.transactions:
+            bank_txs.append(
+                {
+                    "timestamp": tx.timestamp.isoformat(),
+                    "kind": tx.kind.value,
+                    "amount": tx.amount,
+                    "category": tx.category,
+                    "description": tx.description,
+                    "balance_after": tx.balance_after,
+                }
+            )
+        payload["bank"] = {
+            "balance": session.bank.balance,
+            "account_name": session.bank.account_name,
+            "transactions": bank_txs,
+        }
+    if hasattr(session, "staff_overrides") and session.staff_overrides is not None:
+        payload["staff_overrides"] = session.staff_overrides
+    if hasattr(session, "intoxication") and session.intoxication is not None:
+        payload["intoxication"] = asdict(session.intoxication)
     return payload
 
 
@@ -268,6 +302,7 @@ def session_from_dict(data: dict) -> PlayerSession:
         slot_id=data.get("slot_id"),
         slot_label=data.get("slot_label", ""),
         progressive_pools=dict(data.get("progressive_pools", {})),
+        casino_time_ms=int(data.get("casino_time_ms", 0)),
     )
     if "hotel" in data:
         hotel_data = dict(data["hotel"])
@@ -294,13 +329,35 @@ def session_from_dict(data: dict) -> PlayerSession:
         session.world_cycle = WorldCycleState(**data["world_cycle"])
     else:
         ensure_world_cycle(session)
+    if "bank" in data:
+        bank_data = data["bank"]
+        bank = BankAccount(
+            balance=bank_data.get("balance", 0),
+            account_name=bank_data.get("account_name", "Off-Strip Checking"),
+        )
+        bank.transactions = []
+        for raw in bank_data.get("transactions", []):
+            bank.transactions.append(
+                BankTransaction(
+                    timestamp=datetime.fromisoformat(raw["timestamp"]),
+                    kind=BankTransactionKind(raw["kind"]),
+                    amount=raw["amount"],
+                    category=raw["category"],
+                    description=raw["description"],
+                    balance_after=raw["balance_after"],
+                )
+            )
+        session.bank = bank
+    else:
+        ensure_bank(session)
+    if "staff_overrides" in data:
+        set_staff_overrides(session, data["staff_overrides"])
+    attach_intoxication_to_session(session, data)
     return session
 
 
 def _format_updated(when: datetime | None) -> str:
-    if when is None:
-        return "never"
-    return when.astimezone().strftime("%Y-%m-%d %H:%M")
+    return format_vegas_datetime(when)
 
 
 def run_save_picker(
@@ -324,7 +381,8 @@ def run_save_picker(
             for entry in recent:
                 ui.print(
                     f"  Slot {entry.slot_id}: {entry.label} — {entry.player_name} — "
-                    f"{fmt_chips(entry.balance)} (last: {_format_updated(entry.updated_at)})"
+                    f"{fmt_chips(entry.balance)} · {format_save_slot_play_times(entry.casino_time_ms)} "
+                    f"(last: {_format_updated(entry.updated_at)})"
                 )
 
         all_slots = library.list_slots()
@@ -332,7 +390,8 @@ def run_save_picker(
         for slot in all_slots:
             if slot.occupied:
                 options.append(
-                    f"Load Slot {slot.slot_id} — {slot.player_name} ({fmt_chips(slot.balance)})"
+                    f"Load Slot {slot.slot_id} — {slot.player_name} ({fmt_chips(slot.balance)}) · "
+                    f"{format_save_slot_play_times(slot.casino_time_ms)}"
                 )
             else:
                 options.append(f"New save in Slot {slot.slot_id} (empty)")

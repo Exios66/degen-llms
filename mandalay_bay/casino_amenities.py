@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from mandalay_bay.chips import ChipWallet
+from mandalay_bay.intoxication import record_consumption
 from mandalay_bay.session import PlayerSession
 
 
@@ -263,6 +264,7 @@ def order_bar_drink(session: PlayerSession, drink_id: str) -> PurchaseResult:
     amenities = ensure_amenities(session)
     amenities.bar_orders.append(drink_id)
     session.record_visit("bar")
+    record_consumption(session, drink_id, source="bar")
     return PurchaseResult(
         True,
         f"{drink.name} served at {bar.name} — {fmt_chips(drink.price)}. "

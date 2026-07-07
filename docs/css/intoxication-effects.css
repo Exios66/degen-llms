@@ -1,0 +1,181 @@
+/* Intoxication screen glitch / distortion — intensity scales with --intox-level (0–100). */
+
+:root {
+  --intox-level: 0;
+  --intox-norm: 0;
+  --intox-blur: 0;
+  --intox-shake: 0;
+  --intox-rgb: 0;
+  --intox-scan: 0;
+  --intox-hue: 0;
+}
+
+#app,
+#game-shell {
+  position: relative;
+}
+
+.intox-overlay {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 9998;
+  overflow: hidden;
+  opacity: 0;
+  mix-blend-mode: screen;
+  transition: opacity 0.45s ease;
+}
+
+.intox-active > .intox-overlay,
+.intox-active.intox-overlay {
+  opacity: calc(var(--intox-scan, 0) + 0.05);
+}
+
+.intox-overlay__scanlines {
+  position: absolute;
+  inset: -4px;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0) 0px,
+    rgba(0, 0, 0, 0) 2px,
+    rgba(0, 255, 200, calc(var(--intox-scan, 0) * 0.35)) 2px,
+    rgba(0, 255, 200, calc(var(--intox-scan, 0) * 0.35)) 3px
+  );
+  animation: intox-scan-drift calc(12s - var(--intox-norm, 0) * 8s) linear infinite;
+}
+
+.intox-overlay__rgb {
+  position: absolute;
+  inset: 0;
+  opacity: calc(var(--intox-rgb, 0) * 0.045);
+  mix-blend-mode: screen;
+}
+
+.intox-overlay__rgb--r {
+  background: rgba(255, 40, 80, 0.5);
+  transform: translate(calc(var(--intox-rgb, 0) * 0.6px), calc(var(--intox-rgb, 0) * -0.4px));
+  animation: intox-rgb-jitter calc(0.35s - var(--intox-norm, 0) * 0.2s) steps(2) infinite;
+}
+
+.intox-overlay__rgb--g {
+  background: rgba(40, 255, 120, 0.35);
+  transform: translate(calc(var(--intox-rgb, 0) * -0.5px), calc(var(--intox-rgb, 0) * 0.3px));
+  animation: intox-rgb-jitter calc(0.42s - var(--intox-norm, 0) * 0.18s) steps(2) infinite reverse;
+}
+
+.intox-overlay__rgb--b {
+  background: rgba(60, 140, 255, 0.45);
+  transform: translate(calc(var(--intox-rgb, 0) * 0.35px), calc(var(--intox-rgb, 0) * 0.55px));
+  animation: intox-rgb-jitter calc(0.28s - var(--intox-norm, 0) * 0.15s) steps(3) infinite;
+}
+
+.intox-overlay__noise {
+  position: absolute;
+  inset: -20%;
+  opacity: calc(var(--intox-norm, 0) * 0.12);
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.08) 0, transparent 45%),
+    radial-gradient(circle at 80% 70%, rgba(255, 0, 128, 0.06) 0, transparent 40%);
+  animation: intox-noise-pulse calc(2.4s - var(--intox-norm, 0) * 1.6s) ease-in-out infinite alternate;
+}
+
+/* Distort the viewport content beneath the overlay. */
+.intox-active#app,
+.intox-active#game-shell,
+#app.intox-active,
+#game-shell.intox-active {
+  animation: intox-view-shake calc(0.8s - var(--intox-norm, 0) * 0.55s) steps(2) infinite;
+  filter:
+    blur(calc(var(--intox-blur, 0) * 0.35px))
+    hue-rotate(calc(var(--intox-hue, 0) * 1deg))
+    saturate(calc(1 + var(--intox-norm, 0) * 0.35));
+}
+
+html.intox-active body {
+  animation: intox-view-shake calc(0.8s - var(--intox-norm, 0) * 0.55s) steps(2) infinite;
+}
+
+.intox-tier-3.intox-active#app,
+.intox-tier-3.intox-active#game-shell,
+.intox-tier-4.intox-active#app,
+.intox-tier-4.intox-active#game-shell,
+.intox-tier-5.intox-active#app,
+.intox-tier-5.intox-active#game-shell {
+  animation:
+    intox-view-shake calc(0.55s - var(--intox-norm, 0) * 0.35s) steps(3) infinite,
+    intox-view-glitch calc(4s - var(--intox-norm, 0) * 3s) steps(1) infinite;
+}
+
+.intox-tier-5.intox-active#app,
+.intox-tier-5.intox-active#game-shell {
+  filter:
+    blur(calc(var(--intox-blur, 0) * 0.55px))
+    hue-rotate(calc(var(--intox-hue, 0) * 1.4deg))
+    saturate(calc(1 + var(--intox-norm, 0) * 0.55))
+    contrast(calc(1 + var(--intox-norm, 0) * 0.15));
+}
+
+@keyframes intox-view-shake {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(calc(var(--intox-shake, 0) * 0.25px), calc(var(--intox-shake, 0) * -0.35px)); }
+  50% { transform: translate(calc(var(--intox-shake, 0) * -0.35px), calc(var(--intox-shake, 0) * 0.2px)); }
+  75% { transform: translate(calc(var(--intox-shake, 0) * 0.15px), calc(var(--intox-shake, 0) * 0.35px)); }
+}
+
+@keyframes intox-view-glitch {
+  0%, 92%, 100% {
+    clip-path: inset(0 0 0 0);
+    transform: translate(0, 0) skew(0deg);
+  }
+  93% {
+    clip-path: inset(8% 0 62% 0);
+    transform: translate(calc(var(--intox-shake, 0) * -1.2px), 0) skew(-0.6deg);
+  }
+  94% {
+    clip-path: inset(48% 0 18% 0);
+    transform: translate(calc(var(--intox-shake, 0) * 1.4px), 0) skew(0.8deg);
+  }
+  95% {
+    clip-path: inset(72% 0 4% 0);
+    transform: translate(calc(var(--intox-shake, 0) * -0.8px), 0) skew(-0.3deg);
+  }
+}
+
+@keyframes intox-rgb-jitter {
+  0% { transform: translate(0, 0); }
+  50% { transform: translate(calc(var(--intox-rgb, 0) * 1px), calc(var(--intox-rgb, 0) * -1px)); }
+  100% { transform: translate(calc(var(--intox-rgb, 0) * -0.6px), calc(var(--intox-rgb, 0) * 0.8px)); }
+}
+
+@keyframes intox-scan-drift {
+  from { transform: translateY(0); }
+  to { transform: translateY(6px); }
+}
+
+@keyframes intox-noise-pulse {
+  from { opacity: calc(var(--intox-norm, 0) * 0.08); transform: scale(1); }
+  to { opacity: calc(var(--intox-norm, 0) * 0.16); transform: scale(1.03) rotate(0.4deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .intox-active#app,
+  .intox-active#game-shell,
+  html.intox-active body {
+    animation: none;
+  }
+
+  .intox-overlay__rgb,
+  .intox-overlay__scanlines,
+  .intox-overlay__noise {
+    animation: none;
+  }
+
+  .intox-active#app,
+  .intox-active#game-shell {
+    filter: none;
+  }
+
+  .intox-active > .intox-overlay {
+    opacity: calc(var(--intox-norm, 0) * 0.15);
+  }
+}

@@ -1,4 +1,5 @@
 import { secureRandomInt, fmtChips } from "./core.js";
+import { recordConsumption } from "./intoxication-effects.js";
 import { ensureHotel, isNetPositive, getRoomType } from "./hotel.js";
 import { resortRequirementsMet, hintForEvent } from "./resort-bridge.js";
 import { tierIndex } from "./rewards-perks.js";
@@ -90,6 +91,22 @@ export const MINIBAR_ITEMS = {
     label: "Bottled water",
     price: 8,
     flavor: "Somehow costs almost as much as the vodka. Capitalism.",
+  },
+  noir_herb_preroll: {
+    id: "noir_herb_preroll",
+    label: "Noir pre-roll (contraband)",
+    price: 55,
+    flavor: "State-sanctioned recreational herb — farm-to-lounge, no photos.",
+    minTierIndex: 4,
+  },
+  foundation_edible: {
+    id: "foundation_edible",
+    label: "Foundation Room edible (contraband)",
+    price: 75,
+    flavor: "Velvet-rope gummy — the lounge sommelier nods approvingly.",
+    minTierIndex: 4,
+    roomTypes: ["penthouse"],
+    requiresCall: "foundation_room",
   },
   stare_at_minibar: {
     id: "stare_at_minibar",
@@ -386,6 +403,10 @@ function amenityAllowed(session, hotel, item) {
   if (item.requiresNetPositive && !isNetPositive(session)) return false;
   if (item.minTierIndex != null && getSessionTierIndex(session) < item.minTierIndex) return false;
   if (item.roomTypes && !item.roomTypes.includes(hotel.roomType)) return false;
+  if (item.requiresCall) {
+    const ra = ensureRoomAmenities(hotel);
+    if (!ra.phoneCalls.includes(item.requiresCall)) return false;
+  }
   return true;
 }
 
@@ -399,6 +420,10 @@ export function filterPhoneCalls(session, hotel) {
 
 export function filterRoomDecisions(session, hotel) {
   return Object.values(ROOM_DECISIONS).filter((dec) => amenityAllowed(session, hotel, dec));
+}
+
+export function filterMinibarItems(session, hotel) {
+  return Object.values(MINIBAR_ITEMS).filter((item) => amenityAllowed(session, hotel, item));
 }
 
 export function getResortTimeOfDay(hotel) {
@@ -454,6 +479,7 @@ function afterAmenityAction(session) {
 
 function gateMessage(item) {
   if (item.requiresNetPositive) return "Premium channel locked until you're net-positive on the floor.";
+  if (item.requiresCall) return "Call the Foundation Room direct line first — velvet rope protocol.";
   if (item.minTierIndex != null) return `Requires MGM Rewards tier ${item.minTierIndex + 1} or higher.`;
   if (item.roomTypes) return `Available in ${item.roomTypes.join(" / ")} only.`;
   return "Not available.";
@@ -487,12 +513,16 @@ export function purchaseMinibarItem(session, itemId) {
   const item = MINIBAR_ITEMS[itemId];
   if (!item) return { ok: false, message: "The minibar judges silently." };
   const hotel = ensureHotel(session);
+  if (!amenityAllowed(session, hotel, item)) {
+    return { ok: false, message: gateMessage(item) };
+  }
   const ra = ensureRoomAmenities(hotel);
   if (!session.wallet.debit(item.price, "hotel", `Minibar: ${item.label}`)) {
     return { ok: false, message: `Need ${fmtChips(item.price)} — the minibar doesn't accept IOUs.` };
   }
   ra.minibarPurchases.push(itemId);
   ra.minibarTab += item.price;
+  recordConsumption(session, itemId, { source: "minibar" });
   const unlocked = afterAmenityAction(session);
   let message = `${item.label} — ${fmtChips(item.price)} charged to the room.\n${item.flavor}`;
   if (unlocked.length) {

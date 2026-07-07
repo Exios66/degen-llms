@@ -8,6 +8,7 @@ import { TILE_SIZE, MAP_WIDTH, MAP_HEIGHT } from "./systems/MapData.js";
 import { RewardsPhone } from "../../js/RewardsPhone.js";
 import { syncRewardsFlags } from "../../js/rewards.js";
 import { enterZone, ensurePoolComplex } from "../../js/pool-complex.js";
+import { startCasinoClock } from "../../js/casino-time.js";
 
 const GAME_WIDTH = MAP_WIDTH * TILE_SIZE;
 const GAME_HEIGHT = MAP_HEIGHT * TILE_SIZE;
@@ -43,9 +44,11 @@ const dialogue = new DialogueManager(dialogueRoot, {
         r.redeemedComps.push("welcome_drink");
         if (saveAdapter?.rpg?.flags) delete saveAdapter.rpg.flags.has_welcome_drink_comp;
       }
+      if (session) recordConsumption(session, "welcome_cocktail", { source: "rpg_bar" });
     }
     saveAdapter?.persist();
     rewardsPhone?.sync();
+    if (session) applyIntoxicationEffects(session);
   },
 });
 
@@ -67,12 +70,14 @@ async function loadDialogues() {
 async function startOverworld(activeSession) {
   session = activeSession;
   saveAdapter = new SaveAdapter(session);
+  if (session.slotId != null) startCasinoClock();
   dialogue.setFlags(saveAdapter.rpg.flags ?? {});
 
   rewardsPhone = new RewardsPhone(rewardsRoot, session, {
     onPersist: () => persistAll(),
   });
   rewardsPhone.sync();
+  applyIntoxicationEffects(session);
 
   blackjack = new BlackjackOverlay(blackjackRoot, session, {
     onClose: () => {

@@ -24,6 +24,7 @@ class PlayerSession:
     slot_id: int | None = None
     slot_label: str = ""
     progressive_pools: dict[str, int] = field(default_factory=dict)
+    casino_time_ms: int = 0
 
     def stat_for(self, activity: str) -> ActivityStats:
         if activity not in self.activity_stats:

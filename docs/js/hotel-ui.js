@@ -135,6 +135,7 @@ export function buildHotelRenderers(ctx) {
           menuBtn("Guest Directory — lobby guest book", () => pushView("hotel-guest-directory")),
           menuBtn("Find my room (hallway)", () => pushView("hotel-hallway")),
           menuBtn("Pool Complex — 11-acre expansion pack", () => pushView("pool-complex")),
+          menuBtn("Horse Stables — meet the residents", () => pushView("horse-stables")),
           hotel.reachedRoom ? menuBtn("Enter your room", () => pushView("hotel-room")) : null,
           canAccessHotelRoom(session) && hotel.reachedRoom ? null
             : el("p", { className: "dim", textContent: reservationStatusMessage(session) }),

@@ -49,7 +49,7 @@ def test_wallet_apply_delta_and_reconcile() -> None:
 def test_hub_leave_casino_flow(tmp_path: Path) -> None:
     library = SaveLibrary(save_dir=tmp_path / "saves")
     session = library.create_session(1, player_name="Guest", starting_chips=500)
-    ui = ScriptedUI(["15", "y"])
+    ui = ScriptedUI(["16", "y"])
     run_hub(session, ui, library=library, show_intro=False)
     assert session.wallet.balance == 500
     assert library.load_slot(1) is not None
@@ -86,7 +86,7 @@ def test_help_menu_renders(capsys) -> None:
 def test_main_lobby_has_no_back_option(capsys, tmp_path: Path) -> None:
     library = SaveLibrary(save_dir=tmp_path / "saves")
     session = library.create_session(1, player_name="Guest", starting_chips=1000)
-    ui = ScriptedUI(["15", "n", "15", "y"])
+    ui = ScriptedUI(["16", "n", "16", "y"])
     run_hub(session, ui, library=library, show_intro=False)
     lobby_section = capsys.readouterr().out.split("Choose your adventure")[1].split("Choose:")[0]
     assert "0) Back" not in lobby_section

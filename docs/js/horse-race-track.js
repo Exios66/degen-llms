@@ -224,7 +224,7 @@ export function createRaceTrackView({
 
   function renderFrame(elapsed) {
     const scroll = elapsed * 0.04;
-    const animFrame = Math.floor(elapsed / 55) % 4;
+    const animFrame = Math.floor(elapsed / 50) % 6;
 
     ctx.clearRect(0, 0, TRACK_W, canvasH);
     drawTrackScene(ctx, TRACK_W, canvasH, laneCount, scroll);

@@ -49,7 +49,7 @@ export function buildHotelRenderers(ctx) {
     const evicted = cycle.roomEvicted;
     return el("div", { className: `world-cycle-banner resort-time-${cycle.phase.id}` }, [
       el("p", { className: "subtitle", textContent: `Day ${cycle.displayDay} · ${cycle.phaseLabel}` }),
-      el("p", { className: "dim", textContent: `${cycle.timeLabel} · Daily charges: ${fmtChips(cycle.dailyTotal)}` }),
+      el("p", { className: "dim", textContent: `${cycle.vegasClock} · ${cycle.timeLabel} · Daily charges: ${fmtChips(cycle.dailyTotal)}` }),
       el("p", { className: "dim", textContent: cycle.statusMessage }),
       evicted
         ? el("p", { className: "warning", textContent: `Room locked — ${cycle.overdueBalance > 0 ? `$${cycle.overdueBalance.toLocaleString()} overdue` : "settle at front desk"}. Hit the casino floor.` })
@@ -136,6 +136,7 @@ export function buildHotelRenderers(ctx) {
           menuBtn("Guest Directory — lobby guest book", () => pushView("hotel-guest-directory")),
           menuBtn("Find my room (hallway)", () => pushView("hotel-hallway")),
           menuBtn("Pool Complex — 11-acre expansion pack", () => pushView("pool-complex")),
+          menuBtn("Horse Stables — meet the residents", () => pushView("horse-stables")),
           hotel.reachedRoom ? menuBtn("Enter your room", () => pushView("hotel-room")) : null,
           canAccessHotelRoom(session) && hotel.reachedRoom ? null
             : el("p", { className: "dim", textContent: reservationStatusMessage(session) }),

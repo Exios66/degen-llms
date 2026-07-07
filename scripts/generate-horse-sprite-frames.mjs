@@ -33,16 +33,16 @@ function mirrorGrid(grid) {
   return grid.map((row) => [...row].reverse());
 }
 
-function outlineGrid(grid) {
+function outlineGridSized(grid, width, height) {
   const out = grid.map((row) => [...row]);
-  for (let y = 0; y < FRAME_H; y++) {
-    for (let x = 0; x < FRAME_W; x++) {
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
       if (grid[y][x] === ".") continue;
       for (let dy = -1; dy <= 1; dy++) {
         for (let dx = -1; dx <= 1; dx++) {
           const nx = x + dx;
           const ny = y + dy;
-          if (nx < 0 || ny < 0 || nx >= FRAME_W || ny >= FRAME_H) {
+          if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
             set(out, x, y, "k");
             continue;
           }
@@ -51,12 +51,16 @@ function outlineGrid(grid) {
       }
     }
   }
-  for (let y = 0; y < FRAME_H; y++) {
-    for (let x = 0; x < FRAME_W; x++) {
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
       if (grid[y][x] !== "." && out[y][x] === "k") out[y][x] = grid[y][x];
     }
   }
   return out;
+}
+
+function outlineGrid(grid) {
+  return outlineGridSized(grid, FRAME_W, FRAME_H);
 }
 
 function addHighlightShade(grid) {
@@ -197,89 +201,95 @@ function emptyGallopGrid() {
   return Array.from({ length: GALLOP_H }, () => Array(GALLOP_W).fill("."));
 }
 
-/** Outline-free side-profile gallop frames — color-block shading, streaming tail. */
-function drawGallopRightFrame(phase) {
+const GALLOP_FRAME_COUNT = 6;
+const GALLOP_BOB = [0, 0, 2, 2, 1, 0];
+const GALLOP_TAIL_BOB = [0, 1, 2, 1, 0, -1];
+const GALLOP_MANE_FLICK = [0, 0, 1, 1, 0, 0];
+
+/** Chibi side-profile gallop — black outlines, two-tone body, blush, 6-frame bounce cycle. */
+function drawChibiGallopRightFrame(phase) {
   const g = emptyGallopGrid();
-  const bob = [0, 2, 1, 0][phase];
+  const bob = GALLOP_BOB[phase];
+  const tailBob = GALLOP_TAIL_BOB[phase];
+  const maneFlick = GALLOP_MANE_FLICK[phase];
 
-  // Horizontal tail streaming left (speed lines)
-  fillRect(g, 0, 14 - bob, 10, 2, "t");
-  fillRect(g, 2, 15 - bob, 8, 2, "t");
-  fillRect(g, 4, 16 - bob, 6, 1, "n");
-  if (phase === 1) {
-    fillRect(g, 0, 13 - bob, 12, 2, "t");
-    fillRect(g, 0, 17 - bob, 8, 1, "n");
-  }
+  // Tail — bobs with body rhythm
+  fillRect(g, 5, 14 - tailBob - bob, 5, 3, "t");
+  fillRect(g, 3, 16 - tailBob - bob, 4, 3, "n");
+  fillRect(g, 4, 18 - tailBob - bob, 3, 2, "t");
 
-  // Hindquarters + barrel
-  fillRect(g, 10, 12 - bob, 14, 9, "b");
-  fillRect(g, 11, 11 - bob, 12, 4, "h");
-  fillRect(g, 11, 18 - bob, 12, 3, "l");
-  fillRect(g, 10, 15 - bob, 3, 5, "l");
+  // Compact chibi barrel — warm top, shaded lower half
+  fillRect(g, 13, 15 - bob, 17, 8, "l");
+  fillRect(g, 14, 11 - bob, 15, 7, "b");
+  fillRect(g, 15, 10 - bob, 13, 4, "h");
 
-  // Neck + chest
-  fillRect(g, 22, 10 - bob, 8, 8, "b");
-  fillRect(g, 23, 9 - bob, 6, 4, "h");
-  fillRect(g, 22, 16 - bob, 7, 2, "l");
+  // Thick neck
+  fillRect(g, 25, 10 - bob, 7, 8, "b");
+  fillRect(g, 26, 9 - bob, 5, 4, "h");
+  fillRect(g, 25, 15 - bob, 6, 3, "l");
 
-  // Head + muzzle (tapered snout)
-  fillRect(g, 30, 9 - bob, 8, 7, "b");
-  fillRect(g, 36, 10 - bob, 5, 5, "b");
-  fillRect(g, 38, 11 - bob, 4, 3, "h");
-  fillRect(g, 40, 13 - bob, 3, 2, "z");
-  set(g, 37, 11 - bob, "e");
-  fillRect(g, 31, 7 - bob, 3, 2, "m");
-  set(g, 32, 6 - bob, "m");
+  // Large rounded head
+  fillRect(g, 29, 8 - bob, 11, 9, "b");
+  fillRect(g, 30, 7 - bob, 9, 4, "h");
+  fillRect(g, 35, 13 - bob, 7, 5, "b");
+  fillRect(g, 37, 15 - bob, 5, 3, "l");
+  set(g, 36, 10 - bob, "e");
+  set(g, 37, 12 - bob, "p");
+  set(g, 38, 12 - bob, "p");
 
-  const drawLeg = (x, y, lift, far = false) => {
-    const ly = y - lift - bob;
-    const tone = far ? "l" : "b";
-    const shade = far ? "n" : "l";
-    fillRect(g, x, ly, 2, 4, tone);
-    fillRect(g, x, ly + 4, 2, 3, shade);
-    fillRect(g, x, ly + 7, 2, 2, far ? "n" : "l");
+  // Mane tuft — subtle two-position flicker
+  fillRect(g, 30 + maneFlick, 5 - bob, 4, 3, "m");
+  set(g, 31 + maneFlick, 4 - bob, "m");
+  set(g, 32 + maneFlick, 5 - bob, "n");
+
+  const drawStubLeg = (x, baseY, lift) => {
+    const ly = baseY - lift - bob;
+    fillRect(g, x, ly, 3, 3, "l");
+    fillRect(g, x, ly + 3, 3, 2, "l");
+    fillRect(g, x + 1, ly + 5, 2, 2, "n");
   };
 
-  // Four-phase gallop cycle (reference frame 1 = suspended, all hooves airborne)
-  if (phase === 0) {
-    // Rear drive — hind legs pushing, front reaching
-    drawLeg(14, 24, 0, true);
-    drawLeg(18, 24, 0, false);
-    drawLeg(30, 22, 4, false);
-    drawLeg(34, 21, 5, true);
-  } else if (phase === 1) {
-    // Suspended — tucked airborne legs (reference pose)
-    drawLeg(16, 22, 6, true);
-    drawLeg(20, 21, 7, false);
-    drawLeg(28, 22, 5, false);
-    drawLeg(32, 21, 6, true);
-    fillRect(g, 12, 20 - bob, 26, 1, "l");
-  } else if (phase === 2) {
-    // Front landing — forelegs down, hind tucked
-    drawLeg(30, 24, 0, false);
-    drawLeg(34, 24, 0, true);
-    drawLeg(15, 22, 5, true);
-    drawLeg(19, 21, 6, false);
-  } else {
-    // Gather — forelegs on ground, hind coiling
-    drawLeg(29, 24, 0, false);
-    drawLeg(33, 24, 0, true);
-    drawLeg(13, 24, 1, true);
-    drawLeg(17, 23, 2, false);
+  // Six-phase gallop: contact → push → flight peak → flight → front contact → gather
+  switch (phase) {
+    case 0:
+      drawStubLeg(15, 23, 0);
+      drawStubLeg(19, 23, 0);
+      drawStubLeg(28, 22, 3);
+      drawStubLeg(32, 21, 4);
+      break;
+    case 1:
+      drawStubLeg(14, 23, 1);
+      drawStubLeg(18, 23, 0);
+      drawStubLeg(29, 21, 5);
+      drawStubLeg(33, 20, 6);
+      break;
+    case 2:
+      drawStubLeg(17, 20, 6);
+      drawStubLeg(21, 19, 7);
+      drawStubLeg(26, 20, 6);
+      drawStubLeg(30, 19, 7);
+      break;
+    case 3:
+      drawStubLeg(16, 21, 5);
+      drawStubLeg(20, 20, 6);
+      drawStubLeg(27, 21, 5);
+      drawStubLeg(31, 20, 6);
+      break;
+    case 4:
+      drawStubLeg(28, 23, 0);
+      drawStubLeg(32, 23, 0);
+      drawStubLeg(16, 21, 4);
+      drawStubLeg(20, 20, 5);
+      break;
+    default:
+      drawStubLeg(27, 23, 0);
+      drawStubLeg(31, 23, 0);
+      drawStubLeg(15, 23, 1);
+      drawStubLeg(19, 23, 0);
+      break;
   }
 
-  return g;
-}
-
-function applyGallopShading(grid) {
-  const out = grid.map((row) => [...row]);
-  for (let y = 0; y < GALLOP_H; y++) {
-    for (let x = 0; x < GALLOP_W; x++) {
-      const c = grid[y][x];
-      if (c === "b" && grid[y - 1]?.[x] === "b" && grid[y]?.[x - 1] === "b") out[y][x] = "h";
-    }
-  }
-  return out;
+  return outlineGridSized(g, GALLOP_W, GALLOP_H);
 }
 
 const BASE_FRAMES = {
@@ -300,37 +310,38 @@ const BAY_FRAMES = {
 const COAT_FRAME_OVERRIDES = { bay: BAY_FRAMES };
 
 const GALLOP_FRAMES = {
-  right: [0, 1, 2, 3].map((p) => gridToRows(applyGallopShading(drawGallopRightFrame(p)))),
+  right: Array.from({ length: GALLOP_FRAME_COUNT }, (_, p) => gridToRows(drawChibiGallopRightFrame(p))),
 };
 
 const COAT_PALETTES = {
-  black: { k: "#181818", b: "#383838", l: "#282828", h: "#505050", m: "#181818", n: "#101010", f: "#101010", e: "#080808", w: "#d8d8d8", z: "#484848", s: "#282828", t: "#202028" },
-  tan: { k: "#483828", b: "#d8c098", l: "#b89868", h: "#f0dcb8", m: "#684830", n: "#503820", f: "#302018", e: "#201810", w: "#f8f4e8", z: "#e8d8b0", s: "#b89868", t: "#586878" },
-  grey: { k: "#484850", b: "#b8b8c0", l: "#9898a0", h: "#d8d8e0", m: "#686870", n: "#505058", f: "#383840", e: "#202028", w: "#f0f0f0", z: "#c8c8d0", s: "#9898a0", t: "#788088" },
-  chestnut: { k: "#582818", b: "#c87840", l: "#a85828", h: "#e89858", m: "#e8c878", n: "#c8a858", f: "#382010", e: "#201008", w: "#f8f4e8", z: "#d89060", s: "#a85828", t: "#885838" },
-  light_brown: { k: "#503820", b: "#a87848", l: "#885830", h: "#c89860", m: "#784828", n: "#583018", f: "#302010", e: "#201008", w: "#f8f4e8", z: "#b88858", s: "#885830", t: "#685040" },
-  dark_brown: { k: "#281810", b: "#684028", l: "#482818", h: "#885840", m: "#181008", n: "#100808", f: "#100808", e: "#100808", w: "#d8c8b8", z: "#785030", s: "#482818", t: "#383028" },
-  bay: { k: "#281810", b: "#985038", l: "#783828", h: "#b86848", m: "#181008", n: "#100808", f: "#100808", e: "#100808", w: "#f8f4e8", z: "#a86040", s: "#181008", t: "#384048" },
-  dapple: { k: "#484038", b: "#989080", l: "#787060", h: "#b8b0a0", m: "#e8e8e8", n: "#c8c8c8", f: "#383028", e: "#282018", w: "#f0f0f0", z: "#a89888", s: "#787060", t: "#889098" },
+  black: { k: "#101010", b: "#484848", l: "#303030", h: "#686868", m: "#303038", n: "#202028", f: "#101010", e: "#101010", w: "#d8d8d8", z: "#585858", s: "#282828", t: "#383840", p: "#886878" },
+  tan: { k: "#101010", b: "#e8b890", l: "#c0a0b8", h: "#f0c8a0", m: "#485868", n: "#384858", f: "#101010", e: "#101010", w: "#f8f4e8", z: "#f0d0b0", s: "#b89868", t: "#485868", p: "#e89098" },
+  grey: { k: "#101010", b: "#b8b8c0", l: "#9898a8", h: "#d8d8e0", m: "#586068", n: "#485058", f: "#383840", e: "#101010", w: "#f0f0f0", z: "#c8c8d0", s: "#9898a0", t: "#586068", p: "#c8a0b0" },
+  chestnut: { k: "#101010", b: "#d87840", l: "#b86868", h: "#f09858", m: "#685848", n: "#584038", f: "#382010", e: "#101010", w: "#f8f4e8", z: "#e89060", s: "#a85828", t: "#685848", p: "#e87888" },
+  light_brown: { k: "#101010", b: "#a87848", l: "#987868", h: "#c89860", m: "#584838", n: "#483828", f: "#302010", e: "#101010", w: "#f8f4e8", z: "#b88858", s: "#885830", t: "#584838", p: "#d89090" },
+  dark_brown: { k: "#101010", b: "#684028", l: "#583838", h: "#885840", m: "#383028", n: "#282018", f: "#101010", e: "#101010", w: "#d8c8b8", z: "#785030", s: "#482818", t: "#383028", p: "#a87078" },
+  bay: { k: "#101010", b: "#985038", l: "#884848", h: "#b86848", m: "#383028", n: "#282018", f: "#101010", e: "#101010", w: "#f8f4e8", z: "#a86040", s: "#181008", t: "#384048", p: "#c87888" },
+  dapple: { k: "#101010", b: "#989080", l: "#887888", h: "#b8b0a0", m: "#687078", n: "#586068", f: "#383028", e: "#101010", w: "#f0f0f0", z: "#a89888", s: "#787060", t: "#687078", p: "#c8a0a8" },
 };
 
 const fileContent = `/**
  * Original RPG Maker-style equestrian horse sprite frames.
  * Generated by scripts/generate-horse-sprite-frames.mjs — do not edit by hand.
- * Walk: 8 coats × 4 dirs × 3 frames @ 32×32. Gallop: side profile × 4 frames @ 48×32.
+ * Walk: 8 coats × 4 dirs × 3 frames @ 32×32. Gallop: chibi side profile × ${GALLOP_FRAME_COUNT} frames @ 48×32.
  */
 
 export const HORSE_FRAME_W = ${FRAME_W};
 export const HORSE_FRAME_H = ${FRAME_H};
 export const HORSE_GALLOP_W = ${GALLOP_W};
 export const HORSE_GALLOP_H = ${GALLOP_H};
+export const HORSE_GALLOP_FRAME_COUNT = ${GALLOP_FRAME_COUNT};
 
-/** Palette keys: k=outline b=body l=bodyLo h=bodyHi m=mane n=maneLo f=hoof e=eye w=eyeWhite z=muzzle s=sock t=tail */
+/** Palette keys: k=outline b=body l=bodyLo h=bodyHi m=mane n=maneLo f=hoof e=eye w=eyeWhite z=muzzle s=sock t=tail p=blush */
 export const BASE_FRAMES = ${JSON.stringify(BASE_FRAMES)};
 
 export const COAT_FRAME_OVERRIDES = ${JSON.stringify(COAT_FRAME_OVERRIDES)};
 
-/** Outline-free side-profile gallop cycle for race track animation. */
+/** Chibi outlined side-profile gallop cycle for race track animation. */
 export const GALLOP_FRAMES = ${JSON.stringify(GALLOP_FRAMES)};
 
 export const COAT_PALETTES = ${JSON.stringify(COAT_PALETTES, null, 2)};

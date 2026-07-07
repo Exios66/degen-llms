@@ -22,6 +22,8 @@ from mandalay_bay.hotel_experience import run_hotel_lobby
 from mandalay_bay.rewards import sync_rewards_from_wallet
 from mandalay_bay.rewards_experience import run_rewards_phone
 from mandalay_bay.session import PlayerSession
+from mandalay_bay.casino_time import format_play_time_summary, get_casino_time_ms, start_casino_clock
+from mandalay_bay.vegas_time import format_vegas_clock_label, format_vegas_time
 from mandalay_bay.staff_manifest import (
     clear_staff_override,
     editable_staff_entries,
@@ -62,6 +64,8 @@ def show_welcome(session: PlayerSession, ui: TerminalUI) -> None:
     ui.print(f"Your player card: {session.player_name}")
     if session.has_save_slot:
         ui.print(f"Save slot {session.slot_id}: {session.slot_label}")
+        ui.dim(format_play_time_summary(get_casino_time_ms(session)))
+    ui.dim(format_vegas_clock_label())
     ui.chip_line(session.wallet.balance)
     ui.print("\nExplore table games, slots, and the sports book.")
     ui.print("Your chips travel with you. Visit the Cashier anytime.")
@@ -179,7 +183,7 @@ def _show_ledger(session: PlayerSession, ui: TerminalUI) -> None:
     for tx in reversed(txs):
         sign = "+" if tx.amount >= 0 else ""
         ui.print(
-            f"  {tx.timestamp.strftime('%H:%M:%S')} | {tx.activity:12} | "
+            f"  {format_vegas_time(tx.timestamp)} | {tx.activity:12} | "
             f"{sign}{tx.amount:,} | bal {tx.balance_after:,} | {tx.description}"
         )
 
@@ -193,7 +197,7 @@ def _show_bank_ledger(session: PlayerSession, ui: TerminalUI) -> None:
     for tx in reversed(txs):
         sign = "+" if tx.amount >= 0 else ""
         ui.print(
-            f"  {tx.timestamp.strftime('%H:%M:%S')} | {tx.category:12} | "
+            f"  {format_vegas_time(tx.timestamp)} | {tx.category:12} | "
             f"{sign}{tx.amount:,} | bal {tx.balance_after:,} | {tx.description}"
         )
 
@@ -322,6 +326,8 @@ def run_stats(session: PlayerSession, ui: TerminalUI) -> None:
     ui.banner("Player Stats")
     ui.print(f"Player: {session.player_name}")
     ui.chip_line(session.wallet.balance)
+    if session.has_save_slot:
+        ui.print(format_play_time_summary(get_casino_time_ms(session)))
     ui.print(f"Session net (excl. buy-ins): {session.wallet.net_session:+,} chips\n")
     if not session.activity_stats:
         ui.dim("No activity history yet.")
@@ -383,6 +389,8 @@ def run_hub(
 ) -> None:
     if show_intro:
         show_welcome(session, ui)
+    if session.has_save_slot:
+        start_casino_clock(session)
 
     while True:
         ui.print()
@@ -390,6 +398,8 @@ def run_hub(
         ui.print(f"Welcome, {session.player_name}")
         if session.has_save_slot:
             ui.dim(f"Save slot {session.slot_id}: {session.slot_label}")
+            ui.dim(format_play_time_summary(get_casino_time_ms(session)))
+        ui.dim(format_vegas_clock_label())
         ui.chip_line(session.wallet.balance)
         _bank_line(session, ui)
         _maybe_low_balance_notice(session, ui)

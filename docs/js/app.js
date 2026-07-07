@@ -1,12 +1,16 @@
 import {
   CASINO_NAME, ACTIVITIES, FLOOR_ORDER, fmtChips, signedChips,
   saveSlot, loadSlot, createSlot, deleteSlot, listSlots, recentSlots, formatSaveTime,
-  createGuestSession, PlayerSession,
+  createGuestSession, PlayerSession, formatPlayTimeSummary, formatSaveSlotPlayTimes, getCasinoTimeMs,
 } from "./core.js";
+import { startCasinoClock, stopCasinoClock } from "./casino-time.js";
+import { formatVegasClockLabel, formatVegasTime } from "./vegas-time.js";
+import { onActivityVisit, syncContactIntros } from "./phone-contacts.js";
 import { applyIntoxicationEffects } from "./intoxication-effects.js";
 import {
   MACHINES,
   spinReels,
+  randomSymbol,
   displaySymbol,
   calculatePayout,
   contributeToProgressive,
@@ -20,7 +24,8 @@ import { HoldemTable, BettingAction } from "./holdem/game.js";
 import { HAND_CLASS_NAMES } from "./holdem/hand_eval.js";
 import { BET_TYPES, spinWheel, wheelColor, resolveBet, RED_NUMBERS } from "./roulette.js";
 import { generateRace, simulateRace, settleTicket, fmtOdds as fmtRaceOdds, loadBundledHorseNames, parseHorseNamesCSV, setCustomHorseNames, getHorseNamePool } from "./horse_racing.js";
-import { createHorseSpriteCanvas, getHorseSprite, getJockeySilks } from "./horse-sprites.js";
+import { generateDressage, simulateDressage, settleDressageTicket, generateJumper, simulateJumper, settleJumperTicket, fmtOddsEq } from "./equestrian.js";
+import { createHorseSpriteCanvas, getHorseSprite, getJockeySilks, HORSE_SPRITE_ROSTER } from "./horse-sprites.js";
 import { createRaceTrackView, createRacePreview } from "./horse-race-track.js";
 import { getSessionDealer, pickQuip } from "./dealers.js";
 import {
@@ -32,11 +37,14 @@ import {
 } from "./staff-manifest.js";
 import { RewardsPhone } from "./RewardsPhone.js";
 import { buildHotelRenderers } from "./hotel-ui.js";
+import { buildPoolRenderers } from "./pool-complex-ui.js";
+import { buildAmenitiesRenderers } from "./casino-amenities-ui.js";
 import { ensureHotel } from "./hotel.js";
 import {
   STAKE_TIERS, TIER_ORDER, getTier, formatTierLabel, effectiveTableStakes, effectiveSlotStakes,
   formatStakeRange, tierUsesSalonLimits, getTierPayoutBoost,
 } from "./stakes.js";
+import { getActivityTiming, applyTierSpeedCss } from "./rewards-perks.js";
 
 const app = document.getElementById("app");
 
@@ -46,13 +54,41 @@ let sportsbook = new SportsbookState();
 let blackjackGame = null;
 let blackjackSessionNet = 0;
 let slotsState = { machine: null, sessionNet: 0, spins: 0, tier: null };
+let slotsSpinTimers = [];
 let holdemState = null;
 let rouletteState = { sessionNet: 0, spins: 0, lastNumber: null, spinning: false, tier: null };
 let horseRacingState = { card: null, pending: [], sessionNet: 0, races: 0, tier: null };
+let dressageState = { card: null, pending: [], sessionNet: 0, events: 0, tier: null };
+let jumperState = { card: null, pending: [], sessionNet: 0, events: 0, tier: null };
 let currentStakeTier = null;
 let activeTableDealer = null;
 let viewStack = [];
 let statusMessage = null;
+let casinoTimeTicker = null;
+
+function isInCasinoView() {
+  return viewStack.some((v) => v.name !== "save-picker" && v.name !== "save-create" && v.name !== "save-delete");
+}
+
+function startCasinoTimeTicker() {
+  stopCasinoTimeTicker();
+  casinoTimeTicker = window.setInterval(() => {
+    const vegasEl = document.getElementById("vegas-clock");
+    if (vegasEl) vegasEl.textContent = formatVegasClockLabel();
+    if (!isInCasinoView() || session.slotId == null) return;
+    const timeEl = document.getElementById("casino-time-tracker");
+    if (timeEl) {
+      timeEl.textContent = formatPlayTimeSummary(getCasinoTimeMs(session));
+    }
+  }, 30000);
+}
+
+function stopCasinoTimeTicker() {
+  if (casinoTimeTicker != null) {
+    window.clearInterval(casinoTimeTicker);
+    casinoTimeTicker = null;
+  }
+}
 
 function syncSportsbookToSession() {
   if (session.slotId != null) {
@@ -67,7 +103,13 @@ function resetSportsbookFromSession() {
 function persist() {
   syncSportsbookToSession();
   rewardsPhone?.tracker.syncFromWallet();
+  syncContactIntros(session);
   if (session.slotId != null) saveSlot(session);
+}
+
+function recordActivityVisit(activity) {
+  session.recordVisit(activity);
+  onActivityVisit(session, activity);
 }
 
 function mountRewardsPhone() {
@@ -248,6 +290,53 @@ function slotMachineCard(machine, onSelect) {
   ]);
 }
 
+function clearSlotsSpinTimers() {
+  for (const timerId of slotsSpinTimers) {
+    clearTimeout(timerId);
+    clearInterval(timerId);
+  }
+  slotsSpinTimers = [];
+  if (slotsState.spinIntervalId != null) {
+    clearInterval(slotsState.spinIntervalId);
+    slotsState.spinIntervalId = null;
+  }
+}
+
+function scheduleSlotsSpin(fn, ms) {
+  const timerId = window.setTimeout(fn, ms);
+  slotsSpinTimers.push(timerId);
+  return timerId;
+}
+
+function classifySlotWin(win, bet, isJackpot) {
+  if (isJackpot) return "jackpot";
+  if (win >= bet * 15 || win >= 1000) return "big";
+  return "small";
+}
+
+function slotResultElement(message, { spinning = false, reelsStopped = 3 } = {}) {
+  if (spinning && reelsStopped < 3) {
+    const cues = ["Spinning…", "Reels rolling…", "Almost there…"];
+    return el("p", {
+      className: "slot-result slot-result--spinning",
+      textContent: cues[Math.min(reelsStopped, cues.length - 1)],
+    });
+  }
+  if (!message) {
+    return el("p", { className: "slot-result dim", textContent: "Place your bet and spin." });
+  }
+  if (message.type === "success" || message.type === "jackpot-win") {
+    const tier = message.winTier ?? (message.type === "jackpot-win" ? "jackpot" : "small");
+    return el("div", { className: `slot-win-callout slot-win-callout--${tier}` }, [
+      message.amount != null
+        ? el("div", { className: "slot-win-callout-amount", textContent: `+${message.amount.toLocaleString()} chips` })
+        : null,
+      el("div", { className: "slot-win-callout-detail", textContent: message.text }),
+    ]);
+  }
+  return el("p", { className: `slot-result ${message.type}`, textContent: message.text });
+}
+
 function slotPaytablePanel(machine, tierBoost = 1.0) {
   const rows = paytableEntries(machine, tierBoost).map((entry) =>
     el("div", {
@@ -272,29 +361,56 @@ function slotPaytablePanel(machine, tierBoost = 1.0) {
   ].filter(Boolean));
 }
 
-function slotReelWindow(machine, reels, { spinning = false, win = false } = {}) {
+function slotReelWindow(machine, reels, {
+  spinning = false,
+  reelsStopped = 3,
+  landedReel = -1,
+  win = false,
+  winTier = null,
+} = {}) {
   const ui = getMachineUI(machine);
   const symbols = reels?.length === 3
-    ? reels.map((r) => displaySymbol(r, session.useUnicode))
+    ? reels.map((r) => (r ? displaySymbol(r, session.useUnicode) : "—"))
     : ["—", "—", "—"];
-  const windowEl = el("div", {
-    className: `slot-reel-window slot-reel-window--${ui.reelFrame}${win ? " slot-reel-window--win" : ""}${spinning ? " slot-reel--spinning" : ""}`,
-  });
-  for (const sym of symbols) {
-    windowEl.appendChild(el("div", { className: "slot-reel" }, [
-      el("span", { className: "slot-reel-symbol", textContent: sym }),
-    ]));
+  const windowClasses = [
+    "slot-reel-window",
+    `slot-reel-window--${ui.reelFrame}`,
+    spinning && reelsStopped < 3 ? "slot-reel-window--active-spin" : "",
+    win && winTier ? `slot-reel-window--win slot-reel-window--win-${winTier}` : "",
+  ].filter(Boolean).join(" ");
+  const windowEl = el("div", { className: windowClasses });
+  for (let i = 0; i < 3; i += 1) {
+    const isSpinning = spinning && i >= reelsStopped;
+    const reelClasses = [
+      "slot-reel",
+      isSpinning ? "slot-reel--spinning" : "",
+      i === landedReel ? "slot-reel--landed" : "",
+      win && i < reelsStopped ? "slot-reel--winner" : "",
+    ].filter(Boolean).join(" ");
+    const reelEl = el("div", { className: reelClasses }, [
+      el("span", { className: "slot-reel-symbol", textContent: symbols[i] }),
+    ]);
+    if (isSpinning) reelEl.style.setProperty("--reel-delay", `${i * 0.05}s`);
+    windowEl.appendChild(reelEl);
+  }
+  if (win && winTier) {
+    windowEl.appendChild(el("div", { className: "slot-reel-window-shimmer", "aria-hidden": "true" }));
   }
   return windowEl;
 }
 
-function slotCabinet(machine, { screenChildren = [], baseChildren = [] }) {
+function slotCabinet(machine, { screenChildren = [], baseChildren = [], celebrate = null } = {}) {
   const ui = getMachineUI(machine);
   const badges = [
     el("span", { className: "slot-cabinet-badge", textContent: ui.category }),
     el("span", { className: "slot-cabinet-badge", textContent: ui.badge }),
   ];
-  return el("div", { className: `slot-cabinet ${ui.themeClass}` }, [
+  const cabinetClass = [
+    "slot-cabinet",
+    ui.themeClass,
+    celebrate ? `slot-cabinet--celebrate slot-cabinet--celebrate-${celebrate}` : "",
+  ].filter(Boolean).join(" ");
+  return el("div", { className: cabinetClass }, [
     el("div", { className: "slot-cabinet-topper" }, [
       el("div", { className: "slot-cabinet-name", textContent: `${ui.icon}  ${machine.name}` }),
       machine.tagline ? el("p", { className: "slot-cabinet-tagline", textContent: machine.tagline }) : null,
@@ -374,13 +490,18 @@ function enterCasino(nextSession) {
   horseRacingState = { card: null, pending: [], sessionNet: 0, races: 0 };
   viewStack = [{ name: "hub", data: {} }];
   clearStatus();
+  if (session.slotId != null) startCasinoClock();
+  startCasinoTimeTicker();
   mountRewardsPhone();
+  syncContactIntros(nextSession);
   applyIntoxicationEffects(session);
   render();
 }
 
 function returnToSavePicker() {
   persist();
+  stopCasinoClock();
+  stopCasinoTimeTicker();
   rewardsPhone?.close();
   sportsbook = new SportsbookState();
   blackjackGame = null;
@@ -395,8 +516,22 @@ function settingsBar() {
   const saveLabel = session.slotId != null
     ? (session.slotLabel || `Slot ${session.slotId}`)
     : "No save";
-  return el("div", { className: "settings-bar" }, [
+  const children = [
     el("span", { className: "dim", textContent: `Save: ${saveLabel}` }),
+    el("span", {
+      id: "vegas-clock",
+      className: "dim",
+      textContent: formatVegasClockLabel(),
+    }),
+  ];
+  if (session.slotId != null) {
+    children.push(el("span", {
+      id: "casino-time-tracker",
+      className: "dim",
+      textContent: formatPlayTimeSummary(getCasinoTimeMs(session)),
+    }));
+  }
+  children.push(
     el("label", {}, [
       el("input", {
         type: "checkbox",
@@ -430,7 +565,8 @@ function settingsBar() {
         returnToSavePicker();
       },
     }),
-  ]);
+  );
+  return el("div", { className: "settings-bar" }, children);
 }
 
 function formatCardLabel(card) {
@@ -571,7 +707,7 @@ function renderSavePicker() {
     for (const slot of recent) {
       recentList.appendChild(el("div", {
         className: "stat-row dim",
-        textContent: `Slot ${slot.slotId}: ${slot.label} — ${slot.playerName} — ${fmtChips(slot.balance)} (last: ${formatSaveTime(slot.updatedAt)})`,
+        textContent: `Slot ${slot.slotId}: ${slot.label} — ${slot.playerName} — ${fmtChips(slot.balance)} · ${formatSaveSlotPlayTimes(slot.casinoTimeMs)} (last: ${formatSaveTime(slot.updatedAt)})`,
       }));
     }
     panel.appendChild(recentList);
@@ -580,7 +716,7 @@ function renderSavePicker() {
   const menuList = el("ul", { className: "menu-list" });
   allSlots.forEach((slot, i) => {
     const label = slot.occupied
-      ? `Load Slot ${slot.slotId} — ${slot.playerName} (${fmtChips(slot.balance)})`
+      ? `Load Slot ${slot.slotId} — ${slot.playerName} (${fmtChips(slot.balance)}) · ${formatSaveSlotPlayTimes(slot.casinoTimeMs)}`
       : `New save in Slot ${slot.slotId} (empty)`;
     menuList.appendChild(el("li", {}, [
       el("button", {
@@ -723,6 +859,7 @@ function renderHub() {
     "Player Stats",
     "Save Game",
     "Exit to Hotel",
+    "Casino Amenities",
     "Explore Resort (RPG)",
     "Leave Casino",
   ];
@@ -736,6 +873,7 @@ function renderHub() {
       ? el("p", { className: "dim", textContent: `Save: ${session.slotLabel || `Slot ${session.slotId}`}` })
       : el("p", { className: "dim", textContent: "Guest visit — progress is not saved" }),
     el("p", { className: "welcome-line", textContent: `Welcome, ${session.playerName}` }),
+    el("p", { className: "dim", textContent: formatVegasClockLabel() }),
     chipLine(),
     el("div", { className: "hub-features panel" }, [
       el("p", { className: "subtitle", textContent: "On the floor today:" }),
@@ -806,6 +944,8 @@ function renderHub() {
       ensureHotel(session);
       pushView("hotel-lobby");
     } else if (choice === FLOOR_ORDER.length + 7) {
+      pushView("casino-floor");
+    } else if (choice === FLOOR_ORDER.length + 8) {
       const rpgUrl = session.slotId != null
         ? `./rpg/?slot=${session.slotId}`
         : "./rpg/?guest=1";
@@ -858,6 +998,8 @@ function renderFloor({ floor }) {
     else if (act.id === "slots") pushView("stake-tier", { activityId: "slots", nextView: "slots-menu" });
     else if (act.id === "sportsbook") pushView("stake-tier", { activityId: "sportsbook", nextView: "sportsbook" });
     else if (act.id === "horse_racing") pushView("stake-tier", { activityId: "horse_racing", nextView: "horse-racing" });
+    else if (act.id === "dressage") pushView("stake-tier", { activityId: "dressage", nextView: "dressage" });
+    else if (act.id === "jumper") pushView("stake-tier", { activityId: "jumper", nextView: "jumper" });
   }
 }
 
@@ -972,10 +1114,9 @@ function renderCashierLedger() {
       el("th", { textContent: "Description" }),
     ])]),
     el("tbody", {}, txs.length ? [...txs].reverse().map((tx) => {
-      const d = new Date(tx.timestamp);
       const sign = tx.amount >= 0 ? "+" : "";
       return el("tr", {}, [
-        el("td", { textContent: d.toLocaleTimeString() }),
+        el("td", { textContent: formatVegasTime(tx.timestamp) }),
         el("td", { textContent: tx.activity }),
         el("td", { textContent: `${sign}${tx.amount.toLocaleString()}` }),
         el("td", { textContent: tx.balanceAfter.toLocaleString() }),
@@ -1133,10 +1274,9 @@ function renderBankLedger() {
       el("th", { textContent: "Description" }),
     ])]),
     el("tbody", {}, txs.length ? [...txs].reverse().map((tx) => {
-      const d = new Date(tx.timestamp);
       const sign = tx.amount >= 0 ? "+" : "";
       return el("tr", {}, [
-        el("td", { textContent: d.toLocaleTimeString() }),
+        el("td", { textContent: formatVegasTime(tx.timestamp) }),
         el("td", { textContent: tx.category }),
         el("td", { textContent: `${sign}${tx.amount.toLocaleString()}` }),
         el("td", { textContent: tx.balanceAfter.toLocaleString() }),
@@ -1281,6 +1421,9 @@ function renderStats() {
     banner("Player Stats"),
     el("p", { textContent: `Player: ${session.playerName}` }),
     chipLine(),
+    session.slotId != null
+      ? el("p", { className: "dim", textContent: formatPlayTimeSummary(getCasinoTimeMs(session)) })
+      : null,
     el("p", { textContent: `Session net (excl. buy-ins): ${session.wallet.netSession >= 0 ? "+" : ""}${session.wallet.netSession.toLocaleString()} chips` }),
     rows.length ? el("div", { className: "stats-grid" }, rows) : el("p", { className: "dim", textContent: "No activity history yet." }),
     el("div", { className: "action-bar" }, [
@@ -1334,6 +1477,8 @@ function renderStakeTier({ activityId, nextView }) {
       if (activityId === "slots") slotsState.tier = tier;
       if (activityId === "roulette") rouletteState.tier = tier;
       if (activityId === "horse_racing") horseRacingState.tier = tier;
+      if (activityId === "dressage") dressageState.tier = tier;
+      if (activityId === "jumper") jumperState.tier = tier;
       pushView(nextView);
     }),
   ]);
@@ -1350,7 +1495,7 @@ function renderSlotsMenu() {
       ]),
     ]);
   }
-  session.recordVisit("slots");
+  recordActivityVisit("slots");
   persist();
   const tier = slotsState.tier ?? currentStakeTier;
 
@@ -1389,31 +1534,37 @@ function renderSlotsMenu() {
 function renderSlotsPlay() {
   const machine = slotsState.machine;
   const tier = slotsState.tier ?? currentStakeTier ?? getTier("standard");
+  applyTierSpeedCss(tier.id);
   const stakes = effectiveSlotStakes(machine, tier, session.wallet.balance);
   const minBet = stakes.minBet;
   const maxBet = stakes.maxBet;
   const betInput = el("input", {
     type: "number", min: String(minBet), max: String(maxBet), value: String(minBet),
   });
-  const msgEl = el("p", {
-    className: `slot-result ${slotsState.lastMessage?.type ?? "dim"}`,
-    textContent: slotsState.spinning
-      ? "Spinning…"
-      : (slotsState.lastMessage?.text ?? "Place your bet and spin."),
+  const reelsStopped = slotsState.reelsStopped ?? 3;
+  const reelsForDisplay = (slotsState.spinning || reelsStopped < 3)
+    ? (slotsState.displayReels ?? slotsState.lastReels)
+    : slotsState.lastReels;
+  const msgEl = slotResultElement(slotsState.lastMessage, {
+    spinning: slotsState.spinning,
+    reelsStopped,
   });
   const summaryEl = el("p", {
     className: "dim",
     textContent: slotsState.spins ? `Session: ${signedChips(slotsState.sessionNet)} over ${slotsState.spins} spin(s)` : "",
   });
 
-  const reelsEl = slotReelWindow(machine, slotsState.lastReels, {
+  const reelsEl = slotReelWindow(machine, reelsForDisplay, {
     spinning: slotsState.spinning,
+    reelsStopped,
+    landedReel: slotsState.landedReel ?? -1,
     win: slotsState.lastWin,
+    winTier: slotsState.winTier,
   });
 
   const jackpotEl = machine.progressive && machine.progressivePoolId
     ? el("div", {
-      className: "slot-jackpot-ticker",
+      className: `slot-jackpot-ticker${slotsState.winTier === "jackpot" ? " slot-jackpot-ticker--hit" : ""}`,
       textContent: `★ PROGRESSIVE ${progressivePool(session, machine.progressivePoolId, machine.progressiveSeed).toLocaleString()} ★`,
     })
     : null;
@@ -1425,52 +1576,115 @@ function renderSlotsPlay() {
   function doSpin() {
     const bet = parseInt(betInput.value, 10);
     if (bet === 0) {
+      clearSlotsSpinTimers();
       session.recordResult("slots", slotsState.sessionNet, slotsState.spins);
       persist();
       popView();
       render();
       return;
     }
-    if (bet < minBet) { msgEl.className = "slot-result error"; msgEl.textContent = `Minimum spin is ${minBet}.`; return; }
-    if (bet > maxBet) { msgEl.className = "slot-result error"; msgEl.textContent = `Maximum spin is ${maxBet}.`; return; }
+    if (bet < minBet) {
+      slotsState.lastMessage = { text: `Minimum spin is ${minBet}.`, type: "error" };
+      render();
+      return;
+    }
+    if (bet > maxBet) {
+      slotsState.lastMessage = { text: `Maximum spin is ${maxBet}.`, type: "error" };
+      render();
+      return;
+    }
     if (!session.wallet.debit(bet, "slots", `${machine.name} spin ${fmtChips(bet)}`)) {
-      msgEl.className = "slot-result error";
-      msgEl.textContent = "Insufficient chips.";
+      slotsState.lastMessage = { text: "Insufficient chips.", type: "error" };
+      render();
       return;
     }
 
+    clearSlotsSpinTimers();
+    const timing = getActivityTiming(tier.id);
+
+    contributeToProgressive(session, machine, bet);
+    const finalReels = spinReels(machine);
+    const jackpotAmount = tryJackpot(session, machine, finalReels, bet, maxBet);
+    const tierBoost = getTierPayoutBoost(tier?.id);
+    const { win, reason } = calculatePayout(finalReels, bet, machine, jackpotAmount, tierBoost);
+    const isJackpot = jackpotAmount != null;
+    const winTier = win > 0 ? classifySlotWin(win, bet, isJackpot) : null;
+
     slotsState.spinning = true;
     slotsState.lastWin = false;
-    render();
+    slotsState.winTier = null;
+    slotsState.lastWinAmount = 0;
+    slotsState.reelsStopped = 0;
+    slotsState.landedReel = -1;
+    slotsState.displayReels = [...finalReels];
+    slotsState.pendingFinalReels = finalReels;
+    slotsState.pendingOutcome = { win, reason, jackpotAmount, bet, winTier, isJackpot };
+    slotsState.lastMessage = null;
 
-    setTimeout(() => {
-      contributeToProgressive(session, machine, bet);
-      const reels = spinReels(machine);
-      const jackpotAmount = tryJackpot(session, machine, reels, bet, maxBet);
-      const tierBoost = getTierPayoutBoost(tier?.id);
-      const { win, reason } = calculatePayout(reels, bet, machine, jackpotAmount, tierBoost);
-      slotsState.spins += 1;
+    const cycleSymbols = () => {
+      if (!slotsState.spinning || slotsState.reelsStopped >= 3) return;
+      const display = [...slotsState.pendingFinalReels];
+      for (let i = slotsState.reelsStopped; i < 3; i += 1) {
+        display[i] = randomSymbol(machine);
+      }
+      slotsState.displayReels = display;
+      render();
+    };
+    slotsState.spinIntervalId = window.setInterval(cycleSymbols, 90);
+    slotsSpinTimers.push(slotsState.spinIntervalId);
+    cycleSymbols();
+
+    const stopReel = (index) => {
+      slotsState.landedReel = index;
+      slotsState.reelsStopped = index + 1;
+      slotsState.displayReels = slotsState.pendingFinalReels;
+      render();
+      scheduleSlotsSpin(() => {
+        if (slotsState.landedReel === index) slotsState.landedReel = -1;
+      }, 520);
+    };
+
+    scheduleSlotsSpin(() => stopReel(0), timing.slotsReel1);
+    scheduleSlotsSpin(() => stopReel(1), timing.slotsReel2);
+    scheduleSlotsSpin(() => stopReel(2), timing.slotsReel3);
+
+    scheduleSlotsSpin(() => {
+      clearSlotsSpinTimers();
+      const outcome = slotsState.pendingOutcome;
+      if (!outcome) return;
+
       slotsState.spinning = false;
-      slotsState.lastReels = reels;
-      slotsState.lastWin = win > 0;
+      slotsState.reelsStopped = 3;
+      slotsState.landedReel = -1;
+      slotsState.lastReels = slotsState.pendingFinalReels;
+      slotsState.displayReels = slotsState.pendingFinalReels;
+      slotsState.pendingFinalReels = null;
+      slotsState.pendingOutcome = null;
+      slotsState.spins += 1;
+      slotsState.lastWin = outcome.win > 0;
+      slotsState.winTier = outcome.winTier;
+      slotsState.lastWinAmount = outcome.win;
 
-      if (win > 0) {
-        session.wallet.credit(win, "slots", reason);
-        slotsState.sessionNet += win - bet;
+      if (outcome.win > 0) {
+        session.wallet.credit(outcome.win, "slots", outcome.reason);
+        slotsState.sessionNet += outcome.win - outcome.bet;
         slotsState.lastMessage = {
-          text: `${reason}${jackpotAmount == null ? ` — Won ${win.toLocaleString()} chips!` : ""}`,
-          type: jackpotAmount != null ? "jackpot-win" : "success",
+          text: outcome.reason,
+          amount: outcome.win,
+          type: outcome.isJackpot ? "jackpot-win" : "success",
+          winTier: outcome.winTier,
         };
       } else {
-        slotsState.sessionNet -= bet;
+        slotsState.sessionNet -= outcome.bet;
         slotsState.lastMessage = { text: "No win this spin.", type: "dim" };
       }
       persist();
       render();
-    }, 500);
+    }, timing.slotsReel3 + 380);
   }
 
   return slotCabinet(machine, {
+    celebrate: slotsState.lastWin ? slotsState.winTier : null,
     screenChildren: [
       tier ? el("p", { className: "dim", textContent: `Stake tier: ${tier.name} — ${getTierPayoutBoost(tier?.id).toFixed(0)}× payout multiplier` }) : null,
       jackpotEl,
@@ -1492,6 +1706,7 @@ function renderSlotsPlay() {
           className: "btn",
           textContent: "Leave machine",
           onclick: () => {
+            clearSlotsSpinTimers();
             session.recordResult("slots", slotsState.sessionNet, slotsState.spins);
             persist();
             popView();
@@ -1514,7 +1729,7 @@ function renderSportsbook() {
       ]),
     ]);
   }
-  session.recordVisit("sportsbook");
+  recordActivityVisit("sportsbook");
   persist();
 
   if (!sportsbook.events.length) {
@@ -1701,7 +1916,7 @@ function renderBlackjackMenu() {
       ]),
     });
   }
-  session.recordVisit("blackjack");
+  recordActivityVisit("blackjack");
   persist();
   return videoMachine("blackjack", {
     title: "BLACKJACK",
@@ -1799,7 +2014,7 @@ function renderHoldemMenu() {
       ]),
     });
   }
-  session.recordVisit("holdem");
+  recordActivityVisit("holdem");
   persist();
   const tier = currentStakeTier;
   const buyInStakes = tier
@@ -1983,7 +2198,7 @@ function renderRoulette() {
       ]),
     });
   }
-  session.recordVisit("roulette");
+  recordActivityVisit("roulette");
   persist();
 
   const tier = rouletteState.tier ?? currentStakeTier;
@@ -2103,6 +2318,95 @@ function renderRoulette() {
   });
 }
 
+// ── Horse Stables ──────────────────────────────────────────────────────────
+const STABLE_HORSE_DATA = [
+  { id: "black",       name: "Midnight",    stall: 1, note: "Calm at dawn, electric at the gate." },
+  { id: "tan",         name: "Biscuit",     stall: 2, note: "Loves apples. Will follow you anywhere." },
+  { id: "grey",        name: "Sterling",    stall: 3, note: "Three-time distance champion. Retired hero." },
+  { id: "chestnut",    name: "Ember",       stall: 4, note: "Fastest quarter-mile in Mandalay history." },
+  { id: "light_brown", name: "Hazel",       stall: 5, note: "Gentle giant. Prefers morning workouts." },
+  { id: "dark_brown",  name: "Cacao",       stall: 6, note: "Suspicious of hats. Loves carrots." },
+  { id: "bay",         name: "Sovereign",   stall: 7, note: "Racing royalty. Eleven wins this season." },
+  { id: "dapple",      name: "Cloudberry",  stall: 8, note: "Newest arrival. Still learning the track." },
+];
+
+function renderHorseStables() {
+  recordActivityVisit("horse_stables");
+  return el("div", { className: "panel racing-pavilion" }, [
+    banner("Mandalay Stables"),
+    chipLine(),
+    el("p", { className: "horse-stables-intro", textContent: "Behind the Racing Pavilion, past the clockers' stand, eight residents call the Mandalay Stables home. Step through the barn doors to meet them in the pasture or visit them in their stalls." }),
+    menu(
+      ["Visit the Pasture", "Visit the Stalls"],
+      "Stables:",
+      (choice) => {
+        if (choice === 0) { goBack(); return; }
+        if (choice === 1) pushView("horse-stables-pasture");
+        if (choice === 2) pushView("horse-stables-stalls");
+      },
+      { showCasinoBanner: false },
+    ),
+  ]);
+}
+
+function renderHorseStablesPasture() {
+  const cards = STABLE_HORSE_DATA.map((horse) =>
+    el("div", { className: "horse-pasture-card" }, [
+      createHorseSpriteCanvas(horse.id, {
+        size: 128,
+        animate: true,
+        animation: "walk",
+        direction: "front",
+        withJockey: false,
+      }),
+      el("div", { className: "horse-pasture-name", textContent: horse.name }),
+      el("div", { className: "horse-pasture-coat", textContent: getHorseSprite(horse.id).label }),
+    ])
+  );
+
+  return el("div", { className: "panel racing-pavilion" }, [
+    banner("The Pasture"),
+    el("p", { className: "horse-stables-intro", textContent: "Morning light across the south field. The horses roam free between training sessions — no riders, no timers, just open turf." }),
+    el("p", { className: "horse-stables-label", textContent: "Current Residents" }),
+    el("div", { className: "horse-pasture" }, cards),
+    el("div", { className: "action-bar" }, [
+      el("button", { className: "btn", textContent: "Back to Stables", onclick: () => goBack() }),
+    ]),
+  ]);
+}
+
+function renderHorseStablesStalls() {
+  const cards = STABLE_HORSE_DATA.map((horse) => {
+    const spriteMeta = getHorseSprite(horse.id);
+    return el("div", { className: "horse-stall-card" }, [
+      el("div", { className: "horse-stall-header" }, [
+        el("span", { className: "horse-stall-num", textContent: `STALL ${horse.stall}` }),
+        el("span", { className: "horse-stall-badge" }),
+      ]),
+      createHorseSpriteCanvas(horse.id, {
+        size: 80,
+        animate: true,
+        animation: "walk",
+        direction: "front",
+        withJockey: false,
+      }),
+      el("div", { className: "horse-stall-name", textContent: horse.name }),
+      el("div", { className: "horse-stall-coat", textContent: spriteMeta.label }),
+      el("div", { className: "horse-stall-note", textContent: horse.note }),
+    ]);
+  });
+
+  return el("div", { className: "panel racing-pavilion" }, [
+    banner("The Stalls"),
+    el("p", { className: "horse-stables-intro", textContent: "Eight stalls line the east barn, each swept and bedded fresh. The green indicator means your horse is in — settled, fed, and ready for tomorrow." }),
+    el("p", { className: "horse-stables-label", textContent: "Barn — East Wing" }),
+    el("div", { className: "horse-stalls-grid" }, cards),
+    el("div", { className: "action-bar" }, [
+      el("button", { className: "btn", textContent: "Back to Stables", onclick: () => goBack() }),
+    ]),
+  ]);
+}
+
 function renderHorseRacing() {
   const act = ACTIVITIES.horse_racing;
   if (session.wallet.balance < act.minBet && !horseRacingState.pending.length) {
@@ -2114,7 +2418,7 @@ function renderHorseRacing() {
       ]),
     ]);
   }
-  session.recordVisit("horse_racing");
+  recordActivityVisit("horse_racing");
   if (!horseRacingState.card) horseRacingState.card = generateRace(session);
   persist();
   const tier = horseRacingState.tier ?? currentStakeTier;
@@ -2153,7 +2457,7 @@ function renderHorseRacing() {
     renderHorsePaddock(card.horses),
     pendingEl,
     menu(
-      ["Place a wager", "Run race & settle", "New race card", "Manage horse names"],
+      ["Place a wager", "Run race & settle", "New race card", "Manage horse names", "Visit the Stables"],
       "Racing pavilion:",
       (choice) => {
         if (choice === 0) { goBack(); return; }
@@ -2161,6 +2465,7 @@ function renderHorseRacing() {
         else if (choice === 2) pushView("horse-racing-settle");
         else if (choice === 3) { horseRacingState.card = generateRace(session); render(); }
         else if (choice === 4) pushView("horse-racing-names");
+        else if (choice === 5) pushView("horse-stables");
       },
       { showCasinoBanner: false },
     ),
@@ -2173,6 +2478,7 @@ function renderHorseRacingWager() {
   const wagerStakes = tier
     ? effectiveTableStakes(tier, session.wallet.balance, act.minBet)
     : { minBet: act.minBet, maxBet: session.wallet.balance };
+  if (!horseRacingState.card) horseRacingState.card = generateRace(session);
   const card = horseRacingState.card;
   let selectedHorse = card.horses[0]?.number ?? 1;
   const paddockContainer = el("div", {});
@@ -2247,6 +2553,7 @@ function renderHorseRacingSettle() {
   if (!horseRacingState.pending.length) {
     body.appendChild(el("p", { className: "error", textContent: "No open tickets." }));
   } else {
+    if (!horseRacingState.card) horseRacingState.card = generateRace(session);
     const card = horseRacingState.card;
     const results = simulateRace(card);
     const slips = [...horseRacingState.pending];
@@ -2269,7 +2576,7 @@ function renderHorseRacingSettle() {
             el("span", { className: "racing-finish-pos", textContent: `${i + 1}.` }),
             createHorseSpriteCanvas(h.spriteId, {
               size: 64,
-              frame: i % 4,
+              frame: i % 6,
               animation: "gallop",
               direction: "right",
               horseNumber: num,
@@ -2392,6 +2699,336 @@ function renderHorseRacingNames() {
           render();
         },
       }),
+      el("button", { className: "btn", textContent: "Back", onclick: () => goBack() }),
+    ]),
+  ]);
+}
+
+// ── Dressage Arena ────────────────────────────────────────────────────────────
+
+function renderDressage() {
+  const act = ACTIVITIES.dressage;
+  if (session.wallet.balance < act.minBet && !dressageState.pending.length) {
+    return el("div", { className: "panel" }, [
+      banner("Dressage Arena"),
+      el("p", { className: "error", textContent: `You need at least ${act.minBet} chips to wager.` }),
+      el("div", { className: "action-bar" }, [
+        el("button", { className: "btn", textContent: "Back", onclick: () => goBack() }),
+      ]),
+    ]);
+  }
+  recordActivityVisit("dressage");
+  if (!dressageState.card) dressageState.card = generateDressage();
+  persist();
+  const tier = dressageState.tier ?? currentStakeTier;
+  const wagerStakes = tier
+    ? effectiveTableStakes(tier, session.wallet.balance, act.minBet)
+    : { minBet: act.minBet, maxBet: session.wallet.balance };
+
+  const card = dressageState.card;
+
+  const pendingEl = el("div", { className: "pending-tickets" });
+  if (dressageState.pending.length) {
+    pendingEl.appendChild(el("p", { className: "subtitle", textContent: "Open tickets:" }));
+    for (const slip of dressageState.pending) {
+      const e = card.entries.find((x) => x.number === slip.entry);
+      pendingEl.appendChild(el("div", {
+        className: "ticket",
+        textContent: `${slip.amount} chips on #${slip.entry} ${e?.rider ?? ""} (${slip.betType})`,
+      }));
+    }
+  }
+
+  const entriesEl = el("div", { className: "equestrian-entries" });
+  for (const e of card.entries) {
+    entriesEl.appendChild(el("div", { className: "equestrian-entry-row" }, [
+      el("span", { className: "eq-num", textContent: `#${e.number}` }),
+      el("span", { className: "eq-names", textContent: `${e.rider} / ${e.horse}` }),
+      el("span", { className: "eq-scores dim", textContent: `Tech ${e.tech.toFixed(1)}  Art ${e.art.toFixed(1)}` }),
+      el("span", { className: "eq-odds", textContent: fmtOddsEq(e.odds) }),
+    ]));
+  }
+
+  return el("div", { className: "panel equestrian-arena" }, [
+    banner("Dressage Arena"),
+    chipLine(),
+    tier ? el("p", { className: "dim", textContent: `${tier.name}: ${formatStakeRange(wagerStakes.minBet, wagerStakes.maxBet, { noCap: tier.maxBet == null })}` }) : null,
+    el("p", { className: "subtitle", textContent: `${card.level} — ${card.arena}` }),
+    entriesEl,
+    pendingEl,
+    menu(
+      ["Place a wager", "Run test & settle", "New entry list"],
+      "Dressage arena:",
+      (choice) => {
+        if (choice === 0) { goBack(); return; }
+        if (choice === 1) pushView("dressage-wager");
+        else if (choice === 2) pushView("dressage-settle");
+        else if (choice === 3) { dressageState.card = generateDressage(); render(); }
+      },
+      { showCasinoBanner: false },
+    ),
+  ]);
+}
+
+function renderDressageWager() {
+  const act = ACTIVITIES.dressage;
+  const tier = dressageState.tier ?? currentStakeTier;
+  const wagerStakes = tier
+    ? effectiveTableStakes(tier, session.wallet.balance, act.minBet)
+    : { minBet: act.minBet, maxBet: session.wallet.balance };
+  if (!dressageState.card) dressageState.card = generateDressage();
+  const card = dressageState.card;
+
+  const entrySelect = el("select", {}, card.entries.map((e) =>
+    el("option", { value: String(e.number), textContent: `#${e.number} ${e.rider} / ${e.horse} (${fmtOddsEq(e.odds)})` })
+  ));
+  const betTypeSelect = el("select", {}, [
+    el("option", { value: "win", textContent: "Win (1st place)" }),
+    el("option", { value: "place", textContent: "Place (top 2)" }),
+    el("option", { value: "show", textContent: "Show (top 3)" }),
+  ]);
+  const amountInput = el("input", {
+    type: "number", min: String(wagerStakes.minBet), max: String(wagerStakes.maxBet), value: String(wagerStakes.minBet),
+  });
+
+  return el("div", { className: "panel equestrian-arena" }, [
+    banner("Place Wager — Dressage"),
+    chipLine(),
+    el("div", { className: "form-row" }, [el("label", { textContent: "Rider / Horse" }), entrySelect]),
+    el("div", { className: "form-row" }, [el("label", { textContent: "Bet type" }), betTypeSelect]),
+    el("div", { className: "form-row" }, [el("label", { textContent: "Amount" }), amountInput]),
+    el("div", { className: "action-bar" }, [
+      el("button", {
+        className: "btn primary",
+        textContent: "Place ticket",
+        onclick: () => {
+          const entry = parseInt(entrySelect.value, 10);
+          const betType = betTypeSelect.value;
+          const amount = parseInt(amountInput.value, 10);
+          if (amount < wagerStakes.minBet) { alert(`Minimum wager is ${wagerStakes.minBet} chips.`); return; }
+          if (amount > wagerStakes.maxBet) { alert(`Maximum wager is ${wagerStakes.maxBet} chips.`); return; }
+          const e = card.entries.find((x) => x.number === entry);
+          if (!session.wallet.debit(amount, "dressage", `${betType} on #${entry}`)) {
+            alert("Insufficient chips."); return;
+          }
+          dressageState.pending.push({ entry, rider: e.rider, odds: e.odds, betType, amount });
+          persist();
+          showStatus(`Ticket placed: ${amount} chips on #${entry} ${e.rider} (${betType}).`);
+          goBack();
+        },
+      }),
+      el("button", { className: "btn", textContent: "Back", onclick: () => goBack() }),
+    ]),
+  ]);
+}
+
+function renderDressageSettle() {
+  const body = el("div", { className: "eq-settle-body" });
+
+  if (!dressageState.pending.length) {
+    body.appendChild(el("p", { className: "error", textContent: "No open tickets." }));
+  } else {
+    if (!dressageState.card) dressageState.card = generateDressage();
+    const card = dressageState.card;
+    const results = simulateDressage(card);
+    const log = el("div", { className: "log-area" });
+
+    log.appendChild(el("p", { className: "subtitle", textContent: "FINAL STANDINGS" }));
+    results.forEach((num, i) => {
+      const e = card.entries.find((x) => x.number === num);
+      log.appendChild(el("div", { className: "line", textContent: `${i + 1}. #${num} ${e.rider} / ${e.horse}` }));
+    });
+
+    const slips = [...dressageState.pending];
+    for (const slip of slips) {
+      const r = settleDressageTicket(slip, results);
+      if (r.won) {
+        session.wallet.credit(r.payout, "dressage", r.reason);
+        dressageState.sessionNet += r.net;
+        log.appendChild(el("div", { className: "line success", textContent: `WIN: ${r.reason} (${signedChips(r.net)})` }));
+      } else {
+        dressageState.sessionNet += r.net;
+        log.appendChild(el("div", { className: "line error", textContent: `LOSE: ${r.reason} (${signedChips(r.net)})` }));
+      }
+    }
+    dressageState.events += 1;
+    dressageState.pending = [];
+    session.recordResult("dressage", dressageState.sessionNet, dressageState.events);
+    persist();
+    body.appendChild(log);
+  }
+
+  return el("div", { className: "panel equestrian-arena" }, [
+    banner("Dressage Results"),
+    chipLine(),
+    body,
+    el("div", { className: "action-bar" }, [
+      el("button", { className: "btn", textContent: "Back", onclick: () => goBack() }),
+    ]),
+  ]);
+}
+
+// ── Show Jumping ──────────────────────────────────────────────────────────────
+
+function renderJumper() {
+  const act = ACTIVITIES.jumper;
+  if (session.wallet.balance < act.minBet && !jumperState.pending.length) {
+    return el("div", { className: "panel" }, [
+      banner("Show Jumping"),
+      el("p", { className: "error", textContent: `You need at least ${act.minBet} chips to wager.` }),
+      el("div", { className: "action-bar" }, [
+        el("button", { className: "btn", textContent: "Back", onclick: () => goBack() }),
+      ]),
+    ]);
+  }
+  recordActivityVisit("jumper");
+  if (!jumperState.card) jumperState.card = generateJumper();
+  persist();
+  const tier = jumperState.tier ?? currentStakeTier;
+  const wagerStakes = tier
+    ? effectiveTableStakes(tier, session.wallet.balance, act.minBet)
+    : { minBet: act.minBet, maxBet: session.wallet.balance };
+
+  const card = jumperState.card;
+
+  const pendingEl = el("div", { className: "pending-tickets" });
+  if (jumperState.pending.length) {
+    pendingEl.appendChild(el("p", { className: "subtitle", textContent: "Open tickets:" }));
+    for (const slip of jumperState.pending) {
+      const e = card.entries.find((x) => x.number === slip.entry);
+      pendingEl.appendChild(el("div", {
+        className: "ticket",
+        textContent: `${slip.amount} chips on #${slip.entry} ${e?.rider ?? ""} (${slip.betType})`,
+      }));
+    }
+  }
+
+  const entriesEl = el("div", { className: "equestrian-entries" });
+  for (const e of card.entries) {
+    entriesEl.appendChild(el("div", { className: "equestrian-entry-row" }, [
+      el("span", { className: "eq-num", textContent: `#${e.number}` }),
+      el("span", { className: "eq-names", textContent: `${e.rider} / ${e.horse}` }),
+      el("span", { className: "eq-odds", textContent: fmtOddsEq(e.odds) }),
+    ]));
+  }
+
+  return el("div", { className: "panel equestrian-arena" }, [
+    banner("Show Jumping"),
+    chipLine(),
+    tier ? el("p", { className: "dim", textContent: `${tier.name}: ${formatStakeRange(wagerStakes.minBet, wagerStakes.maxBet, { noCap: tier.maxBet == null })}` }) : null,
+    el("p", { className: "subtitle", textContent: `${card.course} — ${card.fenceCount} fences, ${card.entries.length} competitors` }),
+    el("p", { className: "dim", textContent: "Bet types: Win / Place / Show (finish position) or Clear Round (0 faults, pays 3×)." }),
+    entriesEl,
+    pendingEl,
+    menu(
+      ["Place a wager", "Run course & settle", "New draw"],
+      "Show jumping:",
+      (choice) => {
+        if (choice === 0) { goBack(); return; }
+        if (choice === 1) pushView("jumper-wager");
+        else if (choice === 2) pushView("jumper-settle");
+        else if (choice === 3) { jumperState.card = generateJumper(); render(); }
+      },
+      { showCasinoBanner: false },
+    ),
+  ]);
+}
+
+function renderJumperWager() {
+  const act = ACTIVITIES.jumper;
+  const tier = jumperState.tier ?? currentStakeTier;
+  const wagerStakes = tier
+    ? effectiveTableStakes(tier, session.wallet.balance, act.minBet)
+    : { minBet: act.minBet, maxBet: session.wallet.balance };
+  if (!jumperState.card) jumperState.card = generateJumper();
+  const card = jumperState.card;
+
+  const entrySelect = el("select", {}, card.entries.map((e) =>
+    el("option", { value: String(e.number), textContent: `#${e.number} ${e.rider} / ${e.horse} (${fmtOddsEq(e.odds)})` })
+  ));
+  const betTypeSelect = el("select", {}, [
+    el("option", { value: "win", textContent: "Win (1st place)" }),
+    el("option", { value: "place", textContent: "Place (top 2)" }),
+    el("option", { value: "show", textContent: "Show (top 3)" }),
+    el("option", { value: "clear", textContent: "Clear round (0 faults — pays 3×)" }),
+  ]);
+  const amountInput = el("input", {
+    type: "number", min: String(wagerStakes.minBet), max: String(wagerStakes.maxBet), value: String(wagerStakes.minBet),
+  });
+
+  return el("div", { className: "panel equestrian-arena" }, [
+    banner("Place Wager — Show Jumping"),
+    chipLine(),
+    el("div", { className: "form-row" }, [el("label", { textContent: "Rider / Horse" }), entrySelect]),
+    el("div", { className: "form-row" }, [el("label", { textContent: "Bet type" }), betTypeSelect]),
+    el("div", { className: "form-row" }, [el("label", { textContent: "Amount" }), amountInput]),
+    el("div", { className: "action-bar" }, [
+      el("button", {
+        className: "btn primary",
+        textContent: "Place ticket",
+        onclick: () => {
+          const entry = parseInt(entrySelect.value, 10);
+          const betType = betTypeSelect.value;
+          const amount = parseInt(amountInput.value, 10);
+          if (amount < wagerStakes.minBet) { alert(`Minimum wager is ${wagerStakes.minBet} chips.`); return; }
+          if (amount > wagerStakes.maxBet) { alert(`Maximum wager is ${wagerStakes.maxBet} chips.`); return; }
+          const e = card.entries.find((x) => x.number === entry);
+          if (!session.wallet.debit(amount, "jumper", `${betType} on #${entry}`)) {
+            alert("Insufficient chips."); return;
+          }
+          jumperState.pending.push({ entry, rider: e.rider, odds: e.odds, betType, amount });
+          persist();
+          showStatus(`Ticket placed: ${amount} chips on #${entry} ${e.rider} (${betType}).`);
+          goBack();
+        },
+      }),
+      el("button", { className: "btn", textContent: "Back", onclick: () => goBack() }),
+    ]),
+  ]);
+}
+
+function renderJumperSettle() {
+  const body = el("div", { className: "eq-settle-body" });
+
+  if (!jumperState.pending.length) {
+    body.appendChild(el("p", { className: "error", textContent: "No open tickets." }));
+  } else {
+    if (!jumperState.card) jumperState.card = generateJumper();
+    const card = jumperState.card;
+    const results = simulateJumper(card);
+    const log = el("div", { className: "log-area" });
+
+    log.appendChild(el("p", { className: "subtitle", textContent: "FINAL STANDINGS" }));
+    results.forEach((r, i) => {
+      const e = card.entries.find((x) => x.number === r.entryNumber);
+      const faultStr = r.faults === 0 ? "Clear" : `${r.faults} faults`;
+      log.appendChild(el("div", { className: "line", textContent: `${i + 1}. #${r.entryNumber} ${e.rider} / ${e.horse}  ${faultStr}  ${r.timeSeconds}s` }));
+    });
+
+    const slips = [...jumperState.pending];
+    for (const slip of slips) {
+      const r = settleJumperTicket(slip, results);
+      if (r.won) {
+        session.wallet.credit(r.payout, "jumper", r.reason);
+        jumperState.sessionNet += r.net;
+        log.appendChild(el("div", { className: "line success", textContent: `WIN: ${r.reason} (${signedChips(r.net)})` }));
+      } else {
+        jumperState.sessionNet += r.net;
+        log.appendChild(el("div", { className: "line error", textContent: `LOSE: ${r.reason} (${signedChips(r.net)})` }));
+      }
+    }
+    jumperState.events += 1;
+    jumperState.pending = [];
+    session.recordResult("jumper", jumperState.sessionNet, jumperState.events);
+    persist();
+    body.appendChild(log);
+  }
+
+  return el("div", { className: "panel equestrian-arena" }, [
+    banner("Course Results"),
+    chipLine(),
+    body,
+    el("div", { className: "action-bar" }, [
       el("button", { className: "btn", textContent: "Back", onclick: () => goBack() }),
     ]),
   ]);
@@ -2633,6 +3270,30 @@ const hotelRenderers = buildHotelRenderers({
   viewStack,
 });
 
+const poolRenderers = buildPoolRenderers({
+  get session() { return session; },
+  pushView,
+  goBack,
+  persist,
+  render,
+  el,
+  banner,
+  chipLine,
+});
+
+const amenitiesRenderers = buildAmenitiesRenderers({
+  get session() { return session; },
+  pushView,
+  goBack,
+  persist,
+  render,
+  el,
+  banner,
+  chipLine,
+  statusBanner,
+  showStatus,
+});
+
 const RENDERERS = {
   "save-picker": renderSavePicker,
   "save-create": renderSaveCreate,
@@ -2668,7 +3329,18 @@ const RENDERERS = {
   "horse-racing-wager": renderHorseRacingWager,
   "horse-racing-settle": renderHorseRacingSettle,
   "horse-racing-names": renderHorseRacingNames,
+  "horse-stables": renderHorseStables,
+  "horse-stables-pasture": renderHorseStablesPasture,
+  "horse-stables-stalls": renderHorseStablesStalls,
+  dressage: renderDressage,
+  "dressage-wager": renderDressageWager,
+  "dressage-settle": renderDressageSettle,
+  jumper: renderJumper,
+  "jumper-wager": renderJumperWager,
+  "jumper-settle": renderJumperSettle,
   ...hotelRenderers,
+  ...poolRenderers,
+  ...amenitiesRenderers,
   "not-found": renderNotFound,
 };
 
@@ -2692,6 +3364,8 @@ function applyLaunchParams() {
       playerName: params.get("name") || "Guest",
       chips: Math.max(0, parseInt(params.get("chips") || "1000", 10)),
     }));
+    const deepView = params.get("view");
+    if (deepView && RENDERERS[deepView]) pushView(deepView);
     return true;
   }
   const slotParam = params.get("slot");
@@ -2705,6 +3379,8 @@ function applyLaunchParams() {
       const loaded = loadSlot(slotId);
       if (loaded) {
         enterCasino(loaded);
+        const deepView = params.get("view");
+        if (deepView && RENDERERS[deepView]) pushView(deepView);
         return true;
       }
       pushView("save-create", { slotId });

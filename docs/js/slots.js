@@ -408,6 +408,11 @@ export function spinReels(machine) {
   return [weightedPick(machine.symbols), weightedPick(machine.symbols), weightedPick(machine.symbols)];
 }
 
+/** Random symbol for reel blur / spin preview. */
+export function randomSymbol(machine) {
+  return weightedPick(machine.symbols);
+}
+
 /** Exact PAR-sheet base-game RTP (excludes progressive jackpots). */
 export function estimateBaseGameRtp(machine) {
   const symbols = machine.symbols;

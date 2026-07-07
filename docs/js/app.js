@@ -10,6 +10,7 @@ import { applyIntoxicationEffects } from "./intoxication-effects.js";
 import {
   MACHINES,
   spinReels,
+  randomSymbol,
   displaySymbol,
   calculatePayout,
   contributeToProgressive,
@@ -42,6 +43,7 @@ import {
   STAKE_TIERS, TIER_ORDER, getTier, formatTierLabel, effectiveTableStakes, effectiveSlotStakes,
   formatStakeRange, tierUsesSalonLimits,
 } from "./stakes.js";
+import { getActivityTiming, applyTierSpeedCss } from "./rewards-perks.js";
 
 const app = document.getElementById("app");
 
@@ -51,6 +53,7 @@ let sportsbook = new SportsbookState();
 let blackjackGame = null;
 let blackjackSessionNet = 0;
 let slotsState = { machine: null, sessionNet: 0, spins: 0, tier: null };
+let slotsSpinTimers = [];
 let holdemState = null;
 let rouletteState = { sessionNet: 0, spins: 0, lastNumber: null, spinning: false, tier: null };
 let horseRacingState = { card: null, pending: [], sessionNet: 0, races: 0, tier: null };
@@ -284,6 +287,53 @@ function slotMachineCard(machine, onSelect) {
   ]);
 }
 
+function clearSlotsSpinTimers() {
+  for (const timerId of slotsSpinTimers) {
+    clearTimeout(timerId);
+    clearInterval(timerId);
+  }
+  slotsSpinTimers = [];
+  if (slotsState.spinIntervalId != null) {
+    clearInterval(slotsState.spinIntervalId);
+    slotsState.spinIntervalId = null;
+  }
+}
+
+function scheduleSlotsSpin(fn, ms) {
+  const timerId = window.setTimeout(fn, ms);
+  slotsSpinTimers.push(timerId);
+  return timerId;
+}
+
+function classifySlotWin(win, bet, isJackpot) {
+  if (isJackpot) return "jackpot";
+  if (win >= bet * 15 || win >= 1000) return "big";
+  return "small";
+}
+
+function slotResultElement(message, { spinning = false, reelsStopped = 3 } = {}) {
+  if (spinning && reelsStopped < 3) {
+    const cues = ["Spinning…", "Reels rolling…", "Almost there…"];
+    return el("p", {
+      className: "slot-result slot-result--spinning",
+      textContent: cues[Math.min(reelsStopped, cues.length - 1)],
+    });
+  }
+  if (!message) {
+    return el("p", { className: "slot-result dim", textContent: "Place your bet and spin." });
+  }
+  if (message.type === "success" || message.type === "jackpot-win") {
+    const tier = message.winTier ?? (message.type === "jackpot-win" ? "jackpot" : "small");
+    return el("div", { className: `slot-win-callout slot-win-callout--${tier}` }, [
+      message.amount != null
+        ? el("div", { className: "slot-win-callout-amount", textContent: `+${message.amount.toLocaleString()} chips` })
+        : null,
+      el("div", { className: "slot-win-callout-detail", textContent: message.text }),
+    ]);
+  }
+  return el("p", { className: `slot-result ${message.type}`, textContent: message.text });
+}
+
 function slotPaytablePanel(machine) {
   const rows = paytableEntries(machine).map((entry) =>
     el("div", {
@@ -302,29 +352,56 @@ function slotPaytablePanel(machine) {
   ]);
 }
 
-function slotReelWindow(machine, reels, { spinning = false, win = false } = {}) {
+function slotReelWindow(machine, reels, {
+  spinning = false,
+  reelsStopped = 3,
+  landedReel = -1,
+  win = false,
+  winTier = null,
+} = {}) {
   const ui = getMachineUI(machine);
   const symbols = reels?.length === 3
-    ? reels.map((r) => displaySymbol(r, session.useUnicode))
+    ? reels.map((r) => (r ? displaySymbol(r, session.useUnicode) : "—"))
     : ["—", "—", "—"];
-  const windowEl = el("div", {
-    className: `slot-reel-window slot-reel-window--${ui.reelFrame}${win ? " slot-reel-window--win" : ""}${spinning ? " slot-reel--spinning" : ""}`,
-  });
-  for (const sym of symbols) {
-    windowEl.appendChild(el("div", { className: "slot-reel" }, [
-      el("span", { className: "slot-reel-symbol", textContent: sym }),
-    ]));
+  const windowClasses = [
+    "slot-reel-window",
+    `slot-reel-window--${ui.reelFrame}`,
+    spinning && reelsStopped < 3 ? "slot-reel-window--active-spin" : "",
+    win && winTier ? `slot-reel-window--win slot-reel-window--win-${winTier}` : "",
+  ].filter(Boolean).join(" ");
+  const windowEl = el("div", { className: windowClasses });
+  for (let i = 0; i < 3; i += 1) {
+    const isSpinning = spinning && i >= reelsStopped;
+    const reelClasses = [
+      "slot-reel",
+      isSpinning ? "slot-reel--spinning" : "",
+      i === landedReel ? "slot-reel--landed" : "",
+      win && i < reelsStopped ? "slot-reel--winner" : "",
+    ].filter(Boolean).join(" ");
+    const reelEl = el("div", { className: reelClasses }, [
+      el("span", { className: "slot-reel-symbol", textContent: symbols[i] }),
+    ]);
+    if (isSpinning) reelEl.style.setProperty("--reel-delay", `${i * 0.05}s`);
+    windowEl.appendChild(reelEl);
+  }
+  if (win && winTier) {
+    windowEl.appendChild(el("div", { className: "slot-reel-window-shimmer", "aria-hidden": "true" }));
   }
   return windowEl;
 }
 
-function slotCabinet(machine, { screenChildren = [], baseChildren = [] }) {
+function slotCabinet(machine, { screenChildren = [], baseChildren = [], celebrate = null } = {}) {
   const ui = getMachineUI(machine);
   const badges = [
     el("span", { className: "slot-cabinet-badge", textContent: ui.category }),
     el("span", { className: "slot-cabinet-badge", textContent: ui.badge }),
   ];
-  return el("div", { className: `slot-cabinet ${ui.themeClass}` }, [
+  const cabinetClass = [
+    "slot-cabinet",
+    ui.themeClass,
+    celebrate ? `slot-cabinet--celebrate slot-cabinet--celebrate-${celebrate}` : "",
+  ].filter(Boolean).join(" ");
+  return el("div", { className: cabinetClass }, [
     el("div", { className: "slot-cabinet-topper" }, [
       el("div", { className: "slot-cabinet-name", textContent: `${ui.icon}  ${machine.name}` }),
       machine.tagline ? el("p", { className: "slot-cabinet-tagline", textContent: machine.tagline }) : null,
@@ -1444,31 +1521,37 @@ function renderSlotsMenu() {
 function renderSlotsPlay() {
   const machine = slotsState.machine;
   const tier = slotsState.tier ?? currentStakeTier ?? getTier("standard");
+  applyTierSpeedCss(tier.id);
   const stakes = effectiveSlotStakes(machine, tier, session.wallet.balance);
   const minBet = stakes.minBet;
   const maxBet = stakes.maxBet;
   const betInput = el("input", {
     type: "number", min: String(minBet), max: String(maxBet), value: String(minBet),
   });
-  const msgEl = el("p", {
-    className: `slot-result ${slotsState.lastMessage?.type ?? "dim"}`,
-    textContent: slotsState.spinning
-      ? "Spinning…"
-      : (slotsState.lastMessage?.text ?? "Place your bet and spin."),
+  const reelsStopped = slotsState.reelsStopped ?? 3;
+  const reelsForDisplay = (slotsState.spinning || reelsStopped < 3)
+    ? (slotsState.displayReels ?? slotsState.lastReels)
+    : slotsState.lastReels;
+  const msgEl = slotResultElement(slotsState.lastMessage, {
+    spinning: slotsState.spinning,
+    reelsStopped,
   });
   const summaryEl = el("p", {
     className: "dim",
     textContent: slotsState.spins ? `Session: ${signedChips(slotsState.sessionNet)} over ${slotsState.spins} spin(s)` : "",
   });
 
-  const reelsEl = slotReelWindow(machine, slotsState.lastReels, {
+  const reelsEl = slotReelWindow(machine, reelsForDisplay, {
     spinning: slotsState.spinning,
+    reelsStopped,
+    landedReel: slotsState.landedReel ?? -1,
     win: slotsState.lastWin,
+    winTier: slotsState.winTier,
   });
 
   const jackpotEl = machine.progressive && machine.progressivePoolId
     ? el("div", {
-      className: "slot-jackpot-ticker",
+      className: `slot-jackpot-ticker${slotsState.winTier === "jackpot" ? " slot-jackpot-ticker--hit" : ""}`,
       textContent: `★ PROGRESSIVE ${progressivePool(session, machine.progressivePoolId, machine.progressiveSeed).toLocaleString()} ★`,
     })
     : null;
@@ -1480,51 +1563,114 @@ function renderSlotsPlay() {
   function doSpin() {
     const bet = parseInt(betInput.value, 10);
     if (bet === 0) {
+      clearSlotsSpinTimers();
       session.recordResult("slots", slotsState.sessionNet, slotsState.spins);
       persist();
       popView();
       render();
       return;
     }
-    if (bet < minBet) { msgEl.className = "slot-result error"; msgEl.textContent = `Minimum spin is ${minBet}.`; return; }
-    if (bet > maxBet) { msgEl.className = "slot-result error"; msgEl.textContent = `Maximum spin is ${maxBet}.`; return; }
+    if (bet < minBet) {
+      slotsState.lastMessage = { text: `Minimum spin is ${minBet}.`, type: "error" };
+      render();
+      return;
+    }
+    if (bet > maxBet) {
+      slotsState.lastMessage = { text: `Maximum spin is ${maxBet}.`, type: "error" };
+      render();
+      return;
+    }
     if (!session.wallet.debit(bet, "slots", `${machine.name} spin ${fmtChips(bet)}`)) {
-      msgEl.className = "slot-result error";
-      msgEl.textContent = "Insufficient chips.";
+      slotsState.lastMessage = { text: "Insufficient chips.", type: "error" };
+      render();
       return;
     }
 
+    clearSlotsSpinTimers();
+    const timing = getActivityTiming(tier.id);
+
+    contributeToProgressive(session, machine, bet);
+    const finalReels = spinReels(machine);
+    const jackpotAmount = tryJackpot(session, machine, finalReels, bet, maxBet);
+    const { win, reason } = calculatePayout(finalReels, bet, machine, jackpotAmount);
+    const isJackpot = jackpotAmount != null;
+    const winTier = win > 0 ? classifySlotWin(win, bet, isJackpot) : null;
+
     slotsState.spinning = true;
     slotsState.lastWin = false;
-    render();
+    slotsState.winTier = null;
+    slotsState.lastWinAmount = 0;
+    slotsState.reelsStopped = 0;
+    slotsState.landedReel = -1;
+    slotsState.displayReels = [...finalReels];
+    slotsState.pendingFinalReels = finalReels;
+    slotsState.pendingOutcome = { win, reason, jackpotAmount, bet, winTier, isJackpot };
+    slotsState.lastMessage = null;
 
-    setTimeout(() => {
-      contributeToProgressive(session, machine, bet);
-      const reels = spinReels(machine);
-      const jackpotAmount = tryJackpot(session, machine, reels, bet, maxBet);
-      const { win, reason } = calculatePayout(reels, bet, machine, jackpotAmount);
-      slotsState.spins += 1;
+    const cycleSymbols = () => {
+      if (!slotsState.spinning || slotsState.reelsStopped >= 3) return;
+      const display = [...slotsState.pendingFinalReels];
+      for (let i = slotsState.reelsStopped; i < 3; i += 1) {
+        display[i] = randomSymbol(machine);
+      }
+      slotsState.displayReels = display;
+      render();
+    };
+    slotsState.spinIntervalId = window.setInterval(cycleSymbols, 90);
+    slotsSpinTimers.push(slotsState.spinIntervalId);
+    cycleSymbols();
+
+    const stopReel = (index) => {
+      slotsState.landedReel = index;
+      slotsState.reelsStopped = index + 1;
+      slotsState.displayReels = slotsState.pendingFinalReels;
+      render();
+      scheduleSlotsSpin(() => {
+        if (slotsState.landedReel === index) slotsState.landedReel = -1;
+      }, 520);
+    };
+
+    scheduleSlotsSpin(() => stopReel(0), timing.slotsReel1);
+    scheduleSlotsSpin(() => stopReel(1), timing.slotsReel2);
+    scheduleSlotsSpin(() => stopReel(2), timing.slotsReel3);
+
+    scheduleSlotsSpin(() => {
+      clearSlotsSpinTimers();
+      const outcome = slotsState.pendingOutcome;
+      if (!outcome) return;
+
       slotsState.spinning = false;
-      slotsState.lastReels = reels;
-      slotsState.lastWin = win > 0;
+      slotsState.reelsStopped = 3;
+      slotsState.landedReel = -1;
+      slotsState.lastReels = slotsState.pendingFinalReels;
+      slotsState.displayReels = slotsState.pendingFinalReels;
+      slotsState.pendingFinalReels = null;
+      slotsState.pendingOutcome = null;
+      slotsState.spins += 1;
+      slotsState.lastWin = outcome.win > 0;
+      slotsState.winTier = outcome.winTier;
+      slotsState.lastWinAmount = outcome.win;
 
-      if (win > 0) {
-        session.wallet.credit(win, "slots", reason);
-        slotsState.sessionNet += win - bet;
+      if (outcome.win > 0) {
+        session.wallet.credit(outcome.win, "slots", outcome.reason);
+        slotsState.sessionNet += outcome.win - outcome.bet;
         slotsState.lastMessage = {
-          text: `${reason}${jackpotAmount == null ? ` — Won ${win.toLocaleString()} chips!` : ""}`,
-          type: jackpotAmount != null ? "jackpot-win" : "success",
+          text: outcome.reason,
+          amount: outcome.win,
+          type: outcome.isJackpot ? "jackpot-win" : "success",
+          winTier: outcome.winTier,
         };
       } else {
-        slotsState.sessionNet -= bet;
+        slotsState.sessionNet -= outcome.bet;
         slotsState.lastMessage = { text: "No win this spin.", type: "dim" };
       }
       persist();
       render();
-    }, 500);
+    }, timing.slotsReel3 + 380);
   }
 
   return slotCabinet(machine, {
+    celebrate: slotsState.lastWin ? slotsState.winTier : null,
     screenChildren: [
       tier ? el("p", { className: "dim", textContent: `Stake tier: ${tier.name}` }) : null,
       jackpotEl,
@@ -1546,6 +1692,7 @@ function renderSlotsPlay() {
           className: "btn",
           textContent: "Leave machine",
           onclick: () => {
+            clearSlotsSpinTimers();
             session.recordResult("slots", slotsState.sessionNet, slotsState.spins);
             persist();
             popView();

@@ -14,8 +14,9 @@ import {
 } from "./phone-rapport.js";
 import {
   getDialogueNode, getDynamicCallScript, getDynamicIntro, getDynamicTextOptions,
-  getTierRankUpMessages,
+  getTierRankUpMessages, INTOX_UNLOCK_MESSAGES,
 } from "./phone-dialogue-data.js";
+import { isHeightenedIntoxication } from "./intoxication-effects.js";
 
 function nowIso() {
   return new Date().toISOString();
@@ -203,6 +204,7 @@ export function ensurePhoneBook(session) {
       easterEggs: [],
       introSent: [],
       lastTierAnnounced: "sapphire",
+      intoxSecretsSent: false,
     };
   }
   const pb = session.rewards.phoneBook;
@@ -210,6 +212,7 @@ export function ensurePhoneBook(session) {
   if (!Array.isArray(pb.easterEggs)) pb.easterEggs = [];
   if (!Array.isArray(pb.introSent)) pb.introSent = [];
   if (!pb.lastTierAnnounced) pb.lastTierAnnounced = "sapphire";
+  if (pb.intoxSecretsSent == null) pb.intoxSecretsSent = false;
   return pb;
 }
 
@@ -270,6 +273,20 @@ export function onActivityVisit(session, activityId) {
         pb.introSent.push(id);
       }
     }
+  }
+}
+
+/** Send hidden-line unlock texts when player first hits heightened intoxication. */
+export function onIntoxicationChange(session) {
+  if (!isHeightenedIntoxication(session)) return;
+  const pb = ensurePhoneBook(session);
+  if (!pb || pb.intoxSecretsSent) return;
+  pb.intoxSecretsSent = true;
+  recordEasterEgg(session, "intox_hidden_lines");
+  for (const [contactId, body] of Object.entries(INTOX_UNLOCK_MESSAGES)) {
+    if (!isContactUnlocked(session, contactId)) continue;
+    appendMessage(session, contactId, "in", body, { read: false });
+    adjustRapport(session, contactId, 3);
   }
 }
 

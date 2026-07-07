@@ -65,7 +65,7 @@ export function defaultRewardsState(overrides = {}) {
     unlockedComps: ["welcome_drink"],
     redeemedComps: [],
     notifications: [],
-    phoneBook: { threads: {}, easterEggs: [], introSent: [] },
+    phoneBook: { threads: {}, easterEggs: [], introSent: [], intoxSecretsSent: false },
     ...overrides,
   };
   if (!base.notifications.length) {

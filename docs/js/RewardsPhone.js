@@ -18,12 +18,14 @@ import {
   getThread,
   listUnlockedContacts,
   markThreadRead,
+  onIntoxicationChange,
   phoneUnreadCount,
   resolveCallChoice,
   sendText,
   startCall,
   syncContactIntros,
 } from "./phone-contacts.js";
+import { isHeightenedIntoxication } from "./intoxication-effects.js";
 
 /**
  * Era-styled flip-phone DOM widget for the MGM Rewards app.
@@ -79,6 +81,7 @@ export class RewardsPhone {
     }
     this.tracker.syncFromWallet();
     syncContactIntros(this.session);
+    onIntoxicationChange(this.session);
     this._phoneEl.hidden = false;
     this._renderScreen();
   }
@@ -98,6 +101,7 @@ export class RewardsPhone {
     }
     this.tracker.syncFromWallet();
     syncContactIntros(this.session);
+    onIntoxicationChange(this.session);
     this._phoneEl.hidden = false;
     this._renderScreen();
   }
@@ -333,6 +337,9 @@ export class RewardsPhone {
 
     const rapport = getRapportSummary(this.session, contactId);
     body.appendChild(this._line(`Rapport: ${rapport.band.label} (${rapport.rapport})`, "dim rewards-rapport-line"));
+    if (isHeightenedIntoxication(this.session)) {
+      body.appendChild(this._line("🥴 Hidden lines unlocked — after-hours menu active", "dim rewards-intox-line"));
+    }
 
     const thread = getThread(this.session, contactId);
     const msgs = thread?.messages ?? [];
@@ -399,7 +406,10 @@ export class RewardsPhone {
       for (const opt of textOpts) {
         const btn = document.createElement("button");
         btn.type = "button";
-        btn.className = opt.custom ? "rewards-text-option rewards-text-option--custom" : "rewards-text-option";
+        btn.className = [
+          opt.custom ? "rewards-text-option rewards-text-option--custom" : "rewards-text-option",
+          opt.intoxHidden ? "rewards-text-option--intox" : "",
+        ].filter(Boolean).join(" ");
         btn.textContent = `💬 ${opt.label}`;
         btn.onclick = () => {
           const r = sendText(this.session, contactId, opt.key);

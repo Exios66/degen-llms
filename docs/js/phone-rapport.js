@@ -8,6 +8,7 @@ import { tierIndex, getTierExperience } from "./rewards-perks.js";
 import { getCasinoTimeMs } from "./core.js";
 import { getStaffOverrides } from "./staff-manifest.js";
 import { DEALER_ROSTER } from "./dealers.js";
+import { getIntoxicationSummary, isHeightenedIntoxication } from "./intoxication-effects.js";
 
 export const RAPPORT_BANDS = [
   { id: "stranger", label: "Stranger", min: 0 },
@@ -97,6 +98,8 @@ export function buildDialogueContext(session, contactId) {
   const lifetimeWagered = rewards.lifetimeWagered ?? 0;
   const category = DEALER_ROSTER.some((d) => d.id === contactId) ? "dealers" : "npcs";
   const custom = getCustomPhoneContent(session, contactId, category);
+  const intox = getIntoxicationSummary(session);
+  const isBuzzed = isHeightenedIntoxication(session);
 
   return {
     session,
@@ -121,6 +124,8 @@ export function buildDialogueContext(session, contactId) {
     isDownBad: netSession < -500,
     isUp: netSession > 500,
     custom,
+    intox,
+    isBuzzed,
     hasFlag: (flag) => Boolean(session.rpg?.flags?.[flag]),
   };
 }
@@ -139,6 +144,11 @@ export function meetsRequirements(req, ctx) {
   if (req.flag && !ctx.hasFlag(req.flag)) return false;
   if (req.unlessFlag && ctx.hasFlag(req.unlessFlag)) return false;
   if (req.onceKey && ctx.topicsSeen.has(req.onceKey)) return false;
+  if (req.buzzed && !ctx.isBuzzed) return false;
+  if (req.unlessBuzzed && ctx.isBuzzed) return false;
+  if (req.minIntoxLevel != null && ctx.intox.level < req.minIntoxLevel) return false;
+  if (req.minIntoxDoses != null && ctx.intox.totalDoses < req.minIntoxDoses) return false;
+  if (req.intoxCategory && !(ctx.intox.categories[req.intoxCategory] > 0)) return false;
   return true;
 }
 

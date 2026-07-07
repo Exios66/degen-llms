@@ -328,6 +328,17 @@
   color: #e6c8ff;
 }
 
+.rewards-intox-line {
+  color: #f0c040 !important;
+  font-size: 5px;
+}
+
+.rewards-text-option--intox {
+  border-color: #e8a838;
+  color: #ffe8a0;
+  background: rgba(232, 168, 56, 0.1);
+}
+
 .rewards-msg {
   margin: 2px 0;
   padding: 2px;

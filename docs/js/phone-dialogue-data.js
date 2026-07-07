@@ -130,6 +130,29 @@ export const DIALOGUE_TREES = {
         end: true,
       },
     },
+    drunk_court: {
+      start: {
+        text: (ctx) => `*hushed barrister voice* Counsel for ${ctx.playerName} `
+          + `moves to adjourn to Betty's. Court is… wobbly.`,
+        choices: [
+          { label: "OBJECTION (slurred)", next: "slurred", rapport: 3, egg: "legal_drunk_objection" },
+          { label: "Motion to comp Uber", next: "uber", rapport: 2 },
+          { label: "Sue the carpet", next: "carpet", rapport: 4, egg: "legal_drunk_carpet" },
+        ],
+      },
+      slurred: {
+        text: "SUSTAINED. The jury (me) cannot understand you but respects the energy.",
+        end: true,
+      },
+      uber: {
+        text: "Motion granted. Narrative Uber en route. Do not text Harvey again until water happens.",
+        end: true,
+      },
+      carpet: {
+        text: "The carpet is guilty of being too soft. Settlement: one (1) sit-down.",
+        end: true,
+      },
+    },
   },
 
   steve_harvey: {
@@ -152,6 +175,28 @@ export const DIALOGUE_TREES = {
       },
       family: {
         text: "Name a feud answer that's also a life lesson: 'Communication.' Survey says… you need more chips.",
+        end: true,
+      },
+    },
+    drunk_survey: {
+      start: {
+        text: "Survey says… you're texting STEVE HARVEY at whatever o'clock! I respect the commitment.",
+        choices: [
+          { label: "Am I winning?", next: "winning", rapport: 2 },
+          { label: "Is the wheel alive?", next: "wheel", rapport: 3, egg: "steve_drunk_wheel" },
+          { label: "Sing Feud theme", next: "theme", rapport: 4, egg: "steve_drunk_theme" },
+        ],
+      },
+      winning: {
+        text: "Survey says… emotionally? Yes. Mathematically? Steve is not a financial advisor.",
+        end: true,
+      },
+      wheel: {
+        text: "The wheel is spinning, baby! So is the room! Sit down before you spin with it!",
+        end: true,
+      },
+      theme: {
+        text: "DING DING DING — top answer: HYDRATE. Runner-up: call Betty. Third: stop texting Steve.",
         end: true,
       },
     },
@@ -187,6 +232,28 @@ export const DIALOGUE_TREES = {
         end: true,
       },
     },
+    drunk_comp: {
+      start: {
+        text: "…Alexandra here. Your texts have typos AND confidence. VIP after-hours line open.",
+        choices: [
+          { label: "Comp the minibar", next: "minibar", rapport: 3, egg: "host_drunk_minibar" },
+          { label: "I love everyone", next: "love", rapport: 2 },
+          { label: "Escalate Steve Harvey", next: "steve", rapport: 4, egg: "host_drunk_steve" },
+        ],
+      },
+      minibar: {
+        text: "I cannot comp peanuts. I CAN comp the story that they were artisan.",
+        end: true,
+      },
+      love: {
+        text: "Noted. Sober-you may cringe. I'll archive with compassion.",
+        end: true,
+      },
+      steve: {
+        text: "Escalating to Steve's mustache. Survey says… handled.",
+        end: true,
+      },
+    },
   },
 
   barkeep_betty: {
@@ -214,6 +281,34 @@ export const DIALOGUE_TREES = {
       },
       whale: {
         text: "Cried over a cherry hit, tipped in comp points. Vegas is a mood ring.",
+        end: true,
+      },
+    },
+    drunk_menu: {
+      start: {
+        text: (ctx) => `OK listen — you've had ${ctx.intox.totalDoses} pours and I'm still pouring judgment. `
+          + "Off-menu after-hours. Pick your poison.",
+        choices: [
+          { label: "One more for the road", next: "onemore", rapport: 2, egg: "betty_drunk_onemore" },
+          { label: "Water? (coward)", next: "water", rapport: 1 },
+          { label: "Cut me off", next: "cutoff", rapport: 4, egg: "betty_drunk_cutoff" },
+          { label: "Who's cute at the bar?", next: "cute", rapport: 3, requires: { minRapport: 15 }, egg: "betty_drunk_gossip" },
+        ],
+      },
+      onemore: {
+        text: "Last one. Narrator voice: it was not the last one. Hydrate before slots.",
+        end: true,
+      },
+      water: {
+        text: "Responsible legend behavior. Steve Harvey would be proud. I'd never admit that sober.",
+        end: true,
+      },
+      cutoff: {
+        text: "Cut off with LOVE. Uber your soul to bed. I'll tell Chip you're vertical-ish.",
+        end: true,
+      },
+      cute: {
+        text: "Steve's mustache. Next question. …Also Carmen if she stops fighting the elevator.",
         end: true,
       },
     },
@@ -251,6 +346,28 @@ export const DIALOGUE_TREES = {
         end: true,
       },
     },
+    drunk_pit: {
+      start: {
+        text: "Chip here — you texting the pit at this hour? Respect. Also concern.",
+        choices: [
+          { label: "Should I double down?", next: "dd", rapport: 2, egg: "chip_drunk_dd" },
+          { label: "Is Steve real?", next: "steve", rapport: 3, egg: "chip_drunk_steve" },
+          { label: "Where's Tina?", next: "tina", rapport: 2 },
+        ],
+      },
+      dd: {
+        text: "Sober answer: math. Drunk answer: do it for the story. I plead the fifth.",
+        end: true,
+      },
+      steve: {
+        text: "Steve is real. The mustache is registered as a landmark.",
+        end: true,
+      },
+      tina: {
+        text: "Tina? Somewhere between buffet and enlightenment. Same as always.",
+        end: true,
+      },
+    },
   },
 
   tourist_tina: {
@@ -278,6 +395,28 @@ export const DIALOGUE_TREES = {
       },
       destiny: {
         text: "Accept destiny. Destiny is probably the buffet. It's always the buffet.",
+        end: true,
+      },
+    },
+    drunk_lost: {
+      start: {
+        text: "OMG the room is SPINNING but like emotionally. Are you spinning too??",
+        choices: [
+          { label: "Everything is gold", next: "gold", rapport: 2, egg: "tina_drunk_gold" },
+          { label: "I see two Steves", next: "steve", rapport: 4, egg: "tina_drunk_steve" },
+          { label: "Hold my hand (textually)", next: "hand", rapport: 3 },
+        ],
+      },
+      gold: {
+        text: "Gold carpet theory CONFIRMED. Follow it. Or don't. We're all lost bestie.",
+        end: true,
+      },
+      steve: {
+        text: "Two Steves means double survey energy. Run. Or hug. Adventure!",
+        end: true,
+      },
+      hand: {
+        text: "Holding your hand via SMS. Warm. Weird. Vegas.",
         end: true,
       },
     },
@@ -311,8 +450,116 @@ export const DIALOGUE_TREES = {
         end: true,
       },
     },
+    drunk_parlay: {
+      start: {
+        text: (ctx) => `…You sound ${ctx.intox.categories.contraband ? "relaxed" : "hydrated"}. `
+          + "Parlay therapy after hours — no judgment. Much judgment actually.",
+        choices: [
+          { label: "Bet the field", next: "field", rapport: 3, egg: "pete_drunk_field" },
+          { label: "Same bet as last time", next: "again", rapport: 2 },
+          { label: "What's a spread?", next: "spread", rapport: 4, egg: "pete_drunk_spread" },
+        ],
+      },
+      field: {
+        text: "The FIELD? Bold. Drunk bold. Line: chaos +900. Godspeed, legend.",
+        end: true,
+      },
+      again: {
+        text: "You lost that one sober. This version has 'vibes' though. Terrible vibes.",
+        end: true,
+      },
+      spread: {
+        text: "Spread is… points. Or vibes between teams. Ask sober Pete. He'll still be vague.",
+        end: true,
+      },
+    },
   },
 };
+
+/** One-time texts when player first hits heightened intoxication. */
+export const INTOX_UNLOCK_MESSAGES = {
+  chip_chandler: "🥴 Floor alert: you're buzzed enough for after-hours pit texts. Don't double down because of this message.",
+  barkeep_betty: "🍸 Hidden menu unlocked. You know what you did. Hydrate between texts.",
+  steve_harvey: "Survey says… you're texting at volume! Drunk Feud board now on my line.",
+  attorney_brief: "Counsel notes your BAC is legally theatrical. Drunk courtroom mode available. (Still not legal advice.)",
+  tourist_tina: "BESTIE are you OK?? Drunk lost quest unlocked if you need me ❤️",
+  pete_bookie: "Lines are closed but drunk parlay therapy isn't. God help us both.",
+  host_representative: "Alexandra here — VIP typo-hotline open. I'll pretend this is intentional.",
+};
+
+/** Hidden text/call options only visible when buzzed. */
+function intoxTextOptions(contactId, ctx) {
+  const buzzed = { buzzed: true };
+  const opts = [];
+
+  const push = (opt) => opts.push({ ...opt, intoxHidden: true, requires: { ...buzzed, ...opt.requires } });
+
+  if (contactId === "barkeep_betty") {
+    push({ key: "drunk_menu", label: "🥴 Off-menu (shh)", reply: null, startTree: { treeId: "drunk_menu", nodeId: "start" }, rapport: 3 });
+    push({ key: "drunk_pour", label: "…betty?", reply: "Yeah I'm here. Slow down, legend. Hidden menu's up if you need chaos.", rapport: 2 });
+  }
+  if (contactId === "steve_harvey") {
+    push({ key: "drunk_survey", label: "🥴 Drunk Feud", reply: null, startTree: { treeId: "drunk_survey", nodeId: "start" }, rapport: 3 });
+  }
+  if (contactId === "attorney_brief") {
+    push({ key: "drunk_court", label: "🥴 Drunk courtroom", reply: null, startTree: { treeId: "drunk_court", nodeId: "start" }, rapport: 4 });
+    push({ key: "drunk_objection", label: "OBJECTION!!!", reply: "SUSTAINED. The bartender is overruled. Go home. …After one more text.", egg: "legal_drunk_objection_quick", rapport: 3 });
+  }
+  if (contactId === "chip_chandler") {
+    push({ key: "drunk_pit", label: "🥴 Drunk pit hotline", reply: null, startTree: { treeId: "drunk_pit", nodeId: "start" }, rapport: 3 });
+  }
+  if (contactId === "tourist_tina") {
+    push({ key: "drunk_lost", label: "🥴 EVERYTHING SPINS", reply: null, startTree: { treeId: "drunk_lost", nodeId: "start" }, rapport: 3 });
+  }
+  if (contactId === "pete_bookie") {
+    push({ key: "drunk_parlay", label: "🥴 Drunk parlay therapy", reply: null, startTree: { treeId: "drunk_parlay", nodeId: "start" }, rapport: 3 });
+  }
+  if (contactId === "host_representative") {
+    push({ key: "drunk_comp", label: "🥴 VIP typo hotline", reply: null, startTree: { treeId: "drunk_comp", nodeId: "start" }, rapport: 4 });
+  }
+  if (contactId === "clerk_carmen") {
+    push({ key: "drunk_elevator", label: "🥴 Elevator conspiracy", reply: "Floor 14 sent me this text. It says you're not supposed to be vertical. Sit. Hydrate.", egg: "carmen_drunk_elevator", rapport: 3 });
+  }
+  if (contactId === "meryl_screech") {
+    push({ key: "drunk_drama", label: "🥴 Stage whisper to dealer", reply: "Method ACTING at 2am? The pit boss is concerned. I'm delighted.", egg: "meryl_drunk_drama", rapport: 3 });
+  }
+  if (contactId === "lifeguard_lou" || contactId === "beach_dj") {
+    push({ key: "drunk_pool", label: "🥴 Pool confessions", reply: "No diving. No texting Harvey. Hydrate. The wave pool forgives.", rapport: 2 });
+  }
+  if (ctx.intox.categories.contraband > 0) {
+    push({
+      key: "contraband_vibes",
+      label: "🌿 …vibes check",
+      reply: contactId === "pete_bookie"
+        ? "Off-record stays off-record. Lock of the day: Mandalay Bay still standing."
+        : "Vibes: elevated. Legal status: ask Harvey. Pool status: ask Lou.",
+      egg: "intox_contraband_text",
+      rapport: 2,
+      requires: { intoxCategory: "contraband" },
+    });
+  }
+
+  return opts.filter((opt) => meetsRequirements(opt.requires, ctx));
+}
+
+/** Extra drunk call choices merged when buzzed. */
+export function getIntoxCallChoices(contactId, ctx) {
+  if (!ctx.isBuzzed) return [];
+  const choices = [];
+  if (contactId === "barkeep_betty") {
+    choices.push({ label: "🥴 One more (secret)", response: "Pouring one more. Narrator: it was three more. Hydrate.", egg: "betty_drunk_call", rapport: 3 });
+  }
+  if (contactId === "steve_harvey") {
+    choices.push({ label: "🥴 Survey says I'm invincible", response: "Survey says… INCORRECT. But charismatic. Sit down.", egg: "steve_drunk_call", rapport: 3 });
+  }
+  if (contactId === "attorney_brief") {
+    choices.push({ label: "🥴 Drunk objection", response: "SUSTAINED. Go to bed. Case closed.", egg: "legal_drunk_call", rapport: 4 });
+  }
+  if (contactId === "chip_chandler") {
+    choices.push({ label: "🥴 Talk me out of it", response: "I cannot. I can narrate your legend. Badly.", rapport: 3 });
+  }
+  return choices.filter((c) => meetsRequirements(c.requires, ctx));
+}
 
 /** Tier rank-up congratulation texts per contact subset */
 export const TIER_RANKUP_MESSAGES = {
@@ -477,7 +724,7 @@ function baseTextOptions(contactId, ctx) {
 
 /** @param {string} contactId @param {object} ctx */
 export function getDynamicTextOptions(contactId, ctx) {
-  const opts = baseTextOptions(contactId, ctx);
+  const opts = [...baseTextOptions(contactId, ctx), ...intoxTextOptions(contactId, ctx)];
   const custom = ctx.custom?.texts ?? [];
   for (const t of custom) {
     opts.unshift({
@@ -609,9 +856,10 @@ export function getDynamicCallScript(contactId, ctx) {
 
   const script = scripts[contactId];
   if (!script) return null;
+  const intoxChoices = getIntoxCallChoices(contactId, ctx);
   return {
     ...script,
-    choices: script.choices.filter((c) => meetsRequirements(c.requires, ctx)),
+    choices: [...script.choices, ...intoxChoices].filter((c) => meetsRequirements(c.requires, ctx)),
   };
 }
 

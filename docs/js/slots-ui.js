@@ -136,9 +136,10 @@ export function getMachineUI(machine) {
   return MACHINE_UI[machine.id] ?? DEFAULT_UI;
 }
 
-export function paytableEntries(machine) {
+export function paytableEntries(machine, tierBoost = 1.0) {
   const entries = Object.entries(machine.paytable).sort((a, b) => b[1] - a[1]);
-  const rows = entries.map(([key, mult]) => {
+  const rows = entries.map(([key, baseMult]) => {
+    const effectiveMult = Math.round(baseMult * tierBoost);
     const bits = key.split("|");
     let label;
     if (bits.length === 3 && bits[0] === bits[1] && bits[1] === bits[2]) {
@@ -151,7 +152,7 @@ export function paytableEntries(machine) {
       const sym = machine.symbols.find((s) => s.name === key);
       label = sym ? `${sym.display} (1st reel)` : `${key} (1st)`;
     }
-    return { label, mult, key };
+    return { label, mult: effectiveMult, baseMult, key };
   });
   if (machine.progressive && machine.jackpotKey) {
     const symName = machine.jackpotKey.split("|")[0];

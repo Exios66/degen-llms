@@ -4,7 +4,7 @@ import {
   currentHallwayBeat, hallwayChoice, upgradeRoom, extendStay, resetHallway,
   isNetPositive, sessionNetChips, reviewFolio, lateCheckout, triggerWakeUpCall,
   checkoutStay, expressCheckout, getWorldCycleSummary, settleHotelOverdue, reservationStatusMessage,
-  canAccessHotelRoom,
+  canAccessHotelRoom, recordFrontDeskVisit,
 } from "./hotel.js";
 import {
   loadGuestRegistry, listAllGuests, signGuestDirectory, hasSigned, formatSignedAt,
@@ -16,6 +16,7 @@ import {
   filterTvChannels, filterPhoneCalls, filterRoomDecisions, filterMinibarItems,
   getSessionResortPhase, getEventHint, conciergeMinibarNudge,
 } from "./room-amenities.js";
+import { reservationAccessMet } from "./world-cycle.js";
 import { getResortCompletion, maybeAutoSignGuestBook } from "./resort-completion.js";
 
 /**
@@ -48,7 +49,7 @@ export function buildHotelRenderers(ctx) {
     const evicted = cycle.roomEvicted;
     return el("div", { className: `world-cycle-banner resort-time-${cycle.phase.id}` }, [
       el("p", { className: "subtitle", textContent: `Day ${cycle.displayDay} · ${cycle.phaseLabel}` }),
-      el("p", { className: "dim", textContent: `${cycle.timeLabel} · Daily charges: ${fmtChips(cycle.dailyTotal)}` }),
+      el("p", { className: "dim", textContent: `${cycle.vegasClock} · ${cycle.timeLabel} · Daily charges: ${fmtChips(cycle.dailyTotal)}` }),
       el("p", { className: "dim", textContent: cycle.statusMessage }),
       evicted
         ? el("p", { className: "warning", textContent: `Room locked — ${cycle.overdueBalance > 0 ? `$${cycle.overdueBalance.toLocaleString()} overdue` : "settle at front desk"}. Hit the casino floor.` })
@@ -135,6 +136,7 @@ export function buildHotelRenderers(ctx) {
           menuBtn("Guest Directory — lobby guest book", () => pushView("hotel-guest-directory")),
           menuBtn("Find my room (hallway)", () => pushView("hotel-hallway")),
           menuBtn("Pool Complex — 11-acre expansion pack", () => pushView("pool-complex")),
+          menuBtn("Horse Stables — meet the residents", () => pushView("horse-stables")),
           hotel.reachedRoom ? menuBtn("Enter your room", () => pushView("hotel-room")) : null,
           canAccessHotelRoom(session) && hotel.reachedRoom ? null
             : el("p", { className: "dim", textContent: reservationStatusMessage(session) }),
@@ -147,6 +149,8 @@ export function buildHotelRenderers(ctx) {
 
   function renderHotelFrontDesk() {
     const hotel = ensureHotel(session);
+    recordFrontDeskVisit(session);
+    persist();
     const log = el("div", { className: "log-area" });
     const netPositive = isNetPositive(session);
 
@@ -207,6 +211,7 @@ export function buildHotelRenderers(ctx) {
             ? el("p", { className: "warning", textContent: "Last night — extend stay or check out before the carpet claims you." })
             : null,
           menuBtn("Guest Directory — sign the lobby book", () => pushView("hotel-guest-directory")),
+          menuBtn("Dining recommendations — Resort restaurants", () => pushView("hotel-dining")),
           netPositive
             ? el("p", { className: "dim", textContent: "Net-positive — paid upgrades available if comps are spent." })
             : el("p", { className: "dim", textContent: "Unlock room comps via MGM Rewards tier play." }),
@@ -620,9 +625,84 @@ export function buildHotelRenderers(ctx) {
     ]);
   }
 
+  function renderHotelDining() {
+    const RESTAURANTS = [
+      {
+        name: "Aureole",
+        chef: "Charlie Palmer",
+        type: "American fine dining",
+        icon: "🍷",
+        description:
+          "Four-story wine tower with roaming 'wine angels' on harness. Seasonal tasting menus, " +
+          "dry-aged steaks, and the most theatrical wine service on the Strip. A Mandalay Bay " +
+          "institution since opening night.",
+        priceRange: "$$$$$",
+        hours: "Dinner nightly",
+        location: "Mandalay Bay Resort — east lobby",
+      },
+      {
+        name: "Border Grill",
+        chef: "Mary Sue Milliken & Susan Feniger",
+        type: "Modern Mexican",
+        icon: "🌮",
+        description:
+          "Bold, chef-driven Mexican from the legendary 'Too Hot Tamales.' Floor-to-ceiling windows " +
+          "overlook the Mandalay Beach lazy river — ideal for the famous Border Brunch. Salsas, " +
+          "ceviches, and house-made tortillas since 1990.",
+        priceRange: "$$$$",
+        hours: "Brunch & dinner daily",
+        location: "Mandalay Bay Resort — poolside",
+      },
+      {
+        name: "Stripsteak",
+        chef: "Michael Mina",
+        type: "Contemporary steakhouse",
+        icon: "🥩",
+        description:
+          "Michael Mina's flagship Vegas steakhouse: USDA prime and wagyu beef, duck-fat fries, " +
+          "and a craft cocktail program that rivals the best bars on the Strip. Consistently ranked " +
+          "among Vegas's top steakhouses — reserve ahead.",
+        priceRange: "$$$$$",
+        hours: "Dinner nightly",
+        location: "Mandalay Bay Resort — casino level",
+      },
+    ];
+
+    return el("div", {}, [
+      banner("Resort Dining — Clerk Carmen Recommends"),
+      chipLine(),
+      el("div", { className: "panel hotel-panel" }, [
+        el("p", { className: "subtitle", textContent: "\"Three tables you actually need a reservation for.\"" }),
+        el("p", { className: "dim", textContent: "Top dining at Mandalay Bay — ask Carmen to call ahead." }),
+        el("div", { className: "dining-grid" },
+          RESTAURANTS.map((r) =>
+            el("div", { className: "dining-card" }, [
+              el("div", { className: "dining-card-header" }, [
+                el("span", { className: "dining-icon", textContent: r.icon }),
+                el("div", {}, [
+                  el("strong", { textContent: r.name }),
+                  el("span", { className: "dim", textContent: ` — ${r.chef}` }),
+                ]),
+                el("span", { className: "dining-price dim", textContent: r.priceRange }),
+              ]),
+              el("p", { className: "dim", textContent: `${r.type} · ${r.hours}` }),
+              el("p", { textContent: r.description }),
+              el("p", { className: "dim", textContent: `📍 ${r.location}` }),
+            ])
+          )
+        ),
+        el("ul", { className: "menu-list" }, [
+          menuBtn("Back to front desk", () => pushView("hotel-front-desk")),
+          menuBtn("Back", goBack, true),
+        ]),
+      ]),
+    ]);
+  }
+
   return {
     "hotel-lobby": renderHotelLobby,
     "hotel-front-desk": renderHotelFrontDesk,
+    "hotel-dining": renderHotelDining,
     "hotel-guest-directory": renderHotelGuestDirectory,
     "hotel-hallway": renderHotelHallway,
     "hotel-room": renderHotelRoom,

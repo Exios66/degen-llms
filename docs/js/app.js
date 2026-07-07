@@ -1,8 +1,10 @@
 import {
   CASINO_NAME, ACTIVITIES, FLOOR_ORDER, fmtChips, signedChips,
   saveSlot, loadSlot, createSlot, deleteSlot, listSlots, recentSlots, formatSaveTime,
-  createGuestSession, PlayerSession,
+  createGuestSession, PlayerSession, formatPlayTimeSummary, formatSaveSlotPlayTimes, getCasinoTimeMs,
 } from "./core.js";
+import { startCasinoClock, stopCasinoClock } from "./casino-time.js";
+import { formatVegasClockLabel, formatVegasTime } from "./vegas-time.js";
 import { applyIntoxicationEffects } from "./intoxication-effects.js";
 import {
   MACHINES,
@@ -20,7 +22,7 @@ import { HoldemTable, BettingAction } from "./holdem/game.js";
 import { HAND_CLASS_NAMES } from "./holdem/hand_eval.js";
 import { BET_TYPES, spinWheel, wheelColor, resolveBet, RED_NUMBERS } from "./roulette.js";
 import { generateRace, simulateRace, settleTicket, fmtOdds as fmtRaceOdds, loadBundledHorseNames, parseHorseNamesCSV, setCustomHorseNames, getHorseNamePool } from "./horse_racing.js";
-import { createHorseSpriteCanvas, getHorseSprite, getJockeySilks } from "./horse-sprites.js";
+import { createHorseSpriteCanvas, getHorseSprite, getJockeySilks, HORSE_SPRITE_ROSTER } from "./horse-sprites.js";
 import { createRaceTrackView, createRacePreview } from "./horse-race-track.js";
 import { getSessionDealer, pickQuip } from "./dealers.js";
 import {
@@ -32,6 +34,8 @@ import {
 } from "./staff-manifest.js";
 import { RewardsPhone } from "./RewardsPhone.js";
 import { buildHotelRenderers } from "./hotel-ui.js";
+import { buildPoolRenderers } from "./pool-complex-ui.js";
+import { buildAmenitiesRenderers } from "./casino-amenities-ui.js";
 import { ensureHotel } from "./hotel.js";
 import {
   STAKE_TIERS, TIER_ORDER, getTier, formatTierLabel, effectiveTableStakes, effectiveSlotStakes,
@@ -53,6 +57,31 @@ let currentStakeTier = null;
 let activeTableDealer = null;
 let viewStack = [];
 let statusMessage = null;
+let casinoTimeTicker = null;
+
+function isInCasinoView() {
+  return viewStack.some((v) => v.name !== "save-picker" && v.name !== "save-create" && v.name !== "save-delete");
+}
+
+function startCasinoTimeTicker() {
+  stopCasinoTimeTicker();
+  casinoTimeTicker = window.setInterval(() => {
+    const vegasEl = document.getElementById("vegas-clock");
+    if (vegasEl) vegasEl.textContent = formatVegasClockLabel();
+    if (!isInCasinoView() || session.slotId == null) return;
+    const timeEl = document.getElementById("casino-time-tracker");
+    if (timeEl) {
+      timeEl.textContent = formatPlayTimeSummary(getCasinoTimeMs(session));
+    }
+  }, 30000);
+}
+
+function stopCasinoTimeTicker() {
+  if (casinoTimeTicker != null) {
+    window.clearInterval(casinoTimeTicker);
+    casinoTimeTicker = null;
+  }
+}
 
 function syncSportsbookToSession() {
   if (session.slotId != null) {
@@ -368,6 +397,8 @@ function enterCasino(nextSession) {
   horseRacingState = { card: null, pending: [], sessionNet: 0, races: 0 };
   viewStack = [{ name: "hub", data: {} }];
   clearStatus();
+  if (session.slotId != null) startCasinoClock();
+  startCasinoTimeTicker();
   mountRewardsPhone();
   applyIntoxicationEffects(session);
   render();
@@ -375,6 +406,8 @@ function enterCasino(nextSession) {
 
 function returnToSavePicker() {
   persist();
+  stopCasinoClock();
+  stopCasinoTimeTicker();
   rewardsPhone?.close();
   sportsbook = new SportsbookState();
   blackjackGame = null;
@@ -389,8 +422,22 @@ function settingsBar() {
   const saveLabel = session.slotId != null
     ? (session.slotLabel || `Slot ${session.slotId}`)
     : "No save";
-  return el("div", { className: "settings-bar" }, [
+  const children = [
     el("span", { className: "dim", textContent: `Save: ${saveLabel}` }),
+    el("span", {
+      id: "vegas-clock",
+      className: "dim",
+      textContent: formatVegasClockLabel(),
+    }),
+  ];
+  if (session.slotId != null) {
+    children.push(el("span", {
+      id: "casino-time-tracker",
+      className: "dim",
+      textContent: formatPlayTimeSummary(getCasinoTimeMs(session)),
+    }));
+  }
+  children.push(
     el("label", {}, [
       el("input", {
         type: "checkbox",
@@ -424,7 +471,8 @@ function settingsBar() {
         returnToSavePicker();
       },
     }),
-  ]);
+  );
+  return el("div", { className: "settings-bar" }, children);
 }
 
 function formatCardLabel(card) {
@@ -565,7 +613,7 @@ function renderSavePicker() {
     for (const slot of recent) {
       recentList.appendChild(el("div", {
         className: "stat-row dim",
-        textContent: `Slot ${slot.slotId}: ${slot.label} — ${slot.playerName} — ${fmtChips(slot.balance)} (last: ${formatSaveTime(slot.updatedAt)})`,
+        textContent: `Slot ${slot.slotId}: ${slot.label} — ${slot.playerName} — ${fmtChips(slot.balance)} · ${formatSaveSlotPlayTimes(slot.casinoTimeMs)} (last: ${formatSaveTime(slot.updatedAt)})`,
       }));
     }
     panel.appendChild(recentList);
@@ -574,7 +622,7 @@ function renderSavePicker() {
   const menuList = el("ul", { className: "menu-list" });
   allSlots.forEach((slot, i) => {
     const label = slot.occupied
-      ? `Load Slot ${slot.slotId} — ${slot.playerName} (${fmtChips(slot.balance)})`
+      ? `Load Slot ${slot.slotId} — ${slot.playerName} (${fmtChips(slot.balance)}) · ${formatSaveSlotPlayTimes(slot.casinoTimeMs)}`
       : `New save in Slot ${slot.slotId} (empty)`;
     menuList.appendChild(el("li", {}, [
       el("button", {
@@ -717,6 +765,7 @@ function renderHub() {
     "Player Stats",
     "Save Game",
     "Exit to Hotel",
+    "Casino Amenities",
     "Explore Resort (RPG)",
     "Leave Casino",
   ];
@@ -730,6 +779,7 @@ function renderHub() {
       ? el("p", { className: "dim", textContent: `Save: ${session.slotLabel || `Slot ${session.slotId}`}` })
       : el("p", { className: "dim", textContent: "Guest visit — progress is not saved" }),
     el("p", { className: "welcome-line", textContent: `Welcome, ${session.playerName}` }),
+    el("p", { className: "dim", textContent: formatVegasClockLabel() }),
     chipLine(),
     el("div", { className: "hub-features panel" }, [
       el("p", { className: "subtitle", textContent: "On the floor today:" }),
@@ -800,6 +850,8 @@ function renderHub() {
       ensureHotel(session);
       pushView("hotel-lobby");
     } else if (choice === FLOOR_ORDER.length + 7) {
+      pushView("casino-floor");
+    } else if (choice === FLOOR_ORDER.length + 8) {
       const rpgUrl = session.slotId != null
         ? `./rpg/?slot=${session.slotId}`
         : "./rpg/?guest=1";
@@ -966,10 +1018,9 @@ function renderCashierLedger() {
       el("th", { textContent: "Description" }),
     ])]),
     el("tbody", {}, txs.length ? [...txs].reverse().map((tx) => {
-      const d = new Date(tx.timestamp);
       const sign = tx.amount >= 0 ? "+" : "";
       return el("tr", {}, [
-        el("td", { textContent: d.toLocaleTimeString() }),
+        el("td", { textContent: formatVegasTime(tx.timestamp) }),
         el("td", { textContent: tx.activity }),
         el("td", { textContent: `${sign}${tx.amount.toLocaleString()}` }),
         el("td", { textContent: tx.balanceAfter.toLocaleString() }),
@@ -1127,10 +1178,9 @@ function renderBankLedger() {
       el("th", { textContent: "Description" }),
     ])]),
     el("tbody", {}, txs.length ? [...txs].reverse().map((tx) => {
-      const d = new Date(tx.timestamp);
       const sign = tx.amount >= 0 ? "+" : "";
       return el("tr", {}, [
-        el("td", { textContent: d.toLocaleTimeString() }),
+        el("td", { textContent: formatVegasTime(tx.timestamp) }),
         el("td", { textContent: tx.category }),
         el("td", { textContent: `${sign}${tx.amount.toLocaleString()}` }),
         el("td", { textContent: tx.balanceAfter.toLocaleString() }),
@@ -1275,6 +1325,9 @@ function renderStats() {
     banner("Player Stats"),
     el("p", { textContent: `Player: ${session.playerName}` }),
     chipLine(),
+    session.slotId != null
+      ? el("p", { className: "dim", textContent: formatPlayTimeSummary(getCasinoTimeMs(session)) })
+      : null,
     el("p", { textContent: `Session net (excl. buy-ins): ${session.wallet.netSession >= 0 ? "+" : ""}${session.wallet.netSession.toLocaleString()} chips` }),
     rows.length ? el("div", { className: "stats-grid" }, rows) : el("p", { className: "dim", textContent: "No activity history yet." }),
     el("div", { className: "action-bar" }, [
@@ -1509,6 +1562,16 @@ function renderSportsbook() {
   }
   session.recordVisit("sportsbook");
   persist();
+
+  if (!sportsbook.events.length) {
+    sportsbook.refreshBoardAsync(false).then(() => render());
+    return el("div", { className: "panel" }, [
+      banner("Sports Book — Mandalay Sports Book"),
+      chipLine(),
+      el("p", { className: "dim", textContent: "Loading today's board…" }),
+    ]);
+  }
+
   const tier = currentStakeTier;
   const wagerStakes = tier
     ? effectiveTableStakes(tier, session.wallet.balance, act.minBet)
@@ -1551,6 +1614,15 @@ function renderSportsbook() {
 }
 
 function renderSportsbookWager() {
+  if (!sportsbook.events.length) {
+    return el("div", { className: "panel" }, [
+      banner("Place Wager"),
+      el("p", { className: "error", textContent: "No events on the board. Go back and refresh lines." }),
+      el("div", { className: "action-bar" }, [
+        el("button", { className: "btn", textContent: "Back", onclick: () => { popView(); render(); } }),
+      ]),
+    ]);
+  }
   const act = ACTIVITIES.sportsbook;
   const tier = currentStakeTier;
   const wagerStakes = tier
@@ -2077,6 +2149,95 @@ function renderRoulette() {
   });
 }
 
+// ── Horse Stables ──────────────────────────────────────────────────────────
+const STABLE_HORSE_DATA = [
+  { id: "black",       name: "Midnight",    stall: 1, note: "Calm at dawn, electric at the gate." },
+  { id: "tan",         name: "Biscuit",     stall: 2, note: "Loves apples. Will follow you anywhere." },
+  { id: "grey",        name: "Sterling",    stall: 3, note: "Three-time distance champion. Retired hero." },
+  { id: "chestnut",    name: "Ember",       stall: 4, note: "Fastest quarter-mile in Mandalay history." },
+  { id: "light_brown", name: "Hazel",       stall: 5, note: "Gentle giant. Prefers morning workouts." },
+  { id: "dark_brown",  name: "Cacao",       stall: 6, note: "Suspicious of hats. Loves carrots." },
+  { id: "bay",         name: "Sovereign",   stall: 7, note: "Racing royalty. Eleven wins this season." },
+  { id: "dapple",      name: "Cloudberry",  stall: 8, note: "Newest arrival. Still learning the track." },
+];
+
+function renderHorseStables() {
+  session.recordVisit("horse_stables");
+  return el("div", { className: "panel racing-pavilion" }, [
+    banner("Mandalay Stables"),
+    chipLine(),
+    el("p", { className: "horse-stables-intro", textContent: "Behind the Racing Pavilion, past the clockers' stand, eight residents call the Mandalay Stables home. Step through the barn doors to meet them in the pasture or visit them in their stalls." }),
+    menu(
+      ["Visit the Pasture", "Visit the Stalls"],
+      "Stables:",
+      (choice) => {
+        if (choice === 0) { goBack(); return; }
+        if (choice === 1) pushView("horse-stables-pasture");
+        if (choice === 2) pushView("horse-stables-stalls");
+      },
+      { showCasinoBanner: false },
+    ),
+  ]);
+}
+
+function renderHorseStablesPasture() {
+  const cards = STABLE_HORSE_DATA.map((horse) =>
+    el("div", { className: "horse-pasture-card" }, [
+      createHorseSpriteCanvas(horse.id, {
+        size: 128,
+        animate: true,
+        animation: "walk",
+        direction: "front",
+        withJockey: false,
+      }),
+      el("div", { className: "horse-pasture-name", textContent: horse.name }),
+      el("div", { className: "horse-pasture-coat", textContent: getHorseSprite(horse.id).label }),
+    ])
+  );
+
+  return el("div", { className: "panel racing-pavilion" }, [
+    banner("The Pasture"),
+    el("p", { className: "horse-stables-intro", textContent: "Morning light across the south field. The horses roam free between training sessions — no riders, no timers, just open turf." }),
+    el("p", { className: "horse-stables-label", textContent: "Current Residents" }),
+    el("div", { className: "horse-pasture" }, cards),
+    el("div", { className: "action-bar" }, [
+      el("button", { className: "btn", textContent: "Back to Stables", onclick: () => goBack() }),
+    ]),
+  ]);
+}
+
+function renderHorseStablesStalls() {
+  const cards = STABLE_HORSE_DATA.map((horse) => {
+    const spriteMeta = getHorseSprite(horse.id);
+    return el("div", { className: "horse-stall-card" }, [
+      el("div", { className: "horse-stall-header" }, [
+        el("span", { className: "horse-stall-num", textContent: `STALL ${horse.stall}` }),
+        el("span", { className: "horse-stall-badge" }),
+      ]),
+      createHorseSpriteCanvas(horse.id, {
+        size: 80,
+        animate: true,
+        animation: "walk",
+        direction: "front",
+        withJockey: false,
+      }),
+      el("div", { className: "horse-stall-name", textContent: horse.name }),
+      el("div", { className: "horse-stall-coat", textContent: spriteMeta.label }),
+      el("div", { className: "horse-stall-note", textContent: horse.note }),
+    ]);
+  });
+
+  return el("div", { className: "panel racing-pavilion" }, [
+    banner("The Stalls"),
+    el("p", { className: "horse-stables-intro", textContent: "Eight stalls line the east barn, each swept and bedded fresh. The green indicator means your horse is in — settled, fed, and ready for tomorrow." }),
+    el("p", { className: "horse-stables-label", textContent: "Barn — East Wing" }),
+    el("div", { className: "horse-stalls-grid" }, cards),
+    el("div", { className: "action-bar" }, [
+      el("button", { className: "btn", textContent: "Back to Stables", onclick: () => goBack() }),
+    ]),
+  ]);
+}
+
 function renderHorseRacing() {
   const act = ACTIVITIES.horse_racing;
   if (session.wallet.balance < act.minBet && !horseRacingState.pending.length) {
@@ -2127,7 +2288,7 @@ function renderHorseRacing() {
     renderHorsePaddock(card.horses),
     pendingEl,
     menu(
-      ["Place a wager", "Run race & settle", "New race card", "Manage horse names"],
+      ["Place a wager", "Run race & settle", "New race card", "Manage horse names", "Visit the Stables"],
       "Racing pavilion:",
       (choice) => {
         if (choice === 0) { goBack(); return; }
@@ -2135,6 +2296,7 @@ function renderHorseRacing() {
         else if (choice === 2) pushView("horse-racing-settle");
         else if (choice === 3) { horseRacingState.card = generateRace(session); render(); }
         else if (choice === 4) pushView("horse-racing-names");
+        else if (choice === 5) pushView("horse-stables");
       },
       { showCasinoBanner: false },
     ),
@@ -2147,6 +2309,7 @@ function renderHorseRacingWager() {
   const wagerStakes = tier
     ? effectiveTableStakes(tier, session.wallet.balance, act.minBet)
     : { minBet: act.minBet, maxBet: session.wallet.balance };
+  if (!horseRacingState.card) horseRacingState.card = generateRace(session);
   const card = horseRacingState.card;
   let selectedHorse = card.horses[0]?.number ?? 1;
   const paddockContainer = el("div", {});
@@ -2221,6 +2384,7 @@ function renderHorseRacingSettle() {
   if (!horseRacingState.pending.length) {
     body.appendChild(el("p", { className: "error", textContent: "No open tickets." }));
   } else {
+    if (!horseRacingState.card) horseRacingState.card = generateRace(session);
     const card = horseRacingState.card;
     const results = simulateRace(card);
     const slips = [...horseRacingState.pending];
@@ -2243,7 +2407,7 @@ function renderHorseRacingSettle() {
             el("span", { className: "racing-finish-pos", textContent: `${i + 1}.` }),
             createHorseSpriteCanvas(h.spriteId, {
               size: 64,
-              frame: i % 4,
+              frame: i % 6,
               animation: "gallop",
               direction: "right",
               horseNumber: num,
@@ -2607,6 +2771,30 @@ const hotelRenderers = buildHotelRenderers({
   viewStack,
 });
 
+const poolRenderers = buildPoolRenderers({
+  get session() { return session; },
+  pushView,
+  goBack,
+  persist,
+  render,
+  el,
+  banner,
+  chipLine,
+});
+
+const amenitiesRenderers = buildAmenitiesRenderers({
+  get session() { return session; },
+  pushView,
+  goBack,
+  persist,
+  render,
+  el,
+  banner,
+  chipLine,
+  statusBanner,
+  showStatus,
+});
+
 const RENDERERS = {
   "save-picker": renderSavePicker,
   "save-create": renderSaveCreate,
@@ -2642,7 +2830,12 @@ const RENDERERS = {
   "horse-racing-wager": renderHorseRacingWager,
   "horse-racing-settle": renderHorseRacingSettle,
   "horse-racing-names": renderHorseRacingNames,
+  "horse-stables": renderHorseStables,
+  "horse-stables-pasture": renderHorseStablesPasture,
+  "horse-stables-stalls": renderHorseStablesStalls,
   ...hotelRenderers,
+  ...poolRenderers,
+  ...amenitiesRenderers,
   "not-found": renderNotFound,
 };
 
@@ -2666,6 +2859,8 @@ function applyLaunchParams() {
       playerName: params.get("name") || "Guest",
       chips: Math.max(0, parseInt(params.get("chips") || "1000", 10)),
     }));
+    const deepView = params.get("view");
+    if (deepView && RENDERERS[deepView]) pushView(deepView);
     return true;
   }
   const slotParam = params.get("slot");
@@ -2679,6 +2874,8 @@ function applyLaunchParams() {
       const loaded = loadSlot(slotId);
       if (loaded) {
         enterCasino(loaded);
+        const deepView = params.get("view");
+        if (deepView && RENDERERS[deepView]) pushView(deepView);
         return true;
       }
       pushView("save-create", { slotId });

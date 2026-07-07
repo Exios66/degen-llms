@@ -277,6 +277,7 @@ function simulateOutright(catalog, event, rng) {
 }
 
 export function simulateEventOutcome(catalog, event, options = {}) {
+  if (!catalog) return event;
   const rng = options.rng ?? makeRng(secureRandomInt);
   const sportDef = catalog.sports[event.sport];
   if (!sportDef) return event;

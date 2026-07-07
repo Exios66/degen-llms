@@ -1,6 +1,6 @@
 /** Real-time day/night cycle — 2 hours real time = 1 in-game day. */
 
-import { fmtChips } from "./core.js";
+import { formatVegasClockLabel } from "./vegas-time.js";
 import { defaultHotelState, ensureHotel, isNetPositive } from "./hotel.js";
 import { getSessionTierIndex } from "./resort-bridge.js";
 
@@ -156,12 +156,13 @@ function applyDayRollover(session, dayIndex) {
   let message = `Day ${dayIndex + 1} — ${req.label}.`;
 
   const totalDue = charges.total + wc.overdueBalance;
+  const hadOverdue = wc.overdueBalance > 0;
   if (session.wallet.debit(totalDue, "hotel", `Day ${dayIndex + 1} resort charges`)) {
     wc.overdueBalance = 0;
     wc.roomEvicted = false;
     hotel.roomEvicted = false;
     message += ` ${fmtChips(charges.total)} posted`;
-    if (wc.overdueBalance > 0) message += ` (includes overdue)`;
+    if (hadOverdue) message += ` (includes overdue)`;
     message += ".";
   } else {
     const paid = session.wallet.balance;
@@ -328,6 +329,7 @@ export function getWorldCycleSummary(session) {
   return {
     ...state,
     timeLabel: formatTimeRemaining(state.msUntilNextDay),
+    vegasClock: formatVegasClockLabel(),
     phaseLabel: state.phase.label,
     dailyTotal: charges.total,
     statusMessage: reservationStatusMessage(session),

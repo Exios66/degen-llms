@@ -9,6 +9,7 @@ import { RewardsPhone } from "../../js/RewardsPhone.js";
 import { syncRewardsFlags } from "../../js/rewards.js";
 import { enterZone, ensurePoolComplex } from "../../js/pool-complex.js";
 import { startCasinoClock } from "../../js/casino-time.js";
+import { syncContactIntros } from "../../js/phone-contacts.js";
 
 const GAME_WIDTH = MAP_WIDTH * TILE_SIZE;
 const GAME_HEIGHT = MAP_HEIGHT * TILE_SIZE;
@@ -71,6 +72,7 @@ async function startOverworld(activeSession) {
   session = activeSession;
   saveAdapter = new SaveAdapter(session);
   if (session.slotId != null) startCasinoClock();
+  syncContactIntros(session);
   dialogue.setFlags(saveAdapter.rpg.flags ?? {});
 
   rewardsPhone = new RewardsPhone(rewardsRoot, session, {

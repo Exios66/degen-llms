@@ -5,6 +5,7 @@ import {
 } from "./core.js";
 import { startCasinoClock, stopCasinoClock } from "./casino-time.js";
 import { formatVegasClockLabel, formatVegasTime } from "./vegas-time.js";
+import { onActivityVisit, syncContactIntros } from "./phone-contacts.js";
 import { applyIntoxicationEffects } from "./intoxication-effects.js";
 import {
   MACHINES,
@@ -94,7 +95,13 @@ function resetSportsbookFromSession() {
 function persist() {
   syncSportsbookToSession();
   rewardsPhone?.tracker.syncFromWallet();
+  syncContactIntros(session);
   if (session.slotId != null) saveSlot(session);
+}
+
+function recordActivityVisit(activity) {
+  session.recordVisit(activity);
+  onActivityVisit(session, activity);
 }
 
 function mountRewardsPhone() {
@@ -398,6 +405,7 @@ function enterCasino(nextSession) {
   if (session.slotId != null) startCasinoClock();
   startCasinoTimeTicker();
   mountRewardsPhone();
+  syncContactIntros(nextSession);
   applyIntoxicationEffects(session);
   render();
 }
@@ -1392,7 +1400,7 @@ function renderSlotsMenu() {
       ]),
     ]);
   }
-  session.recordVisit("slots");
+  recordActivityVisit("slots");
   persist();
   const tier = slotsState.tier ?? currentStakeTier;
 
@@ -1555,7 +1563,7 @@ function renderSportsbook() {
       ]),
     ]);
   }
-  session.recordVisit("sportsbook");
+  recordActivityVisit("sportsbook");
   persist();
 
   if (!sportsbook.events.length) {
@@ -1742,7 +1750,7 @@ function renderBlackjackMenu() {
       ]),
     });
   }
-  session.recordVisit("blackjack");
+  recordActivityVisit("blackjack");
   persist();
   return videoMachine("blackjack", {
     title: "BLACKJACK",
@@ -1840,7 +1848,7 @@ function renderHoldemMenu() {
       ]),
     });
   }
-  session.recordVisit("holdem");
+  recordActivityVisit("holdem");
   persist();
   const tier = currentStakeTier;
   const buyInStakes = tier
@@ -2024,7 +2032,7 @@ function renderRoulette() {
       ]),
     });
   }
-  session.recordVisit("roulette");
+  recordActivityVisit("roulette");
   persist();
 
   const tier = rouletteState.tier ?? currentStakeTier;
@@ -2157,7 +2165,7 @@ const STABLE_HORSE_DATA = [
 ];
 
 function renderHorseStables() {
-  session.recordVisit("horse_stables");
+  recordActivityVisit("horse_stables");
   return el("div", { className: "panel racing-pavilion" }, [
     banner("Mandalay Stables"),
     chipLine(),
@@ -2244,7 +2252,7 @@ function renderHorseRacing() {
       ]),
     ]);
   }
-  session.recordVisit("horse_racing");
+  recordActivityVisit("horse_racing");
   if (!horseRacingState.card) horseRacingState.card = generateRace(session);
   persist();
   const tier = horseRacingState.tier ?? currentStakeTier;

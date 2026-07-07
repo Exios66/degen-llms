@@ -107,6 +107,15 @@ export const NPCS = [
     dialogueId: "tourist_tina",
     direction: "right",
   },
+  {
+    id: "arena_alex",
+    name: "Arena Alex",
+    x: 6,
+    y: 9,
+    sprite: "npc_teal",
+    dialogueId: "arena_alex_greet",
+    direction: "right",
+  },
 ];
 
 /**
@@ -150,6 +159,11 @@ export function buildMapLayers() {
 
       // Pavilion kiosk decor — northeast carpet
       if (y >= 8 && y <= 10 && x >= 23 && x <= 26) {
+        decorTile = TILE.BAR;
+      }
+
+      // Equestrian Arena kiosk decor — northwest carpet
+      if (y >= 8 && y <= 10 && x >= 4 && x <= 7) {
         decorTile = TILE.BAR;
       }
 

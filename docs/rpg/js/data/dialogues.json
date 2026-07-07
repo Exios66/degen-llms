@@ -277,6 +277,31 @@
     "setFlag": "met_paula"
   },
 
+  "arena_alex_greet": {
+    "speaker": "Arena Alex",
+    "text": "Welcome to the Equestrian Arena — home of Dressage and Show Jumping. Separate discipline, separate venue. No flat racing here: it's all collection, athleticism, and careful rounds. Check terminal mode for the full wagering experience.",
+    "choices": [
+      { "label": "What's the difference between Dressage and Jumping?", "next": "arena_alex_explain" },
+      { "label": "Any tips for betting?", "next": "arena_alex_tips" },
+      { "label": "Thanks!", "next": "arena_alex_bye" }
+    ]
+  },
+  "arena_alex_explain": {
+    "speaker": "Arena Alex",
+    "text": "Dressage is pure precision — rider and horse performing a choreographed test scored by judges. Show Jumping is about clear rounds: knock a fence down, collect faults. Fewest faults wins; ties go to time.",
+    "next": "arena_alex_bye"
+  },
+  "arena_alex_tips": {
+    "speaker": "Arena Alex",
+    "text": "In Dressage, the combined Technical and Artistic scores guide the odds. In Jumping, a high-ability pair might still knock a fence — check the 'Clear Round' bet for upside on a consistent horse.",
+    "next": "arena_alex_bye"
+  },
+  "arena_alex_bye": {
+    "speaker": "Arena Alex",
+    "text": "The Racing Pavilion is northeast of here — horse racing stays over there. Equestrian Arena is strictly Dressage and Jumping. Good luck in the ring!",
+    "setFlag": "met_arena_alex"
+  },
+
   "tourist_tina": {
     "speaker": "Tourist Tina",
     "text": "I came for the wave pool but ended up at the blackjack pit. Vegas, right? Betty's bar has better stories than the slots.",

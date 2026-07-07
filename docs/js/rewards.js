@@ -64,6 +64,7 @@ export function defaultRewardsState(overrides = {}) {
     unlockedComps: ["welcome_drink"],
     redeemedComps: [],
     notifications: [],
+    phoneBook: { threads: {}, easterEggs: [], introSent: [] },
     ...overrides,
   };
   if (!base.notifications.length) {
@@ -124,6 +125,9 @@ export class RewardsTracker {
     if (!Array.isArray(rewards.unlockedComps)) rewards.unlockedComps = [...defaults.unlockedComps];
     if (!Array.isArray(rewards.redeemedComps)) rewards.redeemedComps = [];
     if (!Array.isArray(rewards.notifications)) rewards.notifications = [...defaults.notifications];
+    if (!rewards.phoneBook) {
+      rewards.phoneBook = { threads: {}, easterEggs: [], introSent: [] };
+    }
     return rewards;
   }
 
@@ -152,7 +156,7 @@ export class RewardsTracker {
       const note = {
         id: `tier_${newTier.id}_${Date.now()}`,
         title: `${newTier.label} Tier Unlocked!`,
-        body: `You've reached ${newTier.label} status. ${compLabel ? `New comp: ${compLabel}. ` : ""}${exp.tagline}`,
+        body: `You've reached ${newTier.label} status. ${compLabel ? `New comp: ${compLabel}. ` : ""}${exp.tagline}${newTier.id === "gold" || newTier.id === "platinum" ? " Check Connect on your phone for new contacts!" : ""}`,
         read: false,
         timestamp: nowIso(),
       };

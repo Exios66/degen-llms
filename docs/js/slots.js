@@ -26,12 +26,12 @@ const CLASSIC_SYMBOLS = [
 ];
 
 const CLASSIC_PAYTABLE = {
-  "seven|seven|seven": 100,
-  "diamond|diamond|diamond": 50,
-  "bell|bell|bell": 25,
-  "bar|bar|bar": 15,
-  "cherry|cherry|cherry": 10,
-  "cherry|cherry": 2,
+  "seven|seven|seven": 200,
+  "diamond|diamond|diamond": 100,
+  "bell|bell|bell": 50,
+  "bar|bar|bar": 30,
+  "cherry|cherry|cherry": 20,
+  "cherry|cherry": 4,
   cherry: 1,
 };
 
@@ -70,21 +70,21 @@ export const MACHINES = [
       sym("lemon", "🍋", 8),
     ],
     paytable: {
-      "seven|seven|seven": 80,
-      "bar|bar|bar": 20,
-      "bell|bell|bell": 15,
-      "cherry|cherry|cherry": 10,
-      "cherry|cherry": 2,
+      "seven|seven|seven": 200,
+      "bar|bar|bar": 50,
+      "bell|bell|bell": 40,
+      "cherry|cherry|cherry": 25,
+      "cherry|cherry": 5,
       cherry: 1,
-      "megabuck|megabuck": 10,
-      megabuck: 2,
+      "megabuck|megabuck": 25,
+      megabuck: 3,
     },
     tagline: "Wide-area progressive — max bet qualifies for the jackpot.",
     progressive: true,
     progressivePoolId: "megabucks",
     jackpotRequiresMaxBet: true,
     progressiveContributionRate: 0.03,
-    progressiveSeed: 250000,
+    progressiveSeed: 1000000,
     jackpotKey: "megabuck|megabuck|megabuck",
     cherryRules: true,
   },
@@ -102,12 +102,12 @@ export const MACHINES = [
       sym("lemon", "🍋", 8),
     ],
     paytable: {
-      "wheel|wheel|wheel": 200,
-      "diamond|diamond|diamond": 75,
-      "bar|bar|bar": 25,
-      "bell|bell|bell": 15,
-      "cherry|cherry|cherry": 10,
-      "cherry|cherry": 2,
+      "wheel|wheel|wheel": 500,
+      "diamond|diamond|diamond": 200,
+      "bar|bar|bar": 60,
+      "bell|bell|bell": 40,
+      "cherry|cherry|cherry": 25,
+      "cherry|cherry": 5,
       cherry: 1,
     },
     tagline: "Spin the wheel for bonus-sized wins.",
@@ -127,12 +127,12 @@ export const MACHINES = [
       sym("diamond", "💎", 2),
     ],
     paytable: {
-      "seven|seven|seven": 150,
-      "diamond|diamond|diamond": 40,
-      "bar|bar|bar": 20,
-      "bell|bell|bell": 12,
-      "cherry|cherry|cherry": 8,
-      "cherry|cherry": 3,
+      "seven|seven|seven": 400,
+      "diamond|diamond|diamond": 100,
+      "bar|bar|bar": 50,
+      "bell|bell|bell": 30,
+      "cherry|cherry|cherry": 20,
+      "cherry|cherry": 7,
       cherry: 1,
     },
     tagline: "Flaming sevens with sizzling top-line pays.",
@@ -152,13 +152,13 @@ export const MACHINES = [
       sym("king", "K", 9),
     ],
     paytable: {
-      "buffalo|buffalo|buffalo": 120,
-      "gold|gold|gold": 60,
-      "sunset|sunset|sunset": 30,
-      "eagle|eagle|eagle": 20,
-      "ace|ace|ace": 10,
-      "buffalo|buffalo": 4,
-      "ace|ace": 2,
+      "buffalo|buffalo|buffalo": 300,
+      "gold|gold|gold": 150,
+      "sunset|sunset|sunset": 75,
+      "eagle|eagle|eagle": 50,
+      "ace|ace|ace": 25,
+      "buffalo|buffalo": 10,
+      "ace|ace": 5,
     },
     tagline: "Stampede the reels for gold-coin bonuses.",
   },
@@ -176,12 +176,12 @@ export const MACHINES = [
       sym("lemon", "🍋", 8),
     ],
     paytable: {
-      "crown|crown|crown": 100,
-      "diamond|diamond|diamond": 50,
-      "bar|bar|bar": 25,
-      "bell|bell|bell": 15,
-      "cherry|cherry|cherry": 10,
-      "cherry|cherry": 3,
+      "crown|crown|crown": 250,
+      "diamond|diamond|diamond": 125,
+      "bar|bar|bar": 60,
+      "bell|bell|bell": 40,
+      "cherry|cherry|cherry": 25,
+      "cherry|cherry": 7,
       cherry: 1,
     },
     tagline: "Linked progressive with European elegance.",
@@ -189,7 +189,7 @@ export const MACHINES = [
     progressivePoolId: "mandalay_linked",
     jackpotRequiresMaxBet: true,
     progressiveContributionRate: 0.025,
-    progressiveSeed: 50000,
+    progressiveSeed: 250000,
     jackpotKey: "crown|crown|crown",
     cherryRules: true,
   },
@@ -207,11 +207,11 @@ export const MACHINES = [
       sym("lemon", "🍋", 8),
     ],
     paytable: {
-      "seven|seven|seven": 90,
-      "bar|bar|bar": 25,
-      "bell|bell|bell": 15,
-      "cherry|cherry|cherry": 10,
-      "cherry|cherry": 2,
+      "seven|seven|seven": 225,
+      "bar|bar|bar": 60,
+      "bell|bell|bell": 40,
+      "cherry|cherry|cherry": 25,
+      "cherry|cherry": 5,
       cherry: 1,
     },
     tagline: "Linked progressive — three stars trigger the jackpot.",
@@ -219,7 +219,7 @@ export const MACHINES = [
     progressivePoolId: "mandalay_linked",
     jackpotRequiresMaxBet: true,
     progressiveContributionRate: 0.025,
-    progressiveSeed: 50000,
+    progressiveSeed: 250000,
     jackpotKey: "star|star|star",
     cherryRules: true,
   },
@@ -236,11 +236,11 @@ export const MACHINES = [
       sym("lemon", "🍋", 8),
     ],
     paytable: {
-      "seven|seven|seven": 65,
-      "bar|bar|bar": 25,
-      "bell|bell|bell": 12,
-      "cherry|cherry|cherry": 8,
-      "cherry|cherry": 2,
+      "seven|seven|seven": 175,
+      "bar|bar|bar": 60,
+      "bell|bell|bell": 30,
+      "cherry|cherry|cherry": 20,
+      "cherry|cherry": 5,
       cherry: 1,
     },
     tagline: "Red-hot triple sevens on every spin.",
@@ -260,14 +260,14 @@ export const MACHINES = [
       sym("lemon", "🍋", 8),
     ],
     paytable: {
-      "jackpot|jackpot|jackpot": 200,
-      "seven|seven|seven": 75,
-      "bar|bar|bar": 25,
-      "bell|bell|bell": 15,
-      "cherry|cherry|cherry": 10,
-      "cherry|cherry": 2,
+      "jackpot|jackpot|jackpot": 500,
+      "seven|seven|seven": 200,
+      "bar|bar|bar": 60,
+      "bell|bell|bell": 40,
+      "cherry|cherry|cherry": 25,
+      "cherry|cherry": 5,
       cherry: 1,
-      "jackpot|jackpot": 10,
+      "jackpot|jackpot": 25,
     },
     tagline: "Two-tier jackpots with blazing top symbols.",
     cherryRules: true,
@@ -286,14 +286,14 @@ export const MACHINES = [
       sym("bat", "🦇", 8),
     ],
     paytable: {
-      "ghost|ghost|ghost": 100,
-      "mummy|mummy|mummy": 60,
-      "yeti|yeti|yeti": 40,
-      "moon|moon|moon": 25,
-      "skull|skull|skull": 15,
-      "ghost|ghost": 5,
-      "skull|skull": 2,
-      "bat|bat": 2,
+      "ghost|ghost|ghost": 250,
+      "mummy|mummy|mummy": 150,
+      "yeti|yeti|yeti": 100,
+      "moon|moon|moon": 60,
+      "skull|skull|skull": 40,
+      "ghost|ghost": 12,
+      "skull|skull": 5,
+      "bat|bat": 5,
     },
     tagline: "Mo Mummy, Yo Yeti, and Go Ghost bonus features.",
   },
@@ -311,12 +311,12 @@ export const MACHINES = [
       sym("scarecrow", "🌾", 8),
     ],
     paytable: {
-      "witch|witch|witch": 150,
-      "slipper|slipper|slipper": 80,
-      "emerald|emerald|emerald": 50,
-      "tin|tin|tin": 25,
-      "lion|lion|lion": 15,
-      "slipper|slipper": 5,
+      "witch|witch|witch": 400,
+      "slipper|slipper|slipper": 200,
+      "emerald|emerald|emerald": 125,
+      "tin|tin|tin": 60,
+      "lion|lion|lion": 40,
+      "slipper|slipper": 12,
     },
     tagline: "Follow the yellow-brick road to Hold & Spin bonuses.",
   },
@@ -334,12 +334,12 @@ export const MACHINES = [
       sym("coin", "🪙", 8),
     ],
     paytable: {
-      "guardian|guardian|guardian": 175,
-      "emerald|emerald|emerald": 75,
-      "shield|shield|shield": 40,
-      "sword|sword|sword": 25,
-      "gem|gem|gem": 15,
-      "emerald|emerald": 5,
+      "guardian|guardian|guardian": 450,
+      "emerald|emerald|emerald": 200,
+      "shield|shield|shield": 100,
+      "sword|sword|sword": 60,
+      "gem|gem|gem": 40,
+      "emerald|emerald": 12,
     },
     tagline: "Defend the emerald vault for guardian jackpots.",
   },
@@ -357,15 +357,15 @@ export const MACHINES = [
       sym("lantern", "🏮", 8),
     ],
     paytable: {
-      "tiger|tiger|tiger": 120,
-      "dragon|dragon|dragon": 120,
-      "tiger|tiger|dragon": 35,
-      "dragon|dragon|tiger": 35,
-      "pearl|pearl|pearl": 40,
-      "fan|fan|fan": 20,
-      "coin|coin|coin": 10,
-      "coin|coin": 3,
-      "fan|fan": 2,
+      "tiger|tiger|tiger": 300,
+      "dragon|dragon|dragon": 300,
+      "tiger|tiger|dragon": 90,
+      "dragon|dragon|tiger": 90,
+      "pearl|pearl|pearl": 100,
+      "fan|fan|fan": 50,
+      "coin|coin|coin": 25,
+      "coin|coin": 8,
+      "fan|fan": 5,
     },
     tagline: "East-meets-West super bonus with dual jackpots.",
   },
@@ -453,7 +453,7 @@ export function tryJackpot(session, machine, reels, bet, effectiveMax) {
   return amount;
 }
 
-export function calculatePayout(reels, bet, machine, jackpotAmount = null) {
+export function calculatePayout(reels, bet, machine, jackpotAmount = null, tierBoost = 1.0) {
   const keys = reels.map((r) => r.name);
   const line = keys.join("|");
 
@@ -461,47 +461,49 @@ export function calculatePayout(reels, bet, machine, jackpotAmount = null) {
     return { win: jackpotAmount, reason: `PROGRESSIVE JACKPOT! ${jackpotAmount.toLocaleString()} chips!` };
   }
 
+  function apply(baseMult, label) {
+    const effective = Math.round(baseMult * tierBoost);
+    const boostTag = tierBoost !== 1.0 ? ` (${tierBoost.toFixed(0)}× tier)` : "";
+    return { win: bet * effective, reason: `${label} ${effective.toLocaleString()}x${boostTag}` };
+  }
+
   if (machine.paytable[line] !== undefined) {
-    const mult = machine.paytable[line];
-    return { win: bet * mult, reason: `Three ${reels[0].display}! ${mult}x` };
+    return apply(machine.paytable[line], `Three ${reels[0].display}!`);
   }
 
   if (machine.cherryRules) {
     if (keys[0] === "cherry" && keys[1] === "cherry" && machine.paytable["cherry|cherry"] !== undefined) {
-      const mult = machine.paytable["cherry|cherry"];
-      return { win: bet * mult, reason: `Two cherries! ${mult}x` };
+      return apply(machine.paytable["cherry|cherry"], "Two cherries!");
     }
     if (keys[0] === "cherry" && machine.paytable.cherry !== undefined) {
-      const mult = machine.paytable.cherry;
-      return { win: bet * mult, reason: "Cherry on line! 1x (bet returned)" };
+      return apply(machine.paytable.cherry, "Cherry on line!");
     }
   }
 
   if (keys[0] === keys[1]) {
     const pairKey = `${keys[0]}|${keys[1]}`;
     if (machine.paytable[pairKey] !== undefined) {
-      const mult = machine.paytable[pairKey];
-      return { win: bet * mult, reason: `Two ${reels[0].display}! ${mult}x` };
+      return apply(machine.paytable[pairKey], `Two ${reels[0].display}!`);
     }
   }
 
   if (machine.paytable[keys[0]] !== undefined && !keys[0].includes("|")) {
-    const mult = machine.paytable[keys[0]];
-    return { win: bet * mult, reason: `${reels[0].display} on line! ${mult}x` };
+    return apply(machine.paytable[keys[0]], `${reels[0].display} on line!`);
   }
 
   return { win: 0, reason: "No win" };
 }
 
-export function formatPaytableText(machine) {
+export function formatPaytableText(machine, tierBoost = 1.0) {
   const entries = Object.entries(machine.paytable).sort((a, b) => b[1] - a[1]);
-  const parts = entries.map(([key, mult]) => {
+  const parts = entries.map(([key, baseMult]) => {
+    const effective = Math.round(baseMult * tierBoost);
     const bits = key.split("|");
     if (bits.length === 3 && bits[0] === bits[1] && bits[1] === bits[2]) {
-      return `${bits[0]}×3 = ${mult}x`;
+      return `${bits[0]}×3 = ${effective.toLocaleString()}x`;
     }
-    if (bits.length === 2) return `${bits[0]}×2 = ${mult}x`;
-    return `${key} (1st) = ${mult}x`;
+    if (bits.length === 2) return `${bits[0]}×2 = ${effective.toLocaleString()}x`;
+    return `${key} (1st) = ${effective.toLocaleString()}x`;
   });
   if (machine.progressive && machine.jackpotKey) {
     const symName = machine.jackpotKey.split("|")[0];

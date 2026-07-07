@@ -35,7 +35,7 @@ import { buildHotelRenderers } from "./hotel-ui.js";
 import { ensureHotel } from "./hotel.js";
 import {
   STAKE_TIERS, TIER_ORDER, getTier, formatTierLabel, effectiveTableStakes, effectiveSlotStakes,
-  formatStakeRange, tierUsesSalonLimits,
+  formatStakeRange, tierUsesSalonLimits, getTierPayoutBoost,
 } from "./stakes.js";
 
 const app = document.getElementById("app");
@@ -248,22 +248,28 @@ function slotMachineCard(machine, onSelect) {
   ]);
 }
 
-function slotPaytablePanel(machine) {
-  const rows = paytableEntries(machine).map((entry) =>
+function slotPaytablePanel(machine, tierBoost = 1.0) {
+  const rows = paytableEntries(machine, tierBoost).map((entry) =>
     el("div", {
       className: `slot-paytable-row${entry.progressive ? " slot-paytable-row--jackpot" : ""}`,
     }, [
       el("span", { textContent: entry.label }),
       el("span", {
         className: "slot-paytable-mult",
-        textContent: entry.progressive ? `PROGRESSIVE (${entry.note})` : `${entry.mult}x`,
+        textContent: entry.progressive
+          ? `PROGRESSIVE (${entry.note})`
+          : `${entry.mult.toLocaleString()}x`,
       }),
     ])
   );
+  const boostBadge = tierBoost !== 1.0
+    ? el("div", { className: "slot-paytable-boost-badge", textContent: `★ ${tierBoost.toFixed(0)}× tier boost active` })
+    : null;
   return el("div", { className: "slot-paytable-panel" }, [
     el("div", { className: "slot-paytable-title", textContent: "Paytable" }),
+    boostBadge,
     el("div", { className: "slot-paytable-grid" }, rows),
-  ]);
+  ].filter(Boolean));
 }
 
 function slotReelWindow(machine, reels, { spinning = false, win = false } = {}) {
@@ -1441,7 +1447,8 @@ function renderSlotsPlay() {
       contributeToProgressive(session, machine, bet);
       const reels = spinReels(machine);
       const jackpotAmount = tryJackpot(session, machine, reels, bet, maxBet);
-      const { win, reason } = calculatePayout(reels, bet, machine, jackpotAmount);
+      const tierBoost = getTierPayoutBoost(tier?.id);
+      const { win, reason } = calculatePayout(reels, bet, machine, jackpotAmount, tierBoost);
       slotsState.spins += 1;
       slotsState.spinning = false;
       slotsState.lastReels = reels;
@@ -1465,10 +1472,10 @@ function renderSlotsPlay() {
 
   return slotCabinet(machine, {
     screenChildren: [
-      tier ? el("p", { className: "dim", textContent: `Stake tier: ${tier.name}` }) : null,
+      tier ? el("p", { className: "dim", textContent: `Stake tier: ${tier.name} — ${getTierPayoutBoost(tier?.id).toFixed(0)}× payout multiplier` }) : null,
       jackpotEl,
       maxBetNote,
-      slotPaytablePanel(machine),
+      slotPaytablePanel(machine, getTierPayoutBoost(tier?.id)),
       reelsEl,
       msgEl,
       summaryEl,

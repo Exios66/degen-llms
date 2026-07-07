@@ -71,6 +71,22 @@ def get_tier(tier_id: str) -> StakeTier:
     return STAKE_TIERS[tier_id]
 
 
+# Payout multiplier applied on top of machine paytables for each tier.
+# Higher-intensity tiers earn significantly larger returns per winning spin.
+TIER_PAYOUT_BOOST: dict[str, float] = {
+    "penny":              1.0,   # baseline
+    "standard":           2.0,   # 2× base multipliers
+    "high_limit":         4.0,   # 4× base multipliers
+    "401k_contribution":  8.0,   # 8× base multipliers
+    "no_limit":          15.0,   # 15× base multipliers — salon scale
+}
+
+
+def get_tier_payout_boost(tier_id: str) -> float:
+    """Payout multiplier for the given tier (1.0 if tier is unknown)."""
+    return TIER_PAYOUT_BOOST.get(tier_id, 1.0)
+
+
 def tier_uses_salon_limits(tier: StakeTier) -> bool:
     """Salon tiers ignore per-machine max caps."""
     return tier.id in ("401k_contribution", "no_limit")

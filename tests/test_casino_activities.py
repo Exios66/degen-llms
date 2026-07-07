@@ -53,8 +53,8 @@ def test_three_sevens_paytable() -> None:
         Symbol("seven", "7", 1),
     ]
     win, reason = _payout(reels, 10, machine)
-    assert win == 1000
-    assert "100x" in reason
+    assert win == 2000
+    assert "200x" in reason
 
 
 def test_no_win() -> None:
@@ -71,9 +71,9 @@ def test_no_win() -> None:
 def test_progressive_contribution() -> None:
     session = PlayerSession()
     machine = get_machine("megabucks")
-    assert progressive_pool(session, "megabucks", machine.progressive_seed) == 250_000
+    assert progressive_pool(session, "megabucks", machine.progressive_seed) == 1_000_000
     _contribute_to_progressive(session, machine, 3)
-    assert session.progressive_pools["megabucks"] == 250_001
+    assert session.progressive_pools["megabucks"] == 1_000_001
 
 
 def test_megabucks_jackpot_at_max_bet() -> None:
@@ -110,7 +110,7 @@ def test_megabucks_no_jackpot_below_max_bet() -> None:
 def test_fortune_parody_rtp_band() -> None:
     machine = get_machine("fortune")
     rtp, hit_frequency = estimate_base_game_rtp(machine)
-    assert 0.90 <= rtp <= 0.98
+    assert 1.55 <= rtp <= 1.85
     assert hit_frequency >= 0.28
 
 

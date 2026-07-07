@@ -246,3 +246,69 @@
   color: #ffd700;
   text-shadow: 0 0 6px rgba(255, 215, 0, 0.35);
 }
+
+.rewards-contact-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin: 2px 0;
+  padding: 4px 3px;
+  font-size: 5px;
+  text-align: left;
+  background: #0d2818;
+  border: 1px solid #3a7c4a;
+  color: #7cfc7c;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.rewards-contact-row:hover {
+  background: #2a5c3a;
+}
+
+.rewards-contact-unread {
+  min-width: 12px;
+  padding: 0 3px;
+  border-radius: 6px;
+  background: #f07178;
+  color: #fff;
+  font-size: 5px;
+  text-align: center;
+}
+
+.rewards-thread-log {
+  max-height: 90px;
+  overflow-y: auto;
+  margin: 4px 0;
+  padding: 2px;
+  border: 1px inset #0d2818;
+}
+
+.rewards-msg {
+  margin: 2px 0;
+  padding: 2px;
+  font-size: 5px;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.rewards-msg--out {
+  color: #a8d8a8;
+  text-align: right;
+}
+
+.rewards-msg--in {
+  color: #7cfc7c;
+}
+
+.rewards-thread-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin: 4px 0;
+}
+
+.rewards-thread-actions button {
+  flex: 1 1 45%;
+}

@@ -566,6 +566,20 @@ export const ACTIVITIES = {
     minBet: 5,
     description: "Simulated thoroughbred racing — win, place, and show wagers.",
   },
+  dressage: {
+    id: "dressage",
+    name: "Dressage Arena",
+    floor: "Equestrian Arena",
+    minBet: 5,
+    description: "Score-based dressage competition — bet on the top-placing horse and rider.",
+  },
+  jumper: {
+    id: "jumper",
+    name: "Show Jumping",
+    floor: "Equestrian Arena",
+    minBet: 5,
+    description: "Fault-and-time show jumping — wager on clear rounds and podium finishes.",
+  },
 };
 
-export const FLOOR_ORDER = ["Table Games", "Slot Machines", "Sports Book", "Racing Pavilion"];
+export const FLOOR_ORDER = ["Table Games", "Slot Machines", "Sports Book", "Racing Pavilion", "Equestrian Arena"];

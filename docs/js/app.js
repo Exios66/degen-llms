@@ -1127,7 +1127,7 @@ function renderCashierLedger() {
 
   return el("div", { className: "panel" }, [
     banner("Transaction Ledger"),
-    table,
+    el("div", { className: "ledger-table-wrap" }, [table]),
     el("div", { className: "action-bar" }, [
       el("button", { className: "btn", textContent: "Back", onclick: () => { popView(); render(); } }),
     ]),
@@ -1287,7 +1287,7 @@ function renderBankLedger() {
 
   return el("div", { className: "panel" }, [
     banner("Bank Ledger"),
-    table,
+    el("div", { className: "ledger-table-wrap" }, [table]),
     el("div", { className: "action-bar" }, [
       el("button", { className: "btn", textContent: "Back", onclick: () => goBack() }),
     ]),
@@ -1738,6 +1738,9 @@ function renderSportsbook() {
       banner("Sports Book — Mandalay Sports Book"),
       chipLine(),
       el("p", { className: "dim", textContent: "Loading today's board…" }),
+      el("div", { className: "action-bar" }, [
+        el("button", { className: "btn", textContent: "Back", onclick: () => { popView(); render(); } }),
+      ]),
     ]);
   }
 
@@ -1918,6 +1921,10 @@ function renderBlackjackMenu() {
   }
   recordActivityVisit("blackjack");
   persist();
+  const tier = currentStakeTier;
+  const tableStakes = tier
+    ? effectiveTableStakes(tier, session.wallet.balance, act.minBet)
+    : { minBet: act.minBet, maxBet: session.wallet.balance };
   return videoMachine("blackjack", {
     title: "BLACKJACK",
     screenChildren: [
@@ -2089,7 +2096,12 @@ function processHoldemBots() {
 }
 
 function renderHoldemPlay() {
-  if (!holdemState) return el("div", { textContent: "No active Hold'em table." });
+  if (!holdemState) return el("div", { className: "panel" }, [
+    el("p", { className: "error", textContent: "No active Hold'em table." }),
+    el("div", { className: "action-bar" }, [
+      el("button", { className: "btn", textContent: "Back to Hold'em", onclick: () => { popView(); render(); } }),
+    ]),
+  ]);
   const table = holdemState.table;
   const logLines = [...holdemState.log];
 
@@ -3066,7 +3078,12 @@ function startBlackjack(config) {
 }
 
 function renderBlackjackPlay() {
-  if (!blackjackGame) return el("div", { textContent: "No active game." });
+  if (!blackjackGame) return el("div", { className: "panel" }, [
+    el("p", { className: "error", textContent: "No active blackjack game." }),
+    el("div", { className: "action-bar" }, [
+      el("button", { className: "btn", textContent: "Back to Blackjack", onclick: () => { popView(); render(); } }),
+    ]),
+  ]);
 
   const game = blackjackGame;
   const reveal = game.phase === "settlement" || game.phase === "complete" || game.dealer.holeRevealed;

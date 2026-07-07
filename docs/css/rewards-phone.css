@@ -278,11 +278,54 @@
 }
 
 .rewards-thread-log {
-  max-height: 90px;
+  max-height: 110px;
   overflow-y: auto;
   margin: 4px 0;
   padding: 2px;
   border: 1px inset #0d2818;
+}
+
+.rewards-rapport-line {
+  font-size: 5px;
+  color: #e8c547 !important;
+  margin-bottom: 2px;
+}
+
+.rewards-dialogue-prompt {
+  font-size: 5px;
+  margin-top: 4px;
+}
+
+.rewards-dialogue-choice {
+  width: 100%;
+  text-align: left;
+  font-size: 5px;
+  line-height: 1.4;
+  padding: 3px 4px;
+  background: rgba(232, 197, 71, 0.12);
+  border-color: #e8c547;
+}
+
+.rewards-text-options {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  max-height: 72px;
+  overflow-y: auto;
+}
+
+.rewards-text-option {
+  width: 100%;
+  text-align: left;
+  font-size: 5px;
+  line-height: 1.4;
+  padding: 2px 4px;
+}
+
+.rewards-text-option--custom {
+  border-color: #c678dd;
+  color: #e6c8ff;
 }
 
 .rewards-msg {

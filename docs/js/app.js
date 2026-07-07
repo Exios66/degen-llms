@@ -1320,7 +1320,7 @@ function renderStaffManifest() {
     banner("Staff Manifest"),
     el("p", {
       className: "dim",
-      textContent: "Customize dealer and venue staff names and context for your visit.",
+      textContent: "Customize dealer and venue staff names, context, and optional phone dialogue for MGM Connect.",
     }),
     el("div", { className: "panel" }, [
       list,
@@ -1361,6 +1361,18 @@ function renderStaffManifestEdit({ staffId, category }) {
     rows: "4",
     textContent: entry.context,
   });
+  const phoneIntroInput = el("textarea", {
+    className: "staff-context-input",
+    rows: "2",
+    placeholder: "Custom auto-text when this contact unlocks on your phone…",
+    textContent: entry.phoneIntro ?? "",
+  });
+  const phoneTextsInput = el("textarea", {
+    className: "staff-context-input",
+    rows: "4",
+    placeholder: "Custom text options — one per line: Label :: Reply",
+    textContent: (entry.phoneTexts ?? []).map((t) => `${t.label} :: ${t.reply}`).join("\n"),
+  });
 
   const fields = [
     el("div", { className: "form-row" }, [el("label", { textContent: "Display name" }), nameInput]),
@@ -1369,6 +1381,14 @@ function renderStaffManifestEdit({ staffId, category }) {
     fields.push(el("div", { className: "form-row" }, [el("label", { textContent: "Tagline" }), taglineInput]));
   }
   fields.push(el("div", { className: "form-row" }, [el("label", { textContent: "Context / notes" }), contextInput]));
+  fields.push(el("div", { className: "form-row" }, [
+    el("label", { textContent: "Phone intro (MGM Connect)" }),
+    phoneIntroInput,
+  ]));
+  fields.push(el("div", { className: "form-row" }, [
+    el("label", { textContent: "Custom phone texts (Label :: Reply)" }),
+    phoneTextsInput,
+  ]));
 
   return el("div", { className: "panel" }, [
     banner(`Edit ${entry.name}`),
@@ -1382,7 +1402,26 @@ function renderStaffManifestEdit({ staffId, category }) {
           const fieldsToSave = { name: nameInput.value.trim() };
           if (taglineInput) fieldsToSave.tagline = taglineInput.value.trim();
           fieldsToSave.context = contextInput.value.trim();
-          if (Object.values(fieldsToSave).every((v) => !v)) {
+          fieldsToSave.phoneIntro = phoneIntroInput.value.trim();
+          const phoneTexts = phoneTextsInput.value
+            .split("\n")
+            .map((line) => line.trim())
+            .filter(Boolean)
+            .map((line) => {
+              const sep = line.indexOf("::");
+              if (sep < 0) return { label: line, reply: "…" };
+              return {
+                label: line.slice(0, sep).trim(),
+                reply: line.slice(sep + 2).trim(),
+              };
+            })
+            .filter((t) => t.label);
+          fieldsToSave.phoneTexts = phoneTexts.length ? phoneTexts : undefined;
+          const hasContent = Object.entries(fieldsToSave).some(([k, v]) => {
+            if (k === "phoneTexts") return Array.isArray(v) && v.length > 0;
+            return Boolean(v);
+          });
+          if (!hasContent) {
             clearStaffOverride(session, category, staffId);
           } else {
             updateStaffOverride(session, category, staffId, fieldsToSave);

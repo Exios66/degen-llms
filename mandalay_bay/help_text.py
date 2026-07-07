@@ -7,11 +7,12 @@ Explore the casino floor freely. Your chip wallet follows you everywhere.
 Visit the Cashier to buy more chips or review your transaction history.
 
 Main lobby options:
-  1) Table Games     — Blackjack, Texas Hold'em, Roulette
-  2) Slot Machines   — Mandalay Bay slots (Megabucks, Wheel of Fortune, and more)
-  3) Sports Book     — Moneyline and spread wagering
-  4) Racing Pavilion — Thoroughbred win / place / show
-  5) Cashier         — Buy chips, cash out, view ledger
+  1) Table Games       — Blackjack, Texas Hold'em, Roulette
+  2) Slot Machines     — Mandalay Bay slots (Megabucks, Wheel of Fortune, and more)
+  3) Sports Book       — Moneyline and spread wagering
+  4) Racing Pavilion   — Thoroughbred win / place / show
+  5) Equestrian Arena  — Dressage competition & Show Jumping
+  6) Cashier           — Buy chips, cash out, view ledger
   6) Player Stats    — Visits, bets, net winnings per activity
   7) Save Game       — Write progress to your save slot
   8) Casino Guide    — Rules and controls reference
@@ -144,6 +145,29 @@ Place tickets, run the race to simulate results, then settle.
 Refresh the card for a new field anytime.
 """
 
+EQUESTRIAN_HELP = """
+EQUESTRIAN ARENA — DRESSAGE & SHOW JUMPING
+==========================================
+The Equestrian Arena is a separate venue from the Racing Pavilion,
+featuring scored discipline events rather than flat racing.
+
+Dressage:
+  Riders compete in Grand Prix-level tests judged on Technical and Artistic merit.
+  Bet on any competitor to Win (1st), Place (top 2), or Show (top 3).
+  Odds reflect combined score projections.
+
+Show Jumping:
+  Competitors navigate a 12-fence course. Faults are added for knockdowns (4)
+  or refusals (1); ties broken by elapsed time.
+
+  Win        — competitor finishes 1st
+  Place      — top 2
+  Show       — top 3
+  Clear Round — horse completes the course with 0 faults (pays 3× wager)
+
+Place tickets before the event runs, then settle to see results.
+"""
+
 CHIP_ECONOMY_HELP = """
 CHIP ECONOMY
 ============
@@ -182,6 +206,9 @@ SECTIONS = {
     "slots": SLOTS_HELP,
     "sportsbook": SPORTSBOOK_HELP,
     "horse_racing": HORSE_RACING_HELP,
+    "equestrian": EQUESTRIAN_HELP,
+    "dressage": EQUESTRIAN_HELP,
+    "jumper": EQUESTRIAN_HELP,
     "chips": CHIP_ECONOMY_HELP,
     "saves": SAVES_HELP,
 }

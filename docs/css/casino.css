@@ -2854,3 +2854,69 @@ body {
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* ── Equestrian Arena ───────────────────────────────────────────────────────── */
+
+.equestrian-arena {
+  max-width: 820px;
+  margin: 0 auto;
+}
+
+.equestrian-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0.75rem 0 1rem;
+}
+
+.equestrian-entry-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 6px;
+  border-left: 3px solid var(--gold);
+  flex-wrap: wrap;
+}
+
+.eq-num {
+  font-weight: 700;
+  color: var(--gold);
+  min-width: 2rem;
+  font-size: 0.9rem;
+}
+
+.eq-names {
+  flex: 1;
+  font-size: 0.9rem;
+  min-width: 180px;
+}
+
+.eq-scores {
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+.eq-odds {
+  font-weight: 700;
+  font-size: 0.9rem;
+  min-width: 3rem;
+  text-align: right;
+}
+
+.eq-settle-body {
+  margin: 0.5rem 0;
+}
+
+@media (max-width: 600px) {
+  .equestrian-entry-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+
+  .eq-odds {
+    text-align: left;
+  }
+}

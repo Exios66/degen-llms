@@ -6,7 +6,10 @@ def test_new_games_registered() -> None:
     assert "holdem" in ACTIVITIES_BY_ID
     assert "roulette" in ACTIVITIES_BY_ID
     assert "horse_racing" in ACTIVITIES_BY_ID
+    assert "dressage" in ACTIVITIES_BY_ID
+    assert "jumper" in ACTIVITIES_BY_ID
     assert "Racing Pavilion" in FLOOR_ORDER
+    assert "Equestrian Arena" in FLOOR_ORDER
 
 
 def test_roulette_red_wins() -> None:

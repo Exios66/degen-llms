@@ -1,68 +1,92 @@
 # degen-llms
 
-**The Mandalay Bay** — a choose-your-adventure digital casino with unified chip economy, save slots, blackjack, slots, and sports book. Available as a **CLI**, **web app** (GitHub Pages), or standalone blackjack.
+**The Mandalay Bay** — a satirical choose-your-adventure resort simulator with a unified chip economy. Play blackjack, slots, and the sports book on the casino floor; check into the hotel; lounge at the 11-acre pool complex; climb MGM Rewards tiers; and explore the property as a pixel RPG. Available as a **Python CLI**, a **browser terminal** (GitHub Pages), and a **Phaser overworld**.
+
+## Play now
+
+| Surface | URL / command |
+|---------|----------------|
+| **Web terminal** | [exios66.github.io/degen-llms](https://exios66.github.io/degen-llms/) |
+| **Pixel RPG** | [exios66.github.io/degen-llms/rpg](https://exios66.github.io/degen-llms/rpg/) |
+| **CLI** | `python3 -m mandalay_bay` |
+
+All three surfaces share the same save slots and chip wallet (CLI: `~/.mandalay_bay/saves/`; browser: `localStorage`).
 
 ## Quick start
 
 Requires **Python 3.11+** (stdlib only at runtime).
 
 ```bash
+git clone https://github.com/Exios66/degen-llms.git
+cd degen-llms
 python3 -m mandalay_bay                  # Save library → casino floor
 python3 -m mandalay_bay --list-saves     # View save slots
 python3 -m mandalay_bay --slot 1 --new-save --name "Ace"
-python3 -m blackjack                     # Standalone blackjack
-python3 -m pytest -v
+python3 -m blackjack                     # Standalone blackjack (no resort hub)
 ```
 
-## Play in your browser (GitHub Pages)
-
-**https://exios66.github.io/degen-llms/**
-
-### Pixel RPG mode (Phase 1)
-
-Explore the resort in a **16-bit JRPG–style overworld** — walk the lobby, talk to NPCs, and sit at the blackjack table:
-
-**https://exios66.github.io/degen-llms/rpg/**
-
-Shares the same save slots and chip wallet as the terminal web app. See [`docs/rpg/GDD.md`](docs/rpg/GDD.md) for the full design doc and expansion roadmap.
-
-The web app in [`docs/`](docs/) mirrors the terminal experience. Session progress saves per slot in your browser via `localStorage`.
-
-The site source lives in [`docs/`](docs/) on **`main`**. GitHub Actions mirrors the entire `docs/` tree to the **`gh-pages`** branch (see [`.github/workflows/deploy-gh-pages.yml`](.github/workflows/deploy-gh-pages.yml)).
-
-**Enable Pages (one-time):** Repository **Settings → Pages → Build and deployment → Deploy from branch → `gh-pages` → `/docs`.**
-
-**Automatic sync:**
-
-- On every push to `main` that touches `docs/**`
-- **Every hour** (UTC) — checks for drift and republishes only when files differ
-- Manual run via **Actions → Deploy GitHub Pages → Run workflow**
-
-Each run appends a sync ping to [`logs/gh-pages-sync.log`](logs/gh-pages-sync.log) and a build outcome line to [`logs/gh-pages-build-status.log`](logs/gh-pages-build-status.log) (formats and error codes in [`logs/README.md`](logs/README.md)).
-
-**Manual sync:**
+Optional editable install and tests:
 
 ```bash
-./scripts/sync-gh-pages.sh
-# or
-./scripts/deploy-gh-pages.sh
+pip install -e ".[dev]"
+python3 -m pytest -v                     # 180+ tests
 ```
 
-Custom error screens live in `docs/` (`404.html`, `maintenance.html`, `offline.html`) and deploy with the site.
+## What you can do
 
-## Documentation
+### Casino floor
 
-Full docs in [`docs/`](docs/README.md):
+Five floors, eight activities, one chip wallet:
 
-| Guide | Description |
-|-------|-------------|
-| [Player Guide](docs/player-guide.md) | Every menu, dialog, and shortcut |
-| [Save Slots](docs/saves.md) | Load, create, and manage saves |
-| [Getting Started](docs/getting-started.md) | Install, launch, CLI flags |
-| [Chip Economy](docs/chip-economy.md) | Wallet & ledger |
-| [Architecture](docs/architecture.md) | Developer overview |
+| Floor | Activities | Min bet |
+|-------|------------|---------|
+| **Table Games** | Blackjack, Texas Hold'em, Mandalay Roulette | 10 chips |
+| **Slot Machines** | 14 machines incl. Megabucks & linked progressives | 1 chip |
+| **Sports Book** | Moneyline, spread, prediction markets | 10 chips |
+| **Racing Pavilion** | Mandalay Racing (thoroughbred sim) | 5 chips |
+| **Equestrian Arena** | Dressage & show jumping | 10 chips |
 
-In-game help: **Casino Guide** (lobby option 7).
+Stake tiers run from penny slots through **401K Contribution** ($542–$6,500) and **High Roller / No Limit**. Progressive jackpots (Megabucks, Monte Carlo, Super Spin) persist in your save.
+
+Beyond the gaming pits:
+
+- **Casino Floor — shopping & bars** — The Shoppes at Mandalay Place sky bridge, three full-service bars, intoxication tracking
+- **Cashier** — Buy chips, cash out to your off-strip bank account, view the floor ledger
+- **Off-Strip Bank Account** — Park winnings outside the cage; fund trips from outside income
+- **Staff Manifest** — Editable dealer roster with session overrides
+- **High Limit salon & Foundation Room** — Chip- and tier-gated VIP venues (web)
+
+### Resort hotel
+
+Exit the casino floor to the **Mandalay Bay Hotel Experience**:
+
+- **Clerk Carmen** at the front desk — locate reservations, settle overdue charges, upgrade rooms, review folios, checkout
+- **Hallway mini-game** — three beats of directional choices to reach your door
+- **In-room amenities** — TV (Shark Reef ch. 47, wave pool cam), sensor-enabled minibar, unlimited foreign calls, balcony decisions, 17 unlockable Vegas vignettes
+- **Guest Directory** — leather-bound lobby guest book with persistent signatures
+- **Real-time day/night cycle** — 2 hours real time = 1 in-game day; daily room/resort/parking charges; rotating check-in requirements (phone, desk, both, or whale net-positive)
+- **MGM Rewards phone** — press **P** in the web app for tier status, comps, reservation locate, and textable staff contacts
+
+Room types: Deluxe King → Panorama Suite → Chairman Penthouse. MGM Rewards tier comps can cover upgrades and room nights.
+
+### Pool complex
+
+The **11-acre pool expansion** includes wave pool timing, hot tubs, private cabanas, Shark Reef Aquarium species collection, topless beach club, and beach rave — with unlockable pool vignettes that chain into hotel room events.
+
+### MGM Rewards
+
+Lifetime wagered chips advance you through Sapphire → Pearl → Gold → Platinum → Noir → Chairman. Each tier unlocks narrative comps (welcome drink, slot free-play, buffet, room night, suite upgrade, penthouse fantasy) and perks that gate TV channels, phone calls, and VIP access.
+
+### Pixel RPG (Phase 1–3)
+
+Walk the resort in a **16-bit JRPG–style overworld** built with Phaser 3:
+
+- **Three explorable maps** — casino lobby (`main_resort`), hotel tower (`hotel_tower`), pool complex (`mandalay_beach`)
+- **NPC dialogue trees** — Chip Chandler, pit dealers, Clerk Carmen, pool staff, and more
+- **Blackjack encounters** — sit at a table via dialogue; shares the full rules engine with the web terminal
+- **Unified saves** — RPG position, quest flags, and chip balance sync with the web app via save schema v2
+
+See [`docs/rpg/GDD.md`](docs/rpg/GDD.md) for the design doc and expansion roadmap.
 
 ## Save system
 
@@ -71,17 +95,7 @@ In-game help: **Casino Guide** (lobby option 7).
 - Ephemeral play: `--no-save`
 - Auto-save on leave, after activities, and on Ctrl+C
 - CLI storage: `~/.mandalay_bay/saves/` (override with `--save-dir` or `MANDALAY_BAY_SAVE_DIR`)
-- Browser storage: `localStorage` per slot
-
-## The casino floor
-
-| Floor | Activity | Min bet |
-|-------|----------|---------|
-| Table Games | Blackjack (solo or AI table) | 10 chips |
-| Slot Machines | Mandalay Bay slots (14 machines incl. Megabucks) | 1 chip |
-| Sports Book | Moneyline & spread | 10 chips |
-
-Lobby: **Cashier**, **Player Stats**, **Save Game**, **Casino Guide**, **Leave Casino**.
+- Browser storage: `localStorage` per slot (`mandalay-bay-library`)
 
 ## Command-line options
 
@@ -104,6 +118,55 @@ python3 -m blackjack --quick --bots 3 --rounds 10
 | `--chips` | Starting chips for new saves |
 | `--name` | Default player name |
 | `--no-color` / `--ascii` / `--no-intro` | Display options |
+
+## Project structure
+
+```
+degen-llms/
+├── mandalay_bay/          # Python source of truth — hub, hotel, pool, rewards, activities
+├── blackjack/             # Decoupled blackjack engine (casino + standalone modes)
+├── poker/                 # Texas Hold'em hand evaluation
+├── docs/                  # Web terminal (GitHub Pages) + shared JS engine
+│   ├── js/                # Browser parity modules (hotel, pool, slots, sportsbook, …)
+│   └── rpg/               # Phaser overworld (maps, NPCs, encounter bridge)
+├── tests/                 # pytest suite (180+ tests)
+└── scripts/               # GitHub Pages deploy & asset tooling
+```
+
+Python is the authoritative game logic; the web app mirrors it in vanilla ES modules. The RPG delegates casino/hotel mechanics to the shared `docs/js/` engine.
+
+## Documentation
+
+Full docs in [`docs/`](docs/README.md):
+
+| Guide | Description |
+|-------|-------------|
+| [Player Guide](docs/player-guide.md) | Every menu, dialog, hotel flow, and shortcut |
+| [Getting Started](docs/getting-started.md) | Install, launch, CLI flags |
+| [Save Slots](docs/saves.md) | Load, create, and manage saves |
+| [Chip Economy](docs/chip-economy.md) | Wallet, ledger, buy-ins, cash-outs |
+| [Blackjack](docs/blackjack.md) | Table rules, controls, casino & standalone modes |
+| [Slot Machines](docs/slots.md) | Machines, paytables, progressives |
+| [Sports Book](docs/sportsbook.md) | Events, moneyline, spread, settlement |
+| [Architecture](docs/architecture.md) | Packages, data flow, activity system |
+| [Adding Activities](docs/adding-activities.md) | Plug in new games |
+| [Testing](docs/testing.md) | Running and writing tests |
+| [Pixel RPG GDD](docs/rpg/GDD.md) | Overworld design & expansion roadmap |
+
+In-game help: **Casino Guide** from the main lobby.
+
+## GitHub Pages deployment
+
+The site source lives in [`docs/`](docs/) on **`main`**. GitHub Actions mirrors the entire `docs/` tree to the **`gh-pages`** branch (see [`.github/workflows/deploy-gh-pages.yml`](.github/workflows/deploy-gh-pages.yml)).
+
+**Enable Pages (one-time):** Repository **Settings → Pages → Deploy from branch → `gh-pages` → `/docs`.**
+
+Deployments trigger on pushes to `main` that touch `docs/**`, hourly drift checks, or manual workflow runs. Custom error screens (`404.html`, `maintenance.html`, `offline.html`) deploy with the site.
+
+```bash
+./scripts/sync-gh-pages.sh      # Manual sync
+./scripts/deploy-gh-pages.sh    # Full deploy
+```
 
 ## RNG & legitimacy
 

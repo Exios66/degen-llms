@@ -1,0 +1,1 @@
+timestamp=2026-07-10T04:38:05Z | outcome=failure | code=GBP-009 | debug=GBP-SYNC-002,GBP-FAIL-TRAP-001 | error="Unexpected error at line 198 (exit 1)" | trigger=manual_run | deploy_method=gh-pages-branch-docs | url=https://exios66.github.io/degen-llms/ | workflow_attempt=1 | main=fb22fdb | gh-pages=ed22fce | changed=23

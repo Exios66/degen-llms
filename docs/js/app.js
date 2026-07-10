@@ -177,11 +177,14 @@ function banner(title) {
 
 function chipLine() {
   const bank = ensureBank(session);
+  const name = bank.accountName || "Off-Strip Checking";
+  // Avoid "Off-Strip Checking: $0 (off-strip)" redundancy when the default name already says off-strip.
+  const suffix = /off[-\s]?strip/i.test(name) ? "" : " (off-strip)";
   return el("div", { className: "chip-line-wrap" }, [
     el("p", { className: "chip-line", textContent: `Floor chips: ${fmtChips(session.wallet.balance)}` }),
     el("p", {
       className: "bank-line dim",
-      textContent: `${bank.accountName}: ${fmtChips(bank.balance)} (off-strip)`,
+      textContent: `${name}: ${fmtChips(bank.balance)}${suffix}`,
     }),
   ]);
 }

@@ -2,7 +2,7 @@
 
 import { formatVegasSignedAt } from "./vegas-time.js";
 
-const REGISTRY_PATH = "data/guest_directory.json";
+const REGISTRY_PATH = new URL("../data/guest_directory.json", import.meta.url).href;
 const SIGNATURES_KEY = "mandalay-bay-guest-directory-signatures";
 
 /** @type {{ title: string, subtitle: string, guests: GuestEntry[] } | null} */

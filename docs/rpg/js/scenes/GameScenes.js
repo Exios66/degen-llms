@@ -273,7 +273,7 @@ export class OverworldScene extends Phaser.Scene {
     this.saveAdapter.updatePosition(targetX, targetY, targetMapId);
     this.saveAdapter.persist();
     if (message) {
-      this.dialogue.showSystemMessage?.(message) ?? null;
+      this.dialogue.showSystemMessage(message);
     }
     this.scene.restart({
       session: this.session,

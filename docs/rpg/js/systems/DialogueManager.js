@@ -28,6 +28,52 @@ export class DialogueManager {
   }
 
   /**
+   * Brief non-branching toast used for map transitions and system copy.
+   * @param {string} text
+   * @param {{ speaker?: string, durationMs?: number }} [opts]
+   */
+  showSystemMessage(text, opts = {}) {
+    if (!text) return;
+    if (this._active) {
+      // Don't interrupt an active dialogue tree — queue a one-shot after close.
+      const prevClose = this.hooks.onClose;
+      this.hooks.onClose = () => {
+        this.hooks.onClose = prevClose;
+        prevClose?.();
+        this.showSystemMessage(text, opts);
+      };
+      return;
+    }
+
+    this._active = true;
+    this.root.hidden = false;
+    this.root.innerHTML = "";
+
+    const box = document.createElement("div");
+    box.className = "dialogue-box dialogue-box--system";
+
+    const speaker = document.createElement("div");
+    speaker.className = "dialogue-speaker";
+    speaker.textContent = opts.speaker ?? "Resort";
+    box.appendChild(speaker);
+
+    const textEl = document.createElement("div");
+    textEl.className = "dialogue-text";
+    textEl.textContent = text;
+    box.appendChild(textEl);
+
+    this.root.appendChild(box);
+
+    const duration = opts.durationMs ?? 2200;
+    this._systemTimer = setTimeout(() => {
+      this._systemTimer = null;
+      this.root.hidden = true;
+      this.root.innerHTML = "";
+      this._active = false;
+    }, duration);
+  }
+
+  /**
    * Start a dialogue tree by id.
    * @returns {Promise<{ action?: string, flag?: string, encounter?: string }>}
    */
@@ -45,6 +91,10 @@ export class DialogueManager {
   }
 
   close(result = {}) {
+    if (this._systemTimer) {
+      clearTimeout(this._systemTimer);
+      this._systemTimer = null;
+    }
     this.root.hidden = true;
     this.root.innerHTML = "";
     this._active = false;

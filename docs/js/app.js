@@ -2185,6 +2185,7 @@ function renderFoundationRoom() {
   recordActivityVisit("foundation_room");
 
   return el("div", { className: "panel amenities-panel foundation-room" }, [
+    statusBanner(),
     banner("Foundation Room — Noir Lounge"),
     chipLine(),
     el("p", { className: "dim", textContent: "Darkness has a cover charge. Whales murmur. Alexandra's comp list flickers on a tablet nobody admits exists." }),
@@ -2199,7 +2200,7 @@ function renderFoundationRoom() {
         } else if (choice === 2) {
           showStatus("Foundation Room line rings — edible comp queued for suite delivery narrative.");
         } else if (choice === 3) {
-          pushView("casino-floor");
+          navigateTo("casino-floor");
         }
       },
     ),
@@ -3529,6 +3530,16 @@ function popToView(name) {
   }
 }
 
+/** Pop back to an ancestor view (or hub if missing), then re-render. */
+function navigateTo(name, { doPersist = true } = {}) {
+  popToView(name);
+  if (viewStack[viewStack.length - 1]?.name !== name) {
+    viewStack.push({ name, data: {} });
+  }
+  if (doPersist) persist();
+  render();
+}
+
 function pushView(name, data = {}) {
   viewStack.push({ name, data });
   render();
@@ -3580,12 +3591,14 @@ const hotelRenderers = buildHotelRenderers({
   get rewardsPhone() { return rewardsPhone; },
   pushView,
   goBack,
+  navigateTo,
   persist,
   render,
   el,
   banner,
   chipLine,
   statusBanner,
+  showStatus,
   viewStack,
 });
 
@@ -3593,17 +3606,21 @@ const poolRenderers = buildPoolRenderers({
   get session() { return session; },
   pushView,
   goBack,
+  navigateTo,
   persist,
   render,
   el,
   banner,
   chipLine,
+  statusBanner,
+  showStatus,
 });
 
 const amenitiesRenderers = buildAmenitiesRenderers({
   get session() { return session; },
   pushView,
   goBack,
+  navigateTo,
   persist,
   render,
   el,
@@ -3672,9 +3689,10 @@ function render() {
   app.innerHTML = "";
   if (fn) {
     app.appendChild(fn(current.data));
-    return;
+  } else {
+    app.appendChild(renderNotFound({ requestedView: current.name }));
   }
-  app.appendChild(renderNotFound({ requestedView: current.name }));
+  window.__casinoReady = true;
 }
 
 viewStack = [{ name: "save-picker", data: {} }];

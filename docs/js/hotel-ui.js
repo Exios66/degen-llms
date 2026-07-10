@@ -25,7 +25,7 @@ import { getResortCompletion, maybeAutoSignGuestBook } from "./resort-completion
  */
 export function buildHotelRenderers(ctx) {
   const {
-    session, rewardsPhone, pushView, goBack, persist, render, el, banner, chipLine, statusBanner,
+    session, rewardsPhone, pushView, goBack, navigateTo, persist, render, el, banner, chipLine, statusBanner, showStatus,
   } = ctx;
 
   const tracker = () => rewardsPhone?.tracker ?? null;
@@ -217,8 +217,7 @@ export function buildHotelRenderers(ctx) {
           netPositive
             ? el("p", { className: "dim", textContent: "Net-positive — paid upgrades available if comps are spent." })
             : el("p", { className: "dim", textContent: "Unlock room comps via MGM Rewards tier play." }),
-          menuBtn("Back to hotel lobby", () => pushView("hotel-lobby")),
-          menuBtn("Back", goBack, true),
+          menuBtn("Back to hotel lobby", () => navigateTo("hotel-lobby"), true),
         ]),
       ]),
     ]);
@@ -377,8 +376,7 @@ export function buildHotelRenderers(ctx) {
         el("p", { className: "dim", textContent: "Leather-bound lobby guest book — hardcoded roster plus every visitor signature." }),
         book,
         el("ul", { className: "menu-list" }, [
-          menuBtn("Back to hotel lobby", () => pushView("hotel-lobby")),
-          menuBtn("Back", goBack, true),
+          menuBtn("Back to hotel lobby", () => navigateTo("hotel-lobby"), true),
         ]),
       ]),
     ]);
@@ -413,8 +411,8 @@ export function buildHotelRenderers(ctx) {
         el("div", { className: "panel" }, [
           el("p", { className: "error", textContent: msg }),
           el("div", { className: "action-bar" }, [
-            el("button", { className: "btn primary", textContent: "Hotel lobby", onclick: () => pushView("hotel-lobby") }),
-            el("button", { className: "btn", textContent: "Front Desk", onclick: () => pushView("hotel-front-desk") }),
+            el("button", { className: "btn primary", textContent: "Hotel lobby", onclick: () => navigateTo("hotel-lobby") }),
+            el("button", { className: "btn", textContent: "Front Desk", onclick: () => navigateTo("hotel-front-desk") }),
             el("button", { className: "btn", textContent: "Back", onclick: goBack }),
           ]),
         ]),
@@ -456,10 +454,9 @@ export function buildHotelRenderers(ctx) {
           menuBtn("Room decisions — balcony, DND, room service", () => pushView("hotel-room-decisions")),
           menuBtn("Event log — your Vegas highlight reel", () => pushView("hotel-room-events")),
           menuBtn("Guest Directory — bedside guest book", () => pushView("hotel-guest-directory")),
-          menuBtn("Checkout — front desk folio", () => pushView("hotel-front-desk")),
+          menuBtn("Checkout — front desk folio", () => navigateTo("hotel-front-desk")),
           menuBtn("Return to casino floor", () => viewToHub(ctx)),
-          menuBtn("Hotel lobby", () => pushView("hotel-lobby")),
-          menuBtn("Back", goBack, true),
+          menuBtn("Hotel lobby", () => navigateTo("hotel-lobby"), true),
         ]),
       ]),
     ]);
@@ -492,8 +489,7 @@ export function buildHotelRenderers(ctx) {
         log,
         el("ul", { className: "menu-list" }, [
           ...channelButtons,
-          menuBtn("Back to room", () => pushView("hotel-room")),
-          menuBtn("Back", goBack, true),
+          menuBtn("Back to room", () => navigateTo("hotel-room"), true),
         ]),
       ]),
     ]);
@@ -511,12 +507,14 @@ export function buildHotelRenderers(ctx) {
         log.replaceChildren();
         renderAmenityLog(log, res);
         if (res.ok) tracker()?.pushNotification("Minibar", item.label);
+        if (res.message) showStatus(res.message.split("\n")[0], res.ok ? "success" : "error");
         persist();
         render();
       }),
     );
 
     return el("div", {}, [
+      statusBanner(),
       banner("Minibar"),
       chipLine(),
       el("div", { className: "panel hotel-panel hotel-room-view minibar-neon" }, [
@@ -528,8 +526,7 @@ export function buildHotelRenderers(ctx) {
         log,
         el("ul", { className: "menu-list" }, [
           ...itemButtons,
-          menuBtn("Back to room", () => pushView("hotel-room")),
-          menuBtn("Back", goBack, true),
+          menuBtn("Back to room", () => navigateTo("hotel-room"), true),
         ]),
       ]),
     ]);
@@ -563,8 +560,7 @@ export function buildHotelRenderers(ctx) {
         log,
         el("ul", { className: "menu-list" }, [
           ...callButtons,
-          menuBtn("Back to room", () => pushView("hotel-room")),
-          menuBtn("Back", goBack, true),
+          menuBtn("Back to room", () => navigateTo("hotel-room"), true),
         ]),
       ]),
     ]);
@@ -581,12 +577,14 @@ export function buildHotelRenderers(ctx) {
         const res = makeRoomDecision(session, dec.id);
         log.replaceChildren();
         renderAmenityLog(log, res);
+        if (res.message) showStatus(res.message.split("\n")[0], res.ok ? "success" : "error");
         persist();
         render();
       });
     });
 
     return el("div", {}, [
+      statusBanner(),
       banner("Room Decisions"),
       chipLine(),
       el("div", { className: "panel hotel-panel hotel-room-view" }, [
@@ -603,8 +601,7 @@ export function buildHotelRenderers(ctx) {
             appendResult(log, triggerWakeUpCall(session));
             persist();
           }),
-          menuBtn("Back to room", () => pushView("hotel-room")),
-          menuBtn("Back", goBack, true),
+          menuBtn("Back to room", () => navigateTo("hotel-room"), true),
         ]),
       ]),
     ]);
@@ -642,8 +639,7 @@ export function buildHotelRenderers(ctx) {
             ])
           : null,
         el("ul", { className: "menu-list" }, [
-          menuBtn("Back to room", () => pushView("hotel-room")),
-          menuBtn("Back", goBack, true),
+          menuBtn("Back to room", () => navigateTo("hotel-room"), true),
         ]),
       ]),
     ]);
@@ -716,8 +712,7 @@ export function buildHotelRenderers(ctx) {
           )
         ),
         el("ul", { className: "menu-list" }, [
-          menuBtn("Back to front desk", () => pushView("hotel-front-desk")),
-          menuBtn("Back", goBack, true),
+          menuBtn("Back to front desk", () => navigateTo("hotel-front-desk"), true),
         ]),
       ]),
     ]);

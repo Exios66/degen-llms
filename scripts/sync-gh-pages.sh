@@ -166,7 +166,12 @@ else
   touch docs/.nojekyll
 
   if [[ -f docs/index.html ]]; then
-    sed -i "s/__ASSET_SHA__/${MAIN_SHA_SHORT}/g" docs/index.html
+    # BSD sed (macOS) requires a backup-extension arg for -i; GNU sed does not.
+    if sed --version >/dev/null 2>&1; then
+      sed -i "s/__ASSET_SHA__/${MAIN_SHA_SHORT}/g" docs/index.html
+    else
+      sed -i '' "s/__ASSET_SHA__/${MAIN_SHA_SHORT}/g" docs/index.html
+    fi
   fi
 
   git add -A docs/

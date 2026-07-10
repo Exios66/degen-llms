@@ -32,6 +32,8 @@ export class TitleScreen {
     this._introTimer = null;
     this._introDone = false;
     this._skipHandler = null;
+    this._attractTimer = null;
+    this._pendingSession = null;
   }
 
   show() {
@@ -39,13 +41,49 @@ export class TitleScreen {
     this.root.classList.remove("title-overlay--menu");
     this.root.classList.add("title-overlay--intro");
     this._renderIntro();
+    this._armAttract();
   }
 
   hide() {
     this._clearIntroListeners();
+    this._clearAttract();
     this.root.hidden = true;
     this.root.innerHTML = "";
-    this.root.classList.remove("title-overlay--intro", "title-overlay--menu");
+    this.root.classList.remove("title-overlay--intro", "title-overlay--menu", "title-overlay--attract");
+  }
+
+  _armAttract() {
+    this._clearAttract();
+    this._attractTimer = setTimeout(() => this._renderAttract(), 28000);
+  }
+
+  _clearAttract() {
+    if (this._attractTimer) {
+      clearTimeout(this._attractTimer);
+      this._attractTimer = null;
+    }
+  }
+
+  _renderAttract() {
+    this.root.classList.add("title-overlay--attract");
+    this.root.innerHTML = `
+      <div class="attract-screen">
+        <p class="attract-insert">INSERT COIN</p>
+        <h1>${CASINO_NAME}</h1>
+        <p class="attract-blink">Press Enter · Play blackjack · Slots · Sports · Racing</p>
+        <p class="attract-hint">Arcade cabinet mode · Epic Furious vibes</p>
+      </div>
+    `;
+    const wake = (e) => {
+      if (e.type === "keydown" && e.key !== "Enter" && e.key !== " ") return;
+      document.removeEventListener("keydown", wake);
+      this.root.removeEventListener("click", wake);
+      this.root.classList.remove("title-overlay--attract");
+      this._renderMain();
+      this._armAttract();
+    };
+    document.addEventListener("keydown", wake);
+    this.root.addEventListener("click", wake);
   }
 
   _clearIntroListeners() {
@@ -108,7 +146,7 @@ export class TitleScreen {
 
     setTimeout(() => {
       if (this.launchGuest) {
-        this._start(initSessionRpg(createGuestSession()));
+        this._promptArchetype(initSessionRpg(createGuestSession()));
         return;
       }
       if (this.launchSlotId != null) {
@@ -134,7 +172,7 @@ export class TitleScreen {
 
     const sub = document.createElement("p");
     sub.className = "subtitle";
-    sub.textContent = "Pixel RPG — Phase 1";
+    sub.textContent = "Pixel RPG — Phases 2–4";
     panel.appendChild(sub);
 
     const active = getActiveProfileSummary(listSlots);
@@ -187,7 +225,7 @@ export class TitleScreen {
     const guestBtn = document.createElement("button");
     guestBtn.type = "button";
     guestBtn.textContent = "Guest visit (no save)";
-    guestBtn.onclick = () => this._start(initSessionRpg(createGuestSession()));
+    guestBtn.onclick = () => this._promptArchetype(initSessionRpg(createGuestSession()));
     actions.appendChild(guestBtn);
     panel.appendChild(actions);
 
@@ -249,14 +287,14 @@ export class TitleScreen {
 
     const createBtn = document.createElement("button");
     createBtn.type = "button";
-    createBtn.textContent = "Create & Play";
+    createBtn.textContent = "Choose archetype →";
     createBtn.onclick = () => {
       const session = createSlot(slotId, {
         playerName: nameInput.value.trim() || "Guest",
         chips: parseInt(chipsInput.value, 10) || 1000,
       });
       initSessionRpg(session);
-      this._start(session);
+      this._promptArchetype(session);
     };
 
     const backBtn = document.createElement("button");
@@ -268,10 +306,45 @@ export class TitleScreen {
     this.root.appendChild(panel);
   }
 
+  _promptArchetype(session) {
+    this.root.innerHTML = "";
+    const panel = document.createElement("div");
+    panel.className = "title-panel title-panel--enter title-panel--visible";
+    const h1 = document.createElement("h1");
+    h1.textContent = "Choose Your Guest";
+    panel.appendChild(h1);
+    const archetypes = [
+      { id: "weekend_warrior", name: "Weekend Warrior", perk: "+10% first slot spin payout" },
+      { id: "high_roller", name: "High Roller", perk: "High Limit access at 5,000 chips" },
+      { id: "convention_goer", name: "Convention Goer", perk: "10% cashier buy-in bonus" },
+      { id: "local", name: "Local", perk: "Back-hall shortcut unlocked" },
+    ];
+    for (const a of archetypes) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "archetype-btn";
+      btn.innerHTML = `<strong>${a.name}</strong><br><span class="dim">${a.perk}</span>`;
+      btn.onclick = () => {
+        const rpg = session.ensureRpgState();
+        rpg.archetype = a.id;
+        rpg.playerSprite = a.id;
+        if (a.id === "local") rpg.flags.hint_north_wall = true;
+        this._start(session);
+      };
+      panel.appendChild(btn);
+    }
+    this.root.appendChild(panel);
+  }
+
   _loadAndStart(slotId) {
     const session = loadSlot(slotId);
     if (!session) return;
     initSessionRpg(session);
+    const rpg = session.ensureRpgState();
+    if (!rpg.archetype) {
+      this._promptArchetype(session);
+      return;
+    }
     this._start(session);
   }
 
@@ -281,18 +354,45 @@ export class TitleScreen {
   }
 }
 
-export function renderHud(hudRoot, saveAdapter) {
+export function renderHud(hudRoot, saveAdapter, questManager = null) {
   const lines = saveAdapter.hudLines();
-  const session = saveAdapter.session;
-  const hotelUrl = session.slotId != null
-    ? `../index.html?slot=${session.slotId}&view=hotel-lobby`
-    : "../index.html?guest=1&view=hotel-lobby";
+  const rpg = saveAdapter.rpg;
+  const badges = questManager?.badges?.()?.length ?? 0;
+  const hour = Math.floor((rpg.worldTime ?? 720) / 60);
+  const mins = String((rpg.worldTime ?? 720) % 60).padStart(2, "0");
   hudRoot.innerHTML = `
     <div class="hud-bar">
       <span class="hud-name">${lines.name}</span>
       <span class="hud-chips">${lines.chips}</span>
-      <a class="hud-link" href="${hotelUrl}">Hotel</a>
-      <span class="hud-hint">WASD · E talk · P phone · Shift run</span>
+      <span class="hud-time">${hour}:${mins}</span>
+      <span class="hud-hint">WASD · E · P phone · T trainer · Shift run · badges ${badges}</span>
     </div>
   `;
+}
+
+export function renderTrainerCard(root, saveAdapter, questManager) {
+  if (!root) return;
+  if (!root.hidden && root.dataset.open === "1") {
+    root.hidden = true;
+    root.dataset.open = "0";
+    return;
+  }
+  const rpg = saveAdapter.rpg;
+  const lines = questManager?.summaryLines?.() ?? [];
+  const rep = rpg.reputation ?? {};
+  root.hidden = false;
+  root.dataset.open = "1";
+  root.innerHTML = `
+    <div class="trainer-card-panel">
+      <h2>Trainer Card</h2>
+      <p>${saveAdapter.session.playerName} · ${rpg.archetype ?? "guest"}</p>
+      <p class="dim">Rep — whales ${rep.whales ?? 0} · staff ${rep.staff ?? 0} · tourists ${rep.tourists ?? 0}</p>
+      <ul>${lines.map((l) => `<li>${l}</li>`).join("") || "<li>No quests yet</li>"}</ul>
+      <button type="button" id="trainer-close">Close (T)</button>
+    </div>
+  `;
+  root.querySelector("#trainer-close")?.addEventListener("click", () => {
+    root.hidden = true;
+    root.dataset.open = "0";
+  });
 }

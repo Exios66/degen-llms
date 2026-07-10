@@ -1,0 +1,79 @@
+[
+  {
+    "id": "lobby_to_casino",
+    "mapId": "main_resort",
+    "x": 15,
+    "y": 19,
+    "width": 3,
+    "height": 1,
+    "type": "zone_message",
+    "message": "The carpet hums with slots and cheers."
+  },
+  {
+    "id": "slot_aisle_enter",
+    "mapId": "main_resort",
+    "x": 24,
+    "y": 15,
+    "width": 2,
+    "height": 1,
+    "type": "zone_message",
+    "message": "Slot aisle — reels whisper promises."
+  },
+  {
+    "id": "sports_book_enter",
+    "mapId": "main_resort",
+    "x": 5,
+    "y": 15,
+    "width": 2,
+    "height": 1,
+    "type": "zone_message",
+    "message": "Sports book — screens glow with odds."
+  },
+  {
+    "id": "high_limit_gate",
+    "mapId": "main_resort",
+    "x": 15,
+    "y": 5,
+    "width": 1,
+    "height": 1,
+    "type": "zone_message",
+    "message": "High Limit salon ahead. 10,000 chips — or High Roller at 5,000."
+  },
+  {
+    "id": "staff_door",
+    "mapId": "main_resort",
+    "x": 15,
+    "y": 1,
+    "type": "warp",
+    "targetMap": "staff_corridor",
+    "targetX": 15,
+    "targetY": 26,
+    "requiresFlag": "hint_north_wall",
+    "message": "STAFF ONLY corridor. Sam pretends not to see."
+  },
+  {
+    "id": "easter_plant_whisper",
+    "mapId": "main_resort",
+    "x": 12,
+    "y": 22,
+    "type": "zone_message",
+    "message": "A potted palm rustles: 'Konami on the statue…'",
+    "setFlag": "easter_plant_whisper"
+  },
+  {
+    "id": "reef_ambient",
+    "mapId": "shark_reef",
+    "x": 15,
+    "y": 22,
+    "type": "zone_message",
+    "message": "Acrylic walls. Sharks glide. Your camera waits."
+  },
+  {
+    "id": "vip_whisper",
+    "mapId": "foundation_room",
+    "x": 15,
+    "y": 22,
+    "type": "zone_message",
+    "message": "Whales speak softly. Comps speak louder."
+  }
+]

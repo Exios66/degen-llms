@@ -77,16 +77,17 @@ The **11-acre pool expansion** includes wave pool timing, hot tubs, private caba
 
 Lifetime wagered chips advance you through Sapphire → Pearl → Gold → Platinum → Noir → Chairman. Each tier unlocks narrative comps (welcome drink, slot free-play, buffet, room night, suite upgrade, penthouse fantasy) and perks that gate TV channels, phone calls, and VIP access.
 
-### Pixel RPG (Phase 1–3)
+### Pixel RPG (Phases 1–4)
 
 Walk the resort in a **16-bit JRPG–style overworld** built with Phaser 3:
 
-- **Three explorable maps** — casino lobby (`main_resort`), hotel tower (`hotel_tower`), pool complex (`mandalay_beach`)
-- **NPC dialogue trees** — Chip Chandler, pit dealers, Clerk Carmen, pool staff, and more
-- **Blackjack encounters** — sit at a table via dialogue; shares the full rules engine with the web terminal
-- **Unified saves** — RPG position, quest flags, and chip balance sync with the web app via save schema v2
+- **Eight maps** — casino lobby, hotel tower, pool, Shark Reef, House of Blues, ULTRA Arena, Foundation Room, staff corridor
+- **Full activity encounters** — blackjack, holdem, roulette, slots, sportsbook, racing, dressage/jumper, hotel, pool mini-games, shops/bar, cashier
+- **Quests & systems** — shark photo collection, Trainer Card (T), day/night tint, faction reputation, guest archetypes
+- **Arcade polish** — procedural textures, Web Audio BGM/SFX, cabinet bezel, Konami + Easter eggs
+- **Unified saves** — RPG position, quests, flags, and chip balance sync with the web terminal
 
-See [`docs/rpg/GDD.md`](docs/rpg/GDD.md) for the design doc and expansion roadmap.
+See [`docs/rpg/GDD.md`](docs/rpg/GDD.md).
 
 ## Save system
 

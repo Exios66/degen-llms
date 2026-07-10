@@ -23,6 +23,10 @@ export class DialogueManager {
     this.flags = flags ?? {};
   }
 
+  setQuestManager(qm) {
+    this.questManager = qm;
+  }
+
   isActive() {
     return this._active;
   }
@@ -165,14 +169,22 @@ export class DialogueManager {
     typeTick();
   }
 
+  _choiceVisible(choice) {
+    if (choice.requiresFlag && !this.flags[choice.requiresFlag]) return false;
+    if (choice.unlessFlag && this.flags[choice.unlessFlag]) return false;
+    if (choice.requiresQuestStage && this.questManager) {
+      if (!this.questManager.meets(choice.requiresQuestStage)) return false;
+    }
+    return true;
+  }
+
   _afterText(node, box, advanceHint) {
     if (node.choices?.length) {
       advanceHint.hidden = true;
       const ul = document.createElement("ul");
       ul.className = "dialogue-choices";
       for (const choice of node.choices) {
-        if (choice.requiresFlag && !this.flags[choice.requiresFlag]) continue;
-        if (choice.unlessFlag && this.flags[choice.unlessFlag]) continue;
+        if (!this._choiceVisible(choice)) continue;
         const li = document.createElement("li");
         const btn = document.createElement("button");
         btn.textContent = choice.label;
@@ -189,18 +201,28 @@ export class DialogueManager {
       this.flags[choice.setFlag] = true;
       this.hooks.onFlag?.(choice.setFlag);
     }
+    const reputation = choice.reputation ?? null;
     if (choice.encounter) {
       this._cleanupKeys?.();
-      this.close({ action: "encounter", encounter: choice.encounter, flag: choice.setFlag });
+      this.close({
+        action: "encounter",
+        encounter: choice.encounter,
+        flag: choice.setFlag,
+        reputation,
+      });
       this.hooks.onEncounter?.(choice.encounter);
       return;
     }
     if (choice.next) {
       const next = this.dialogues[choice.next];
-      if (next) this._renderNode(next);
-      else this._finish(choice);
+      if (next) {
+        this._pendingReputation = reputation;
+        this._renderNode(next);
+      } else {
+        this._finish({ ...choice, reputation });
+      }
     } else {
-      this._finish(choice);
+      this._finish({ ...choice, reputation });
     }
   }
 
@@ -224,7 +246,9 @@ export class DialogueManager {
       this.flags[node.setFlag] = true;
       this.hooks.onFlag?.(node.setFlag);
     }
+    const reputation = node.reputation ?? this._pendingReputation ?? null;
+    this._pendingReputation = null;
     this._cleanupKeys?.();
-    this.close({ action: "close", flag: node.setFlag });
+    this.close({ action: "close", flag: node.setFlag, reputation });
   }
 }

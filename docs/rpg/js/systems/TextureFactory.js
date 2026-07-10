@@ -9,6 +9,10 @@ const PALETTE = {
   [TILE.WATER]: 0x2a6a8a,
   [TILE.WALL]: 0x1a1520,
   [TILE.BAR]: 0x5c3a1a,
+  [TILE.SLOT]: 0x6a2060,
+  [TILE.SCREEN]: 0x1a4060,
+  [TILE.VIP]: 0x3a2a10,
+  [TILE.AQUA]: 0x1a4a5a,
 };
 
 const TILE_HIGHLIGHT = {
@@ -17,6 +21,10 @@ const TILE_HIGHLIGHT = {
   [TILE.FELT]: 0x2a7c4a,
   [TILE.WALL]: 0x2a2438,
   [TILE.BAR]: 0x7c4a2a,
+  [TILE.SLOT]: 0x8a4080,
+  [TILE.SCREEN]: 0x2a70a0,
+  [TILE.VIP]: 0x5a4a20,
+  [TILE.AQUA]: 0x2a6a7a,
 };
 
 /**
@@ -26,13 +34,21 @@ export function createGameTextures(scene) {
   for (const [id, color] of Object.entries(PALETTE)) {
     const key = `tile_${id}`;
     const g = scene.make.graphics({ x: 0, y: 0, add: false });
-    const base = color;
+    const base = Number(color);
     const hi = TILE_HIGHLIGHT[id] ?? base;
     g.fillStyle(base, 1);
     g.fillRect(0, 0, TILE_SIZE, TILE_SIZE);
     g.fillStyle(hi, 1);
     g.fillRect(0, 0, TILE_SIZE, 2);
     g.fillRect(0, 0, 2, TILE_SIZE);
+    if (Number(id) === TILE.VIP) {
+      g.fillStyle(0xe8c547, 0.35);
+      g.fillRect(4, 4, 8, 8);
+    }
+    if (Number(id) === TILE.AQUA) {
+      g.fillStyle(0x39c5cf, 0.25);
+      g.fillRect(2, 10, 12, 4);
+    }
     g.lineStyle(1, 0x000000, 0.15);
     g.strokeRect(0, 0, TILE_SIZE, TILE_SIZE);
     g.generateTexture(key, TILE_SIZE, TILE_SIZE);
@@ -40,6 +56,10 @@ export function createGameTextures(scene) {
   }
 
   createCharacterTexture(scene, "player", 0x39c5cf, 0x2a9299);
+  createCharacterTexture(scene, "player_weekend_warrior", 0x39c5cf, 0x2a9299);
+  createCharacterTexture(scene, "player_high_roller", 0xe8c547, 0xc4a030);
+  createCharacterTexture(scene, "player_convention_goer", 0xc678dd, 0x9a58aa);
+  createCharacterTexture(scene, "player_local", 0x3dd68c, 0x2a9c64);
   createCharacterTexture(scene, "npc_gold", 0xe8c547, 0xc4a030);
   createCharacterTexture(scene, "npc_green", 0x3dd68c, 0x2a9c64);
   createCharacterTexture(scene, "npc_pink", 0xc678dd, 0x9a58aa);
@@ -64,6 +84,28 @@ export function createGameTextures(scene) {
   plantG.generateTexture("decor_plant", TILE_SIZE, TILE_SIZE);
   plantG.destroy();
 
+  const slotG = scene.make.graphics({ x: 0, y: 0, add: false });
+  slotG.fillStyle(0x2a1028, 1);
+  slotG.fillRect(2, 2, 12, 14);
+  slotG.fillStyle(0xe8c547, 1);
+  slotG.fillRect(4, 4, 8, 6);
+  slotG.fillStyle(0xf07178, 1);
+  slotG.fillRect(5, 5, 2, 4);
+  slotG.fillRect(9, 5, 2, 4);
+  slotG.generateTexture("decor_slot", TILE_SIZE, TILE_SIZE);
+  slotG.destroy();
+
+  const screenG = scene.make.graphics({ x: 0, y: 0, add: false });
+  screenG.fillStyle(0x0a2030, 1);
+  screenG.fillRect(1, 2, 14, 12);
+  screenG.fillStyle(0x39c5cf, 1);
+  screenG.fillRect(3, 4, 10, 8);
+  screenG.fillStyle(0x3dd68c, 1);
+  screenG.fillRect(4, 6, 3, 2);
+  screenG.fillRect(9, 6, 3, 2);
+  screenG.generateTexture("decor_screen", TILE_SIZE, TILE_SIZE);
+  screenG.destroy();
+
   const interactG = scene.make.graphics({ x: 0, y: 0, add: false });
   interactG.lineStyle(1, 0xe8c547, 1);
   interactG.strokeTriangle(8, 0, 16, 12, 0, 12);
@@ -81,9 +123,18 @@ function createCharacterTexture(scene, key, bodyColor, outlineColor) {
   g.fillStyle(bodyColor, 1);
   g.fillRect(5, 3, 6, 4);
   g.fillRect(4, 9, 8, 8);
-  g.fillStyle(0x1a1520, 1);
-  g.fillRect(6, 4, 1, 1);
-  g.fillRect(9, 4, 1, 1);
+  g.fillStyle(0xffe0c0, 1);
+  g.fillRect(6, 4, 4, 3);
   g.generateTexture(key, w, h);
   g.destroy();
+}
+
+export function playerTextureKey(archetype) {
+  const map = {
+    weekend_warrior: "player_weekend_warrior",
+    high_roller: "player_high_roller",
+    convention_goer: "player_convention_goer",
+    local: "player_local",
+  };
+  return map[archetype] ?? "player";
 }

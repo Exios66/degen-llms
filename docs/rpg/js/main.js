@@ -1,9 +1,25 @@
 import Phaser from "phaser";
 import { OverworldScene } from "./scenes/GameScenes.js";
-import { TitleScreen, renderHud } from "./scenes/TitleScreen.js";
+import { TitleScreen, renderHud, renderTrainerCard } from "./scenes/TitleScreen.js";
 import { DialogueManager } from "./systems/DialogueManager.js";
 import { SaveAdapter } from "./systems/SaveAdapter.js";
-import { BlackjackOverlay, EncounterBridge } from "./systems/EncounterBridge.js";
+import {
+  BlackjackOverlay,
+  EncounterBridge,
+  RouletteOverlay,
+  HoldemOverlay,
+  SlotsOverlay,
+  SportsbookOverlay,
+  HorseRacingOverlay,
+  EquestrianOverlay,
+  PoolOverlay,
+  HotelOverlay,
+  AmenitiesOverlay,
+  CashierOverlay,
+  RhythmOverlay,
+} from "./systems/EncounterBridge.js";
+import { QuestManager } from "./systems/QuestManager.js";
+import { audioManager } from "./systems/AudioManager.js";
 import { TILE_SIZE, MAP_WIDTH, MAP_HEIGHT } from "./systems/MapData.js";
 import { RewardsPhone } from "../../js/RewardsPhone.js";
 import { syncRewardsFlags } from "../../js/rewards.js";
@@ -19,11 +35,13 @@ let game = null;
 let session = null;
 let saveAdapter = null;
 let rewardsPhone = null;
+let questManager = null;
+let encounters = null;
 
 const hudRoot = document.getElementById("hud");
 const rewardsRoot = document.getElementById("rewards-phone");
+const trainerRoot = document.getElementById("trainer-card");
 const dialogueRoot = document.getElementById("dialogue-overlay");
-const blackjackRoot = document.getElementById("blackjack-overlay");
 const titleRoot = document.getElementById("title-overlay");
 
 const POOL_FLAG_ZONES = {
@@ -54,13 +72,20 @@ const dialogue = new DialogueManager(dialogueRoot, {
   },
 });
 
-let blackjack = null;
-let encounters = null;
-
 function persistAll() {
   rewardsPhone?.tracker.syncFromWallet();
   syncRewardsFlags(session);
   saveAdapter?.persist();
+}
+
+function closeHooks() {
+  return {
+    onClose: () => {
+      persistAll();
+      renderHud(hudRoot, saveAdapter, questManager);
+      rewardsPhone?.sync();
+    },
+  };
 }
 
 async function loadDialogues() {
@@ -69,12 +94,37 @@ async function loadDialogues() {
   return res.json();
 }
 
+async function loadTriggers() {
+  try {
+    const res = await fetch("js/data/triggers.json");
+    if (!res.ok) return [];
+    return res.json();
+  } catch {
+    return [];
+  }
+}
+
 async function startOverworld(activeSession) {
   session = activeSession;
   saveAdapter = new SaveAdapter(session);
+  const rpg = saveAdapter.rpg;
+  if (!rpg.archetype) rpg.archetype = rpg.playerSprite || "weekend_warrior";
+  if (rpg.worldTime == null) rpg.worldTime = 720;
+  if (!rpg.reputation) rpg.reputation = { whales: 0, staff: 0, tourists: 0 };
+
   if (session.slotId != null) startCasinoClock();
   syncContactIntros(session);
-  dialogue.setFlags(saveAdapter.rpg.flags ?? {});
+  dialogue.setFlags(rpg.flags ?? {});
+
+  questManager = new QuestManager(session, {
+    onUpdate: () => {
+      persistAll();
+      renderHud(hudRoot, saveAdapter, questManager);
+    },
+  });
+  questManager.start("shark_photos", 5);
+  questManager.start("dana_lucky_hand", 1);
+  dialogue.setQuestManager?.(questManager);
 
   rewardsPhone = new RewardsPhone(rewardsRoot, session, {
     onPersist: () => persistAll(),
@@ -82,23 +132,52 @@ async function startOverworld(activeSession) {
   rewardsPhone.sync();
   applyIntoxicationEffects(session);
 
-  blackjack = new BlackjackOverlay(blackjackRoot, session, {
-    onClose: () => {
-      persistAll();
-      renderHud(hudRoot, saveAdapter);
-      rewardsPhone?.sync();
-    },
-  });
+  const hooks = closeHooks();
+  const shake = () => {
+    game?.scene?.getScene("OverworldScene")?.cameras?.main?.shake(200, 0.01);
+    audioManager.sfx("win");
+  };
+
+  const overlays = {
+    blackjack: new BlackjackOverlay(document.getElementById("blackjack-overlay"), session, {
+      ...hooks,
+      onNatural21: shake,
+    }),
+    roulette: new RouletteOverlay(document.getElementById("roulette-overlay"), session, hooks),
+    holdem: new HoldemOverlay(document.getElementById("holdem-overlay"), session, hooks),
+    slots: new SlotsOverlay(document.getElementById("slots-overlay"), session, {
+      ...hooks,
+      onBigWin: shake,
+    }),
+    sportsbook: new SportsbookOverlay(document.getElementById("sportsbook-overlay"), session, hooks),
+    horse_racing: new HorseRacingOverlay(document.getElementById("racing-overlay"), session, hooks),
+    dressage: new EquestrianOverlay(document.getElementById("dressage-overlay"), session, hooks, "dressage"),
+    jumper: new EquestrianOverlay(document.getElementById("jumper-overlay"), session, hooks, "jumper"),
+    hotel: new HotelOverlay(document.getElementById("hotel-overlay"), session, hooks),
+    pool: new PoolOverlay(document.getElementById("pool-overlay"), session, {
+      ...hooks,
+      onSharkPhoto: (speciesId) => {
+        questManager.advance("shark_photos");
+        if (questManager.isComplete("shark_photos")) {
+          audioManager.sfx("secret");
+        }
+      },
+    }),
+    amenities: new AmenitiesOverlay(document.getElementById("amenities-overlay"), session, hooks),
+    cashier: new CashierOverlay(document.getElementById("cashier-overlay"), session, hooks),
+    rhythm: new RhythmOverlay(document.getElementById("rhythm-overlay"), session, hooks),
+  };
 
   encounters = new EncounterBridge({
     session,
-    blackjack,
+    overlays,
     onPersist: () => persistAll(),
+    questManager,
   });
 
-  renderHud(hudRoot, saveAdapter);
+  renderHud(hudRoot, saveAdapter, questManager);
 
-  const dialogues = await loadDialogues();
+  const [dialogues, triggers] = await Promise.all([loadDialogues(), loadTriggers()]);
   dialogue.load(dialogues);
 
   if (game) {
@@ -130,15 +209,22 @@ async function startOverworld(activeSession) {
     dialogue,
     encounters,
     dialogues,
-    rewardsPhone,
-    onHudUpdate: () => {
-      renderHud(hudRoot, saveAdapter);
+    triggers,
+    questManager,
+    audio: audioManager,
+    onHudUpdate: (opts) => {
+      renderHud(hudRoot, saveAdapter, questManager);
       rewardsPhone?.sync();
+      if (opts?.trainerCard) {
+        renderTrainerCard(trainerRoot, saveAdapter, questManager);
+      }
     },
   });
 }
 
 const title = new TitleScreen(titleRoot, (s) => {
+  audioManager.unlock();
+  audioManager.playBgm("lobby");
   startOverworld(s).catch((err) => {
     console.error(err);
     alert(`Could not start game: ${err.message}`);
@@ -164,7 +250,7 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "p" || e.key === "P") {
     if (titleRoot.hidden === false) return;
     if (dialogue.isActive?.()) return;
-    if (blackjack?.isActive()) return;
+    if (encounters?.isAnyActive?.()) return;
     rewardsPhone?.toggle();
     e.preventDefault();
   }

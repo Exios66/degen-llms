@@ -42,9 +42,12 @@ export function defaultRpgState(overrides = {}) {
     x: 15,
     y: 26,
     playerSprite: "weekend_warrior",
+    archetype: "weekend_warrior",
     quests: {},
     flags: {},
     playTimeMinutes: 0,
+    worldTime: 720,
+    reputation: { whales: 0, staff: 0, tourists: 0 },
     ...overrides,
   };
 }

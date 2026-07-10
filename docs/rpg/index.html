@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <meta name="description" content="The Mandalay Bay — pixel RPG casino adventure. Explore the resort, talk to NPCs, and play blackjack.">
+  <meta name="description" content="The Mandalay Bay — pixel RPG casino adventure. Explore the resort, talk to NPCs, and play every casino game.">
   <meta name="theme-color" content="#0a0812">
   <title>The Mandalay Bay — Pixel RPG</title>
   <link rel="icon" href="../favicon.svg" type="image/svg+xml">
@@ -22,12 +22,25 @@
   </script>
 </head>
 <body>
-  <div id="game-shell">
+  <div id="game-shell" class="arcade-cabinet">
     <div id="phaser-root"></div>
     <div id="hud" aria-live="polite"></div>
     <div id="rewards-phone" aria-live="polite"></div>
+    <div id="trainer-card" hidden aria-live="polite"></div>
     <div id="dialogue-overlay" hidden aria-live="polite"></div>
-    <div id="blackjack-overlay" hidden aria-live="polite"></div>
+    <div id="blackjack-overlay" class="encounter-overlay" hidden aria-live="polite"></div>
+    <div id="roulette-overlay" class="encounter-overlay" hidden aria-live="polite"></div>
+    <div id="holdem-overlay" class="encounter-overlay" hidden aria-live="polite"></div>
+    <div id="slots-overlay" class="encounter-overlay" hidden aria-live="polite"></div>
+    <div id="sportsbook-overlay" class="encounter-overlay" hidden aria-live="polite"></div>
+    <div id="racing-overlay" class="encounter-overlay" hidden aria-live="polite"></div>
+    <div id="dressage-overlay" class="encounter-overlay" hidden aria-live="polite"></div>
+    <div id="jumper-overlay" class="encounter-overlay" hidden aria-live="polite"></div>
+    <div id="hotel-overlay" class="encounter-overlay" hidden aria-live="polite"></div>
+    <div id="pool-overlay" class="encounter-overlay" hidden aria-live="polite"></div>
+    <div id="amenities-overlay" class="encounter-overlay" hidden aria-live="polite"></div>
+    <div id="cashier-overlay" class="encounter-overlay" hidden aria-live="polite"></div>
+    <div id="rhythm-overlay" class="encounter-overlay" hidden aria-live="polite"></div>
     <div id="title-overlay" aria-live="polite"></div>
   </div>
   <script type="module" src="js/main.js"></script>

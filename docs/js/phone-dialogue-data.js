@@ -903,6 +903,13 @@ function baseTextOptions(contactId, ctx) {
   }
 
   if (contactId === "clerk_carmen") {
+    push({ key: "conf", label: "Elevator gaslighting?", reply: "Floor 14 is real. The elevator disagrees for sport. Use stairs or charm.", rapport: 2 });
+    push({ key: "room", label: "Room status?", reply: tier.id === "platinum" || tier.id === "noir" || tier.id === "chairman"
+      ? `${tier.label} — I'll see what narrative upgrade Alexandra queued. Keys still with me.`
+      : "Reservation's in the system. Somewhere. Try spelling your name slower.", rapport: 1 });
+  }
+
+  // Dealer / NPC default fallbacks
   if (!opts.length) {
     push({ key: "hey", label: band.id === "stranger" ? "Hey!" : "Good to see you again!",
       reply: band.id === "stranger"

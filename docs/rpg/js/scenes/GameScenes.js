@@ -1,11 +1,12 @@
 import Phaser from "phaser";
-import { createGameTextures } from "../systems/TextureFactory.js";
+import { createGameTextures, playerTextureKey } from "../systems/TextureFactory.js";
 import {
   TILE_SIZE, MAP_WIDTH, MAP_HEIGHT, buildMapLayersForId, getNpcsForMap,
-  DOOR_TRIGGERS, getMapDefinition, SPAWN_DEFAULT, TILE,
+  DOOR_TRIGGERS, getMapDefinition, SPAWN_DEFAULT, TILE, resolveNpcPosition,
 } from "../systems/MapData.js";
 import { getSessionDealer } from "../../../js/dealers.js";
 import { resolveNpc } from "../../../js/staff-manifest.js";
+import { audioManager } from "../systems/AudioManager.js";
 
 export class OverworldScene extends Phaser.Scene {
   constructor() {
@@ -19,6 +20,9 @@ export class OverworldScene extends Phaser.Scene {
     this.encounters = data.encounters;
     this.onHudUpdate = data.onHudUpdate;
     this.dialogues = data.dialogues ?? {};
+    this.triggers = data.triggers ?? [];
+    this.questManager = data.questManager ?? null;
+    this.audio = data.audio ?? audioManager;
   }
 
   create() {
@@ -26,12 +30,25 @@ export class OverworldScene extends Phaser.Scene {
     if (this.dialogues && this.dialogue) {
       this.dialogue.load(this.dialogues);
       this.dialogue.setFlags(this.saveAdapter.rpg.flags ?? {});
+      if (this.questManager) this.dialogue.setQuestManager?.(this.questManager);
     }
 
     const mapId = this.saveAdapter.rpg.mapId ?? "main_resort";
     this.currentMapId = mapId;
     const { ground, collision, decor } = buildMapLayersForId(mapId);
     this.collisionGrid = collision;
+    this.groundGrid = ground;
+
+    // Local archetype shortcut / staff corridor unlock
+    const rpg = this.saveAdapter.rpg;
+    if (rpg.flags?.hint_north_wall || rpg.archetype === "local") {
+      if (mapId === "main_resort") {
+        for (let x = 14; x <= 16; x++) {
+          this.collisionGrid[1][x] = 0;
+          this.groundGrid[1][x] = TILE.CARPET;
+        }
+      }
+    }
 
     this.groundLayer = this.add.group();
     for (let y = 0; y < MAP_HEIGHT; y++) {
@@ -42,7 +59,11 @@ export class OverworldScene extends Phaser.Scene {
           this.add.image(x * TILE_SIZE + TILE_SIZE / 2, y * TILE_SIZE + TILE_SIZE / 2, `tile_${tile}`)
         );
         if (decor[y][x]) {
-          const decorKey = decor[y][x] === TILE.BAR ? "decor_bar" : "decor_plant";
+          const d = decor[y][x];
+          let decorKey = "decor_plant";
+          if (d === TILE.BAR) decorKey = "decor_bar";
+          else if (d === TILE.SLOT) decorKey = "decor_slot";
+          else if (d === TILE.SCREEN) decorKey = "decor_screen";
           this.groundLayer.add(
             this.add.image(x * TILE_SIZE + TILE_SIZE / 2, y * TILE_SIZE + TILE_SIZE / 2, decorKey)
           );
@@ -55,16 +76,21 @@ export class OverworldScene extends Phaser.Scene {
     const px = spawn.x ?? mapDef.spawn.x ?? SPAWN_DEFAULT.x;
     const py = spawn.y ?? mapDef.spawn.y ?? SPAWN_DEFAULT.y;
 
-    this.player = this.physics.add.sprite(px * TILE_SIZE + TILE_SIZE / 2, py * TILE_SIZE + TILE_SIZE / 2, "player");
+    const pKey = playerTextureKey(spawn.archetype || spawn.playerSprite);
+    this.player = this.physics.add.sprite(px * TILE_SIZE + TILE_SIZE / 2, py * TILE_SIZE + TILE_SIZE / 2, pKey);
     this.player.setCollideWorldBounds(true);
     this.player.body.setSize(12, 12);
     this.player.body.setOffset(2, 8);
 
     this.physics.world.setBounds(0, 0, MAP_WIDTH * TILE_SIZE, MAP_HEIGHT * TILE_SIZE);
 
+    const worldTime = spawn.worldTime ?? 720;
     this.npcSprites = new Map();
     this.npcLabels = new Map();
-    this.currentNpcs = getNpcsForMap(mapId);
+    this.currentNpcs = getNpcsForMap(mapId).map((npc) => {
+      const pos = resolveNpcPosition(npc, worldTime);
+      return { ...npc, x: pos.x, y: pos.y };
+    });
     for (const npc of this.currentNpcs) {
       const sprite = this.add.sprite(
         npc.x * TILE_SIZE + TILE_SIZE / 2,
@@ -100,6 +126,7 @@ export class OverworldScene extends Phaser.Scene {
       enter: Phaser.Input.Keyboard.KeyCodes.ENTER,
       space: Phaser.Input.Keyboard.KeyCodes.SPACE,
       shift: Phaser.Input.Keyboard.KeyCodes.SHIFT,
+      t: Phaser.Input.Keyboard.KeyCodes.T,
     });
 
     this.cameras.main.setBounds(0, 0, MAP_WIDTH * TILE_SIZE, MAP_HEIGHT * TILE_SIZE);
@@ -110,10 +137,18 @@ export class OverworldScene extends Phaser.Scene {
     this.canMove = true;
     this.nearbyNpc = null;
     this._lastDoorTile = null;
+    this._lastTriggerId = null;
+    this._footTimer = 0;
+    this._konami = [];
+
+    this._applyDayNightTint(worldTime);
+    this.audio?.playBgm?.(this.audio.bgmForMap(mapId));
 
     this.onHudUpdate?.();
     this.scale.on("resize", this._fitCamera, this);
     this._fitCamera();
+
+    this.cameras.main.fadeIn(300, 0, 0, 0);
 
     if (!this.saveAdapter.hasFlag("tutorial_complete")) {
       this.time.delayedCall(600, () => {
@@ -122,6 +157,33 @@ export class OverworldScene extends Phaser.Scene {
           this.canMove = true;
         });
       });
+    }
+
+    this.input.keyboard.on("keydown", (ev) => this._trackKonami(ev));
+  }
+
+  _applyDayNightTint(worldTime) {
+    const isNight = worldTime >= 1200 || worldTime < 360;
+    if (isNight) {
+      this.cameras.main.setBackgroundColor("#080610");
+      this.tweens.add({
+        targets: this.cameras.main,
+        // soft neon night via fade overlay
+        duration: 1,
+      });
+      if (!this._nightOverlay) {
+        this._nightOverlay = this.add.rectangle(
+          MAP_WIDTH * TILE_SIZE / 2,
+          MAP_HEIGHT * TILE_SIZE / 2,
+          MAP_WIDTH * TILE_SIZE,
+          MAP_HEIGHT * TILE_SIZE,
+          0x1a0a40,
+          0.28
+        ).setDepth(50).setScrollFactor(1);
+      }
+    } else if (this._nightOverlay) {
+      this._nightOverlay.destroy();
+      this._nightOverlay = null;
     }
   }
 
@@ -135,9 +197,13 @@ export class OverworldScene extends Phaser.Scene {
   }
 
   update(_time, delta) {
-    if (!this.canMove || this.dialogue.isActive() || this.encounters.blackjack.isActive()) {
+    if (!this.canMove || this.dialogue.isActive() || this.encounters.isAnyActive?.() || this.encounters.blackjack?.isActive()) {
       this.player.body.setVelocity(0, 0);
       return;
+    }
+
+    if (Phaser.Input.Keyboard.JustDown(this.keys.t)) {
+      this.onHudUpdate?.({ trainerCard: true });
     }
 
     const speed = this.keys.shift.isDown ? 120 : 80;
@@ -154,11 +220,21 @@ export class OverworldScene extends Phaser.Scene {
     if (vx !== 0 || vy !== 0) {
       if (Math.abs(vx) > Math.abs(vy)) this.facing = vx < 0 ? "left" : "right";
       else this.facing = vy < 0 ? "up" : "down";
+      this._footTimer += delta;
+      if (this._footTimer > 220) {
+        this._footTimer = 0;
+        const tx = Math.floor(this.player.x / TILE_SIZE);
+        const ty = Math.floor(this.player.y / TILE_SIZE);
+        const tile = this.groundGrid?.[ty]?.[tx];
+        this.audio?.sfx?.(tile === TILE.LOBBY ? "foot_lobby" : "foot_carpet");
+        this._advanceWorldTime(1);
+      }
     }
 
     this._resolveCollision();
     this._updateNearbyNpc();
     this._checkDoorTriggers();
+    this._checkZoneTriggers();
 
     if (Phaser.Input.Keyboard.JustDown(this.keys.e) ||
         Phaser.Input.Keyboard.JustDown(this.keys.enter) ||
@@ -169,12 +245,17 @@ export class OverworldScene extends Phaser.Scene {
     this._autosavePosition(delta);
   }
 
+  _advanceWorldTime(minutes) {
+    const rpg = this.saveAdapter.rpg;
+    rpg.worldTime = ((rpg.worldTime ?? 720) + minutes) % 1440;
+    if (minutes >= 1 && Math.random() < 0.02) {
+      this._applyDayNightTint(rpg.worldTime);
+    }
+  }
+
   _resolveCollision() {
     const body = this.player.body;
-    const tx = Math.floor(body.center.x / TILE_SIZE);
-    const ty = Math.floor(body.center.y / TILE_SIZE);
     const half = 0.35;
-
     for (const [ox, oy] of [[-half, -half], [half, -half], [-half, half], [half, half]]) {
       const cx = Math.floor((body.center.x + ox * TILE_SIZE) / TILE_SIZE);
       const cy = Math.floor((body.center.y + oy * TILE_SIZE) / TILE_SIZE);
@@ -182,10 +263,6 @@ export class OverworldScene extends Phaser.Scene {
         body.setVelocity(0, 0);
         return;
       }
-    }
-
-    if (this._isBlocked(tx, ty)) {
-      body.setVelocity(0, 0);
     }
   }
 
@@ -265,23 +342,66 @@ export class OverworldScene extends Phaser.Scene {
     const trigger = DOOR_TRIGGERS.find((d) =>
       d.mapId === this.currentMapId && d.x === tx && d.y === ty);
     if (!trigger) return;
+
+    if (trigger.requiresFlag && !this.saveAdapter.hasFlag(trigger.requiresFlag)) {
+      this.dialogue.showSystemMessage("A locked STAFF ONLY door.");
+      return;
+    }
+    if (trigger.requiresChips != null) {
+      const rpg = this.saveAdapter.rpg;
+      const need = (rpg.archetype === "high_roller" && trigger.highRollerAlt != null)
+        ? trigger.highRollerAlt
+        : trigger.requiresChips;
+      if (this.session.wallet.balance < need) {
+        this.dialogue.showSystemMessage(`Need ${need.toLocaleString()} chips to enter.`);
+        return;
+      }
+    }
     this._transitionMap(trigger.targetMap, trigger.targetX, trigger.targetY, trigger.message);
+  }
+
+  _checkZoneTriggers() {
+    const tx = Math.floor(this.player.x / TILE_SIZE);
+    const ty = Math.floor(this.player.y / TILE_SIZE);
+    for (const t of this.triggers) {
+      if (t.mapId && t.mapId !== this.currentMapId) continue;
+      const w = t.width ?? 1;
+      const h = t.height ?? 1;
+      if (tx >= t.x && tx < t.x + w && ty >= t.y && ty < t.y + h) {
+        if (this._lastTriggerId === t.id) return;
+        this._lastTriggerId = t.id;
+        if (t.setFlag) this.saveAdapter.setFlag(t.setFlag);
+        if (t.type === "zone_message" && t.message) {
+          this.dialogue.showSystemMessage(t.message);
+        }
+        if (t.type === "warp" && t.targetMap) {
+          if (t.requiresFlag && !this.saveAdapter.hasFlag(t.requiresFlag)) continue;
+          this._transitionMap(t.targetMap, t.targetX ?? 15, t.targetY ?? 26, t.message);
+        }
+        return;
+      }
+    }
+    this._lastTriggerId = null;
   }
 
   _transitionMap(targetMapId, targetX, targetY, message) {
     this.canMove = false;
     this.saveAdapter.updatePosition(targetX, targetY, targetMapId);
     this.saveAdapter.persist();
-    if (message) {
-      this.dialogue.showSystemMessage(message);
-    }
-    this.scene.restart({
-      session: this.session,
-      saveAdapter: this.saveAdapter,
-      dialogue: this.dialogue,
-      encounters: this.encounters,
-      dialogues: this.dialogues,
-      onHudUpdate: this.onHudUpdate,
+    if (message) this.dialogue.showSystemMessage(message);
+    this.cameras.main.fadeOut(250, 0, 0, 0);
+    this.time.delayedCall(260, () => {
+      this.scene.restart({
+        session: this.session,
+        saveAdapter: this.saveAdapter,
+        dialogue: this.dialogue,
+        encounters: this.encounters,
+        dialogues: this.dialogues,
+        triggers: this.triggers,
+        questManager: this.questManager,
+        audio: this.audio,
+        onHudUpdate: this.onHudUpdate,
+      });
     });
   }
 
@@ -303,11 +423,25 @@ export class OverworldScene extends Phaser.Scene {
 
     const result = await this.dialogue.start(dialogueId);
 
-    if (result.encounter) {
+    if (result.reputation) {
+      const rep = this.saveAdapter.rpg.reputation ?? { whales: 0, staff: 0, tourists: 0 };
+      for (const [k, v] of Object.entries(result.reputation)) {
+        rep[k] = (rep[k] ?? 0) + v;
+      }
+      this.saveAdapter.rpg.reputation = rep;
+    }
+
+    if (result.encounter || npc.encounter) {
+      const encounterId = result.encounter || npc.encounter;
       const encounterNpc = activeDealer
         ? { ...npc, name: activeDealer.name, dealerId: activeDealer.id }
         : npc;
-      await this._runEncounter(result.encounter, encounterNpc, activeDealer);
+      await this._runEncounter(encounterId, encounterNpc, activeDealer);
+    }
+
+    // Security Sam escort comedy
+    if (npc.id === "security_sam" && this.saveAdapter.hasFlag("hint_north_wall")) {
+      this.saveAdapter.setFlag("found_back_room");
     }
 
     this.canMove = true;
@@ -317,14 +451,30 @@ export class OverworldScene extends Phaser.Scene {
   async _runEncounter(encounterId, npc, dealerProfile = null) {
     this.scene.pause();
     this.canMove = false;
+    this.cameras.main.flash(120, 20, 10, 40);
+    this.audio?.sfx?.("click");
     await this.encounters.start(encounterId, {
       dealerName: npc.name,
       dealerProfile: dealerProfile ?? null,
     });
     this.scene.resume();
     this.canMove = true;
+    this._advanceWorldTime(5);
     this.saveAdapter.persist();
     this.onHudUpdate?.();
+  }
+
+  _trackKonami(ev) {
+    const code = ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight", "b", "a"];
+    this._konami.push(ev.key);
+    if (this._konami.length > code.length) this._konami.shift();
+    if (this._konami.join(",") === code.join(",")) {
+      this.saveAdapter.setFlag("konami_mode");
+      this.audio?.sfx?.("secret");
+      this.dialogue.showSystemMessage("Retro palette unlocked. The statue winks.");
+      document.getElementById("game-shell")?.classList.add("konami-mode");
+      this._konami = [];
+    }
   }
 
   _saveTimer = 0;

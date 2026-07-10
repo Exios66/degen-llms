@@ -1,6 +1,15 @@
 import { BlackjackGame, Action } from "../../../js/blackjack/game.js";
 import { fmtChips } from "../../../js/core.js";
 import { pickQuip } from "../../../js/dealers.js";
+import { RouletteOverlay } from "./overlays/RouletteOverlay.js";
+import { HoldemOverlay } from "./overlays/HoldemOverlay.js";
+import { SlotsOverlay } from "./overlays/SlotsOverlay.js";
+import { SportsbookOverlay } from "./overlays/SportsbookOverlay.js";
+import { HorseRacingOverlay } from "./overlays/HorseRacingOverlay.js";
+import { EquestrianOverlay } from "./overlays/EquestrianOverlay.js";
+import { PoolOverlay } from "./overlays/PoolOverlay.js";
+import { HotelOverlay } from "./overlays/HotelOverlay.js";
+import { AmenitiesOverlay, CashierOverlay, RhythmOverlay } from "./overlays/AmenitiesOverlay.js";
 
 /**
  * DOM overlay that wraps the shared BlackjackGame engine for RPG encounters.
@@ -9,7 +18,7 @@ export class BlackjackOverlay {
   /**
    * @param {HTMLElement} root
    * @param {import("../../../js/core.js").PlayerSession} session
-   * @param {{ onClose: (result: { net: number }) => void }} hooks
+   * @param {{ onClose: (result: { net: number }) => void, onNatural21?: () => void }} hooks
    */
   constructor(root, session, hooks) {
     this.root = root;
@@ -27,10 +36,6 @@ export class BlackjackOverlay {
     return this._active;
   }
 
-  /**
-   * @param {{ dealerName?: string, dealerProfile?: import("../../../js/dealers.js").DealerProfile, minBet?: number }} options
-   * @returns {Promise<{ net: number }>}
-   */
   open(options = {}) {
     if (this._active) return Promise.resolve({ net: 0 });
     this._active = true;
@@ -166,8 +171,10 @@ export class BlackjackOverlay {
       div.className = "bj-row" + (row.highlight ? " highlight" : "");
       const cards = row.cards.map((c) => c.label(this.session.useUnicode)).join(" ");
       let suffix = "";
-      if (row.blackjack) suffix = " [BJ]";
-      else if (row.bust) suffix = " [BUST]";
+      if (row.blackjack) {
+        suffix = " [BJ]";
+        this.hooks.onNatural21?.();
+      } else if (row.bust) suffix = " [BUST]";
       else if (row.surrendered) suffix = " [SURR]";
       div.textContent = `${row.label}: ${cards} (${row.value}) — bet $${row.bet}${suffix}`;
       table.appendChild(div);
@@ -296,31 +303,88 @@ export class BlackjackOverlay {
  */
 export class EncounterBridge {
   /**
-   * @param {{ session: import("../../../js/core.js").PlayerSession, blackjack: BlackjackOverlay, onPersist: () => void }} deps
+   * @param {{
+   *   session: import("../../../js/core.js").PlayerSession,
+   *   overlays: Record<string, { isActive: () => boolean, open: Function }>,
+   *   onPersist: () => void,
+   *   questManager?: import("./QuestManager.js").QuestManager,
+   * }} deps
    */
   constructor(deps) {
     this.session = deps.session;
-    this.blackjack = deps.blackjack;
+    this.overlays = deps.overlays;
     this.onPersist = deps.onPersist;
+    this.questManager = deps.questManager ?? null;
+    this.blackjack = deps.overlays.blackjack;
+  }
+
+  isAnyActive() {
+    return Object.values(this.overlays).some((o) => o?.isActive?.());
   }
 
   async start(encounterId, context = {}) {
-    switch (encounterId) {
-      case "blackjack":
-        return this._startBlackjack(context);
-      default:
-        console.warn(`Unknown encounter: ${encounterId}`);
-        return { net: 0 };
-    }
-  }
+    const map = {
+      blackjack: "blackjack",
+      holdem: "holdem",
+      roulette: "roulette",
+      slots_fortune: "slots",
+      slots_high_roller: "slots",
+      slots: "slots",
+      sportsbook: "sportsbook",
+      horse_racing: "horse_racing",
+      dressage: "dressage",
+      jumper: "jumper",
+      hotel: "hotel",
+      pool: "pool",
+      pool_wave: "pool",
+      pool_reef: "pool",
+      pool_rave: "pool",
+      amenities: "amenities",
+      bar: "amenities",
+      cashier: "cashier",
+      house_of_blues: "rhythm",
+      rhythm: "rhythm",
+    };
 
-  async _startBlackjack(context) {
-    const result = await this.blackjack.open({
-      dealerName: context.dealerName ?? "Dealer",
-      dealerProfile: context.dealerProfile ?? null,
-      minBet: 10,
-    });
+    const key = map[encounterId] ?? encounterId;
+    const overlay = this.overlays[key];
+    if (!overlay) {
+      console.warn(`Unknown encounter: ${encounterId}`);
+      return { net: 0 };
+    }
+
+    const openOpts = { ...context };
+    if (encounterId === "slots_fortune" || encounterId === "slots") openOpts.machineId = "fortune";
+    if (encounterId === "slots_high_roller") openOpts.machineId = "high_roller";
+    if (encounterId === "pool_wave" || encounterId === "pool") openOpts.zone = context.zone ?? "wave_pool";
+    if (encounterId === "pool_reef") openOpts.zone = "shark_reef";
+    if (encounterId === "pool_rave") openOpts.zone = "beach_rave";
+    if (encounterId === "bar") openOpts.mode = "bar";
+    if (encounterId === "dressage") openOpts.mode = "dressage";
+    if (encounterId === "jumper") openOpts.mode = "jumper";
+
+    const result = await overlay.open(openOpts);
+
+    if (encounterId === "blackjack" || key === "blackjack") {
+      this.questManager?.advance("dana_lucky_hand");
+      this.session.ensureRpgState().flags.played_blackjack = true;
+    }
+
     this.onPersist();
     return result;
   }
 }
+
+export {
+  RouletteOverlay,
+  HoldemOverlay,
+  SlotsOverlay,
+  SportsbookOverlay,
+  HorseRacingOverlay,
+  EquestrianOverlay,
+  PoolOverlay,
+  HotelOverlay,
+  AmenitiesOverlay,
+  CashierOverlay,
+  RhythmOverlay,
+};

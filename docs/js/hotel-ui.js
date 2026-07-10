@@ -16,7 +16,7 @@ import {
   filterTvChannels, filterPhoneCalls, filterRoomDecisions, filterMinibarItems,
   getSessionResortPhase, getEventHint, conciergeMinibarNudge,
 } from "./room-amenities.js";
-import { reservationAccessMet } from "./world-cycle.js";
+import { getReservationRequirement } from "./world-cycle.js";
 import { getResortCompletion, maybeAutoSignGuestBook } from "./resort-completion.js";
 
 /**
@@ -25,7 +25,7 @@ import { getResortCompletion, maybeAutoSignGuestBook } from "./resort-completion
  */
 export function buildHotelRenderers(ctx) {
   const {
-    session, rewardsPhone, pushView, goBack, persist, render, el, banner, chipLine, statusBanner,
+    session, rewardsPhone, pushView, goBack, navigateTo, persist, render, el, banner, chipLine, statusBanner, showStatus,
   } = ctx;
 
   const tracker = () => rewardsPhone?.tracker ?? null;
@@ -121,9 +121,11 @@ export function buildHotelRenderers(ctx) {
         el("div", { className: "hotel-status" }, [
           el("p", { textContent: `Reservation: ${hotel.reservationCode}` }),
           el("p", { textContent: `Room: ${room.label} (${hotel.nightsRemaining} night(s))` }),
-          hotel.foundReservation
+          canAccessHotelRoom(session) && hotel.foundReservation
             ? el("p", { className: "dim", textContent: reservationHint(hotel) })
-            : el("p", { className: "warning", textContent: "Open MGM Rewards (P) → Reservation to locate your room." }),
+            : !canAccessHotelRoom(session)
+              ? el("p", { className: "warning", textContent: reservationStatusMessage(session) })
+              : el("p", { className: "dim", textContent: reservationStatusMessage(session) }),
           hotel.reachedRoom
             ? el("p", { className: "success", textContent: `You're in — room ${hotel.roomNumber}.` })
             : null,
@@ -215,8 +217,7 @@ export function buildHotelRenderers(ctx) {
           netPositive
             ? el("p", { className: "dim", textContent: "Net-positive — paid upgrades available if comps are spent." })
             : el("p", { className: "dim", textContent: "Unlock room comps via MGM Rewards tier play." }),
-          menuBtn("Back to hotel lobby", () => pushView("hotel-lobby")),
-          menuBtn("Back", goBack, true),
+          menuBtn("Back to hotel lobby", () => navigateTo("hotel-lobby"), true),
         ]),
       ]),
     ]);
@@ -229,12 +230,16 @@ export function buildHotelRenderers(ctx) {
       log.appendChild(el("div", { className: "line dim", textContent: line }));
     }
 
-    if (!hotel.foundReservation && !reservationAccessMet(session)) {
+    if (!canAccessHotelRoom(session)) {
+      const msg = session.worldCycle?.roomEvicted || hotel.roomEvicted
+        ? "Room locked — settle overdue charges at the front desk or win on the casino floor."
+        : reservationStatusMessage(session);
       return el("div", {}, [
         banner("Hotel Hallways"),
         el("div", { className: "panel" }, [
-          el("p", { className: "error", textContent: "You don't know which tower you're in. Press P → Reservation on your MGM Rewards phone." }),
+          el("p", { className: "error", textContent: msg }),
           el("div", { className: "action-bar" }, [
+            el("button", { className: "btn primary", textContent: "Front Desk — Clerk Carmen", onclick: () => pushView("hotel-front-desk") }),
             el("button", { className: "btn", textContent: "Back", onclick: goBack }),
           ]),
         ]),
@@ -371,8 +376,7 @@ export function buildHotelRenderers(ctx) {
         el("p", { className: "dim", textContent: "Leather-bound lobby guest book — hardcoded roster plus every visitor signature." }),
         book,
         el("ul", { className: "menu-list" }, [
-          menuBtn("Back to hotel lobby", () => pushView("hotel-lobby")),
-          menuBtn("Back", goBack, true),
+          menuBtn("Back to hotel lobby", () => navigateTo("hotel-lobby"), true),
         ]),
       ]),
     ]);
@@ -393,8 +397,26 @@ export function buildHotelRenderers(ctx) {
     const time = getSessionResortPhase(session);
     const timeClass = `hotel-room-view resort-time-${time.slot}`;
 
-    if (!canAccessHotelRoom(session) && hotel.reachedRoom) {
-      hotel.reachedRoom = false;
+    if (!canAccessHotelRoom(session) || !hotel.reachedRoom) {
+      const msg = !canAccessHotelRoom(session)
+        ? (session.worldCycle?.roomEvicted || hotel.roomEvicted
+          ? "Room locked — settle overdue charges at the front desk."
+          : reservationStatusMessage(session))
+        : "Complete the hallway to reach your room door first.";
+      if (!canAccessHotelRoom(session) && hotel.reachedRoom) {
+        hotel.reachedRoom = false;
+      }
+      return el("div", {}, [
+        banner(room.label),
+        el("div", { className: "panel" }, [
+          el("p", { className: "error", textContent: msg }),
+          el("div", { className: "action-bar" }, [
+            el("button", { className: "btn primary", textContent: "Hotel lobby", onclick: () => navigateTo("hotel-lobby") }),
+            el("button", { className: "btn", textContent: "Front Desk", onclick: () => navigateTo("hotel-front-desk") }),
+            el("button", { className: "btn", textContent: "Back", onclick: goBack }),
+          ]),
+        ]),
+      ]);
     }
 
     if (unlocked.length >= Object.keys(ROOM_EVENTS).length) {
@@ -432,10 +454,9 @@ export function buildHotelRenderers(ctx) {
           menuBtn("Room decisions — balcony, DND, room service", () => pushView("hotel-room-decisions")),
           menuBtn("Event log — your Vegas highlight reel", () => pushView("hotel-room-events")),
           menuBtn("Guest Directory — bedside guest book", () => pushView("hotel-guest-directory")),
-          menuBtn("Checkout — front desk folio", () => pushView("hotel-front-desk")),
+          menuBtn("Checkout — front desk folio", () => navigateTo("hotel-front-desk")),
           menuBtn("Return to casino floor", () => viewToHub(ctx)),
-          menuBtn("Hotel lobby", () => pushView("hotel-lobby")),
-          menuBtn("Back", goBack, true),
+          menuBtn("Hotel lobby", () => navigateTo("hotel-lobby"), true),
         ]),
       ]),
     ]);
@@ -468,8 +489,7 @@ export function buildHotelRenderers(ctx) {
         log,
         el("ul", { className: "menu-list" }, [
           ...channelButtons,
-          menuBtn("Back to room", () => pushView("hotel-room")),
-          menuBtn("Back", goBack, true),
+          menuBtn("Back to room", () => navigateTo("hotel-room"), true),
         ]),
       ]),
     ]);
@@ -487,12 +507,14 @@ export function buildHotelRenderers(ctx) {
         log.replaceChildren();
         renderAmenityLog(log, res);
         if (res.ok) tracker()?.pushNotification("Minibar", item.label);
+        if (res.message) showStatus(res.message.split("\n")[0], res.ok ? "success" : "error");
         persist();
         render();
       }),
     );
 
     return el("div", {}, [
+      statusBanner(),
       banner("Minibar"),
       chipLine(),
       el("div", { className: "panel hotel-panel hotel-room-view minibar-neon" }, [
@@ -504,8 +526,7 @@ export function buildHotelRenderers(ctx) {
         log,
         el("ul", { className: "menu-list" }, [
           ...itemButtons,
-          menuBtn("Back to room", () => pushView("hotel-room")),
-          menuBtn("Back", goBack, true),
+          menuBtn("Back to room", () => navigateTo("hotel-room"), true),
         ]),
       ]),
     ]);
@@ -539,8 +560,7 @@ export function buildHotelRenderers(ctx) {
         log,
         el("ul", { className: "menu-list" }, [
           ...callButtons,
-          menuBtn("Back to room", () => pushView("hotel-room")),
-          menuBtn("Back", goBack, true),
+          menuBtn("Back to room", () => navigateTo("hotel-room"), true),
         ]),
       ]),
     ]);
@@ -557,12 +577,14 @@ export function buildHotelRenderers(ctx) {
         const res = makeRoomDecision(session, dec.id);
         log.replaceChildren();
         renderAmenityLog(log, res);
+        if (res.message) showStatus(res.message.split("\n")[0], res.ok ? "success" : "error");
         persist();
         render();
       });
     });
 
     return el("div", {}, [
+      statusBanner(),
       banner("Room Decisions"),
       chipLine(),
       el("div", { className: "panel hotel-panel hotel-room-view" }, [
@@ -579,8 +601,7 @@ export function buildHotelRenderers(ctx) {
             appendResult(log, triggerWakeUpCall(session));
             persist();
           }),
-          menuBtn("Back to room", () => pushView("hotel-room")),
-          menuBtn("Back", goBack, true),
+          menuBtn("Back to room", () => navigateTo("hotel-room"), true),
         ]),
       ]),
     ]);
@@ -618,8 +639,7 @@ export function buildHotelRenderers(ctx) {
             ])
           : null,
         el("ul", { className: "menu-list" }, [
-          menuBtn("Back to room", () => pushView("hotel-room")),
-          menuBtn("Back", goBack, true),
+          menuBtn("Back to room", () => navigateTo("hotel-room"), true),
         ]),
       ]),
     ]);
@@ -692,8 +712,7 @@ export function buildHotelRenderers(ctx) {
           )
         ),
         el("ul", { className: "menu-list" }, [
-          menuBtn("Back to front desk", () => pushView("hotel-front-desk")),
-          menuBtn("Back", goBack, true),
+          menuBtn("Back to front desk", () => navigateTo("hotel-front-desk"), true),
         ]),
       ]),
     ]);

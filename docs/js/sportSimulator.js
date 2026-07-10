@@ -1,6 +1,6 @@
 import { secureRandomInt } from "./core.js";
 
-const CATALOG_PATH = "./data/sports_catalog.json";
+const CATALOG_PATH = new URL("../data/sports_catalog.json", import.meta.url).href;
 let catalogCache = null;
 
 export async function loadCatalog() {

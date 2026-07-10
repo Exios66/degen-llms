@@ -11,7 +11,7 @@ import { fmtChips } from "./core.js";
  */
 export function buildAmenitiesRenderers(ctx) {
   const {
-    session, pushView, goBack, persist, render, el, banner, chipLine, statusBanner, showStatus,
+    session, pushView, goBack, navigateTo, persist, render, el, banner, chipLine, statusBanner, showStatus,
   } = ctx;
 
   function menuBtn(label, onclick, isBack = false) {
@@ -43,6 +43,8 @@ export function buildAmenitiesRenderers(ctx) {
           menuBtn(`<span class="num">1)</span> ${MALL_NAME}`, () => pushView("mall-lobby")),
           menuBtn("<span class=\"num\">2)</span> Full Service Bar — choose your lounge", () => pushView("bar-select")),
           menuBtn("<span class=\"num\">3)</span> View shopping bag", () => pushView("mall-bag")),
+          menuBtn(`<span class="num">4)</span> High Limit Salon <span class="dim">(10,000+ chips, high-limit tier)</span>`, () => pushView("high-limit-salon")),
+          menuBtn(`<span class="num">5)</span> Foundation Room <span class="dim">(Noir lounge)</span>`, () => pushView("foundation-room")),
           menuBtn('<span class="num">0)</span> Back', goBack, true),
         ]),
       ]),
@@ -60,7 +62,7 @@ export function buildAmenitiesRenderers(ctx) {
           menuBtn("<span class=\"num\">1)</span> Flagship Designer Row <span class=\"dim\">(casino floor)</span>", () => pushView("mall-zone", { zone: "flagship" })),
           menuBtn("<span class=\"num\">2)</span> Mandalay Place boutiques <span class=\"dim\">(sky bridge)</span>", () => pushView("mall-zone", { zone: "place" })),
           menuBtn("<span class=\"num\">3)</span> View shopping bag", () => pushView("mall-bag")),
-          menuBtn('<span class="num">0)</span> Back', () => pushView("casino-floor"), true),
+          menuBtn('<span class="num">0)</span> Back', goBack, true),
         ]),
       ]),
     ]);
@@ -82,7 +84,7 @@ export function buildAmenitiesRenderers(ctx) {
             `<span class="num">${i + 1})</span> <strong>${store.name}</strong><br><span class="dim" style="padding-left:1.75rem;font-size:0.85rem;">${store.tagline}</span>`,
             () => pushView("mall-store", { storeId: store.id }),
           )),
-          menuBtn('<span class="num">0)</span> Back', () => pushView("mall-lobby"), true),
+          menuBtn('<span class="num">0)</span> Back', goBack, true),
         ]),
       ]),
     ]);
@@ -92,7 +94,7 @@ export function buildAmenitiesRenderers(ctx) {
     const store = getStoreById(storeId);
     if (!store) return el("div", { className: "panel" }, [
       el("p", { className: "error", textContent: "Store not found." }),
-      el("ul", { className: "menu-list" }, [menuBtn('<span class="num">0)</span> Back', () => pushView("mall-lobby"), true)]),
+      el("ul", { className: "menu-list" }, [menuBtn('<span class="num">0)</span> Back', goBack, true)]),
     ]);
     const amenities = ensureAmenities(session);
     const log = el("div", { className: "log-area" });
@@ -116,12 +118,12 @@ export function buildAmenitiesRenderers(ctx) {
                 if (result.ok) {
                   showStatus(result.message);
                   persist();
+                  render();
                 }
-                render();
               },
             );
           }),
-          menuBtn('<span class="num">0)</span> Back', () => pushView("mall-zone", { zone: store.zone.includes("Flagship") ? "flagship" : "place" }), true),
+          menuBtn('<span class="num">0)</span> Back', goBack, true),
         ]),
         el("p", { className: "footer-note dim", textContent: "All purchases tendered in chips at the register." }),
       ]),
@@ -172,7 +174,7 @@ export function buildAmenitiesRenderers(ctx) {
             `<span class="num">${i + 1})</span> <strong>${bar.name}</strong><br><span class="dim" style="padding-left:1.75rem;font-size:0.85rem;">${bar.location}</span>`,
             () => pushView("bar-menu", { barId: bar.id }),
           )),
-          menuBtn('<span class="num">0)</span> Back', () => pushView("casino-floor"), true),
+          menuBtn('<span class="num">0)</span> Back', goBack, true),
         ]),
       ]),
     ]);
@@ -182,7 +184,7 @@ export function buildAmenitiesRenderers(ctx) {
     const bar = getBarById(barId);
     if (!bar) return el("div", { className: "panel" }, [
       el("p", { className: "error", textContent: "Bar not found." }),
-      el("ul", { className: "menu-list" }, [menuBtn('<span class="num">0)</span> Back', () => pushView("bar-select"), true)]),
+      el("ul", { className: "menu-list" }, [menuBtn('<span class="num">0)</span> Back', goBack, true)]),
     ]);
     const log = el("div", { className: "log-area" });
 
@@ -203,12 +205,12 @@ export function buildAmenitiesRenderers(ctx) {
               if (result.ok) {
                 showStatus(result.message);
                 persist();
+                render();
               }
-              render();
             },
           )),
-          menuBtn("Choose another bar", () => pushView("bar-select")),
-          menuBtn('<span class="num">0)</span> Back to casino floor', () => pushView("casino-floor"), true),
+          menuBtn("Choose another bar", () => navigateTo("bar-select")),
+          menuBtn('<span class="num">0)</span> Back to casino floor', () => navigateTo("casino-floor"), true),
         ]),
         el("p", { className: "footer-note dim", textContent: "Full service — drinks tendered in chips." }),
       ]),

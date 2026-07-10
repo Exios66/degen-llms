@@ -1,5 +1,6 @@
 import { TransactionKind, secureRandomInt } from "./core.js";
 import { getTierExperience } from "./rewards-perks.js";
+import { onTierRankUp } from "./phone-contacts.js";
 
 export const SAVE_VERSION_WITH_REWARDS = 3;
 
@@ -64,7 +65,7 @@ export function defaultRewardsState(overrides = {}) {
     unlockedComps: ["welcome_drink"],
     redeemedComps: [],
     notifications: [],
-    phoneBook: { threads: {}, easterEggs: [], introSent: [] },
+    phoneBook: { threads: {}, easterEggs: [], introSent: [], intoxSecretsSent: false },
     ...overrides,
   };
   if (!base.notifications.length) {
@@ -163,6 +164,7 @@ export class RewardsTracker {
       rewards.notifications.unshift(note);
       created.push(note);
       this.onNotify?.(note);
+      onTierRankUp(this.session, newTier.id);
     }
     return created;
   }

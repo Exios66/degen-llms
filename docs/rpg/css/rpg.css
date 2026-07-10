@@ -69,6 +69,8 @@ body {
 .hud-bar {
   display: flex;
   justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
   background: rgba(20, 16, 31, 0.92);
   border: 2px solid var(--border);
@@ -623,4 +625,16 @@ body {
 @media (max-width: 480px) {
   html, body { font-size: 8px; }
   .title-panel h1 { font-size: 11px; }
+  .hud-bar {
+    gap: 6px;
+  }
+  .hud-hint {
+    display: none;
+  }
+  .hud-name,
+  .hud-chips {
+    max-width: 42%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 }

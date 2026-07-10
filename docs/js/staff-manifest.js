@@ -1,6 +1,6 @@
 import { DEALER_ROSTER } from "./dealers.js";
 
-/** @typedef {{ name?: string, tagline?: string, context?: string }} StaffOverride */
+/** @typedef {{ name?: string, tagline?: string, context?: string, phoneIntro?: string, phoneGreeting?: string, phoneTexts?: { key?: string, label: string, reply: string }[] }} StaffOverride */
 
 const BASE_MANIFEST = {
   npcs: [
@@ -56,6 +56,11 @@ export function updateStaffOverride(session, category, staffId, fields) {
   const bucket = { ...(current[category] ?? {}) };
   const merged = { ...(bucket[staffId] ?? {}) };
   for (const [key, value] of Object.entries(fields)) {
+    if (key === "phoneTexts") {
+      if (Array.isArray(value) && value.length) merged.phoneTexts = value;
+      else delete merged.phoneTexts;
+      continue;
+    }
     const cleaned = String(value ?? "").trim();
     if (cleaned) merged[key] = cleaned;
     else delete merged[key];
@@ -100,23 +105,29 @@ export function editableStaffEntries(session = null) {
   const entries = [];
   for (const dealer of DEALER_ROSTER) {
     const resolved = session ? resolveDealer(session, dealer) : dealer;
+    const ov = overrides.dealers[dealer.id] ?? {};
     entries.push({
       category: "dealers",
       id: dealer.id,
       name: resolved.name,
       tagline: resolved.tagline,
-      context: overrides.dealers[dealer.id]?.context ?? dealer.tagline,
+      context: ov.context ?? dealer.tagline,
+      phoneIntro: ov.phoneIntro ?? "",
+      phoneTexts: ov.phoneTexts ?? [],
       games: [...dealer.games],
       customized: Boolean(overrides.dealers[dealer.id]),
     });
   }
   for (const npc of BASE_MANIFEST.npcs) {
     const resolved = resolveNpc(session, npc.id, { fallbackName: npc.name, fallbackContext: npc.context });
+    const ov = overrides.npcs[npc.id] ?? {};
     entries.push({
       category: "npcs",
       id: npc.id,
       name: resolved.name,
       context: resolved.context,
+      phoneIntro: ov.phoneIntro ?? "",
+      phoneTexts: ov.phoneTexts ?? [],
       role: npc.role,
       customized: Boolean(overrides.npcs[npc.id]),
     });

@@ -1,5 +1,6 @@
 import { secureRandomInt } from "./core.js";
 import { loadCatalog, generateBoard, simulateEventOutcome } from "./sportSimulator.js";
+import { PredictionMarketsState } from "./predictionMarkets.js";
 
 export function fmtOdds(odds) {
   return odds > 0 ? `+${odds}` : String(odds);
@@ -91,12 +92,14 @@ export class SportsbookState {
     this.sportFilter = "all";
     this.activeTab = "sports";
     this.liveCache = null;
+    this.predictions = new PredictionMarketsState();
     if (data) {
       this.events = data.events ?? [];
       this.pending = data.pending ?? [];
       this.sportFilter = data.sportFilter ?? "all";
       this.activeTab = data.activeTab ?? "sports";
       this.liveCache = data.liveCache ?? null;
+      this.predictions = PredictionMarketsState.fromJSON(data.predictions ?? null);
     }
   }
 
@@ -112,12 +115,14 @@ export class SportsbookState {
     if (!this.events.length || force) {
       this.refreshBoard(true);
     }
+    this.predictions.syncMarkets(this.events, force);
   }
 
   refreshBoard(force = false) {
     if (this.events.length && !force) return;
     if (!this.catalog) return;
     this.events = generateBoard(this.catalog);
+    this.predictions.syncMarkets(this.events, force);
   }
 
   async refreshBoardAsync(force = false) {
@@ -130,7 +135,11 @@ export class SportsbookState {
   }
 
   getOpenPositionCount() {
-    return this.pending.length;
+    return this.pending.length + this.predictions.getOpenPositionCount();
+  }
+
+  settlePredictions() {
+    return this.predictions.settleAll(this.events);
   }
 
   settleAll(catalog) {
@@ -168,6 +177,7 @@ export class SportsbookState {
       sportFilter: this.sportFilter,
       activeTab: this.activeTab,
       liveCache: this.liveCache,
+      predictions: this.predictions.toJSON(),
     };
   }
 

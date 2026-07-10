@@ -2,6 +2,10 @@
 
 export const INTOXICATION_MAX = 100;
 
+/** ~4–5 standard pours (potency 2) or equivalent liquor + smoke mix. */
+export const INTOX_BUZZED_MIN_LEVEL = 10;
+export const INTOX_BUZZED_MIN_DOSES = 4;
+
 /** @typedef {"liquor" | "beer" | "contraband"} IntoxCategory */
 
 /** @type {Record<string, { category: IntoxCategory, potency: number, label?: string }>} */
@@ -126,11 +130,47 @@ export function recordConsumption(session, itemId, meta = {}) {
   if (state.history.length > 40) state.history = state.history.slice(-40);
 
   applyIntoxicationEffects(session);
+  if (typeof window !== "undefined") {
+    import("./phone-contacts.js").then((mod) => {
+      mod.onIntoxicationChange?.(session);
+    }).catch(() => {});
+  }
   return { ok: true, level: state.level, added };
 }
 
 export function getIntoxicationLevel(session) {
   return ensureIntoxication(session).level;
+}
+
+/** @param {import("./core.js").PlayerSession} session */
+export function getIntoxicationSummary(session) {
+  const state = ensureIntoxication(session);
+  const categories = { liquor: 0, beer: 0, contraband: 0 };
+  for (const entry of state.history ?? []) {
+    if (categories[entry.category] != null) categories[entry.category] += 1;
+  }
+  const level = state.level;
+  return {
+    level,
+    tier: getIntoxicationTier(level),
+    totalDoses: state.totalDoses,
+    categories,
+    hasContraband: categories.contraband > 0,
+    hasLiquor: categories.liquor > 0,
+    hasBeer: categories.beer > 0,
+  };
+}
+
+/**
+ * Heightened intoxication — roughly 4–5 drinks or a liquor + smoke equivalent.
+ * @param {import("./core.js").PlayerSession} session
+ */
+export function isHeightenedIntoxication(session) {
+  const { level, totalDoses, categories } = getIntoxicationSummary(session);
+  if (level >= 16) return true;
+  if (totalDoses >= INTOX_BUZZED_MIN_DOSES && level >= INTOX_BUZZED_MIN_LEVEL) return true;
+  if (totalDoses >= 3 && level >= 12 && categories.contraband > 0) return true;
+  return false;
 }
 
 export function getIntoxicationTier(level) {

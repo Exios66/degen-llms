@@ -22,5 +22,9 @@ include = ["blackjack*", "mandalay_bay*"]
 testpaths = ["tests"]
 pythonpath = ["."]
 
+[tool.basedpyright]
+venvPath = "."
+venv = ".venv"
+
 [project.optional-dependencies]
 dev = ["pytest>=8.0"]

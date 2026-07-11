@@ -1,3 +1,5 @@
+import pytest
+
 from mandalay_bay.bank_account import (
     BankAccount,
     buy_in_for_session,
@@ -43,7 +45,5 @@ def test_buy_in_outside_funds_when_bank_empty() -> None:
 
 
 def test_bank_negative_balance_rejected() -> None:
-    import pytest
-
     with pytest.raises(ValueError):
         BankAccount(balance=-1)

@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { OverworldScene } from "./scenes/GameScenes.js";
+import { OverworldScene } from "./scenes/GameScenes.js?v=gfx-move-5";
 import { TitleScreen, renderHud, renderTrainerCard } from "./scenes/TitleScreen.js";
 import { DialogueManager } from "./systems/DialogueManager.js";
 import { SaveAdapter } from "./systems/SaveAdapter.js";
@@ -192,6 +192,15 @@ async function startOverworld(activeSession) {
     parent: "phaser-root",
     backgroundColor: "#0a0812",
     pixelArt: true,
+    input: {
+      keyboard: {
+        capture: [
+          "W", "A", "S", "D",
+          "UP", "DOWN", "LEFT", "RIGHT",
+          "SHIFT", "SPACE", "ENTER", "E",
+        ],
+      },
+    },
     physics: {
       default: "arcade",
       arcade: { gravity: { y: 0 }, debug: false },
@@ -202,6 +211,8 @@ async function startOverworld(activeSession) {
     },
     scene: [OverworldScene],
   });
+  // Debug/test hook for movement verification
+  window.__rpgGame = game;
 
   game.scene.start("OverworldScene", {
     session,
@@ -247,6 +258,10 @@ window.addEventListener("beforeunload", () => {
 });
 
 document.addEventListener("keydown", (e) => {
+  // Keep arrow keys / space from scrolling the page while playing
+  if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(e.key)) {
+    if (titleRoot.hidden !== false) e.preventDefault();
+  }
   if (e.key === "p" || e.key === "P") {
     if (titleRoot.hidden === false) return;
     if (dialogue.isActive?.()) return;

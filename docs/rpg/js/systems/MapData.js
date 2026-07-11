@@ -73,7 +73,11 @@ function finalize(ground, collision, decor) {
     for (let x = 0; x < MAP_WIDTH; x++) {
       const tile = ground[y][x];
       const decorTile = decor[y][x];
-      collision[y][x] = COLLISION.has(tile) || COLLISION.has(decorTile) ? 1 : 0;
+      // decor 0 means "no decor" — do not treat as TILE.VOID collision
+      const blocked =
+        COLLISION.has(tile) ||
+        (decorTile !== 0 && COLLISION.has(decorTile));
+      collision[y][x] = blocked ? 1 : 0;
     }
   }
   sealWalls(ground, collision);

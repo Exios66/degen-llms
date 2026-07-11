@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { createGameTextures, playerTextureKey } from "../systems/TextureFactory.js";
+import { createGameTextures, playerTextureKey, playerAnimKey } from "../systems/TextureFactory.js";
 import {
   TILE_SIZE, MAP_WIDTH, MAP_HEIGHT, buildMapLayersForId, getNpcsForMap,
   DOOR_TRIGGERS, getMapDefinition, SPAWN_DEFAULT, TILE, resolveNpcPosition,
@@ -76,11 +76,17 @@ export class OverworldScene extends Phaser.Scene {
     const px = spawn.x ?? mapDef.spawn.x ?? SPAWN_DEFAULT.x;
     const py = spawn.y ?? mapDef.spawn.y ?? SPAWN_DEFAULT.y;
 
-    const pKey = playerTextureKey(spawn.archetype || spawn.playerSprite);
+    this.playerArchetype = spawn.archetype || spawn.playerSprite || "weekend_warrior";
+    const pKey = playerTextureKey(this.playerArchetype, "down");
     this.player = this.physics.add.sprite(px * TILE_SIZE + TILE_SIZE / 2, py * TILE_SIZE + TILE_SIZE / 2, pKey);
     this.player.setCollideWorldBounds(true);
-    this.player.body.setSize(12, 12);
-    this.player.body.setOffset(2, 8);
+    this.player.setDepth(10);
+    this.player.body.setSize(10, 8);
+    this.player.body.setOffset(3, 12);
+
+    this.playerShadow = this.add.image(this.player.x, this.player.y + 8, "shadow");
+    this.playerShadow.setDepth(9);
+    this.playerShadow.setAlpha(0.35);
 
     this.physics.world.setBounds(0, 0, MAP_WIDTH * TILE_SIZE, MAP_HEIGHT * TILE_SIZE);
 
@@ -97,15 +103,18 @@ export class OverworldScene extends Phaser.Scene {
         npc.y * TILE_SIZE + TILE_SIZE / 2,
         npc.sprite
       );
+      sprite.setDepth(10);
       sprite.setData("npc", npc);
       this.npcSprites.set(npc.id, sprite);
 
       const displayName = this._resolveNpcDisplayName(npc);
-      const label = this.add.text(sprite.x, sprite.y - 14, displayName.split(" ")[0], {
+      const label = this.add.text(sprite.x, sprite.y - 16, displayName.split(" ")[0], {
         fontFamily: "Press Start 2P",
         fontSize: "6px",
         color: "#e8c547",
-      }).setOrigin(0.5);
+        stroke: "#0a0812",
+        strokeThickness: 2,
+      }).setOrigin(0.5).setDepth(11);
       this.npcLabels.set(npc.id, label);
 
       if (npc.zone) {
@@ -116,6 +125,51 @@ export class OverworldScene extends Phaser.Scene {
 
     this.interactIcon = this.add.image(0, 0, "interact_icon").setVisible(false).setDepth(100);
 
+    // Make canvas focusable so keyboard events reach Phaser
+    const canvas = this.game.canvas;
+    if (canvas) {
+      canvas.setAttribute("tabindex", "0");
+      canvas.style.outline = "none";
+      canvas.focus({ preventScroll: true });
+    }
+
+    this.moveKeys = { left: false, right: false, up: false, down: false, run: false };
+    const setMove = (e, down) => {
+      const k = e.key;
+      const c = e.code;
+      if (k === "ArrowLeft" || c === "ArrowLeft" || k === "a" || k === "A" || c === "KeyA") this.moveKeys.left = down;
+      if (k === "ArrowRight" || c === "ArrowRight" || k === "d" || k === "D" || c === "KeyD") this.moveKeys.right = down;
+      if (k === "ArrowUp" || c === "ArrowUp" || k === "w" || k === "W" || c === "KeyW") this.moveKeys.up = down;
+      if (k === "ArrowDown" || c === "ArrowDown" || k === "s" || k === "S" || c === "KeyS") this.moveKeys.down = down;
+      if (k === "Shift" || c === "ShiftLeft" || c === "ShiftRight") this.moveKeys.run = down;
+      if (down && ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(k)) {
+        e.preventDefault?.();
+      }
+    };
+    this._onKeyDownMove = (e) => setMove(e, true);
+    this._onKeyUpMove = (e) => setMove(e, false);
+    this.input.keyboard.on("keydown", this._onKeyDownMove);
+    this.input.keyboard.on("keyup", this._onKeyUpMove);
+    // Also listen on window in case canvas loses focus briefly
+    window.addEventListener("keydown", this._onKeyDownMove);
+    window.addEventListener("keyup", this._onKeyUpMove);
+    this.events.once("shutdown", () => {
+      window.removeEventListener("keydown", this._onKeyDownMove);
+      window.removeEventListener("keyup", this._onKeyUpMove);
+    });
+
+    this.input.keyboard.addCapture([
+      Phaser.Input.Keyboard.KeyCodes.W,
+      Phaser.Input.Keyboard.KeyCodes.A,
+      Phaser.Input.Keyboard.KeyCodes.S,
+      Phaser.Input.Keyboard.KeyCodes.D,
+      Phaser.Input.Keyboard.KeyCodes.UP,
+      Phaser.Input.Keyboard.KeyCodes.DOWN,
+      Phaser.Input.Keyboard.KeyCodes.LEFT,
+      Phaser.Input.Keyboard.KeyCodes.RIGHT,
+      Phaser.Input.Keyboard.KeyCodes.SHIFT,
+      Phaser.Input.Keyboard.KeyCodes.SPACE,
+    ]);
     this.cursors = this.input.keyboard.createCursorKeys();
     this.keys = this.input.keyboard.addKeys({
       w: Phaser.Input.Keyboard.KeyCodes.W,
@@ -130,8 +184,9 @@ export class OverworldScene extends Phaser.Scene {
     });
 
     this.cameras.main.setBounds(0, 0, MAP_WIDTH * TILE_SIZE, MAP_HEIGHT * TILE_SIZE);
-    this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
+    this.cameras.main.startFollow(this.player, true, 0.14, 0.14);
     this.cameras.main.setZoom(1);
+    this.cameras.main.setRoundPixels(true);
 
     this.facing = "down";
     this.canMove = true;
@@ -140,6 +195,14 @@ export class OverworldScene extends Phaser.Scene {
     this._lastTriggerId = null;
     this._footTimer = 0;
     this._konami = [];
+    this._moving = false;
+    this._prevX = this.player.x;
+    this._prevY = this.player.y;
+    this.events.on("postupdate", this._resolveCollision, this);
+    this.events.once("shutdown", () => {
+      this.events.off("postupdate", this._resolveCollision, this);
+    });
+    this._applyPlayerAnim(false);
 
     this._applyDayNightTint(worldTime);
     this.audio?.playBgm?.(this.audio.bgmForMap(mapId));
@@ -192,13 +255,56 @@ export class OverworldScene extends Phaser.Scene {
     const h = MAP_HEIGHT * TILE_SIZE;
     const scaleX = this.scale.width / w;
     const scaleY = this.scale.height / h;
-    const zoom = Math.min(scaleX, scaleY, 2);
+    // Fit world, then nudge zoom so 16px sprites read clearly without cropping too hard
+    const fit = Math.min(scaleX, scaleY);
+    const zoom = Phaser.Math.Clamp(fit * 2.1, 1.5, 2.6);
     this.cameras.main.setZoom(zoom);
   }
 
+  _isKeyDown(key) {
+    return Boolean(key?.isDown);
+  }
+
+  _readMoveVector() {
+    const left = this.moveKeys?.left || this._isKeyDown(this.cursors?.left) || this._isKeyDown(this.keys?.a);
+    const right = this.moveKeys?.right || this._isKeyDown(this.cursors?.right) || this._isKeyDown(this.keys?.d);
+    const up = this.moveKeys?.up || this._isKeyDown(this.cursors?.up) || this._isKeyDown(this.keys?.w);
+    const down = this.moveKeys?.down || this._isKeyDown(this.cursors?.down) || this._isKeyDown(this.keys?.s);
+    let x = 0;
+    let y = 0;
+    if (left) x -= 1;
+    if (right) x += 1;
+    if (up) y -= 1;
+    if (down) y += 1;
+    return { x, y };
+  }
+
+  _applyPlayerAnim(moving) {
+    const key = playerAnimKey(this.playerArchetype, this.facing, moving);
+    if (this.player.anims?.currentAnim?.key === key) return;
+    if (this.anims.exists(key)) {
+      this.player.anims.play(key, true);
+    } else {
+      this.player.setTexture(playerTextureKey(this.playerArchetype, this.facing));
+    }
+  }
+
   update(_time, delta) {
+    if (!this.player?.body) return;
+
+    this._prevX = this.player.x;
+    this._prevY = this.player.y;
+
+    if (this.playerShadow) {
+      this.playerShadow.setPosition(this.player.x, this.player.y + 9);
+    }
+
     if (!this.canMove || this.dialogue.isActive() || this.encounters.isAnyActive?.() || this.encounters.blackjack?.isActive()) {
       this.player.body.setVelocity(0, 0);
+      if (this._moving) {
+        this._moving = false;
+        this._applyPlayerAnim(false);
+      }
       return;
     }
 
@@ -206,22 +312,27 @@ export class OverworldScene extends Phaser.Scene {
       this.onHudUpdate?.({ trainerCard: true });
     }
 
-    const speed = this.keys.shift.isDown ? 120 : 80;
-    let vx = 0;
-    let vy = 0;
+    const run = this.moveKeys?.run || this._isKeyDown(this.keys.shift);
+    const speed = run ? 130 : 88;
+    const { x: mx, y: my } = this._readMoveVector();
 
-    if (this.cursors.left.isDown || this.keys.a.isDown) vx = -speed;
-    else if (this.cursors.right.isDown || this.keys.d.isDown) vx = speed;
-    if (this.cursors.up.isDown || this.keys.w.isDown) vy = -speed;
-    else if (this.cursors.down.isDown || this.keys.s.isDown) vy = speed;
+    let vx = mx * speed;
+    let vy = my * speed;
+    // Normalize diagonal so WASD/arrows feel even on diagonals
+    if (vx !== 0 && vy !== 0) {
+      const inv = Math.SQRT1_2;
+      vx *= inv;
+      vy *= inv;
+    }
 
     this.player.body.setVelocity(vx, vy);
 
-    if (vx !== 0 || vy !== 0) {
+    const moving = vx !== 0 || vy !== 0;
+    if (moving) {
       if (Math.abs(vx) > Math.abs(vy)) this.facing = vx < 0 ? "left" : "right";
       else this.facing = vy < 0 ? "up" : "down";
       this._footTimer += delta;
-      if (this._footTimer > 220) {
+      if (this._footTimer > 200) {
         this._footTimer = 0;
         const tx = Math.floor(this.player.x / TILE_SIZE);
         const ty = Math.floor(this.player.y / TILE_SIZE);
@@ -231,7 +342,11 @@ export class OverworldScene extends Phaser.Scene {
       }
     }
 
-    this._resolveCollision();
+    if (moving !== this._moving || moving) {
+      this._moving = moving;
+      this._applyPlayerAnim(moving);
+    }
+
     this._updateNearbyNpc();
     this._checkDoorTriggers();
     this._checkZoneTriggers();
@@ -253,17 +368,53 @@ export class OverworldScene extends Phaser.Scene {
     }
   }
 
-  _resolveCollision() {
-    const body = this.player.body;
-    const half = 0.35;
-    for (const [ox, oy] of [[-half, -half], [half, -half], [-half, half], [half, half]]) {
-      const cx = Math.floor((body.center.x + ox * TILE_SIZE) / TILE_SIZE);
-      const cy = Math.floor((body.center.y + oy * TILE_SIZE) / TILE_SIZE);
-      if (this._isBlocked(cx, cy)) {
-        body.setVelocity(0, 0);
-        return;
+  /** True if the player's physics body overlaps any solid tile. */
+  _bodyHitsWall() {
+    const body = this.player?.body;
+    if (!body) return true;
+    const x0 = Math.floor(body.x / TILE_SIZE);
+    const y0 = Math.floor(body.y / TILE_SIZE);
+    const x1 = Math.floor((body.right - 0.01) / TILE_SIZE);
+    const y1 = Math.floor((body.bottom - 0.01) / TILE_SIZE);
+    for (let ty = y0; ty <= y1; ty++) {
+      for (let tx = x0; tx <= x1; tx++) {
+        if (this._isBlocked(tx, ty)) return true;
       }
     }
+    return false;
+  }
+
+  /**
+   * Post-physics slide collision: keep X or Y from the previous frame so the
+   * player can walk past plants/walls instead of freezing when a corner clips.
+   */
+  _resolveCollision() {
+    if (!this.player?.body || !this.canMove) return;
+    if (!this._bodyHitsWall()) return;
+
+    const body = this.player.body;
+    const prevX = this._prevX ?? this.player.x;
+    const prevY = this._prevY ?? this.player.y;
+    const newX = this.player.x;
+    const newY = this.player.y;
+
+    // Slide on X (new X, old Y)
+    this.player.setPosition(newX, prevY);
+    if (!this._bodyHitsWall()) {
+      body.setVelocity(body.velocity.x, 0);
+      return;
+    }
+
+    // Slide on Y (old X, new Y)
+    this.player.setPosition(prevX, newY);
+    if (!this._bodyHitsWall()) {
+      body.setVelocity(0, body.velocity.y);
+      return;
+    }
+
+    // Fully blocked — revert
+    this.player.setPosition(prevX, prevY);
+    body.setVelocity(0, 0);
   }
 
   _isBlocked(tx, ty) {

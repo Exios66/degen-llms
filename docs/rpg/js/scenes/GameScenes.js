@@ -15,6 +15,7 @@ import {
 import { tierForWagered } from "../../../js/rewards.js";
 import { tierIndex } from "../../../js/rewards-perks.js";
 import { recordDex } from "../systems/Dex.js";
+import { findPath, nearestReachable } from "../systems/Pathfinder.js";
 import { EGG_REGISTRY, discoverEgg, eggForFlag } from "../systems/EasterEggs.js";
 
 /** Most tiles the camera will ever show on an axis — a handheld-sized window. */
@@ -269,6 +270,9 @@ export class OverworldScene extends Phaser.Scene {
     this._prevX = this.player.x;
     this._prevY = this.player.y;
     this.moveTarget = null;
+    this.movePath = [];
+    this.pendingTalk = null;
+    this._stalledFor = 0;
     this._touchInteractRadius = TILE_SIZE * 1.75;
     this._setupTouchInput();
     this.events.on("postupdate", this._resolveCollision, this);
@@ -521,33 +525,127 @@ export class OverworldScene extends Phaser.Scene {
       if (!this.canMove || this.dialogue.isActive() || this.encounters.isAnyActive?.()) return;
 
       const world = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
+      const tileX = Math.floor(world.x / TILE_SIZE);
+      const tileY = Math.floor(world.y / TILE_SIZE);
 
-      if (this.nearbyNpc && this.interactIcon.visible) {
-        const ix = this.interactIcon.x;
-        const iy = this.interactIcon.y;
-        if (Phaser.Math.Distance.Between(world.x, world.y, ix, iy) < TILE_SIZE * 0.9) {
-          this._tryInteract();
-          return;
-        }
+      // The prompt bobbing over a guest's head is a button as much as they are.
+      if (this.nearbyNpc && this.interactIcon.visible
+          && tileX === Math.floor(this.interactIcon.x / TILE_SIZE)
+          && tileY === Math.floor(this.interactIcon.y / TILE_SIZE)) {
+        this._tryInteract();
+        return;
       }
+      this.walkTo(tileX, tileY);
+    });
+  }
 
-      for (const npc of this.currentNpcs ?? []) {
-        const nx = npc.x * TILE_SIZE + TILE_SIZE / 2;
-        const ny = npc.y * TILE_SIZE + TILE_SIZE / 2;
-        const dist = Phaser.Math.Distance.Between(world.x, world.y, nx, ny);
-        if (dist < TILE_SIZE * 1.25) {
-          this._faceToward(nx, ny);
-          if (dist < this._touchInteractRadius && this._isFacingNpc(npc)) {
-            this.nearbyNpc = npc;
-            this._tryInteract();
-            return;
-          }
-          this.moveTarget = { x: nx, y: ny - TILE_SIZE * 0.35 };
-          return;
-        }
-      }
+  /** Tile the player currently stands on, measured at the feet. */
+  playerTile() {
+    const at = this.player.body?.center ?? this.player;
+    return {
+      x: Math.floor(at.x / TILE_SIZE),
+      y: Math.floor(at.y / TILE_SIZE),
+    };
+  }
 
-      this.moveTarget = { x: world.x, y: world.y };
+  /**
+   * Where to put the sprite so its feet land in the middle of a tile. The
+   * collision body sits below the sprite's center, so aiming the sprite at the
+   * tile center would leave the body straddling the tile below.
+   */
+  _footTarget(tileX, tileY) {
+    const drop = (this.player.body?.center.y ?? this.player.y) - this.player.y;
+    return {
+      x: tileX * TILE_SIZE + TILE_SIZE / 2,
+      y: tileY * TILE_SIZE + TILE_SIZE / 2 - drop,
+    };
+  }
+
+  /**
+   * Walk to a tapped tile, routing around anything solid.
+   *
+   * Tapping the guest standing behind a rope, or the door on the far side of a
+   * slot bank, should send the player there and then do the obvious thing —
+   * talk, or step through — rather than making them steer.
+   *
+   * @returns {boolean} whether a route was found
+   */
+  walkTo(tileX, tileY) {
+    const start = this.playerTile();
+    const npc = this._npcAtTile(tileX, tileY);
+    const goal = npc
+      ? nearestReachable(this.collisionGrid, start, { x: npc.x, y: npc.y }, 2)
+      : nearestReachable(this.collisionGrid, start, { x: tileX, y: tileY });
+    if (!goal) {
+      this._showTapMarker(tileX, tileY, false);
+      return false;
+    }
+
+    this.pendingTalk = npc?.id ?? null;
+    this._showTapMarker(goal.x, goal.y, true);
+    if (goal.x === start.x && goal.y === start.y) {
+      this.movePath = [];
+      if (npc) this._arriveAtNpc(npc);
+      return true;
+    }
+    this.movePath = findPath(this.collisionGrid, start, goal)
+      .map((t) => this._footTarget(t.x, t.y));
+    if (!this.movePath.length) {
+      this.pendingTalk = null;
+      return false;
+    }
+    this.moveTarget = this.movePath[0];
+    return true;
+  }
+
+  _npcAtTile(tileX, tileY) {
+    return (this.currentNpcs ?? []).find((npc) => npc.x === tileX && npc.y === tileY) ?? null;
+  }
+
+  /** Turn to the NPC that was tapped and open with them. */
+  _arriveAtNpc(npc) {
+    this._faceToward(npc.x * TILE_SIZE + TILE_SIZE / 2, npc.y * TILE_SIZE + TILE_SIZE / 2);
+    this.nearbyNpc = npc;
+    this._tryInteract();
+  }
+
+  _clearMovePath() {
+    this.movePath = [];
+    this.moveTarget = null;
+    this.pendingTalk = null;
+  }
+
+  /** End of a tapped route: greet whoever was tapped. */
+  _finishWalk() {
+    const npc = this.pendingTalk
+      ? (this.currentNpcs ?? []).find((n) => n.id === this.pendingTalk)
+      : null;
+    this.pendingTalk = null;
+    if (npc) this._arriveAtNpc(npc);
+  }
+
+  /** Brief reticle where the tap landed, so touch input feels answered. */
+  _showTapMarker(tileX, tileY, reachable) {
+    this._tapMarker?.destroy();
+    const color = reachable ? 0xe8c547 : 0xf07178;
+    const marker = this.add.rectangle(
+      tileX * TILE_SIZE + TILE_SIZE / 2,
+      tileY * TILE_SIZE + TILE_SIZE / 2,
+      TILE_SIZE * 0.7,
+      TILE_SIZE * 0.7,
+    );
+    marker.setStrokeStyle(2, color, 0.9);
+    marker.setDepth(8);
+    this._tapMarker = marker;
+    this.tweens.add({
+      targets: marker,
+      scale: reachable ? 0.55 : 1.25,
+      alpha: 0,
+      duration: reachable ? 360 : 260,
+      onComplete: () => {
+        marker.destroy();
+        if (this._tapMarker === marker) this._tapMarker = null;
+      },
     });
   }
 
@@ -599,6 +697,11 @@ export class OverworldScene extends Phaser.Scene {
   update(_time, delta) {
     if (!this.player?.body) return;
 
+    // Physics runs after update(), so this is how far the last frame got us.
+    this._lastFrameTravel = Math.hypot(
+      this.player.x - (this._prevX ?? this.player.x),
+      this.player.y - (this._prevY ?? this.player.y),
+    );
     this._prevX = this.player.x;
     this._prevY = this.player.y;
 
@@ -609,6 +712,8 @@ export class OverworldScene extends Phaser.Scene {
     if (!this.canMove || this.isMenuOpen?.() || this.dialogue.isActive()
         || this.encounters.isAnyActive?.() || this.encounters.blackjack?.isActive()) {
       this.player.body.setVelocity(0, 0);
+      // Whatever just interrupted us outranks a tapped route.
+      if (this.moveTarget) this._clearMovePath();
       if (this._moving) {
         this._moving = false;
         this._applyPlayerAnim(false);
@@ -634,7 +739,9 @@ export class OverworldScene extends Phaser.Scene {
       const dy = this.moveTarget.y - this.player.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
       if (dist < TILE_SIZE * 0.2) {
-        this.moveTarget = null;
+        this.movePath?.shift();
+        this.moveTarget = this.movePath?.[0] ?? null;
+        if (!this.moveTarget) this._finishWalk();
       } else {
         mx = dx / dist;
         my = dy / dist;
@@ -642,7 +749,8 @@ export class OverworldScene extends Phaser.Scene {
         else this.facing = my < 0 ? "up" : "down";
       }
     } else if (mx !== 0 || my !== 0) {
-      this.moveTarget = null;
+      // Taking the keys back cancels the route.
+      this._clearMovePath();
     }
 
     let vx = mx * speed;
@@ -655,6 +763,17 @@ export class OverworldScene extends Phaser.Scene {
     }
 
     this.player.body.setVelocity(vx, vy);
+
+    // A guest can wander into a planned route. Give up rather than shove.
+    if (this.moveTarget) {
+      this._stalledFor = this._lastFrameTravel < 0.4 ? this._stalledFor + delta : 0;
+      if (this._stalledFor > 500) {
+        this._clearMovePath();
+        this._stalledFor = 0;
+      }
+    } else {
+      this._stalledFor = 0;
+    }
 
     const moving = vx !== 0 || vy !== 0;
     if (moving) {
@@ -971,6 +1090,7 @@ export class OverworldScene extends Phaser.Scene {
 
   _transitionMap(targetMapId, targetX, targetY, message) {
     this.canMove = false;
+    this._clearMovePath();
     this.saveAdapter.updatePosition(targetX, targetY, targetMapId);
     this.saveAdapter.persist();
     if (message) this.dialogue.showSystemMessage(message);

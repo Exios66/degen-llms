@@ -24,6 +24,7 @@ const { HOSTED_ENCOUNTERS, TABLE_STAKE_ACTIVITIES } = await import(
 const { RPG_ITEMS } = await import(join(rpgRoot, "js/systems/Inventory.js"));
 const { DEX_REGISTRY } = await import(join(rpgRoot, "js/systems/Dex.js"));
 const { ART_UNIT } = await import(join(rpgRoot, "js/systems/MapTiles.js"));
+const { findPath, nearestReachable } = await import(join(rpgRoot, "js/systems/Pathfinder.js"));
 const { artKeys, drawArtToCanvas, drawCharacterToCanvas } = await import(
   join(rpgRoot, "js/systems/TextureFactory.js"));
 const {
@@ -404,6 +405,53 @@ for (const [collection, entries] of Object.entries(DEX_REGISTRY)) {
 for (const [id, spec] of Object.entries(HOSTED_ENCOUNTERS)) {
   check(Boolean(spec.view), `hosted ${id}: missing view`);
   check(Boolean(spec.title), `hosted ${id}: missing title`);
+}
+
+// ── Tap-to-walk routing ───────────────────────────────────────────────────
+// Touch players never press a direction, so every tap has to produce a route
+// that only steps on walkable tiles — or an honest refusal.
+for (const mapId of MAP_IDS) {
+  const grid = layers.get(mapId).collision;
+  const spawn = getMapDefinition(mapId).spawn;
+  const reachedTiles = [...reachedFrom.get(mapId)].map((k) => {
+    const [x, y] = k.split(",").map(Number);
+    return { x, y };
+  });
+  // Farthest walkable tile from the spawn is the hardest route on the map.
+  const far = reachedTiles.reduce((best, t) => {
+    const d = Math.abs(t.x - spawn.x) + Math.abs(t.y - spawn.y);
+    return d > best.d ? { t, d } : best;
+  }, { t: spawn, d: -1 }).t;
+
+  const path = findPath(grid, spawn, far);
+  const at = `route ${mapId} (${spawn.x},${spawn.y})->(${far.x},${far.y})`;
+  check(far === spawn || path.length > 0, `${at}: no route to the farthest walkable tile`);
+  let prev = spawn;
+  for (const step of path) {
+    check(Math.abs(step.x - prev.x) + Math.abs(step.y - prev.y) === 1,
+      `${at}: step (${step.x},${step.y}) is not adjacent to the one before it`);
+    check(walkable(mapId, step.x, step.y),
+      `${at}: routes over solid tile (${step.x},${step.y})`);
+    prev = step;
+  }
+  if (path.length) {
+    check(prev.x === far.x && prev.y === far.y, `${at}: route stops short of the target`);
+  }
+
+  // Tapping a wall should land you beside it rather than doing nothing.
+  const wall = [];
+  for (let y = 0; y < MAP_HEIGHT && wall.length < 1; y += 1) {
+    for (let x = 0; x < MAP_WIDTH; x += 1) {
+      if (walkable(mapId, x, y) || !adjacentToWalk(mapId, x, y, connected)) continue;
+      wall.push({ x, y });
+      break;
+    }
+  }
+  for (const target of wall) {
+    const spot = nearestReachable(grid, spawn, target);
+    check(spot != null && walkable(mapId, spot.x, spot.y),
+      `${mapId}: tapping solid tile (${target.x},${target.y}) found nowhere to stand`);
+  }
 }
 
 // ── Art ───────────────────────────────────────────────────────────────────

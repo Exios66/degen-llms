@@ -112,7 +112,7 @@ Classic dice table with Pass Line, Don't Pass, and side bets.
 | `mandalay_bay/craps.py` | Python engine |
 | `docs/js/craps.js` | Browser mirror |
 | `mandalay_bay/activities/craps.py` | CLI activity |
-| `docs/rpg/js/systems/overlays/CrapsOverlay.js` | RPG overlay |
+| `docs/js/ui/craps-renderers.js` | Table screen the RPG mounts too |
 
 ---
 
@@ -122,4 +122,6 @@ All table games respect the selected stake tier. See [[Casino-Offerings#stake-ti
 
 ## Pixel RPG
 
-All three games launch as in-world encounters from pit NPCs on the casino carpet. See [[Pixel-RPG-Simulator]].
+Roulette and hold'em launch from their pit NPCs on the casino carpet, and
+**Stickman Stan** runs the craps rail on the north floor — he'll call you over
+if you walk through his sightline twice. See [[Pixel-RPG-Simulator]].

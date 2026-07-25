@@ -1,4 +1,4 @@
-"""Save format migration — CLI v3 rewards bootstrap and v7 tier fields."""
+"""Save format migration — CLI v3 rewards bootstrap, v7 tier fields, v8 RPG state."""
 
 from mandalay_bay.rewards import SAVE_VERSION_WITH_REWARDS, ensure_rewards, migrate_session_rewards
 from mandalay_bay.saves import session_from_dict, session_to_dict
@@ -42,3 +42,46 @@ def test_migrate_session_rewards_welcome_on_old_version() -> None:
     migrate_session_rewards(session, data_version=1)
     assert session.rewards.notifications
     assert any(n["title"] == "Welcome to MGM Rewards" for n in session.rewards.notifications)
+
+
+def test_v8_save_loads_in_the_cli() -> None:
+    """The CLI reads `version` tolerantly, so a web v8 save must still load."""
+    data = {
+        "version": 8,
+        "player_name": "Pixel",
+        "wallet": {"balance": 4200, "transactions": []},
+        "activity_stats": {},
+        "rpg": {"mapId": "sky_bridge", "x": 4, "y": 9, "eggs": {"konami_mode": {}}},
+    }
+    session = session_from_dict(data)
+    assert session.player_name == "Pixel"
+    assert session.wallet.balance == 4200
+
+
+def test_cli_round_trip_preserves_web_rpg_state() -> None:
+    """Playing in the terminal must not erase pixel-RPG progress."""
+    rpg = {
+        "mapId": "guest_room",
+        "x": 15,
+        "y": 20,
+        "inventory": ["reef_badge"],
+        "dex": {"reef": ["sand_tiger"]},
+        "eggs": {"egg_green_room": {"at": None}},
+        "mapVisits": {"guest_room": 3},
+        "options": {"muted": True, "textSpeed": "fast"},
+    }
+    loaded = session_from_dict(
+        {
+            "version": 8,
+            "player_name": "Pixel",
+            "wallet": {"balance": 900, "transactions": []},
+            "activity_stats": {},
+            "rpg": rpg,
+        }
+    )
+    loaded.wallet.balance = 1500
+
+    payload = session_to_dict(loaded)
+
+    assert payload["rpg"] == rpg
+    assert payload["wallet"]["balance"] == 1500

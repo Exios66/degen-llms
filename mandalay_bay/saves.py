@@ -23,6 +23,11 @@ from mandalay_bay.vegas_time import format_vegas_datetime
 MAX_SLOTS = 5
 DEFAULT_STARTING_CHIPS = 1000
 
+#: Save keys the web build owns and the CLI has no model for. They are carried
+#: through a CLI load/save round trip untouched so playing in the terminal
+#: never erases pixel-RPG progress written by docs/rpg/.
+WEB_ONLY_SAVE_KEYS = frozenset({"rpg", "rpg_data", "rpgData", "sportsbook"})
+
 
 def default_save_dir() -> Path:
     override = os.environ.get("MANDALAY_BAY_SAVE_DIR")
@@ -264,6 +269,7 @@ def session_to_dict(session: PlayerSession) -> dict:
         payload["staff_overrides"] = session.staff_overrides
     if hasattr(session, "intoxication") and session.intoxication is not None:
         payload["intoxication"] = asdict(session.intoxication)
+    payload.update(getattr(session, "web_only_state", None) or {})
     return payload
 
 
@@ -353,6 +359,9 @@ def session_from_dict(data: dict) -> PlayerSession:
     if "staff_overrides" in data:
         set_staff_overrides(session, data["staff_overrides"])
     attach_intoxication_to_session(session, data)
+    session.web_only_state = {
+        key: value for key, value in data.items() if key in WEB_ONLY_SAVE_KEYS
+    }
     return session
 
 

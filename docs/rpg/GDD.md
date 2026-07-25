@@ -1,497 +1,288 @@
 # The Mandalay Bay — Pixel RPG Game Design Document
 
-**Version:** Phases 2–4 (complete)  
-**Audience:** Future developers expanding the Epic Furious–style pixel RPG  
-**Play URL:** `/rpg/index.html` (GitHub Pages: `https://exios66.github.io/degen-llms/rpg/`)
+**Status:** Phases 1–6 complete
+**Audience:** developers extending the Pokémon-style pixel resort
+**Play URL:** `/rpg/index.html` — live at <https://exios66.github.io/degen-llms/rpg/>
 
 ---
 
 ## 1. Vision
 
-Transform **The Mandalay Bay** from a menu-driven terminal casino into a **16-bit JRPG / Pokémon-style explorable resort** inspired by [Operation Epic Furious](https://www.epicfurious.com/):
+The Mandalay Bay is a digital resort with three faces: a Python CLI, a web
+terminal, and this pixel RPG. All three share one chip wallet, one save
+library, and one set of game rules. The RPG's job is to make the resort a
+*place* — twenty-eight rooms you walk through, sixty people who have something
+to say, and a clock that charges you rent whether or not you are winning.
 
-- Top-down overworld navigation
-- NPC dialogue trees with branching choices
-- Casino activities as **encounters** (blackjack first; slots and sportsbook later)
-- Unified chip economy and save library shared with CLI and terminal web modes
-- Dense environmental storytelling, Easter eggs, and Mandalay Bay–themed zones
+The reference feel is Pokémon: a top-down overworld, a START menu that holds
+your whole life, trainers who spot you from across the room, a collection dex,
+and secrets that pay in flavor rather than money.
 
-Phase 1 proves the loop: **walk → talk → play blackjack → earn chips → save position**.
+### The delegation rule
+
+**The RPG does not reimplement game logic or game screens.** Every casino,
+hotel, pool, and shopping flow lives once in `docs/js/` and is *mounted* by the
+RPG inside an encounter panel. When the terminal gains a feature, the RPG gets
+it for free.
+
+The only screens the RPG draws itself are the ones that read better in-world:
+blackjack, hold'em, roulette, and the House of Blues rhythm minigame. Those are
+the battle screens.
 
 ---
 
-## 2. Phase 1 Deliverables (Implemented)
+## 2. Architecture
 
-| Feature | Status | Location |
-|---------|--------|----------|
-| Phaser 3 overworld (30×30 tiles) | ✅ | `js/scenes/GameScenes.js` |
-| Procedural pixel textures | ✅ | `js/systems/TextureFactory.js` |
-| Player movement (WASD / arrows, Shift run) | ✅ | `OverworldScene.update()` |
-| NPC interaction (face + E/Enter/Space) | ✅ | `OverworldScene._tryInteract()` |
-| JSON dialogue system | ✅ | `js/systems/DialogueManager.js`, `js/data/dialogues.json` |
-| Blackjack encounter (shared engine) | ✅ | `js/systems/EncounterBridge.js` |
-| Save library + RPG state (v2) | ✅ | `docs/js/core.js`, `js/systems/SaveAdapter.js` |
-| Chip HUD | ✅ | `js/scenes/TitleScreen.js` → `renderHud()` |
-| Title / save picker | ✅ | `js/scenes/TitleScreen.js` |
-| 3 NPCs (Chip Chandler, Dealer Dana, Tourist Tina) | ✅ | `js/systems/MapData.js` |
-| Charismatic dealer roster + rotation | ✅ | `docs/js/dealers.js`, `mandalay_bay/dealers.py` |
-| Pit NPCs, bar, pavilion staff | ✅ | `js/systems/MapData.js`, `js/data/dialogues.json` |
-
-### Phase 1 map layout
-
-```
-North (y=0)
-┌────────────────────────────────┐
-│  WALL / future expansion       │  y 2–5
-├────────────────────────────────┤
-│     CASINO CARPET + FELT       │  y 6–19
-│       (blackjack / hold'em / roulette pits) │
-│     Betty's bar (west) · Pavilion (NE)      │
-├────────────────────────────────┤
-│     LOBBY (gold marble)        │  y 20–28
-│  Chip Chandler · Tourist Tina  │
-│         ENTRANCE (y=28)        │
-└────────────────────────────────┘
-South
+```mermaid
+flowchart TB
+  subgraph shared ["docs/js/ — single source of truth"]
+    LOGIC["Rules: slots, hotel, pool, sportsbook, bank, rewards, world-cycle"]
+    SHELL["ui/shell.js — el, banner, chipLine, statusBanner, view stack"]
+    UIFAC["ui/*.js — buildSlotsRenderers, buildHotelRenderers, ..."]
+  end
+  subgraph term ["docs/index.html — web terminal"]
+    APP["app.js — bootstrap + RENDERERS assembly"]
+  end
+  subgraph rpg ["docs/rpg/ — Phaser overworld"]
+    OW["OverworldScene"]
+    HOST["TerminalHostOverlay + ctx shim"]
+    MENU["MenuOverlay — START menu"]
+    DATA["js/data/*.json — maps, NPCs, dialogue, quests, eggs"]
+  end
+  UIFAC --> LOGIC
+  UIFAC --> SHELL
+  APP --> UIFAC
+  HOST --> UIFAC
+  DATA --> OW
+  OW -->|encounter id| HOST
+  OW -->|Esc / X| MENU
+  MENU --> HOST
 ```
 
-### Phase 1 controls
+### Where things live
+
+| Concern | File |
+|---------|------|
+| Boot, save picker, HUD wiring | `js/main.js`, `js/scenes/TitleScreen.js` |
+| Overworld scene, movement, triggers | `js/scenes/GameScenes.js` |
+| Tile vocabulary | `js/systems/MapTiles.js` |
+| JSON → tile layers | `js/systems/MapLoader.js` |
+| Map/NPC/door accessors + procedural fallback | `js/systems/MapData.js` |
+| Procedural sprites and tiles | `js/systems/TextureFactory.js` |
+| Dialogue graph | `js/systems/DialogueManager.js` |
+| Encounter routing | `js/systems/EncounterBridge.js`, `js/systems/HostedEncounters.js` |
+| Mounting terminal screens | `js/systems/TerminalHostOverlay.js` |
+| START menu | `js/systems/MenuOverlay.js` |
+| Quests, dex, bag, secrets | `js/systems/QuestManager.js`, `Dex.js`, `Inventory.js`, `EasterEggs.js` |
+| Save bridge | `js/systems/SaveAdapter.js`, `docs/js/core.js` |
+| Procedural audio | `js/systems/AudioManager.js` |
+
+---
+
+## 3. The world
+
+Twenty-eight rooms, each a 30×30 tile grid, authored as declarative JSON in
+`js/data/maps/`. `js/data/maps/index.json` lists them; `MapLoader.compileMap()`
+turns each record into ground, collision, and decor layers at boot.
+
+| Wing | Rooms |
+|------|-------|
+| Arrival | Las Vegas Blvd, Valet & Parking, Registration Lobby |
+| Casino | Casino Floor North, Casino Floor South, Race & Sports Book, High Limit Salon, Foundation Room |
+| Retail | The Shoppes at Mandalay Place, Sky Bridge, Convention Center |
+| Bars | Betty's Bar, Skyfall Lounge |
+| Hotel | Hotel Tower, Guest Corridor, Room 24-118, Delano Wing, Bathhouse & Spa |
+| Pool | Mandalay Beach, Cabana Row, Beach Club, Moonlight Rave Stage |
+| Attractions | Shark Reef Tunnel, Shark Reef Exhibit, House of Blues, HOB Green Room, ULTRA Arena |
+| Back of house | Staff Corridor |
+
+### Map record schema
+
+```jsonc
+{
+  "id": "betty_bar",
+  "label": "Betty's Bar",
+  "bgm": "lobby",                       // AudioManager track id
+  "spawn": { "x": 15, "y": 26 },        // per-map, not a global default
+  "base": "WALL",                       // fill before anything else
+  "rects":   [{ "tile": "CARPET", "x": 4, "y": 4, "w": 22, "h": 22 }],
+  "decor":   [{ "tile": "BAR", "x": 8, "y": 8, "w": 14, "h": 1 },
+              { "tile": "PLANT", "points": [[5, 5], [24, 5]] }],
+  "scatter": [{ "tile": "PLANT", "mod": 11, "on": ["LOBBY"],
+                "bounds": { "x": 3, "y": 21, "w": 24, "h": 5 } }],
+  "clear":   [{ "tile": "CARPET", "x": 14, "y": 26, "w": 3, "h": 3 }],
+  "signs":   [{ "x": 15, "y": 22, "text": "LOBBY",
+                "color": "#fff8e8", "stroke": "#8a6a28" }],
+  "doors":   [{ "x": 15, "y": 27, "to": "main_resort", "toX": 4, "toY": 23,
+                "message": "Back to the casino floor." }]
+}
+```
+
+Layers are applied in order: `base` → `rects` → `decor` → `scatter` → `clear`.
+`clear` runs last so a doorway can always be punched through greenery.
+`scatter` uses a deterministic hash, never a random number, so a saved position
+can never end up inside new decor after an edit.
+
+Two tiles exist purely to make a room readable at a glance. `PATH` is the gold
+walkway that connects entrances, aisles, and doors, and `TRIM` is the dark
+border that separates one floor type from the next — a `trim_ring()` helper in
+the authoring script wraps a zone in one call. `signs` floats zone labels over
+the floor in tile coordinates, fractions included, so a label can sit between
+two tiles. Both are walkable; neither carries meaning beyond wayfinding.
+
+Door options: `requiresFlag`, `requiresChips` (+ `highRollerAlt`),
+`venueGate` (`high_limit_salon` | `foundation_room`, checked against
+`docs/js/venues.js`), and `requiresRoomKey` (checked against
+`canAccessHotelRoom()`).
+
+### Authoring
+
+`scripts/_author_maps.py` holds the whole world as readable Python literals and
+regenerates `js/data/maps/*.json` and `js/data/npcs.json`. Edit the script, run
+it, then run the integrity checker. Hand-editing the JSON works too — the
+script is a convenience, not a build step.
+
+`MapData.js` keeps the original procedural builders as a fallback: if
+`MapLoader.loadWorld()` cannot fetch the JSON (file:// origin, bad deploy), the
+RPG still boots into a nine-map procedural world rather than a black screen.
+
+---
+
+## 4. Pokémon-style systems
+
+**START menu** (`Esc`, `X`, or `Enter` on empty ground) — Trainer Card, Quests,
+Dex, Bag, Secrets, Rewards Phone, Off-Strip Bank, Player Stats, Staff Manifest,
+Guest Book, Resort Completion, Options, Save, Exit to Terminal. Every entry
+past the first five mounts a shared terminal screen.
+
+**Line-of-sight challengers** — an NPC with `sight: { dir, range }` notices you
+entering its cone, walks over, plays its `challengeDialogueId`, and drops
+straight into its encounter. Each NPC challenges once, tracked by a
+`challenged_<id>` flag.
+
+**Quests** — `js/data/quests.json`. A quest is `{ label, hint, target, giver,
+giverName, category, reward, rewardItem }`. Progress is *derived*, not
+incremented: `QuestManager.syncDerived()` reads reef photos, bar orders, dex
+counts, purchases, unlocked vignettes, egg count, and resort completion from
+shared session state, so quest progress can never disagree with the systems
+that produced it. Work done before a quest is accepted still counts — the
+derived value is banked and applied on accept.
+
+**Dex** — three collections in `js/systems/Dex.js`: Shark Reef species, slot
+machines played, and staff met. Dealers are remapped through the staff manifest
+so a renamed dealer still reads correctly.
+
+**Bag** — story items from quests and dialogue, plus mall purchases and minibar
+tabs pulled from `session.amenities`.
+
+**Secrets** — `js/data/easter_eggs.json`, twelve entries. Discovered by dialogue
+choices, zone triggers, or the Konami code. **Cosmetic only** — an egg never
+pays chips. This is a hard design rule.
+
+**Schedules** — NPCs carry a `schedule` keyed by world-cycle phase
+(`dawn`/`midday`/`dusk`/`late`). They tween to their new spot when the phase
+turns rather than teleporting.
+
+---
+
+## 5. Time and money
+
+`docs/js/world-cycle.js` is the single clock. Two real hours are one in-game
+day, split into four phases. `OverworldScene._tickWorldCycle()` runs every four
+seconds and is the only thing that advances the world:
+
+- mirrors `rpg.worldTime` for older saves and the HUD readout
+- re-tints the screen when the phase turns (`PHASE_WASH`)
+- walks NPCs to their scheduled positions
+- announces the day and today's reservation requirement
+- surfaces daily resort charges when a rollover posts
+- warns when the room is evicted, and blocks the Room 24-118 door until the
+  folio is settled
+
+The RPG player therefore feels the same pressure as the terminal player: rent
+is due whether or not the night went well.
+
+---
+
+## 6. Save format
+
+`SAVE_VERSION` is **8** (`docs/js/core.js`). The `rpg` blob:
+
+| Key | Meaning |
+|-----|---------|
+| `mapId`, `x`, `y` | position; new games start on `strip_sidewalk` |
+| `archetype`, `playerSprite` | guest type and overworld sprite |
+| `flags` | dialogue and world flags |
+| `quests` | `{ id: { stage, target } }`, `stage: "complete"` when done |
+| `inventory` | story item ids |
+| `dex` | `{ reef: [], slots: [], staff: [] }` |
+| `eggs` | `{ eggId: { at } }` |
+| `mapVisits` | `{ mapId: count }` |
+| `options` | `{ muted, textSpeed, footsteps }` |
+| `reputation` | `{ whales, staff, tourists }` |
+| `worldTime` | mirror of the world-cycle clock, kept for v7 readers |
+
+`migrateRpgState()` folds a v7 save forward: existing keys are never renamed,
+the new buckets are added empty, and a v7 save keeps the map it was saved on
+instead of being moved to the new arrival map. The pre-Phase-1 `rpgData` blob
+is folded into `rpg.flags` and no longer written.
+
+On the Python side, `mandalay_bay/saves.py` reads `version` tolerantly and
+carries `WEB_ONLY_SAVE_KEYS` (including `rpg`) through a CLI load/save round
+trip untouched, so playing in the terminal never erases pixel progress.
+
+---
+
+## 7. Tests
+
+| Check | Command |
+|-------|---------|
+| World data integrity | `node scripts/smoke-test-rpg.mjs` |
+| Browser walk + e2e journey | `python3 scripts/smoke-test-web.py` |
+| Screenshots for review | `python3 scripts/rpg-screenshot.py` |
+| Python rules | `python3 -m pytest` |
+
+`smoke-test-rpg.mjs` installs the authored world exactly the way `main.js` does
+and then asserts referential integrity across roughly 2,200 checks: every map
+compiles to a connected walkable region, every door lands somewhere you can
+actually stand, every NPC is reachable in all four day phases, every
+`dialogueId` / `encounter` / `giveItem` / `requiresQuestStage` resolves, every
+egg flag is set by something in the world, and a v7 save migrates cleanly.
+
+It also walks the other direction: every routable encounter must be *offered* by
+an NPC or a dialogue branch. That rule is what catches the failure mode this
+architecture invites — the terminal grows a screen, the RPG dutifully hosts it,
+and nobody in the world ever hands it to the player. Only `stats` and
+`staff_manifest` are exempt, because they are pages of the START menu.
+
+`smoke-test-web.py` opens every terminal view, every RPG encounter, every menu
+page, and then runs one continuous journey: boot a save slot, walk, get spotted
+by a challenger, open the START menu, check into the hotel, reload, and confirm
+position and chips came back.
+
+---
+
+## 8. Extending
+
+| To add… | Do this |
+|---------|---------|
+| A room | Add a record to `scripts/_author_maps.py`, regenerate, add doors both ways, run the checker |
+| An NPC | Add to the `NPCS` table in the same script plus a `*_greet` node in `dialogues.json` |
+| A dialogue branch | Edit `js/data/dialogues.json`; gates are `requiresFlag`, `unlessFlag`, `requiresQuestStage` with `elseNext` |
+| A quest | Add to `js/data/quests.json`, derive its progress in `QuestManager.syncDerived()`, and offer it from a dialogue node with `startQuest` |
+| An easter egg | Add to `js/data/easter_eggs.json` and set its flag from a dialogue choice or a zone trigger. Cosmetic only |
+| A casino screen | Build it in `docs/js/ui/` as `buildXRenderers(ctx)`, add an entry to `HostedEncounters.js`, then give somebody in the world a line that opens it. Do not write it twice |
+| A tile type | Add to `MapTiles.js`, draw it in `TextureFactory.js`, and decide whether it belongs in `COLLISION` |
+
+### Controls
 
 | Input | Action |
 |-------|--------|
-| Arrow keys / WASD | Move |
-| Shift | Run |
-| E / Enter / Space | Talk / advance dialogue |
-| Mouse | Dialogue choices, blackjack buttons |
-
----
-
-## 3. Architecture
-
-```
-docs/
-├── js/                          # Shared casino engine (CLI parity)
-│   ├── core.js                  # PlayerSession, ChipWallet, saves (v2 + rpg)
-│   └── blackjack/               # Full blackjack rules engine
-└── rpg/
-    ├── index.html               # RPG entry point
-    ├── css/rpg.css
-    ├── GDD.md                   # This document
-    └── js/
-        ├── main.js              # Bootstrap: title → Phaser → overlays
-        ├── data/
-        │   └── dialogues.json   # All NPC dialogue trees
-        ├── scenes/
-        │   ├── GameScenes.js    # OverworldScene (Phaser)
-        │   └── TitleScreen.js   # DOM save picker + HUD
-        └── systems/
-            ├── MapData.js       # Tile map + NPC defs (Phase 1: code-generated)
-            ├── TextureFactory.js
-            ├── DialogueManager.js
-            ├── SaveAdapter.js
-            └── EncounterBridge.js  # Activity overlays (blackjack DOM UI)
-```
-
-### Design pattern: Hybrid Phaser + DOM
-
-- **Phaser** renders the overworld (tiles, sprites, camera).
-- **DOM overlays** handle dialogue and blackjack UI — reuses the proven `BlackjackGame` class without rewriting card UI in Phaser.
-- **Future activities** (slots, sportsbook) should follow the same pattern: add `SlotsOverlay` / `SportsbookOverlay` in `EncounterBridge.js`.
-
-### Encounter flow
-
-```
-OverworldScene._tryInteract()
-  → DialogueManager.start(dialogueId)
-  → choice with "encounter": "blackjack"
-  → EncounterBridge.start("blackjack")
-  → BlackjackOverlay.open()  [DOM]
-  → session.wallet synced via BlackjackGame walletSync
-  → SaveAdapter.persist()
-  → OverworldScene resumes
-```
-
-### Save schema v2
-
-Terminal and RPG modes share `localStorage` key `mandalay-bay-library`. RPG adds optional `rpg` object:
-
-```json
-{
-  "version": 2,
-  "playerName": "Guest",
-  "wallet": { "balance": 1000, "transactions": [] },
-  "activityStats": {},
-  "rpg": {
-    "mapId": "main_resort",
-    "x": 15,
-    "y": 26,
-    "playerSprite": "weekend_warrior",
-    "quests": {},
-    "flags": {
-      "met_chip_chandler": true,
-      "tutorial_complete": true,
-      "played_blackjack": true
-    },
-    "playTimeMinutes": 0
-  }
-}
-```
-
-**Rules for future saves changes:**
-
-1. Bump `SAVE_VERSION` in `core.js`.
-2. Migrate in `PlayerSession.fromJSON()` — never break v1 saves.
-3. Document new fields in this file and `docs/saves.md`.
-
----
-
-## 4. Phase 2 — Full Floor Content
-
-**Goal:** Replace menu-only web app activities with RPG encounters; expand the map.
-
-### 2.1 Map expansion
-
-| Zone | Tile theme | Priority |
-|------|------------|----------|
-| Slot aisle (east carpet) | `TILE.CARPET` + machine decor | High |
-| Sports book (west carpet) | `TILE.CARPET` + screen tiles | High |
-| Cashier / lobby desk | `TILE.LOBBY` | Medium |
-| High Limit salon | Locked door + chip gate (10,000) | Medium |
-
-**Implementation steps:**
-
-1. Add zones to `buildMapLayers()` or migrate to **Tiled** JSON export.
-2. Add `triggers.json` for zone entry messages (see §7).
-3. Place NPCs in `MapData.js` → later `npcs.json`.
-
-### 2.2 New encounters
-
-| Activity | Encounter ID | Engine reuse |
-|----------|--------------|--------------|
-| Mandalay Fortune slots | `slots_fortune` | `docs/js/slots.js` |
-| High Roller slots | `slots_high_roller` | `docs/js/slots.js` |
-| Sports book | `sportsbook` | `docs/js/sportsbook.js` |
-
-**Checklist per activity:**
-
-- [x] Create `XOverlay` classes under `js/systems/overlays/` (blackjack pattern)
-- [x] Add `EncounterBridge.start()` routing for all encounter ids
-- [x] Add NPC dialogue branches with `"encounter": "..."`
-- [x] Call `session.recordVisit()` / `session.recordResult()`
-- [x] Sync wallet through existing engine callbacks
-- [ ] Add pytest parity tests if Python activity logic changes
-
-### 2.3 NPC roster (Phase 2)
-
-| NPC | Zone | Encounter |
-|-----|------|-----------|
-| Spinster Sal | Slot aisle | `slots_fortune` |
-| Bookie Blake | Sports book | `sportsbook` |
-| Cashier Carmen | Lobby desk | shop UI (buy-in only, no game) |
-| Security Sam | Roaming patrol | comedic escort from STAFF ONLY tiles |
-
-### 2.4 Dialogue authoring workflow
-
-1. Add nodes to `js/data/dialogues.json`.
-2. Reference by `dialogueId` on NPC in `MapData.js`.
-3. Use flags for return visits: `requiresFlag`, `unlessFlag`, `setFlag`.
-4. For conditional entry dialogue, branch in `OverworldScene._tryInteract()` (see `dealer_dana_return` pattern).
-
-**Dialogue node schema:**
-
-```json
-{
-  "node_id": {
-    "speaker": "NPC Name",
-    "text": "Line of dialogue.",
-    "next": "optional_next_node_id",
-    "setFlag": "optional_flag_to_set",
-    "encounter": "optional_encounter_id",
-    "choices": [
-      {
-        "label": "Player choice text",
-        "next": "node_id",
-        "encounter": "blackjack",
-        "setFlag": "flag",
-        "requiresFlag": "only_if_set",
-        "unlessFlag": "hide_if_set"
-      }
-    ]
-  }
-}
-```
-
----
-
-## 5. Phase 3 — Resort Expansion
-
-**Goal:** Mandalay Bay signature venues as explorable zones.
-
-### 5.1 New maps (multi-scene)
-
-| Map ID | Real-world reference | Gameplay |
-|--------|---------------------|----------|
-| `mandalay_beach` | 11-acre pool complex | Timing mini-game (ring toss / surf) |
-| `shark_reef` | Aquarium | Collection quest (photograph 5 species) |
-| `house_of_blues` | Music venue | Rhythm-tap mini-game or cutscene |
-| `ultra_arena` | Michelob ULTRA Arena | Scheduled event cutscenes |
-| `foundation_room` | VIP lounge | Chip-gated lounge, whale NPCs |
-
-**Implementation:**
-
-1. Create one Phaser scene per map OR one `OverworldScene` with `mapId` swap.
-2. Add door triggers: `{ "x": 15, "y": 6, "targetMap": "mandalay_beach", "targetX": 10, "targetY": 20 }`.
-3. Persist `rpg.mapId`, `rpg.x`, `rpg.y` on transition.
-4. Crossfade BGM per map (see §6).
-
-### 5.2 Quest system (minimal)
-
-Store in `rpg.quests`:
-
-```json
-{
-  "shark_photos": { "stage": 2, "target": 5 },
-  "dana_lucky_hand": { "stage": "complete" }
-}
-```
-
-Add `QuestManager.js`:
-
-- `QuestManager.advance("shark_photos")`
-- Dialogue conditions: `"requiresQuestStage": { "id": "shark_photos", "min": 1 }`
-- Trainer Card UI (Phase 3+) listing badges
-
-### 5.3 Day / night cycle
-
-- `rpg.worldTime` (minutes 0–1439)
-- Tint overlay: warm day lobby, neon night casino
-- NPC schedules: `"schedule": { "night": { "x": 12, "y": 14 } }`
-
----
-
-## 6. Phase 4 — Polish & Epic Furious Parity
-
-### 6.1 Art pipeline
-
-**Current (Phase 1):** Procedural textures in `TextureFactory.js`.
-
-**Target:**
-
-| Asset | Tool | Size |
-|-------|------|------|
-| Tilesets | Aseprite + Tiled | 16×16 or 32×32 |
-| Characters | Aseprite | 16×32, 4-dir walk cycles |
-| UI | 9-slice pixel borders | — |
-
-**Migration steps:**
-
-1. Export Tiled map → `assets/maps/main_resort.json`.
-2. Load in Phaser: `this.load.tilemapTiledJSON('map', 'assets/maps/main_resort.json')`.
-3. Replace `buildMapLayers()` with tilemap layers: `ground`, `collision`, `decor`.
-4. Keep `TextureFactory` as fallback for dev builds.
-
-### 6.2 Audio
-
-| Track | Zone |
-|-------|------|
-| `title_theme.ogg` | Save picker |
-| `lobby.ogg` | South lobby |
-| `casino_floor.ogg` | Carpet areas |
-| `blackjack.ogg` | Encounter |
-| `victory.ogg` | Win fanfare |
-| `secret.ogg` | Easter egg room |
-
-Use Phaser sound manager; respect browser autoplay (start audio after user gesture on title screen).
-
-### 6.3 Juice
-
-- Encounter transition: swirl or wipe (`cameras.main.fade` / custom shader)
-- Screen shake on blackjack natural 21
-- Slot reel stop frames
-- Footstep SFX by tile type (`TILE.LOBBY` vs `TILE.CARPET`)
-
-### 6.4 Arcade cabinet mode
-
-- CSS bezel frame around `#game-shell`
-- Attract screen on title idle timeout
-- “Insert coin” animation → save picker
-
----
-
-## 7. Content Systems Reference
-
-### 7.1 NPC definition
-
-```javascript
-{
-  id: "dealer_dana",
-  name: "Dealer Dana",
-  x: 15, y: 12,
-  sprite: "npc_green",      // texture key from TextureFactory or atlas
-  dialogueId: "dealer_dana_greet",
-  encounter: "blackjack",     // optional shortcut if no dialogue
-  direction: "down",
-  schedule: null,             // Phase 3+
-}
-```
-
-### 7.2 Trigger definition (Phase 2+)
-
-Create `js/data/triggers.json`:
-
-```json
-[
-  {
-    "id": "lobby_to_casino",
-    "x": 15, "y": 19,
-    "width": 3, "height": 1,
-    "type": "zone_message",
-    "message": "The carpet hums with slots and cheers."
-  },
-  {
-    "id": "staff_door",
-    "x": 2, "y": 10,
-    "type": "warp",
-    "targetMap": "staff_corridor",
-    "requiresFlag": "hint_north_wall"
-  }
-]
-```
-
-### 7.3 Easter egg tiers (backlog)
-
-| Tier | Example | Flag |
-|------|---------|------|
-| Easy | First slot spin cherry bonus dialogue | `easter_cherry` |
-| Medium | Konami code on lobby statue → retro palette | `konami_mode` |
-| Hard | STAFF ONLY corridor behind north wall | `found_back_room` |
-| ARG | Weekly sportsbook “lock of the week” | external |
-
-Track in a spreadsheet; each egg needs: trigger, dialogue, flag, reward (cosmetic only — **never** RNG advantage).
-
----
-
-## 8. Character & Faction Design
-
-### Starter archetypes (Phase 2 character select)
-
-| ID | Name | Starter perk |
-|----|------|--------------|
-| `weekend_warrior` | Weekend Warrior | +10% first slot spin payout |
-| `high_roller` | High Roller | High Limit access at 5,000 chips |
-| `convention_goer` | Convention Goer | 10% cashier buy-in bonus |
-| `local` | Local | Back-hall shortcut unlocked |
-
-Store in `rpg.playerSprite` / `rpg.archetype`.
-
-### Faction reputation (Phase 3)
-
-`rpg.reputation`: `{ whales: 0, staff: 0, tourists: 0 }` — adjusted by dialogue choices.
-
----
-
-## 9. Technical Guidelines
-
-### 9.1 Adding a new encounter (step-by-step)
-
-1. **Engine:** Confirm JS activity logic exists in `docs/js/`.
-2. **Overlay:** Create `MyActivityOverlay` in `EncounterBridge.js`.
-3. **Bridge:** Add `case "my_activity":` in `EncounterBridge.start()`.
-4. **Content:** Add dialogue choice with `"encounter": "my_activity"`.
-5. **NPC:** Optional — link `encounter` on NPC def for non-dialogue bump.
-6. **Persist:** Ensure wallet sync + `saveAdapter.persist()` on close.
-7. **Stats:** `session.recordVisit()` / `session.recordResult()`.
-8. **Docs:** Update this file and `docs/player-guide.md`.
-
-### 9.2 RNG / fairness
-
-All gambling outcomes **must** use `crypto.getRandomValues` (via `secureRandomInt` / `fisherYatesShuffle` in `core.js`). Easter eggs may unlock content but **must not** alter odds.
-
-### 9.3 Python CLI parity
-
-The Python `mandalay_bay` package remains the rules reference. When changing paytables or blackjack rules:
-
-1. Update Python first.
-2. Port to `docs/js/`.
-3. Run `python3 -m pytest -v`.
-
-RPG mode does not use Python at runtime — browser only.
-
-### 9.4 Local development
-
-```bash
-# Serve docs (required for ES modules + fetch)
-cd docs && python3 -m http.server 8080
-
-# Terminal casino
-open http://localhost:8080/index.html
-
-# Pixel RPG
-open http://localhost:8080/rpg/index.html
-```
-
-### 9.5 Deploy
-
-RPG lives under `docs/rpg/` and deploys with GitHub Pages:
-
-```bash
-./scripts/deploy-gh-pages.sh
-```
-
-### 9.6 Testing checklist (manual Phase 1)
-
-- [ ] Create save slot → enter overworld at lobby
-- [ ] Talk to Chip Chandler → tutorial flags set
-- [ ] Walk north → face Dealer Dana → play blackjack hand
-- [ ] Win/lose updates chip HUD and save file
-- [ ] Reload page → position and chips restored
-- [ ] Guest mode works without persisting
-- [ ] Terminal mode (`../index.html`) still loads same save slots
-
----
-
-## 10. Phase Summary Roadmap
-
-| Phase | Focus | Exit criteria |
-|-------|-------|---------------|
-| **1** ✅ | Lobby → blackjack vertical slice | Walk, talk, play, save |
-| **2** ✅ | Full floor + all activity encounters | Slots, sportsbook, holdem, roulette, racing, hotel, pool, amenities |
-| **3** ✅ | Resort maps + quests | shark_reef, HoB, arena, foundation; QuestManager; day/night |
-| **4** ✅ | Procedural polish | TextureFactory zones, Web Audio, arcade bezel, Easter eggs |
-| **5** | Live ops | Seasonal events, weekly sportsbook |
-
----
-
-## 11. File Ownership Quick Reference
-
-| Task | Primary files |
-|------|---------------|
-| New map geometry | `MapData.js` → Tiled JSON |
-| New NPC | `MapData.js`, `dialogues.json` |
-| New dialogue | `dialogues.json` |
-| New mini-game | `EncounterBridge.js`, `docs/js/*.js` |
-| Save format | `docs/js/core.js`, `SaveAdapter.js` |
-| HUD / title | `TitleScreen.js`, `rpg.css` |
-| Overworld behavior | `GameScenes.js` |
-| Pixel textures | `TextureFactory.js` → sprite atlases |
-
----
-
-## 12. Legal & Branding
-
-- Use **“The Mandalay Bay”** as fictional resort branding (existing project convention).
-- Do **not** use MGM/Mandalay Bay official logos or trademarked marketing assets without license.
-- Easter eggs and satire should target **Vegas/resort tropes**, not real individuals (Epic Furious is political satire; this project is resort adventure).
-
----
-
-## 13. Contact & Handoff
-
-When picking up this project:
-
-1. Play Phase 1 end-to-end locally.
-2. Read `docs/architecture.md` for casino engine design.
-3. Read `docs/adding-activities.md` for Python activity plugin pattern.
-4. Implement Phase 2 encounters using §9.1 — **do not** rewrite blackjack logic in Phaser.
-
-**Phase 1 is intentionally small.** The architecture separates **world** (Phaser), **story** (JSON dialogue), and **games** (shared JS engine). Expand each layer independently without breaking save compatibility.
+| WASD / arrows | Walk |
+| Tap / click a tile | Walk there (touch-first, same handler) |
+| Shift | Run (faster with the comped golf cart at Platinum+) |
+| E / Enter / Space | Talk, advance dialogue |
+| Esc / X | START menu |
+| T | Trainer Card and wardrobe |
+| P | Rewards phone |
+| ↑↑↓↓←→←→BA | Retro palette |

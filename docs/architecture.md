@@ -31,14 +31,57 @@ degen-llms/
 │   └── ...
 ├── docs/                  # Documentation & web terminal (GitHub Pages)
 │   ├── js/
+│   │   ├── core.js            # PlayerSession, ChipWallet, save versioning
 │   │   ├── hotel.js / hotel-ui.js
 │   │   ├── room-amenities.js
 │   │   ├── pool-complex.js
 │   │   ├── resort-bridge.js / resort-completion.js
-│   │   └── casino-amenities.js
-│   └── rpg/               # Phaser overworld (main_resort, hotel_tower, mandalay_beach)
+│   │   ├── casino-amenities.js
+│   │   ├── world-cycle.js     # The single resort clock
+│   │   └── ui/                # buildXRenderers(ctx) screen factories
+│   │       ├── shell.js       # el, banner, chipLine, statusBanner, view stack
+│   │       ├── slots-renderers.js / table-renderers.js
+│   │       ├── sportsbook-renderers.js / racing-renderers.js
+│   │       ├── cashier-renderers.js / meta-renderers.js
+│   │       └── stakes-ui.js
+│   └── rpg/               # Phaser overworld — 28 JSON-authored maps
+│       ├── js/data/       # maps, npcs, dialogues, quests, easter_eggs, triggers
+│       └── js/systems/    # MapLoader, TerminalHostOverlay, MenuOverlay, ...
 └── tests/                 # pytest suite
 ```
+
+## Three surfaces, one engine
+
+| Surface | Entry | Role |
+|---------|-------|------|
+| Python CLI | `python3 -m mandalay_bay` | Authoritative rules |
+| Web terminal | `docs/index.html` | Browser parity, ES modules under `docs/js/` |
+| Pixel RPG | `docs/rpg/index.html` | Phaser overworld over the same modules |
+
+### The delegation rule
+
+**The RPG never reimplements a game screen.** Casino, hotel, pool, shopping,
+sportsbook, racing, cashier, and every meta screen is written once in
+`docs/js/ui/` as a `buildXRenderers(ctx)` factory that returns a view-name →
+render-function map. The terminal spreads those maps into its `RENDERERS`
+table; the RPG's `TerminalHostOverlay` builds the same `ctx` and mounts them
+inside an encounter panel. A feature added to the terminal therefore appears in
+the RPG with no RPG-side work.
+
+```mermaid
+flowchart LR
+    LOGIC["docs/js/ — rules"] --> UI["docs/js/ui/ — buildXRenderers(ctx)"]
+    UI --> APP["app.js (terminal)"]
+    UI --> HOST["TerminalHostOverlay (RPG)"]
+```
+
+The exceptions are the four bespoke "battle screens" the RPG draws itself
+because they read better in-world: blackjack, hold'em, roulette, and the House
+of Blues rhythm minigame. They still route bet entry through the shared stake
+picker. See the [Pixel RPG GDD](rpg/GDD.md) for the overworld side.
+
+Anything genuinely new belongs in `docs/js/` first, with the RPG consuming it —
+never the reverse.
 
 ## Data flow
 

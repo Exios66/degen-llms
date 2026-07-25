@@ -99,6 +99,6 @@ Talk to **Dealer Dana** or pit NPCs on the casino carpet. Blackjack launches as 
 | `blackjack/` | Core engine (table, cards, rules, runner) |
 | `mandalay_bay/activities/blackjack.py` | Casino activity wrapper |
 | `docs/js/blackjack/` | Browser mirror |
-| `docs/rpg/js/systems/overlays/BlackjackOverlay.js` | RPG overlay |
+| `BlackjackOverlay` in `docs/rpg/js/systems/EncounterBridge.js` | Bespoke pixel battle screen |
 
 See [[RNG-and-Fairness]].

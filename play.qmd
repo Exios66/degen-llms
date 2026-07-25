@@ -1,0 +1,76 @@
+---
+title: "Play The Mandalay Bay"
+subtitle: "CLI, web terminal, and pixel RPG surfaces"
+date: last-modified
+---
+
+Three playable surfaces share save slots and the chip wallet. This Posit site documents them; the interactive clients live on GitHub Pages and in the Python package.
+
+::: {.play-grid}
+::: {.play-card}
+### Web terminal
+Browser hub with casino floors, hotel, pool, and rewards phone.
+
+**[Launch web terminal →](https://exios66.github.io/degen-llms/)**
+:::
+
+::: {.play-card}
+### Pixel RPG
+Sixteen-bit overworld with encounter bridges into the shared engine.
+
+**[Launch pixel RPG →](https://exios66.github.io/degen-llms/rpg/)**
+:::
+
+::: {.play-card}
+### Python CLI
+Authoritative local play — stdlib only at runtime.
+
+```bash
+python3 -m mandalay_bay
+```
+:::
+:::
+
+## Quick start (CLI)
+
+```bash
+git clone https://github.com/Exios66/degen-llms.git
+cd degen-llms
+python3 -m mandalay_bay                  # Save library → casino floor
+python3 -m mandalay_bay --list-saves
+python3 -m mandalay_bay --slot 1 --new-save --name "Ace"
+python3 -m blackjack                     # Standalone blackjack
+```
+
+Optional editable install and tests:
+
+```bash
+pip install -e ".[dev]"
+python3 -m pytest -v
+```
+
+## Keyboard and UX tips (web)
+
+| Input | Action |
+|-------|--------|
+| Number keys / click | Menu choices |
+| **P** | Open MGM Rewards phone |
+| Casino Guide | In-lobby rules reference |
+| Leave Casino | Auto-save and exit |
+
+Full navigation: [Player Guide](docs/player-guide.md) · first launch: [Getting Started](docs/getting-started.md).
+
+## What ships in the repo
+
+| Path | Contents |
+|------|----------|
+| `mandalay_bay/` | Hub, hotel, pool, rewards, activities |
+| `blackjack/` | Decoupled blackjack engine |
+| `poker/` | Texas Hold'em hand evaluation |
+| `docs/` | GitHub Pages web terminal + shared JS |
+| `docs/rpg/` | Phaser overworld |
+| `tests/` | pytest suite (180+ tests) |
+
+## RNG note
+
+Production randomness uses OS CSPRNG. Outcomes are not manipulated for narrative effect.

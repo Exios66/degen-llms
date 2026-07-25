@@ -1,0 +1,147 @@
+/*-- scss:defaults --*/
+$link-color: #C5050C;
+$toc-color: #C5050C;
+
+/*-- scss:rules --*/
+#title-block-header {
+  border-bottom: 3px solid #C5050C;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+}
+
+.quarto-title-meta {
+  font-size: 0.95rem;
+}
+
+div.callout-note {
+  border-left-color: #C5050C;
+}
+
+div.callout-tip {
+  border-left-color: #C5050C;
+}
+
+.figure-caption,
+.quarto-float-fig > figcaption,
+.quarto-float-tbl > figcaption,
+.table-caption {
+  color: #222;
+  font-size: 0.95rem;
+  text-align: left;
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.figure-caption .figure-caption-prefix,
+.quarto-float-fig > figcaption > span.figure-caption-prefix,
+figcaption.quarto-float-caption-bottom > span:first-child {
+  font-weight: 700;
+  font-style: normal;
+}
+
+.figure-caption,
+.quarto-float-fig > figcaption {
+  font-style: italic;
+}
+
+.table-caption,
+.quarto-float-tbl > figcaption {
+  font-style: italic;
+}
+
+.table-caption .table-caption-prefix,
+.quarto-float-tbl > figcaption > span:first-child {
+  font-weight: 700;
+  font-style: normal;
+}
+
+.quarto-figure {
+  margin-top: 1.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.quarto-figure img {
+  background: #fff;
+  border: 0;
+}
+
+.github-access {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 0 0 1.5rem 0;
+  align-items: center;
+}
+
+.github-access .github-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.4rem 0.85rem;
+  border: 1px solid rgba(197, 5, 12, 0.35);
+  border-radius: 0.35rem;
+  color: #C5050C;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  background: rgba(197, 5, 12, 0.04);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.github-access .github-btn:hover {
+  background: rgba(197, 5, 12, 0.1);
+  border-color: #C5050C;
+  color: #9a0409;
+  text-decoration: none;
+}
+
+.github-access .github-btn .bi {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.feature-block {
+  margin: 1.25rem 0 1.75rem 0;
+  padding: 1rem 1.15rem 1.15rem 1.15rem;
+  border-left: 4px solid #C5050C;
+  background: linear-gradient(180deg, rgba(197, 5, 12, 0.04), rgba(0, 0, 0, 0.015));
+}
+
+.feature-block > h3 {
+  margin-top: 0;
+  margin-bottom: 0.65rem;
+  color: #222;
+}
+
+.feature-block table {
+  margin-bottom: 0.25rem;
+  width: 100%;
+}
+
+.feature-block table th {
+  background: rgba(197, 5, 12, 0.08);
+  font-weight: 700;
+}
+
+.play-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin: 1.25rem 0 1.75rem;
+}
+
+.play-card {
+  border: 1px solid rgba(197, 5, 12, 0.25);
+  border-radius: 0.4rem;
+  padding: 1rem 1.1rem;
+  background: rgba(197, 5, 12, 0.03);
+}
+
+.play-card h3 {
+  margin-top: 0;
+  font-size: 1.1rem;
+}
+
+.play-card a {
+  font-weight: 700;
+}

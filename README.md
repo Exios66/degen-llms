@@ -158,7 +158,7 @@ In-game help: **Casino Guide** from the main lobby.
 
 ## GitHub Pages deployment
 
-The site source lives in [`docs/`](docs/) on **`main`**. GitHub Actions mirrors the entire `docs/` tree to the **`gh-pages`** branch (see [`.github/workflows/deploy-gh-pages.yml`](.github/workflows/deploy-gh-pages.yml)).
+The interactive web terminal + RPG source lives in [`docs/`](docs/) on **`main`**. GitHub Actions mirrors the entire `docs/` tree to the **`gh-pages`** branch (see [`.github/workflows/deploy-gh-pages.yml`](.github/workflows/deploy-gh-pages.yml)).
 
 **Enable Pages (one-time):** Repository **Settings → Pages → Deploy from branch → `gh-pages` → `/docs`.**
 
@@ -169,6 +169,18 @@ Deployments trigger on pushes to `main` that touch `docs/**`, hourly drift check
 ./scripts/deploy-gh-pages.sh    # Full deploy
 ```
 
+## Posit Connect Cloud (documentation site)
+
+A Quarto documentation website (overview manuscript + player/developer guides) publishes to the **JackJBurleson** Posit Connect Cloud account as its **own** content instance — it does **not** overwrite the PSYCH 755 manuscript.
+
+```bash
+# Requires Quarto ≥ 1.10, jupyter, pandas, matplotlib
+export PYTHONPATH="$PWD"
+quarto render
+python scripts/publish_posit_degen_llms.py   # creates or updates Connect Cloud content
+```
+
+See [`CONTRIBUTING-POSIT.md`](CONTRIBUTING-POSIT.md) and [`.cursor/skills/posit-connect-publish/SKILL.md`](.cursor/skills/posit-connect-publish/SKILL.md).
 ## RNG & legitimacy
 
 All random outcomes use OS-backed CSPRNG (`secrets.SystemRandom()` in Python, `crypto.getRandomValues()` in the browser). No outcome manipulation.

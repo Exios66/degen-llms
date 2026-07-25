@@ -280,6 +280,126 @@ In-game help with six sections:
 
 ---
 
+## Mandalay Bay Hotel Experience
+
+Exit the casino floor to the **hotel lobby** (web: hub menu or RPG HUD link; deep link: `?view=hotel-lobby`).
+
+### Hotel flow
+
+1. **MGM Rewards (P)** → Reservation — locate your tower and floor
+2. **Front desk** — confirm at the desk on the days that require it; your key activates the moment the day's requirement is met, from either the phone or the desk
+3. **Hallway mini-game** — three beats of directional choices (wrong turns are comedic)
+4. **Your room** — TV, minibar, phone, decisions, unlockable Vegas vignettes
+
+### In-room amenities
+
+| Amenity | Highlights |
+|---------|------------|
+| TV | Shark Reef (ch. 47), wave pool cam, ULTRA Arena boxing, House of Blues (Gold+) |
+| Minibar | Sensor-enabled charges; concierge suggests items |
+| Phone | Concierge, bookie, Foundation Room (Noir+ penthouse), spa, Delano |
+| Decisions | Balcony, sky bridge to Mandalay Place, suite/penthouse perks, wake-up roulette |
+
+**17 unlockable room events** chain across pool visits, shopping (LUSH bath bomb), tier status, and bad decisions. Locked events show cryptic hints in the event log.
+
+### World day/night cycle
+
+**2 hours real time = 1 resort day.** The hub and hotel lobby show the current phase and time until the next day.
+
+Each new day:
+- **Daily charges** post automatically (room rate + resort fee + parking — higher for suites/penthouse)
+- **Reservation requirement rotates:** phone only → desk only → phone + desk → net-positive whale check-in
+- **Insufficient chips** locks room access until you settle overdue charges at the front desk or win on the casino floor
+
+Platinum+ tiers reduce resort fees; Chairman tier waives them narratively.
+
+### Stay lifecycle (Front Desk)
+
+- **Review folio** — minibar + room service + Mandalay Place deliveries
+- **Late checkout** — comp if net-positive, else $75
+- **Express checkout** — Pearl+ skips the line; Chairman waives the folio narratively
+- **Standard checkout** — decrements nights; at 0 nights Carmen offers extend-stay
+
+### Resort completion tracker
+
+The hotel lobby and in-room hub show progress: room vignettes, pool vignettes, TV channels sampled, guest book signed. Unlock all room events to auto-sign the guest directory.
+
+## The pixel RPG
+
+Open `/rpg/index.html`, pick a guest type, and set your skin tone, hair, and
+outfit — the preview is the sprite you'll actually walk around as, and you can
+change it later from the Trainer Card's wardrobe. You arrive on Las Vegas Blvd
+and walk in through the gold doors. Everything below runs on the same wallet,
+the same save slot, and the same rules as the terminal — the RPG mounts the
+terminal's own screens rather than reimplementing them.
+
+### Controls
+
+| Input | Action |
+|-------|--------|
+| WASD / arrows | Walk |
+| Tap / click a tile | Walk there — the whole game is playable on a phone |
+| Shift | Run — faster once a host comps you the golf cart at Platinum |
+| E / Enter / Space | Talk to whoever you are facing, advance dialogue |
+| Esc / X | START menu |
+| T | Trainer Card and wardrobe |
+| P | MGM Rewards phone |
+
+Gold walkways are the resort's wayfinding: follow them and they connect the
+entrance, the pits, the aisles, and every door. Dark trim marks where one floor
+ends and the next begins, and floating signs name the zone you're standing in.
+
+### Getting around
+
+Twenty-eight rooms in eight wings. Doors sit on the outer walkable ring of each
+room — walk onto one and you warp, with a placard naming where you landed.
+
+| Wing | What's there |
+|------|--------------|
+| Arrival | The Boulevard, valet garage, registration lobby (Chip Chandler starts you off) |
+| Casino | Two casino floors, the race & sports book, High Limit Salon, Foundation Room |
+| Retail | The Shoppes at Mandalay Place, the sky bridge, the convention center |
+| Bars | Betty's Bar and the Skyfall Lounge |
+| Hotel | Tower elevators, guest corridor, your room, the Delano wing, the bathhouse |
+| Pool | Mandalay Beach wave pool, cabana row, the beach club, the moonlight rave |
+| Attractions | Shark Reef tunnel and exhibit, House of Blues (+ green room), ULTRA Arena |
+| Back of house | The staff corridor, if you can find the way in |
+
+Two doors are gated: the High Limit Salon checks chips and stake tier at the
+rope, and the Foundation Room wants Noir standing. Your own room door stops
+working if the folio goes unpaid.
+
+### The START menu
+
+Trainer Card, Quests, Dex, Bag, Secrets, Rewards Phone, Off-Strip Bank, Player
+Stats, Staff Manifest, Guest Book, Resort Completion, Options, Save, and Exit
+to Terminal. The Quests page lists what you have accepted *and* what you have
+not, with the name of the person who hands each one out.
+
+### Trainers
+
+Some staff will spot you from across the room, walk over, and put you on the
+spot: Slot Tech Tessa, Bookie Blake, Spinster Sal, Lifeguard Lou, the Moonlight
+DJ, Busker Bo, Housekeeper Hana, Valet Vic, Whale Warren, and the salon dealer.
+Each one challenges you once.
+
+### Collections
+
+- **Dex** — five Shark Reef species, fourteen slot machines, and every dealer
+  and staff member you meet.
+- **Bag** — quest rewards, mall purchases, and whatever the minibar sensors
+  caught you taking.
+- **Secrets** — twelve easter eggs. All cosmetic; none of them pay chips.
+
+### The clock
+
+Two real hours are one resort day, in four phases. When the day turns, resort
+charges post to your wallet, the reservation requirement rotates, and if you
+cannot cover the bill your key stops working until you settle at the desk or
+win it back on the floor. The HUD shows the day, the time, and the phase.
+
+---
+
 ## Global shortcuts & tips
 
 | Context | Shortcut |

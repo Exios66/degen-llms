@@ -1,0 +1,251 @@
+---
+title: "The Mandalay Bay"
+subtitle: "A satirical choose-your-adventure resort simulator with a unified chip economy"
+author:
+  - name: Jack J. Burleson
+    url: https://github.com/Exios66
+    affiliations:
+      - University of Wisconsin–Madison
+    corresponding: true
+date: last-modified
+abstract: |
+  **The Mandalay Bay** (`degen-llms`) is a full-stack digital resort simulator spanning a
+  Python CLI, a browser terminal on GitHub Pages, and a Phaser 3 pixel RPG overworld.
+  Players share one chip wallet across blackjack, Texas Hold'em, roulette, fourteen slot
+  machines, a sports book with prediction markets, thoroughbred racing, and equestrian
+  events — then leave the floor for hotel check-in, an eleven-acre pool complex, and
+  MGM Rewards tier progression. This Quarto site documents the product surfaces, economy,
+  save system, architecture, and expansion roadmap using the live repository packages.
+keywords:
+  - Mandalay Bay
+  - casino simulation
+  - chip economy
+  - blackjack
+  - slots
+  - sports book
+  - Phaser RPG
+  - Quarto
+  - Posit Connect Cloud
+---
+
+::: {.github-access}
+<a class="github-btn" href="https://github.com/Exios66/degen-llms"><i class="bi bi-github"></i> Repository</a>
+<a class="github-btn" href="https://github.com/Exios66"><i class="bi bi-person-badge"></i> @Exios66</a>
+<a class="github-btn" href="https://exios66.github.io/degen-llms/"><i class="bi bi-joystick"></i> Web Terminal</a>
+<a class="github-btn" href="https://exios66.github.io/degen-llms/rpg/"><i class="bi bi-controller"></i> Pixel RPG</a>
+:::
+
+```{python}
+#| label: setup
+#| include: false
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+import matplotlib.pyplot as plt
+import pandas as pd
+
+ROOT = Path.cwd()
+
+from mandalay_bay.activities.registry import ALL_ACTIVITIES, FLOOR_ORDER
+from mandalay_bay.stakes import STAKE_TIERS
+from mandalay_bay.rewards import TIERS as REWARD_TIERS
+```
+
+# Introduction
+
+**The Mandalay Bay** is a satirical Las Vegas resort simulator. It is not a thin demo of a single table game — it is a property with floors, a hotel tower, a pool deck, VIP venues, and a rewards phone that persists across visits. The project ships three playable surfaces that share save slots and the same chip wallet:
+
+| Surface | How to open | Role |
+|---------|-------------|------|
+| **Python CLI** | `python3 -m mandalay_bay` | Authoritative game logic |
+| **Web terminal** | [exios66.github.io/degen-llms](https://exios66.github.io/degen-llms/) | Browser parity of the CLI hub |
+| **Pixel RPG** | […/rpg](https://exios66.github.io/degen-llms/rpg/) | Phaser 3 overworld with activity encounters |
+
+This Posit Connect Cloud site is the **documentation manuscript** for the repository: player guides, developer architecture, live package introspection, and deploy notes. The interactive game itself remains on GitHub Pages; see [Play](play.qmd).
+
+::: {.callout-note}
+## New content instance
+This deployment is a **new** JackJBurleson Posit Connect Cloud content item for `degen-llms`. It does **not** replace the PSYCH 755 communication-apprehension manuscript at content id `019f9a10-ebb9-d1d5-839f-97e794bfd0ca`.
+:::
+
+# Product map
+
+::: {.feature-block}
+### What you can do on property
+
+| Zone | Highlights |
+|------|------------|
+| **Casino floor** | Blackjack, Hold'em, roulette, 14 slots, sports book, racing, dressage & jumping |
+| **Cashier & bank** | Buy/cash chips, ledger, off-strip bank account |
+| **Hotel** | Clerk Carmen, hallway mini-game, in-room amenities, guest directory |
+| **Pool complex** | Wave pool, cabanas, Shark Reef collection, beach club |
+| **MGM Rewards** | Sapphire → Chairman tiers, comps, phone (press **P** on web) |
+| **Pixel RPG** | 28 walkable rooms, 61 NPCs, quests, and a dex — see [Pixel RPG](rpg.qmd) |
+:::
+
+```{python}
+#| label: tbl-activity-catalog
+#| tbl-cap: "Live activity catalog from `mandalay_bay.activities.registry`"
+
+rows = []
+for activity in ALL_ACTIVITIES:
+    info = activity.info
+    rows.append(
+        {
+            "ID": info.id,
+            "Name": info.name,
+            "Floor": info.floor,
+            "Min bet": info.min_bet,
+            "Description": info.description,
+        }
+    )
+catalog = pd.DataFrame(rows)
+catalog = catalog.sort_values(
+    by="Floor",
+    key=lambda s: s.map({name: i for i, name in enumerate(FLOOR_ORDER)}).fillna(99),
+)
+catalog
+```
+
+```{python}
+#| label: fig-activities-by-floor
+#| fig-cap: "Registered activities per casino floor"
+
+counts = catalog.groupby("Floor").size().reindex(FLOOR_ORDER).fillna(0).astype(int)
+fig, ax = plt.subplots(figsize=(7.2, 3.8))
+bars = ax.bar(counts.index, counts.values, color="#C5050C", edgecolor="#7a0307")
+ax.set_ylabel("Activities")
+ax.set_xlabel("Floor")
+ax.set_ylim(0, max(counts.values.max(), 1) + 1)
+ax.spines["top"].set_visible(False)
+ax.spines["right"].set_visible(False)
+for bar, value in zip(bars, counts.values):
+    ax.text(bar.get_x() + bar.get_width() / 2, value + 0.05, str(int(value)), ha="center", va="bottom", fontsize=9)
+fig.tight_layout()
+plt.show()
+```
+
+# Chip economy and stakes
+
+Every activity debits and credits a single `ChipWallet`. Buy-ins and cash-outs happen at the Cashier; gambling outcomes write to a transaction ledger. Stake tiers span penny slots through high-roller / no-limit brackets (including satirical “401K Contribution” limits). Progressive jackpots persist in the active save.
+
+```{python}
+#| label: tbl-stake-tiers
+#| tbl-cap: "Stake tiers exposed by `mandalay_bay.stakes`"
+
+from mandalay_bay.stakes import TIER_ORDER
+
+stake_df = pd.DataFrame(
+    [
+        {
+            "ID": STAKE_TIERS[tid].id,
+            "Name": STAKE_TIERS[tid].name,
+            "Min bet": STAKE_TIERS[tid].min_bet,
+            "Max bet": STAKE_TIERS[tid].max_bet if STAKE_TIERS[tid].max_bet is not None else "No cap",
+            "Description": STAKE_TIERS[tid].description,
+        }
+        for tid in TIER_ORDER
+    ]
+)
+stake_df
+```
+Full player-facing detail: [Chip Economy](docs/chip-economy.md).
+
+# Resort systems beyond the pits
+
+## Hotel experience
+
+Exit the casino floor to the **Mandalay Bay Hotel Experience**: reservation locate with Clerk Carmen, hallway navigation, room upgrades (Deluxe King → Panorama Suite → Chairman Penthouse), folio settlement, and in-room amenities (TV channels, minibar, foreign calls, balcony decisions, unlockable Vegas vignettes). A real-time day/night cycle drives daily charges and rotating check-in requirements.
+
+## Pool complex
+
+The eleven-acre expansion includes wave-pool timing, hot tubs, private cabanas, Shark Reef species collection, topless beach club, and beach rave — with vignettes that chain into hotel room events.
+
+## MGM Rewards
+
+```{python}
+#| label: tbl-reward-tiers
+#| tbl-cap: "MGM Rewards ladder from `mandalay_bay.rewards`"
+
+from mandalay_bay.rewards import COMP_CATALOG
+
+rewards_df = pd.DataFrame(
+    [
+        {
+            "Tier": tier.label,
+            "ID": tier.id,
+            "Lifetime wagered": tier.min_wagered,
+            "Comp unlock": (
+                COMP_CATALOG.get(tier.comp, {}).get("title", tier.comp)
+                if tier.comp
+                else "—"
+            ),
+        }
+        for tier in REWARD_TIERS
+    ]
+)
+rewards_df
+```
+Lifetime wagered chips advance Sapphire → Pearl → Gold → Platinum → Noir → Chairman. Tier comps gate TV channels, phone contacts, VIP venues, and narrative perks. On the web terminal, press **P** for the rewards phone.
+
+# Save system
+
+Up to **five** save slots with most-recent-first library ordering. CLI stores under `~/.mandalay_bay/saves/`; the browser uses `localStorage`. Auto-save runs on leave, after activities, and on Ctrl+C. RPG position, quests, hotel state, pool progress, and progressive jackpots travel with the slot.
+
+See [Save Slots](docs/saves.md) and [Getting Started](docs/getting-started.md).
+
+# Architecture
+
+Python is the source of truth. The web terminal mirrors logic in vanilla ES modules under `docs/js/`. Screens are written once as `buildXRenderers(ctx)` factories in `docs/js/ui/`: the terminal spreads them into its renderer table and the RPG mounts the same functions inside an encounter panel, so neither surface reimplements the other.
+
+```{python}
+#| label: tbl-package-inventory
+#| tbl-cap: "Repository package inventory (file counts at render time)"
+
+def count_files(path: Path, suffixes: set[str]) -> int:
+    if not path.exists():
+        return 0
+    return sum(1 for p in path.rglob("*") if p.is_file() and p.suffix in suffixes)
+
+inventory = pd.DataFrame(
+    [
+        {"Package / tree": "mandalay_bay/", "Python modules": count_files(ROOT / "mandalay_bay", {".py"}), "Data files": count_files(ROOT / "mandalay_bay" / "data", {".json", ".csv"})},
+        {"Package / tree": "blackjack/", "Python modules": count_files(ROOT / "blackjack", {".py"}), "Data files": 0},
+        {"Package / tree": "poker/", "Python modules": count_files(ROOT / "poker", {".py"}), "Data files": 0},
+        {"Package / tree": "docs/js/", "Python modules": count_files(ROOT / "docs" / "js", {".js"}), "Data files": count_files(ROOT / "docs" / "data", {".json", ".csv"})},
+        {"Package / tree": "docs/rpg/", "Python modules": count_files(ROOT / "docs" / "rpg", {".js"}), "Data files": count_files(ROOT / "docs" / "rpg", {".json", ".css", ".html", ".md"})},
+        {"Package / tree": "tests/", "Python modules": count_files(ROOT / "tests", {".py"}), "Data files": 0},
+    ]
+)
+inventory
+```
+
+Developer deep-dives:
+
+- [Architecture](docs/architecture.md)
+- [Adding Activities](docs/adding-activities.md)
+- [Testing](docs/testing.md)
+- [Pixel RPG GDD](docs/rpg/GDD.md)
+
+# Player documentation index
+
+| Guide | Audience |
+|-------|----------|
+| [Getting Started](docs/getting-started.md) | Install, launch, CLI flags |
+| [Player Guide](docs/player-guide.md) | Every menu, dialog, and shortcut |
+| [Chip Economy](docs/chip-economy.md) | Wallet, ledger, buy-ins, cash-outs |
+| [Save Slots](docs/saves.md) | Library, migration, RPG fields |
+| [Blackjack](docs/blackjack.md) | Table rules and modes |
+| [Slot Machines](docs/slots.md) | Machines, paytables, progressives |
+| [Sports Book](docs/sportsbook.md) | Moneyline, spread, settlement |
+
+# RNG and legitimacy
+
+All random outcomes use OS-backed CSPRNG (`secrets.SystemRandom()` in Python, `crypto.getRandomValues()` in the browser). Tests inject seeded RNGs for determinism; production play never does.
+
+# License and deploy
+
+MIT licensed — see `LICENSE` in the repository. GitHub Pages continues to host the interactive web terminal and RPG from the `docs/` tree. This Quarto website is published separately to Posit Connect Cloud under the JackJBurleson account as its own content instance ([deploy notes](CONTRIBUTING-POSIT.md)).

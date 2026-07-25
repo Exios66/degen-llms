@@ -1,4 +1,6 @@
 import { TransactionKind, secureRandomInt } from "./core.js";
+import { getTierExperience } from "./rewards-perks.js";
+import { onTierRankUp } from "./phone-contacts.js";
 
 export const SAVE_VERSION_WITH_REWARDS = 3;
 
@@ -63,6 +65,7 @@ export function defaultRewardsState(overrides = {}) {
     unlockedComps: ["welcome_drink"],
     redeemedComps: [],
     notifications: [],
+    phoneBook: { threads: {}, easterEggs: [], introSent: [], intoxSecretsSent: false },
     ...overrides,
   };
   if (!base.notifications.length) {
@@ -111,10 +114,22 @@ export class RewardsTracker {
   }
 
   ensureRewards() {
+    const defaults = defaultRewardsState();
     if (!this.session.rewards) {
-      this.session.rewards = defaultRewardsState();
+      this.session.rewards = defaults;
+      return this.session.rewards;
     }
-    return this.session.rewards;
+    const rewards = this.session.rewards;
+    if (!rewards.memberId) rewards.memberId = defaults.memberId;
+    if (!rewards.tier) rewards.tier = defaults.tier;
+    if (typeof rewards.lifetimeWagered !== "number") rewards.lifetimeWagered = 0;
+    if (!Array.isArray(rewards.unlockedComps)) rewards.unlockedComps = [...defaults.unlockedComps];
+    if (!Array.isArray(rewards.redeemedComps)) rewards.redeemedComps = [];
+    if (!Array.isArray(rewards.notifications)) rewards.notifications = [...defaults.notifications];
+    if (!rewards.phoneBook) {
+      rewards.phoneBook = { threads: {}, easterEggs: [], introSent: [] };
+    }
+    return rewards;
   }
 
   /** @returns {object[]} newly created notifications */
@@ -138,16 +153,18 @@ export class RewardsTracker {
         rewards.unlockedComps.push(newTier.comp);
       }
       const compLabel = newTier.comp ? COMP_CATALOG[newTier.comp]?.title : "exclusive offers";
+      const exp = getTierExperience(newTier.id);
       const note = {
         id: `tier_${newTier.id}_${Date.now()}`,
         title: `${newTier.label} Tier Unlocked!`,
-        body: `You've reached ${newTier.label} status. ${compLabel ? `New comp: ${compLabel}.` : "Check Resort Offers on your phone."}`,
+        body: `You've reached ${newTier.label} status. ${compLabel ? `New comp: ${compLabel}. ` : ""}${exp.tagline}${newTier.id === "gold" || newTier.id === "platinum" ? " Check Connect on your phone for new contacts!" : ""}`,
         read: false,
         timestamp: nowIso(),
       };
       rewards.notifications.unshift(note);
       created.push(note);
       this.onNotify?.(note);
+      onTierRankUp(this.session, newTier.id);
     }
     return created;
   }

@@ -1,8 +1,10 @@
 from pathlib import Path
 
+from mandalay_bay.bank_account import fund_bank_from_outside
 from mandalay_bay.chips import ChipWallet
 from mandalay_bay.saves import SaveLibrary
 from mandalay_bay.session import PlayerSession
+from mandalay_bay.staff_manifest import update_staff_override
 
 
 def test_library_initializes_five_slots(tmp_path: Path) -> None:
@@ -56,8 +58,17 @@ def test_session_serialization_preserves_transactions(tmp_path: Path) -> None:
     )
     session.wallet.debit(100, "blackjack", "bet")
     session.wallet.credit(250, "blackjack", "win")
+    fund_bank_from_outside(session, 400)
+    update_staff_override(
+        session,
+        category="dealers",
+        staff_id="steve_harvey",
+        fields={"name": "Steve H."},
+    )
 
     data = session_to_dict(session)
     restored = session_from_dict(data)
     assert restored.wallet.balance == 1150
     assert len(restored.wallet.transactions) == 2
+    assert restored.bank.balance == 400
+    assert restored.staff_overrides["dealers"]["steve_harvey"]["name"] == "Steve H."

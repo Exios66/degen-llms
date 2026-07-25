@@ -1,4 +1,4 @@
-"""Texas Hold'em table engine — one human vs AI opponents."""
+"""Texas Hold'em table engine — one human vs four AI opponents (5-max)."""
 
 from __future__ import annotations
 
@@ -25,6 +25,15 @@ class Street(str, Enum):
     SHOWDOWN = "showdown"
 
 
+STREET_ORDER = (
+    Street.PREFLOP,
+    Street.FLOP,
+    Street.TURN,
+    Street.RIVER,
+    Street.SHOWDOWN,
+)
+
+
 @dataclass
 class HoldemPlayer:
     name: str
@@ -35,6 +44,7 @@ class HoldemPlayer:
     total_in_hand: int = 0
     folded: bool = False
     all_in: bool = False
+    has_acted: bool = False
 
     def reset_for_hand(self) -> None:
         self.hole = []
@@ -42,6 +52,7 @@ class HoldemPlayer:
         self.total_in_hand = 0
         self.folded = False
         self.all_in = False
+        self.has_acted = False
 
 
 @dataclass
@@ -57,26 +68,43 @@ class HoldemTable:
     current_bet: int = 0
     min_raise: int = 0
     action_index: int = 0
-    acted_since_raise: int = 0
     hand_over: bool = False
     winners: list[str] = field(default_factory=list)
     showdown_scores: list[tuple[str, HandScore]] = field(default_factory=list)
     last_message: str = ""
+    default_bot_stack: int = 0
+    action_log: list[str] = field(default_factory=list)
 
     @classmethod
-    def quick_table(cls, human_stack: int, num_bots: int = 2) -> HoldemTable:
-        bots = min(num_bots, 2) if human_stack >= 100 else 1
+    def quick_table(cls, human_stack: int, num_bots: int = 4) -> HoldemTable:
+        """Build a full ring: always 1 human + up to 4 bots (5 seats)."""
+        bots = max(1, min(int(num_bots), 4))
         players = [HoldemPlayer("You", True, stack=human_stack)]
         bot_stack = max(human_stack, 500)
         for i in range(bots):
             players.append(HoldemPlayer(f"Bot {i + 1}", False, stack=bot_stack))
         bb = max(10, min(50, human_stack // 20))
         sb = max(5, bb // 2)
-        return cls(players=players, small_blind=sb, big_blind=bb)
+        return cls(
+            players=players,
+            small_blind=sb,
+            big_blind=bb,
+            default_bot_stack=bot_stack,
+        )
 
     @property
     def human(self) -> HoldemPlayer:
-        return self.players[0]
+        return next(p for p in self.players if p.is_human)
+
+    def min_raise_to(self, player: HoldemPlayer) -> int:
+        """Minimum total bet size for a full raise (or open bet)."""
+        max_total = player.bet_this_street + player.stack
+        full_min = self.current_bet + self.min_raise if self.current_bet > 0 else self.min_raise
+        return min(full_min, max_total)
+
+    def max_raise_to(self, player: HoldemPlayer) -> int:
+        """No-limit: player may put their entire stack in."""
+        return player.bet_this_street + player.stack
 
     def start_hand(self) -> None:
         self.community = []
@@ -88,7 +116,12 @@ class HoldemTable:
         self.winners = []
         self.showdown_scores = []
         self.last_message = ""
-        self.acted_since_raise = 0
+        self.action_log = []
+
+        # Keep busted bots in the game so the table stays 5-handed.
+        for p in self.players:
+            if not p.is_human and p.stack <= 0:
+                p.stack = self.default_bot_stack or max(self.big_blind * 20, 500)
 
         for p in self.players:
             p.reset_for_hand()
@@ -100,8 +133,13 @@ class HoldemTable:
             return
 
         n = len(self.players)
-        sb_idx = (self.dealer_index + 1) % n
-        bb_idx = (self.dealer_index + 2) % n
+        if n == 2:
+            sb_idx = self.dealer_index
+            bb_idx = (self.dealer_index + 1) % n
+        else:
+            sb_idx = (self.dealer_index + 1) % n
+            bb_idx = (self.dealer_index + 2) % n
+
         self._post_blind(sb_idx, self.small_blind)
         self._post_blind(bb_idx, self.big_blind)
         self.current_bet = max(p.bet_this_street for p in self.players)
@@ -110,9 +148,11 @@ class HoldemTable:
             if not p.folded and p.stack >= 0:
                 p.hole = [self.shoe.deal(), self.shoe.deal()]
 
+        # Preflop action starts left of the big blind.
         self.action_index = (bb_idx + 1) % n
         self._seek_actor()
         self.last_message = "Cards dealt — pre-flop betting."
+        self.action_log.append(self.last_message)
 
     def _post_blind(self, idx: int, amount: int) -> None:
         player = self.players[idx]
@@ -126,6 +166,8 @@ class HoldemTable:
         self.pot += paid
         if player.stack == 0:
             player.all_in = True
+        # Blinds do not count as voluntary actions for the round.
+        player.has_acted = False
 
     def _seek_actor(self) -> None:
         n = len(self.players)
@@ -138,6 +180,9 @@ class HoldemTable:
     def _players_in_hand(self) -> list[HoldemPlayer]:
         return [p for p in self.players if not p.folded]
 
+    def _active_actors(self) -> list[HoldemPlayer]:
+        return [p for p in self.players if not p.folded and not p.all_in]
+
     def legal_actions(self, player: HoldemPlayer) -> set[BettingAction]:
         if player.folded or player.all_in or self.hand_over:
             return set()
@@ -145,16 +190,27 @@ class HoldemTable:
         actions: set[BettingAction] = {BettingAction.FOLD}
         if to_call <= 0:
             actions.add(BettingAction.CHECK)
-        if to_call > 0 and player.stack >= to_call:
+        elif player.stack > 0:
+            # Short all-in calls are allowed in no-limit.
             actions.add(BettingAction.CALL)
-        if player.stack > to_call and (player.stack - to_call) >= self.min_raise:
+        if player.stack > to_call:
             actions.add(BettingAction.RAISE)
         return actions
 
-    def apply_action(self, player: HoldemPlayer, action: BettingAction) -> str:
+    def apply_action(
+        self,
+        player: HoldemPlayer,
+        action: BettingAction,
+        raise_to: int | None = None,
+    ) -> str:
         if self.hand_over:
             return "Hand is over."
+        legal = self.legal_actions(player)
+        if action not in legal:
+            raise ValueError(f"{player.name} cannot {action.value} now")
+
         to_call = max(0, self.current_bet - player.bet_this_street)
+        raised = False
 
         if action == BettingAction.FOLD:
             player.folded = True
@@ -171,26 +227,60 @@ class HoldemTable:
             self.pot += pay
             if player.stack == 0:
                 player.all_in = True
-            msg = f"{player.name} calls {pay}."
+            if pay < to_call:
+                msg = f"{player.name} calls all-in for {pay}."
+            else:
+                msg = f"{player.name} calls {pay}."
         elif action == BettingAction.RAISE:
-            raise_total = self.current_bet + self.min_raise
-            add = raise_total - player.bet_this_street
+            max_total = self.max_raise_to(player)
+            min_total = self.min_raise_to(player)
+            target = raise_to if raise_to is not None else min_total
+            try:
+                target = int(target)
+            except (TypeError, ValueError) as exc:
+                raise ValueError("Raise amount must be an integer") from exc
+
+            # No-limit: any size from min full raise up to all-in.
+            # All-in for less than a full raise is always allowed.
+            if target < min_total and target < max_total:
+                raise ValueError(f"Raise must be at least {min_total} (or all-in)")
+            if target > max_total:
+                target = max_total
+            if target <= player.bet_this_street:
+                raise ValueError("Raise must increase your bet")
+
+            add = target - player.bet_this_street
             add = min(add, player.stack)
+            opening_bet = to_call <= 0
             player.stack -= add
             player.bet_this_street += add
             player.total_in_hand += add
             self.pot += add
+
             if player.bet_this_street > self.current_bet:
-                self.min_raise = player.bet_this_street - self.current_bet
+                raise_size = player.bet_this_street - self.current_bet
+                # Only a full raise updates the minimum re-raise size.
+                if raise_size >= self.min_raise:
+                    self.min_raise = raise_size
                 self.current_bet = player.bet_this_street
-                self.acted_since_raise = 0
+                raised = True
             if player.stack == 0:
                 player.all_in = True
-            msg = f"{player.name} raises to {player.bet_this_street}."
+            if opening_bet:
+                msg = f"{player.name} bets {player.bet_this_street}."
+            else:
+                msg = f"{player.name} raises to {player.bet_this_street}."
         else:
             raise ValueError(f"Unknown action {action}")
 
+        player.has_acted = True
+        if raised:
+            for other in self.players:
+                if other is not player and not other.folded and not other.all_in:
+                    other.has_acted = False
+
         self.last_message = msg
+        self.action_log.append(msg)
         self._after_action(player)
         return msg
 
@@ -200,21 +290,18 @@ class HoldemTable:
             self._award_uncontested(live[0])
             return
 
-        self.acted_since_raise += 1
         n = len(self.players)
         self.action_index = (self.players.index(acted) + 1) % n
         self._seek_actor()
 
         if self._round_complete():
             self._advance_street()
-        elif self.acted_since_raise >= len([p for p in self.players if not p.folded and not p.all_in]):
-            self._advance_street()
 
     def _round_complete(self) -> bool:
-        active = [p for p in self.players if not p.folded and not p.all_in]
+        active = self._active_actors()
         if not active:
             return True
-        return all(p.bet_this_street == self.current_bet for p in active)
+        return all(p.has_acted and p.bet_this_street == self.current_bet for p in active)
 
     def _advance_street(self) -> None:
         if len(self._players_in_hand()) == 1:
@@ -223,31 +310,35 @@ class HoldemTable:
 
         for p in self.players:
             p.bet_this_street = 0
+            p.has_acted = False
         self.current_bet = 0
         self.min_raise = self.big_blind
-        self.acted_since_raise = 0
 
         if self.street == Street.PREFLOP:
             self.community.extend([self.shoe.deal() for _ in range(3)])
             self.street = Street.FLOP
-            self.last_message = "Flop dealt."
+            self.last_message = "Flop dealt — betting opens."
         elif self.street == Street.FLOP:
             self.community.append(self.shoe.deal())
             self.street = Street.TURN
-            self.last_message = "Turn dealt."
+            self.last_message = "Turn dealt — betting opens."
         elif self.street == Street.TURN:
             self.community.append(self.shoe.deal())
             self.street = Street.RIVER
-            self.last_message = "River dealt."
+            self.last_message = "River dealt — betting opens."
         elif self.street == Street.RIVER:
             self._showdown()
             return
 
+        self.action_log.append(self.last_message)
+
+        # Fewer than two players able to bet → run out remaining board.
+        if len(self._active_actors()) < 2:
+            self._advance_street()
+            return
+
         self.action_index = (self.dealer_index + 1) % len(self.players)
         self._seek_actor()
-
-        if self._round_complete():
-            self._advance_street()
 
     def _showdown(self) -> None:
         self.street = Street.SHOWDOWN
@@ -264,10 +355,13 @@ class HoldemTable:
         self.showdown_scores = [(p.name, s) for p, s in scored]
         self._split_pot(winner_names)
         self.last_message = "Showdown complete."
+        self.action_log.append(self.last_message)
 
     def _award_uncontested(self, winner: HoldemPlayer) -> None:
+        won = self.pot
         self._split_pot([winner.name])
-        self.last_message = f"{winner.name} wins {self.pot} uncontested."
+        self.last_message = f"{winner.name} wins {won} uncontested."
+        self.action_log.append(self.last_message)
 
     def _split_pot(self, winner_names: list[str]) -> None:
         if not winner_names:
@@ -284,7 +378,8 @@ class HoldemTable:
         self.dealer_index = (self.dealer_index + 1) % len(self.players)
         self.pot = 0
 
-    def bot_action(self, player: HoldemPlayer) -> BettingAction:
+    def bot_action(self, player: HoldemPlayer) -> tuple[BettingAction, int | None]:
+        """Return (action, raise_to) for a bot. raise_to is set only for RAISE."""
         known = player.hole + self.community
         if len(known) >= 5:
             score, _ = best_hand_from_cards(known)
@@ -298,16 +393,34 @@ class HoldemTable:
 
         to_call = max(0, self.current_bet - player.bet_this_street)
         legal = self.legal_actions(player)
+        pot_odds_pressure = to_call > max(self.big_blind * 3, self.pot // 3)
 
-        if BettingAction.FOLD in legal and to_call > self.big_blind and strength == 0:
-            return BettingAction.FOLD
-        if BettingAction.RAISE in legal and strength >= 4 and SECURE_RANDOM.random() < 0.3:
-            return BettingAction.RAISE
+        if BettingAction.FOLD in legal and strength == 0 and (pot_odds_pressure or to_call > self.big_blind * 2):
+            return BettingAction.FOLD, None
+
+        if BettingAction.RAISE in legal and strength >= 2 and SECURE_RANDOM.random() < (0.15 + 0.1 * strength):
+            min_to = self.min_raise_to(player)
+            max_to = self.max_raise_to(player)
+            # Size by strength: stronger hands bet bigger; still no-limit within stack.
+            pot_bet = max(min_to, min(max_to, self.current_bet + max(self.min_raise, self.pot // 2 + self.big_blind)))
+            if strength >= 5:
+                target = max_to if SECURE_RANDOM.random() < 0.25 else max(min_to, min(max_to, pot_bet * 2))
+            elif strength >= 3:
+                target = pot_bet
+            else:
+                target = min_to
+            target = max(min_to, min(max_to, int(target)))
+            return BettingAction.RAISE, target
+
         if BettingAction.CHECK in legal:
-            return BettingAction.CHECK
+            return BettingAction.CHECK, None
         if BettingAction.CALL in legal:
-            return BettingAction.CALL
-        return BettingAction.FOLD
+            if strength == 0 and to_call > self.big_blind and SECURE_RANDOM.random() < 0.55:
+                return BettingAction.FOLD, None
+            return BettingAction.CALL, None
+        if BettingAction.FOLD in legal:
+            return BettingAction.FOLD, None
+        return BettingAction.CHECK, None
 
 
 def _has_pair_preflop(hole: list[Card]) -> bool:

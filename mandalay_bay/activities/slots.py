@@ -8,6 +8,7 @@ from mandalay_bay.session import PlayerSession
 from mandalay_bay.stakes import (
     effective_slot_stakes,
     format_stake_range,
+    get_tier_payout_boost,
     pick_stake_tier,
     tier_uses_salon_limits,
 )
@@ -44,20 +45,20 @@ def _sym(name: str, display: str, weight: int) -> Symbol:
 
 CLASSIC_SYMBOLS = (
     _sym("seven", "7", 1),
-    _sym("bar", "BAR", 3),
-    _sym("bell", "🔔", 4),
-    _sym("cherry", "🍒", 6),
-    _sym("lemon", "🍋", 8),
     _sym("diamond", "💎", 2),
+    _sym("bar", "BAR", 5),
+    _sym("bell", "🔔", 5),
+    _sym("cherry", "🍒", 11),
+    _sym("lemon", "🍋", 8),
 )
 
 CLASSIC_PAYTABLE = {
-    "seven|seven|seven": 100,
-    "diamond|diamond|diamond": 50,
-    "bell|bell|bell": 25,
-    "bar|bar|bar": 15,
-    "cherry|cherry|cherry": 10,
-    "cherry|cherry": 2,
+    "seven|seven|seven": 200,
+    "diamond|diamond|diamond": 100,
+    "bell|bell|bell": 50,
+    "bar|bar|bar": 30,
+    "cherry|cherry|cherry": 20,
+    "cherry|cherry": 4,
     "cherry": 1,
 }
 
@@ -88,28 +89,31 @@ MACHINES: dict[str, SlotMachine] = {
         min_bet=1,
         max_bet=3,
         symbols=(
-            _sym("megabuck", "💵", 1),
+            _sym("megabuck", "💵", 2),
             _sym("seven", "7", 2),
-            _sym("bar", "BAR", 4),
+            _sym("bar", "BAR", 5),
             _sym("bell", "🔔", 5),
-            _sym("cherry", "🍒", 7),
-            _sym("lemon", "🍋", 9),
+            _sym("cherry", "🍒", 10),
+            _sym("lemon", "🍋", 8),
         ),
         paytable={
-            "seven|seven|seven": 80,
-            "bar|bar|bar": 20,
-            "bell|bell|bell": 15,
-            "cherry|cherry|cherry": 10,
-            "megabuck|megabuck": 10,
-            "megabuck": 2,
+            "seven|seven|seven": 200,
+            "bar|bar|bar": 50,
+            "bell|bell|bell": 40,
+            "cherry|cherry|cherry": 25,
+            "cherry|cherry": 5,
+            "cherry": 1,
+            "megabuck|megabuck": 25,
+            "megabuck": 3,
         },
         tagline="Wide-area progressive — max bet qualifies for the jackpot.",
         progressive=True,
         progressive_pool_id="megabucks",
         jackpot_requires_max_bet=True,
         progressive_contribution_rate=0.03,
-        progressive_seed=250_000,
+        progressive_seed=1_000_000,
         jackpot_key="megabuck|megabuck|megabuck",
+        cherry_rules=True,
     ),
     "wheel_of_fortune": SlotMachine(
         id="wheel_of_fortune",
@@ -119,18 +123,18 @@ MACHINES: dict[str, SlotMachine] = {
         symbols=(
             _sym("wheel", "🎡", 1),
             _sym("diamond", "💎", 2),
-            _sym("bar", "BAR", 4),
+            _sym("bar", "BAR", 5),
             _sym("bell", "🔔", 5),
-            _sym("cherry", "🍒", 7),
-            _sym("lemon", "🍋", 9),
+            _sym("cherry", "🍒", 11),
+            _sym("lemon", "🍋", 8),
         ),
         paytable={
-            "wheel|wheel|wheel": 200,
-            "diamond|diamond|diamond": 75,
-            "bar|bar|bar": 25,
-            "bell|bell|bell": 15,
-            "cherry|cherry|cherry": 10,
-            "cherry|cherry": 2,
+            "wheel|wheel|wheel": 500,
+            "diamond|diamond|diamond": 200,
+            "bar|bar|bar": 60,
+            "bell|bell|bell": 40,
+            "cherry|cherry|cherry": 25,
+            "cherry|cherry": 5,
             "cherry": 1,
         },
         tagline="Spin the wheel for bonus-sized wins.",
@@ -143,20 +147,23 @@ MACHINES: dict[str, SlotMachine] = {
         max_bet=25,
         symbols=(
             _sym("seven", "7", 3),
-            _sym("bar", "BAR", 4),
+            _sym("bar", "BAR", 6),
             _sym("bell", "🔔", 5),
-            _sym("cherry", "🍒", 6),
+            _sym("cherry", "🍒", 12),
             _sym("lemon", "🍋", 8),
             _sym("diamond", "💎", 2),
         ),
         paytable={
-            "seven|seven|seven": 150,
-            "diamond|diamond|diamond": 40,
-            "bar|bar|bar": 20,
-            "bell|bell|bell": 12,
-            "cherry|cherry|cherry": 8,
+            "seven|seven|seven": 400,
+            "diamond|diamond|diamond": 100,
+            "bar|bar|bar": 50,
+            "bell|bell|bell": 30,
+            "cherry|cherry|cherry": 20,
+            "cherry|cherry": 7,
+            "cherry": 1,
         },
         tagline="Flaming sevens with sizzling top-line pays.",
+        cherry_rules=True,
     ),
     "buffalo_gold": SlotMachine(
         id="buffalo_gold",
@@ -164,20 +171,21 @@ MACHINES: dict[str, SlotMachine] = {
         min_bet=1,
         max_bet=50,
         symbols=(
-            _sym("buffalo", "🦬", 2),
-            _sym("gold", "🥇", 3),
-            _sym("sunset", "🌅", 4),
-            _sym("eagle", "🦅", 5),
-            _sym("ace", "A", 6),
-            _sym("king", "K", 8),
+            _sym("buffalo", "🦬", 6),
+            _sym("gold", "🥇", 6),
+            _sym("sunset", "🌅", 6),
+            _sym("eagle", "🦅", 7),
+            _sym("ace", "A", 8),
+            _sym("king", "K", 9),
         ),
         paytable={
-            "buffalo|buffalo|buffalo": 120,
-            "gold|gold|gold": 60,
-            "sunset|sunset|sunset": 30,
-            "eagle|eagle|eagle": 20,
-            "ace|ace|ace": 10,
-            "buffalo|buffalo": 5,
+            "buffalo|buffalo|buffalo": 300,
+            "gold|gold|gold": 150,
+            "sunset|sunset|sunset": 75,
+            "eagle|eagle|eagle": 50,
+            "ace|ace|ace": 25,
+            "buffalo|buffalo": 10,
+            "ace|ace": 5,
         },
         tagline="Stampede the reels for gold-coin bonuses.",
     ),
@@ -187,27 +195,30 @@ MACHINES: dict[str, SlotMachine] = {
         min_bet=1,
         max_bet=5,
         symbols=(
-            _sym("crown", "👑", 1),
-            _sym("diamond", "💎", 2),
-            _sym("bar", "BAR", 4),
-            _sym("bell", "🔔", 5),
-            _sym("cherry", "🍒", 7),
-            _sym("lemon", "🍋", 9),
+            _sym("crown", "👑", 2),
+            _sym("diamond", "💎", 3),
+            _sym("bar", "BAR", 6),
+            _sym("bell", "🔔", 6),
+            _sym("cherry", "🍒", 12),
+            _sym("lemon", "🍋", 8),
         ),
         paytable={
-            "crown|crown|crown": 100,
-            "diamond|diamond|diamond": 50,
-            "bar|bar|bar": 20,
-            "bell|bell|bell": 12,
-            "cherry|cherry|cherry": 8,
+            "crown|crown|crown": 250,
+            "diamond|diamond|diamond": 125,
+            "bar|bar|bar": 60,
+            "bell|bell|bell": 40,
+            "cherry|cherry|cherry": 25,
+            "cherry|cherry": 7,
+            "cherry": 1,
         },
         tagline="Linked progressive with European elegance.",
         progressive=True,
         progressive_pool_id="mandalay_linked",
         jackpot_requires_max_bet=True,
         progressive_contribution_rate=0.025,
-        progressive_seed=50_000,
+        progressive_seed=250_000,
         jackpot_key="crown|crown|crown",
+        cherry_rules=True,
     ),
     "super_spin": SlotMachine(
         id="super_spin",
@@ -215,26 +226,29 @@ MACHINES: dict[str, SlotMachine] = {
         min_bet=1,
         max_bet=5,
         symbols=(
-            _sym("star", "⭐", 1),
-            _sym("seven", "7", 2),
-            _sym("bar", "BAR", 4),
-            _sym("bell", "🔔", 5),
-            _sym("cherry", "🍒", 7),
-            _sym("lemon", "🍋", 9),
+            _sym("star", "⭐", 2),
+            _sym("seven", "7", 3),
+            _sym("bar", "BAR", 5),
+            _sym("bell", "🔔", 6),
+            _sym("cherry", "🍒", 12),
+            _sym("lemon", "🍋", 8),
         ),
         paytable={
-            "seven|seven|seven": 90,
-            "bar|bar|bar": 25,
-            "bell|bell|bell": 15,
-            "cherry|cherry|cherry": 10,
+            "seven|seven|seven": 225,
+            "bar|bar|bar": 60,
+            "bell|bell|bell": 40,
+            "cherry|cherry|cherry": 25,
+            "cherry|cherry": 5,
+            "cherry": 1,
         },
         tagline="Linked progressive — three stars trigger the jackpot.",
         progressive=True,
         progressive_pool_id="mandalay_linked",
         jackpot_requires_max_bet=True,
         progressive_contribution_rate=0.025,
-        progressive_seed=50_000,
+        progressive_seed=250_000,
         jackpot_key="star|star|star",
+        cherry_rules=True,
     ),
     "triple_red_hot_7s": SlotMachine(
         id="triple_red_hot_7s",
@@ -242,18 +256,19 @@ MACHINES: dict[str, SlotMachine] = {
         min_bet=1,
         max_bet=25,
         symbols=(
-            _sym("seven", "7", 4),
-            _sym("bar", "BAR", 3),
+            _sym("seven", "7", 2),
+            _sym("bar", "BAR", 5),
             _sym("bell", "🔔", 5),
-            _sym("cherry", "🍒", 6),
+            _sym("cherry", "🍒", 11),
             _sym("lemon", "🍋", 8),
         ),
         paytable={
-            "seven|seven|seven": 200,
-            "bar|bar|bar": 30,
-            "bell|bell|bell": 15,
-            "cherry|cherry|cherry": 10,
-            "cherry|cherry": 3,
+            "seven|seven|seven": 175,
+            "bar|bar|bar": 60,
+            "bell|bell|bell": 30,
+            "cherry|cherry|cherry": 20,
+            "cherry|cherry": 5,
+            "cherry": 1,
         },
         tagline="Red-hot triple sevens on every spin.",
         cherry_rules=True,
@@ -264,22 +279,25 @@ MACHINES: dict[str, SlotMachine] = {
         min_bet=1,
         max_bet=25,
         symbols=(
-            _sym("jackpot", "JP", 2),
-            _sym("seven", "7", 2),
-            _sym("bar", "BAR", 4),
-            _sym("bell", "🔔", 5),
-            _sym("cherry", "🍒", 7),
-            _sym("lemon", "🍋", 9),
+            _sym("jackpot", "JP", 3),
+            _sym("seven", "7", 3),
+            _sym("bar", "BAR", 5),
+            _sym("bell", "🔔", 6),
+            _sym("cherry", "🍒", 10),
+            _sym("lemon", "🍋", 8),
         ),
         paytable={
-            "jackpot|jackpot|jackpot": 250,
-            "seven|seven|seven": 100,
-            "bar|bar|bar": 25,
-            "bell|bell|bell": 15,
-            "cherry|cherry|cherry": 10,
-            "jackpot|jackpot": 15,
+            "jackpot|jackpot|jackpot": 500,
+            "seven|seven|seven": 200,
+            "bar|bar|bar": 60,
+            "bell|bell|bell": 40,
+            "cherry|cherry|cherry": 25,
+            "cherry|cherry": 5,
+            "cherry": 1,
+            "jackpot|jackpot": 25,
         },
         tagline="Two-tier jackpots with blazing top symbols.",
+        cherry_rules=True,
     ),
     "spooky_link": SlotMachine(
         id="spooky_link",
@@ -287,20 +305,22 @@ MACHINES: dict[str, SlotMachine] = {
         min_bet=1,
         max_bet=25,
         symbols=(
-            _sym("ghost", "👻", 2),
-            _sym("mummy", "🧟", 3),
-            _sym("yeti", "❄️", 4),
-            _sym("moon", "🌙", 5),
-            _sym("skull", "💀", 6),
+            _sym("ghost", "👻", 4),
+            _sym("mummy", "🧟", 5),
+            _sym("yeti", "❄️", 5),
+            _sym("moon", "🌙", 6),
+            _sym("skull", "💀", 7),
             _sym("bat", "🦇", 8),
         ),
         paytable={
-            "ghost|ghost|ghost": 100,
-            "mummy|mummy|mummy": 60,
-            "yeti|yeti|yeti": 40,
-            "moon|moon|moon": 25,
-            "skull|skull|skull": 15,
-            "ghost|ghost": 5,
+            "ghost|ghost|ghost": 250,
+            "mummy|mummy|mummy": 150,
+            "yeti|yeti|yeti": 100,
+            "moon|moon|moon": 60,
+            "skull|skull|skull": 40,
+            "ghost|ghost": 12,
+            "skull|skull": 5,
+            "bat|bat": 5,
         },
         tagline="Mo Mummy, Yo Yeti, and Go Ghost bonus features.",
     ),
@@ -310,20 +330,20 @@ MACHINES: dict[str, SlotMachine] = {
         min_bet=1,
         max_bet=25,
         symbols=(
-            _sym("witch", "🧙", 2),
-            _sym("slipper", "👠", 3),
-            _sym("emerald", "💚", 4),
-            _sym("tin", "🤖", 5),
-            _sym("lion", "🦁", 6),
+            _sym("witch", "🧙", 4),
+            _sym("slipper", "👠", 5),
+            _sym("emerald", "💚", 5),
+            _sym("tin", "🤖", 6),
+            _sym("lion", "🦁", 7),
             _sym("scarecrow", "🌾", 8),
         ),
         paytable={
-            "witch|witch|witch": 150,
-            "slipper|slipper|slipper": 80,
-            "emerald|emerald|emerald": 50,
-            "tin|tin|tin": 25,
-            "lion|lion|lion": 15,
-            "slipper|slipper": 5,
+            "witch|witch|witch": 400,
+            "slipper|slipper|slipper": 200,
+            "emerald|emerald|emerald": 125,
+            "tin|tin|tin": 60,
+            "lion|lion|lion": 40,
+            "slipper|slipper": 12,
         },
         tagline="Follow the yellow-brick road to Hold & Spin bonuses.",
     ),
@@ -333,20 +353,20 @@ MACHINES: dict[str, SlotMachine] = {
         min_bet=1,
         max_bet=25,
         symbols=(
-            _sym("guardian", "🐉", 2),
-            _sym("emerald", "💚", 3),
-            _sym("shield", "🛡️", 4),
-            _sym("sword", "⚔️", 5),
-            _sym("gem", "💎", 6),
+            _sym("guardian", "🐉", 4),
+            _sym("emerald", "💚", 5),
+            _sym("shield", "🛡️", 5),
+            _sym("sword", "⚔️", 6),
+            _sym("gem", "💎", 7),
             _sym("coin", "🪙", 8),
         ),
         paytable={
-            "guardian|guardian|guardian": 175,
-            "emerald|emerald|emerald": 75,
-            "shield|shield|shield": 40,
-            "sword|sword|sword": 25,
-            "gem|gem|gem": 15,
-            "emerald|emerald": 5,
+            "guardian|guardian|guardian": 450,
+            "emerald|emerald|emerald": 200,
+            "shield|shield|shield": 100,
+            "sword|sword|sword": 60,
+            "gem|gem|gem": 40,
+            "emerald|emerald": 12,
         },
         tagline="Defend the emerald vault for guardian jackpots.",
     ),
@@ -356,21 +376,23 @@ MACHINES: dict[str, SlotMachine] = {
         min_bet=1,
         max_bet=50,
         symbols=(
-            _sym("tiger", "🐯", 2),
-            _sym("dragon", "🐲", 2),
-            _sym("pearl", "🔮", 4),
-            _sym("fan", "🪭", 5),
-            _sym("coin", "🪙", 6),
+            _sym("tiger", "🐯", 4),
+            _sym("dragon", "🐲", 4),
+            _sym("pearl", "🔮", 5),
+            _sym("fan", "🪭", 6),
+            _sym("coin", "🪙", 7),
             _sym("lantern", "🏮", 8),
         ),
         paytable={
-            "tiger|tiger|tiger": 120,
-            "dragon|dragon|dragon": 120,
-            "tiger|tiger|dragon": 80,
-            "dragon|dragon|tiger": 80,
-            "pearl|pearl|pearl": 40,
-            "fan|fan|fan": 20,
-            "coin|coin|coin": 10,
+            "tiger|tiger|tiger": 300,
+            "dragon|dragon|dragon": 300,
+            "tiger|tiger|dragon": 90,
+            "dragon|dragon|tiger": 90,
+            "pearl|pearl|pearl": 100,
+            "fan|fan|fan": 50,
+            "coin|coin|coin": 25,
+            "coin|coin": 8,
+            "fan|fan": 5,
         },
         tagline="East-meets-West super bonus with dual jackpots.",
     ),
@@ -420,6 +442,25 @@ def _spin_reels(machine: SlotMachine) -> list[Symbol]:
     return [_weighted_pick(machine.symbols) for _ in range(3)]
 
 
+def estimate_base_game_rtp(machine: SlotMachine) -> tuple[float, float]:
+    """Exact PAR-sheet base-game RTP and hit frequency (excludes progressives)."""
+    symbols = machine.symbols
+    total_w = sum(s.weight for s in symbols)
+    probs = [s.weight / total_w for s in symbols]
+    rtp = 0.0
+    hit_frequency = 0.0
+    for i, left in enumerate(symbols):
+        for j, mid in enumerate(symbols):
+            for k, right in enumerate(symbols):
+                reels = [left, mid, right]
+                probability = probs[i] * probs[j] * probs[k]
+                win, _ = _payout(reels, 1, machine)
+                rtp += probability * win
+                if win > 0:
+                    hit_frequency += probability
+    return rtp, hit_frequency
+
+
 _ASCII_SYMBOLS = {
     "bell", "cherry", "lemon", "diamond", "buffalo", "gold", "sunset", "eagle",
     "ghost", "mummy", "yeti", "moon", "skull", "bat", "witch", "slipper",
@@ -441,6 +482,7 @@ def _payout(
     machine: SlotMachine,
     *,
     jackpot_amount: int | None = None,
+    tier_boost: float = 1.0,
 ) -> tuple[int, str]:
     keys = [r.name for r in reels]
     line = "|".join(keys)
@@ -448,29 +490,29 @@ def _payout(
     if machine.jackpot_key and line == machine.jackpot_key and jackpot_amount is not None:
         return jackpot_amount, f"PROGRESSIVE JACKPOT! {jackpot_amount:,} chips!"
 
+    def _apply(base_mult: int, label: str) -> tuple[int, str]:
+        effective = round(base_mult * tier_boost)
+        boost_tag = f" ({tier_boost:.0f}× tier)" if tier_boost != 1.0 else ""
+        return bet * effective, f"{label} {effective}x{boost_tag}"
+
     if line in machine.paytable:
-        mult = machine.paytable[line]
-        return bet * mult, f"Three {reels[0].display}! {mult}x"
+        return _apply(machine.paytable[line], f"Three {reels[0].display}!")
 
     if machine.cherry_rules:
         if keys[0] == keys[1] == "cherry" and "cherry|cherry" in machine.paytable:
-            mult = machine.paytable["cherry|cherry"]
-            return bet * mult, f"Two cherries! {mult}x"
+            return _apply(machine.paytable["cherry|cherry"], "Two cherries!")
         if keys[0] == "cherry" and "cherry" in machine.paytable:
-            mult = machine.paytable["cherry"]
-            return bet * mult, "Cherry on line! 1x (bet returned)"
+            return _apply(machine.paytable["cherry"], "Cherry on line!")
 
     parts = line.split("|")
     if len(parts) >= 2 and parts[0] == parts[1]:
         pair_key = f"{parts[0]}|{parts[1]}"
         if pair_key in machine.paytable:
-            mult = machine.paytable[pair_key]
-            return bet * mult, f"Two {reels[0].display}! {mult}x"
+            return _apply(machine.paytable[pair_key], f"Two {reels[0].display}!")
     if parts[0] in machine.paytable and "|" not in parts[0]:
         single_key = parts[0]
         if single_key in machine.paytable and single_key.count("|") == 0:
-            mult = machine.paytable[single_key]
-            return bet * mult, f"{reels[0].display} on line! {mult}x"
+            return _apply(machine.paytable[single_key], f"{reels[0].display} on line!")
 
     return 0, "No win"
 
@@ -501,17 +543,20 @@ def _try_jackpot(
     return amount
 
 
-def format_paytable(machine: SlotMachine) -> str:
+def format_paytable(machine: SlotMachine, *, tier_boost: float = 1.0) -> str:
     lines = []
-    for key, mult in sorted(machine.paytable.items(), key=lambda item: -item[1]):
+    if tier_boost != 1.0:
+        lines.append(f"  ★ Tier boost: {tier_boost:.0f}× applied to all multipliers")
+    for key, base_mult in sorted(machine.paytable.items(), key=lambda item: -item[1]):
+        effective = round(base_mult * tier_boost)
         if "|" in key:
             parts = key.split("|")
             if len(parts) == 3 and parts[0] == parts[1] == parts[2]:
-                lines.append(f"  {parts[0]} x3  {mult}x bet")
+                lines.append(f"  {parts[0]} x3  {effective:,}x bet")
             elif len(parts) == 2:
-                lines.append(f"  {parts[0]} x2  {mult}x bet")
+                lines.append(f"  {parts[0]} x2  {effective:,}x bet")
         else:
-            lines.append(f"  {key} (1st reel)  {mult}x bet")
+            lines.append(f"  {key} (1st reel)  {effective:,}x bet")
     if machine.progressive and machine.jackpot_key:
         req = "max bet required" if machine.jackpot_requires_max_bet else "any bet"
         sym = machine.jackpot_key.split("|")[0]
@@ -572,7 +617,10 @@ class SlotsActivity(Activity):
             ui.pause()
             return
 
+        tier_boost = get_tier_payout_boost(tier.id)
         ui.print(f"\n{machine.name} — {tier.name}")
+        if tier_boost != 1.0:
+            ui.success(f"  ★ {tier.name} tier boost: {tier_boost:.0f}× multiplier on all wins")
         if machine.tagline:
             ui.dim(machine.tagline)
         if machine.progressive and machine.progressive_pool_id:
@@ -581,21 +629,23 @@ class SlotsActivity(Activity):
             if machine.jackpot_requires_max_bet:
                 ui.dim(f"Max bet ({max_bet:,} chips) required to qualify for the jackpot.")
         ui.print("\nPaytable:")
-        ui.print(format_paytable(machine))
+        ui.print(format_paytable(machine, tier_boost=tier_boost))
         ui.print("")
 
         session_net = 0
         spins = 0
+        last_bet = min_bet
         while True:
             ui.chip_line(session.wallet.balance)
             if machine.progressive and machine.progressive_pool_id:
                 pool = progressive_pool(session, machine.progressive_pool_id, machine.progressive_seed)
                 ui.dim(f"Jackpot: {pool:,} chips")
+            default_bet = last_bet if min_bet <= last_bet <= max_bet else min_bet
             bet = ui.prompt_int(
                 f"Spin amount ({min_bet}-{max_bet}, 0 to leave)",
                 0,
                 max_bet,
-                default=min_bet,
+                default=default_bet,
             )
             if bet == 0:
                 break
@@ -606,13 +656,14 @@ class SlotsActivity(Activity):
                 ui.error("Insufficient chips.")
                 continue
 
+            last_bet = bet
             _contribute_to_progressive(session, machine, bet)
             reels = _spin_reels(machine)
             shown = " | ".join(_display_symbol(r, session.use_unicode) for r in reels)
             ui.print(f"\n  [ {shown} ]")
 
             jackpot_amount = _try_jackpot(session, machine, reels, bet, max_bet)
-            win, reason = _payout(reels, bet, machine, jackpot_amount=jackpot_amount)
+            win, reason = _payout(reels, bet, machine, jackpot_amount=jackpot_amount, tier_boost=tier_boost)
             spins += 1
             if win > 0:
                 session.wallet.credit(win, self.info.id, reason)

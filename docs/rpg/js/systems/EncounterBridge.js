@@ -1,6 +1,12 @@
 import { BlackjackGame, Action } from "../../../js/blackjack/game.js";
 import { fmtChips } from "../../../js/core.js";
 import { pickQuip } from "../../../js/dealers.js";
+import { effectiveTableStakes } from "../../../js/stakes.js";
+import { HIGH_LIMIT_SALON_CHIP_MIN, canEnterFoundationRoom, canEnterHighLimitSalon } from "../../../js/venues.js";
+import { RouletteOverlay } from "./overlays/RouletteOverlay.js";
+import { HoldemOverlay } from "./overlays/HoldemOverlay.js";
+import { RhythmOverlay } from "./overlays/RhythmOverlay.js";
+import { HOSTED_ENCOUNTERS, TABLE_STAKE_ACTIVITIES, prepareHostedState } from "./HostedEncounters.js";
 
 /**
  * DOM overlay that wraps the shared BlackjackGame engine for RPG encounters.
@@ -9,7 +15,7 @@ export class BlackjackOverlay {
   /**
    * @param {HTMLElement} root
    * @param {import("../../../js/core.js").PlayerSession} session
-   * @param {{ onClose: (result: { net: number }) => void }} hooks
+   * @param {{ onClose: (result: { net: number }) => void, onNatural21?: () => void }} hooks
    */
   constructor(root, session, hooks) {
     this.root = root;
@@ -27,10 +33,6 @@ export class BlackjackOverlay {
     return this._active;
   }
 
-  /**
-   * @param {{ dealerName?: string, dealerProfile?: import("../../../js/dealers.js").DealerProfile, minBet?: number }} options
-   * @returns {Promise<{ net: number }>}
-   */
   open(options = {}) {
     if (this._active) return Promise.resolve({ net: 0 });
     this._active = true;
@@ -43,12 +45,14 @@ export class BlackjackOverlay {
 
     const chipsBefore = this.session.wallet.balance;
     const minBet = options.minBet ?? 10;
+    const maxBet = Math.max(minBet, Math.min(options.maxBet ?? 100, chipsBefore));
+    this.tier = options.tier ?? null;
 
     this.game = new BlackjackGame(
       {
         startingBankroll: chipsBefore,
         minBet,
-        maxBet: Math.min(100, chipsBefore),
+        maxBet,
         numDecks: 6,
         dealerHitsSoft17: true,
         numBots: 0,
@@ -108,6 +112,13 @@ export class BlackjackOverlay {
     title.textContent = `BLACKJACK — Table 7 · ${this.dealerName}`;
     panel.appendChild(title);
 
+    if (this.tier) {
+      const tierLine = document.createElement("p");
+      tierLine.className = "bj-dealer-tagline";
+      tierLine.textContent = `${this.tier.name} stakes`;
+      panel.appendChild(tierLine);
+    }
+
     if (this.dealerProfile?.tagline) {
       const tag = document.createElement("p");
       tag.className = "bj-dealer-tagline";
@@ -166,8 +177,10 @@ export class BlackjackOverlay {
       div.className = "bj-row" + (row.highlight ? " highlight" : "");
       const cards = row.cards.map((c) => c.label(this.session.useUnicode)).join(" ");
       let suffix = "";
-      if (row.blackjack) suffix = " [BJ]";
-      else if (row.bust) suffix = " [BUST]";
+      if (row.blackjack) {
+        suffix = " [BJ]";
+        this.hooks.onNatural21?.();
+      } else if (row.bust) suffix = " [BUST]";
       else if (row.surrendered) suffix = " [SURR]";
       div.textContent = `${row.label}: ${cards} (${row.value}) — bet $${row.bet}${suffix}`;
       table.appendChild(div);
@@ -291,36 +304,139 @@ export class BlackjackOverlay {
   }
 }
 
+/** Bespoke pixel overlays keyed by encounter id. */
+const BESPOKE_ALIASES = {
+  blackjack: "blackjack",
+  holdem: "holdem",
+  roulette: "roulette",
+  house_of_blues: "rhythm",
+  rhythm: "rhythm",
+};
+
 /**
- * Route encounter ids to activity overlays.
+ * Route encounter ids either to a bespoke pixel overlay ("battle screens")
+ * or to the shared terminal screens mounted by TerminalHostOverlay.
  */
 export class EncounterBridge {
   /**
-   * @param {{ session: import("../../../js/core.js").PlayerSession, blackjack: BlackjackOverlay, onPersist: () => void }} deps
+   * @param {{
+   *   session: import("../../../js/core.js").PlayerSession,
+   *   overlays: Record<string, { isActive: () => boolean, open: Function }>,
+   *   terminalHost: import("./TerminalHostOverlay.js").TerminalHostOverlay,
+   *   onPersist: () => void,
+   *   questManager?: import("./QuestManager.js").QuestManager,
+   *   onEncounterEnd?: (encounterId: string, result: { net: number }) => void,
+   * }} deps
    */
   constructor(deps) {
     this.session = deps.session;
-    this.blackjack = deps.blackjack;
+    this.overlays = deps.overlays;
+    this.terminalHost = deps.terminalHost ?? null;
     this.onPersist = deps.onPersist;
+    this.questManager = deps.questManager ?? null;
+    this.onEncounterEnd = deps.onEncounterEnd ?? null;
+    this.blackjack = deps.overlays.blackjack;
+  }
+
+  isAnyActive() {
+    if (this.terminalHost?.isActive()) return true;
+    return Object.values(this.overlays).some((o) => o?.isActive?.());
+  }
+
+  /** Every encounter id this bridge knows how to open. */
+  knownEncounters() {
+    return [...Object.keys(BESPOKE_ALIASES), ...Object.keys(HOSTED_ENCOUNTERS)];
+  }
+
+  canStart(encounterId) {
+    return Boolean(BESPOKE_ALIASES[encounterId] || HOSTED_ENCOUNTERS[encounterId]);
+  }
+
+  /**
+   * Velvet-rope check for overworld doors, using the same rules the terminal
+   * venue screens enforce. The salon also needs a qualifying stake tier, so a
+   * player who clears the chip bar is offered the shared tier picker at the
+   * rope rather than being bounced.
+   * @param {"high_limit_salon" | "foundation_room"} gateId
+   * @returns {Promise<{ ok: boolean, reason?: string }>}
+   */
+  async checkVenue(gateId) {
+    if (gateId === "foundation_room") {
+      return canEnterFoundationRoom(this.session);
+    }
+    if (gateId !== "high_limit_salon") return { ok: true };
+
+    const tier = () => this.terminalHost?.runtime?.stakeTier ?? null;
+    let gate = canEnterHighLimitSalon(this.session, tier());
+    if (gate.ok || this.session.wallet.balance < HIGH_LIMIT_SALON_CHIP_MIN) return gate;
+
+    if (await this.terminalHost?.pickStakeTier("blackjack")) {
+      gate = canEnterHighLimitSalon(this.session, tier());
+    }
+    return gate;
   }
 
   async start(encounterId, context = {}) {
-    switch (encounterId) {
-      case "blackjack":
-        return this._startBlackjack(context);
-      default:
-        console.warn(`Unknown encounter: ${encounterId}`);
-        return { net: 0 };
-    }
-  }
+    const result = HOSTED_ENCOUNTERS[encounterId]
+      ? await this._startHosted(encounterId, context)
+      : await this._startBespoke(encounterId, context);
 
-  async _startBlackjack(context) {
-    const result = await this.blackjack.open({
-      dealerName: context.dealerName ?? "Dealer",
-      dealerProfile: context.dealerProfile ?? null,
-      minBet: 10,
-    });
+    if (encounterId === "blackjack") {
+      this.questManager?.advance("dana_lucky_hand");
+      this.session.ensureRpgState().flags.played_blackjack = true;
+    }
+
+    this.questManager?.syncDerived?.();
+    this.onEncounterEnd?.(encounterId, result);
     this.onPersist();
     return result;
   }
+
+  async _startHosted(encounterId, context) {
+    const spec = HOSTED_ENCOUNTERS[encounterId];
+    if (!this.terminalHost) {
+      console.warn(`No terminal host available for "${encounterId}"`);
+      return { net: 0 };
+    }
+    if (spec.stakeFor) {
+      const tier = await this.terminalHost.pickStakeTier(spec.stakeFor);
+      if (!tier) return { net: 0 };
+    }
+    prepareHostedState(this.terminalHost.runtime, spec);
+    return this.terminalHost.open({
+      view: spec.view,
+      data: { ...(spec.data ?? {}), ...(context.data ?? {}) },
+      activityId: spec.activityId ?? null,
+      tab: spec.tab ?? null,
+      title: spec.title,
+    });
+  }
+
+  async _startBespoke(encounterId, context) {
+    const key = BESPOKE_ALIASES[encounterId] ?? encounterId;
+    const overlay = this.overlays[key];
+    if (!overlay) {
+      console.warn(`Unknown encounter: ${encounterId}`);
+      return { net: 0 };
+    }
+
+    const openOpts = { ...context };
+    const stakeActivity = TABLE_STAKE_ACTIVITIES[encounterId];
+    if (stakeActivity && this.terminalHost) {
+      const tier = await this.terminalHost.pickStakeTier(stakeActivity);
+      if (!tier) return { net: 0 };
+      const stakes = effectiveTableStakes(tier, this.session.wallet.balance);
+      openOpts.tier = tier;
+      openOpts.minBet = stakes.minBet;
+      openOpts.maxBet = stakes.maxBet;
+    }
+
+    return overlay.open(openOpts);
+  }
 }
+
+export {
+  RouletteOverlay,
+  HoldemOverlay,
+  RhythmOverlay,
+};

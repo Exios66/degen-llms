@@ -21,7 +21,7 @@ export const DEFAULT_HORSE_NAMES = [
 
 const TRACKS = ["Mandalay Turf", "Bay Downs", "Sunset Mile", "Neon Park"];
 
-const CSV_PATH = "data/horse_names.csv";
+const CSV_PATH = new URL("../data/horse_names.csv", import.meta.url).href;
 
 let cachedDefaultCsvNames = null;
 

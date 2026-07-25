@@ -97,3 +97,17 @@ export function formatTierLabel(tier, balance) {
   const stake = formatStakeRange(tier.minBet, maxBet, { noCap: tier.maxBet == null });
   return `${tier.name} (${stake})`;
 }
+
+/** Payout multiplier applied on top of machine paytables for each tier. */
+export const TIER_PAYOUT_BOOST = {
+  penny:             1.0,
+  standard:          2.0,
+  high_limit:        4.0,
+  "401k_contribution": 8.0,
+  no_limit:         15.0,
+};
+
+/** Returns the payout boost for a given tier id (1.0 if unknown). */
+export function getTierPayoutBoost(tierId) {
+  return TIER_PAYOUT_BOOST[tierId] ?? 1.0;
+}

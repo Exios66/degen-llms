@@ -7,15 +7,17 @@ Explore the casino floor freely. Your chip wallet follows you everywhere.
 Visit the Cashier to buy more chips or review your transaction history.
 
 Main lobby options:
-  1) Table Games     — Blackjack, Texas Hold'em, Roulette
-  2) Slot Machines   — Mandalay Bay slots (Megabucks, Wheel of Fortune, and more)
-  3) Sports Book     — Moneyline and spread wagering
-  4) Racing Pavilion — Thoroughbred win / place / show
-  5) Cashier         — Buy chips, cash out, view ledger
-  6) Player Stats    — Visits, bets, net winnings per activity
-  7) Save Game       — Write progress to your save slot
-  8) Casino Guide    — Rules and controls reference
-  9) Leave Casino    — Auto-saves and exits
+  1) Table Games       — Blackjack, Texas Hold'em, Roulette, Craps
+  2) Slot Machines     — Mandalay Bay slots (Megabucks, Wheel of Fortune, and more)
+  3) Lottery Counter   — Pick 3/4, Mega draws, scratchers
+  4) Sports Book       — Sports board + prediction markets (history desk & easter eggs)
+  5) Racing Pavilion   — Thoroughbred win / place / show
+  6) Equestrian Arena  — Dressage competition & Show Jumping
+  7) Cashier           — Buy chips, cash out, view ledger
+  8) Player Stats      — Visits, bets, net winnings per activity
+  9) Save Game         — Write progress to your save slot
+ 10) Casino Guide      — Rules and controls reference
+ 11) Leave Casino      — Auto-saves and exits
 
 Save system:
   • Pick or create a save slot when entering the casino
@@ -49,6 +51,7 @@ SLOTS_HELP = """
 SLOT MACHINES — MANDALAY BAY FLOOR
 ===================================
 Penny slots to high-limit progressives — pick any machine on the floor.
+Your last spin amount stays selected as the default for the next pull.
 
 Classic & high limit:
   Mandalay Fortune     5–50 chips per spin
@@ -80,18 +83,28 @@ Enter 0 as spin amount to leave the machine.
 SPORTSBOOK_HELP = """
 SPORTS BOOK — HOW TO WAGER
 ==========================
-1) Review the event board (NFL, NBA, MLB, Soccer)
-2) Place a wager — pick moneyline or spread
-3) Settle open bets when ready for simulated final scores
+1) Sports board — 10 events across NFL, NBA, MLB, MLS, NHL, NCAA, UFC, Tennis, Golf
+2) Prediction markets board — YES/NO contracts across sports pulse, History Desk, headlines, Vegas buzz, sentiment, and easter eggs
+3) Settle all open positions when ready for simulated final scores and market resolutions
 
-Moneyline: Pick the outright winner.
-Spread:    Pick a team to cover the point spread.
+Sports bet types:
+  Moneyline — Pick the outright winner
+  Spread    — Pick a team to cover the point spread
+  Total     — Over/under the combined score line
+  Props     — Side bets tied to the same simulated outcome
+  Outright  — UFC, tennis, and golf winner markets
+
+Prediction markets:
+  Buy YES or NO at displayed cent prices (e.g. 35¢ YES → high upside if correct)
+  History Desk — realistic historical claims that settle to recorded truth
+  Easter Eggs — ludicrous longshot contracts for the chaotic visitor
+  Filter the board by category; prices drift on refresh
 
 American odds examples:
   +150  — Win $150 profit on a $100 bet
   -110  — Bet $110 to win $100 profit
 
-Open tickets are listed in the Sports Book menu header.
+Open positions appear in the unified bet slip.
 """
 
 HOLDEM_HELP = """
@@ -103,11 +116,14 @@ Hand categories follow the UCI / Kaggle poker-hands dataset (CLASS 0–9):
   8 Straight flush   9 Royal flush
 
 Gameplay:
-  • Buy in at the table; blinds post automatically each hand
-  • Pre-flop → flop → turn → river betting rounds
-  • Actions: fold, check, call, raise (minimum raise = big blind)
+  • 5-handed no-limit table: you + 4 AI opponents
+  • Buy in once; your stack carries across hands with wins and losses
+  • Blinds post automatically each hand
+  • Full street flow: pre-flop → flop → turn → river → showdown
+  • Each street has a betting round; bots fold, call, or raise
+  • Raise to any amount from the minimum up to your stack (no-limit)
   • Best five-card hand from your two hole cards + five community cards
-  • Play vs AI opponents until you leave or bust
+  • Cash out when you leave — remaining stack returns to your wallet
 """
 
 ROULETTE_HELP = """
@@ -121,6 +137,37 @@ Bet types:
   • Dozens 1–12, 13–24, 25–36 (2:1)
 
 Zero wins only on straight-up bets; all outside bets lose on 0.
+A live spin history strip shows recent results (newest first) as you play.
+"""
+
+CRAPS_HELP = """
+MANDALAY CRAPS — DICE TABLE
+===========================
+Come-out roll:
+  • Pass Line wins on 7 or 11; loses on 2, 3, or 12; else a point is set
+  • Don't Pass wins on 2 or 3; pushes on 12; loses on 7 or 11
+
+Point phase:
+  • Pass Line wins if the point repeats before a 7
+  • Don't Pass wins on seven-out
+
+One-roll sides: Field, Any Craps (7:1), Any Seven (4:1)
+Hardways stay working until they hit hard or lose to a soft/seven.
+"""
+
+LOTTERY_HELP = """
+MANDALAY LOTTERY — TICKET COUNTER
+=================================
+Strip Pick 3 / Neon Pick 4:
+  • Straight (exact order) or Box (any order) prizes
+  • Quick Pick or choose your digits
+
+Mandalay Mega:
+  • 5 balls (1–45) + Mega ball (1–20)
+  • Tiered prizes for matches + mega
+
+Scratchers:
+  • Gold Rush ($5) and Wild Card ($10) instant tickets
 """
 
 HORSE_RACING_HELP = """
@@ -134,6 +181,29 @@ Each race card lists 5–6 horses with morning-line odds.
 
 Place tickets, run the race to simulate results, then settle.
 Refresh the card for a new field anytime.
+"""
+
+EQUESTRIAN_HELP = """
+EQUESTRIAN ARENA — DRESSAGE & SHOW JUMPING
+==========================================
+The Equestrian Arena is a separate venue from the Racing Pavilion,
+featuring scored discipline events rather than flat racing.
+
+Dressage:
+  Riders compete in Grand Prix-level tests judged on Technical and Artistic merit.
+  Bet on any competitor to Win (1st), Place (top 2), or Show (top 3).
+  Odds reflect combined score projections.
+
+Show Jumping:
+  Competitors navigate a 12-fence course. Faults are added for knockdowns (4)
+  or refusals (1); ties broken by elapsed time.
+
+  Win        — competitor finishes 1st
+  Place      — top 2
+  Show       — top 3
+  Clear Round — horse completes the course with 0 faults (pays 3× wager)
+
+Place tickets before the event runs, then settle to see results.
 """
 
 CHIP_ECONOMY_HELP = """
@@ -171,9 +241,14 @@ SECTIONS = {
     "blackjack": BLACKJACK_HELP,
     "holdem": HOLDEM_HELP,
     "roulette": ROULETTE_HELP,
+    "craps": CRAPS_HELP,
     "slots": SLOTS_HELP,
+    "lottery": LOTTERY_HELP,
     "sportsbook": SPORTSBOOK_HELP,
     "horse_racing": HORSE_RACING_HELP,
+    "equestrian": EQUESTRIAN_HELP,
+    "dressage": EQUESTRIAN_HELP,
+    "jumper": EQUESTRIAN_HELP,
     "chips": CHIP_ECONOMY_HELP,
     "saves": SAVES_HELP,
 }

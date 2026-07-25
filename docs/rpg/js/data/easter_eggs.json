@@ -1,0 +1,74 @@
+{
+  "easter_cherry": {
+    "label": "Cherry on top",
+    "hint": "Somewhere a machine still pays in fruit.",
+    "reveal": "Three cherries on a machine nobody maintains anymore.",
+    "flag": "easter_cherry"
+  },
+  "konami_mode": {
+    "label": "Retro palette",
+    "hint": "Up up down down… you know the rest.",
+    "reveal": "The cabinet flips to a 1987 palette and the statue winks.",
+    "flag": "konami_mode"
+  },
+  "found_back_room": {
+    "label": "Back of house",
+    "hint": "A wall that isn't quite a wall.",
+    "reveal": "The STAFF ONLY corridor behind the north tiles.",
+    "flag": "found_back_room"
+  },
+  "easter_plant_whisper": {
+    "label": "The talking plant",
+    "hint": "Stand still near the lobby greenery.",
+    "reveal": "The lobby ficus whispers a horse's name. It is never right.",
+    "flag": "easter_plant_whisper"
+  },
+  "easter_statue_pat": {
+    "label": "Statue etiquette",
+    "hint": "Everyone touches the golden statue. Not everyone is polite.",
+    "reveal": "Pat the statue twice and it returns the favor.",
+    "flag": "easter_statue_pat"
+  },
+  "easter_blake_lock": {
+    "label": "Lock of the week",
+    "hint": "Ask the bookie what he actually likes.",
+    "reveal": "Blake's lock of the week board — undefeated at being wrong.",
+    "flag": "easter_blake_lock"
+  },
+  "egg_phantom_floor": {
+    "label": "The floor that isn't",
+    "hint": "Elevators skip a number for a reason.",
+    "reveal": "Press the missing floor button and the tower hums back.",
+    "flag": "egg_phantom_floor"
+  },
+  "egg_wrong_number": {
+    "label": "555-0199",
+    "hint": "Dial the number nobody answers.",
+    "reveal": "A wrong number that knows your name and your chip count.",
+    "flag": "egg_wrong_number"
+  },
+  "egg_aquarium_tap": {
+    "label": "Do not tap the glass",
+    "hint": "The sign says do not. The sign is a suggestion.",
+    "reveal": "Tap the reef glass and the sand tiger taps back.",
+    "flag": "egg_aquarium_tap"
+  },
+  "egg_jackpot_bell": {
+    "label": "The old bell",
+    "hint": "Some jackpots still ring analog.",
+    "reveal": "A brass bell above the slot aisle nobody has rung since 1999.",
+    "flag": "egg_jackpot_bell"
+  },
+  "egg_delano_ghost": {
+    "label": "Delano ghost floor",
+    "hint": "The quiet tower keeps quieter guests.",
+    "reveal": "A Delano corridor where the carpet pattern never repeats.",
+    "flag": "egg_delano_ghost"
+  },
+  "egg_green_room": {
+    "label": "Green room list",
+    "hint": "Backstage has a guest list. You are not on it.",
+    "reveal": "The House of Blues green room rider, entirely in green M&Ms.",
+    "flag": "egg_green_room"
+  }
+}

@@ -1,18 +1,11 @@
 name: Deploy GitHub Pages
 
-# Live site: gh-pages branch /docs/ (legacy GitHub Pages root = /docs on that branch).
-# Full mirror of main/docs/ — casino CSS, slot skins, horse sprites, hotel, RPG, etc.
+# DISABLED: automatic publish (push + schedule) — fails on account billing limits and spams errors.
+# Publish manually instead: bash .cursor/skills/sync-gh-pages/scripts/run-sync.sh
+# Live site: gh-pages branch /docs/ → https://exios66.github.io/degen-llms/
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "docs/**"
-      - "scripts/sync-gh-pages.sh"
-      - ".github/workflows/deploy-gh-pages.yml"
-  schedule:
-    # Hourly drift check — sync only when docs/ differs from main
-    - cron: "0 * * * *"
+  # Optional manual run from Actions tab only (normally use sync-gh-pages skill / run-sync.sh).
   workflow_dispatch:
 
 permissions:
@@ -32,10 +25,28 @@ jobs:
           fetch-depth: 0
           ref: main
 
-      - name: Full sync docs/ to gh-pages and log ping
+      - name: Full sync docs/ to gh-pages and log build status
+        id: sync
         env:
           GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_RUN_ATTEMPT: ${{ github.run_attempt }}
         run: bash scripts/sync-gh-pages.sh
 
       - name: Site URL
+        if: success()
         run: echo "Live at https://exios66.github.io/degen-llms/"
+
+      - name: Log workflow failure to build status log
+        if: failure()
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          if [[ "${{ steps.sync.outcome }}" == "success" ]]; then
+            echo "Sync step succeeded; build status already logged."
+            exit 0
+          fi
+          bash scripts/log-gh-pages-workflow-failure.sh failure \
+            "Deploy GitHub Pages workflow failed before or during sync (see Actions run for billing/checkout errors)"

@@ -456,13 +456,14 @@ const TEX_CHAR_H = CHAR_H * SCALE;
 // ─── Characters ──────────────────────────────────────────────────────────────
 
 function drawCharacterPixels(w, palette, dir, frame) {
-  const { body, mid, shade, hair, hairShade, skinLight, skinMid, skinShade } = palette;
+  // `outfitShade` must not be named `shade` — that would shadow the shade() helper.
+  const { body, mid, shade: outfitShade, hair, hairShade, skinLight, skinMid, skinShade } = palette;
   const bob = frame === 1 ? -1 : frame === 2 ? 1 : 0;
   const legL = frame === 1 ? 1 : frame === 2 ? -1 : 0;
   const legR = -legL;
   const shoe = 0x282838;
   const shoeHi = 0x484858;
-  const belt = shade(shade, 0.65);
+  const belt = shade(outfitShade, 0.65);
 
   // Ground shadow
   w.px(0x000000, 3, 20, 10, 1, 0.35);
@@ -482,7 +483,7 @@ function drawCharacterPixels(w, palette, dir, frame) {
   w.px(OUTLINE, 3, 8 + bob, 10, 8);
   w.px(body, 4, 9 + bob, 8, 6);
   w.px(mid, 4, 9 + bob, 8, 2);
-  w.px(shade, 4, 13 + bob, 8, 2);
+  w.px(outfitShade, 4, 13 + bob, 8, 2);
   w.px(0xffffff, 5, 10 + bob, 2, 1, 0.85);
   w.px(belt, 4, 13 + bob, 8, 1);
   w.px(shade(belt, 1.2), 5, 13 + bob, 1, 1);

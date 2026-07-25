@@ -14,6 +14,10 @@ keywords:
   - overworld
   - quest design
   - Mandalay Bay
+execute:
+  # Every table here is read from js/data/, which changes without this file
+  # changing. Freezing would publish last week's world.
+  freeze: false
 ---
 
 ::: {.github-access}

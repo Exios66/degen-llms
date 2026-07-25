@@ -5,3 +5,16 @@ __pycache__/
 .venv/
 dist/
 build/
+node_modules/
+package-lock.json
+
+# Quarto / Posit Connect Cloud
+_site/
+.quarto/
+*_cache/
+.jupyter/
+*.quarto_ipynb
+/tmp/posit-*.json
+posit-tokens.json
+/.quarto/
+**/*.quarto_ipynb

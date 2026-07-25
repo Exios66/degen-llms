@@ -1,170 +1,207 @@
 # degen-llms
 
-**The Mandalay Bay** — a choose-your-adventure digital casino CLI. Explore the floor, build your chip stack across blackjack tables, slot machines, and the sports book, all backed by a unified chip economy and secure OS RNG.
+**The Mandalay Bay** — a satirical choose-your-adventure resort simulator with a unified chip economy. Play blackjack, slots, and the sports book on the casino floor; check into the hotel; lounge at the 11-acre pool complex; climb MGM Rewards tiers; and explore the property as a pixel RPG. Available as a **Python CLI**, a **browser terminal** (GitHub Pages), and a **Phaser overworld**.
+
+## Play now
+
+| Surface | URL / command |
+|---------|----------------|
+| **Web terminal** | [Web-Terminal-Access](https://exios66.github.io/degen-llms/) |
+| **Pixel RPG** | [The-Pixel-RPG](https://exios66.github.io/degen-llms/rpg/) |
+| **CLI** | `python3 -m mandalay_bay` |
+| **Quarto docs (Posit Connect Cloud)** | [Posit-Cloud](https://019f9a67-d5c9-226b-b6b1-a86d1655be69.share.connect.posit.cloud/) |
+
+All three surfaces share the same save slots and chip wallet (CLI: `~/.mandalay_bay/saves/`; browser: `localStorage`).
 
 ## Quick start
 
 Requires **Python 3.11+** (stdlib only at runtime).
 
 ```bash
-# Enter the full casino
-python3 -m mandalay_bay
-
-# Standalone blackjack (original mode)
-python3 -m blackjack
-
-# Run tests
-python3 -m pytest -v
+git clone https://github.com/Exios66/degen-llms.git
+cd degen-llms
+python3 -m mandalay_bay                  # Save library → casino floor
+python3 -m mandalay_bay --list-saves     # View save slots
+python3 -m mandalay_bay --slot 1 --new-save --name "Ace"
+python3 -m blackjack                     # Standalone blackjack (no resort hub)
 ```
 
-### Play in your browser (GitHub Pages)
-
-The same **The Mandalay Bay** experience is available as a web app styled like the terminal CLI:
-
-**https://exios66.github.io/degen-llms/**
-
-The site source lives in [`docs/`](docs/) on `main` and is published via the **`gh-pages`** branch (files deployed to `gh-pages/docs/`). Pushes to `main` that change `docs/` automatically redeploy via GitHub Actions.
-
-**Pages source:** branch `gh-pages`, folder `/docs` (matches repo Settings → Pages).
-
-Manual deploy: `./scripts/deploy-gh-pages.sh`
-
-All floor activities work in the browser:
-
-- Table Games (blackjack — quick hand or custom table with bots)
-- Slot Machines (Mandalay Fortune & High Roller)
-- Sports Book (moneyline & spread)
-- Cashier (buy/cash out, transaction ledger)
-- Player Stats (visits, bets, net winnings)
-- **Save Library** (5 slots — select, create, load, delete; recent saves tracked)
-
-Session progress is saved per slot in your browser via `localStorage`. Open `docs/index.html` locally for offline play.
-
-## The Mandalay Bay
-
-Welcome to the floor. One chip wallet powers every activity:
-
-| Area | Activity | Min bet |
-|------|----------|---------|
-| **Table Games** | Blackjack (solo or full table with AI players) | 10 chips |
-| **Slot Machines** | Mandalay Fortune & High Roller slots | 5 chips |
-| **Sports Book** | Moneyline & spread on simulated live events | 10 chips |
-
-### Casino navigation
-
-```
-══════════════════════════════════
-  The Mandalay Bay
-══════════════════════════════════
-Welcome, Guest
-Chips: $1,000
-
-Choose your adventure:
-  1) Explore Table Games
-  2) Explore Slot Machines
-  3) Explore Sports Book
-  4) Cashier
-  5) Player Stats
-  6) Leave Casino
-  0) Back
-```
-
-- **Cashier** — buy chips, cash out, view transaction ledger
-- **Player Stats** — visits, bets, and net winnings per activity
-- **Save Game** — write current progress to your active save slot
-- **Chip economy** — all wagers debit/credit one shared wallet with full audit trail
-
-### Command-line options
+Optional editable install and tests:
 
 ```bash
-python3 -m mandalay_bay --chips 2500 --name "High Roller"
-python3 -m mandalay_bay --no-color --ascii
+pip install -e ".[dev]"
+python3 -m pytest -v                     # 200+ tests
+```
 
-# Load save slot 2 directly
+## What you can do
+
+### Casino floor
+
+Five floors, eight activities, one chip wallet:
+
+| Floor | Activities | Min bet |
+|-------|------------|---------|
+| **Table Games** | Blackjack, Texas Hold'em, Mandalay Roulette | 10 chips |
+| **Slot Machines** | 14 machines incl. Megabucks & linked progressives | 1 chip |
+| **Sports Book** | Moneyline, spread, prediction markets | 10 chips |
+| **Racing Pavilion** | Mandalay Racing (thoroughbred sim) | 5 chips |
+| **Equestrian Arena** | Dressage & show jumping | 10 chips |
+
+Stake tiers run from penny slots through **401K Contribution** ($542–$6,500) and **High Roller / No Limit**. Progressive jackpots (Megabucks, Monte Carlo, Super Spin) persist in your save.
+
+Beyond the gaming pits:
+
+- **Casino Floor — shopping & bars** — The Shoppes at Mandalay Place sky bridge, three full-service bars, intoxication tracking
+- **Cashier** — Buy chips, cash out to your off-strip bank account, view the floor ledger
+- **Off-Strip Bank Account** — Park winnings outside the cage; fund trips from outside income
+- **Staff Manifest** — Editable dealer roster with session overrides
+- **High Limit salon & Foundation Room** — Chip- and tier-gated VIP venues (web)
+
+### Resort hotel
+
+Exit the casino floor to the **Mandalay Bay Hotel Experience**:
+
+- **Clerk Carmen** at the front desk — locate reservations, settle overdue charges, upgrade rooms, review folios, checkout
+- **Hallway mini-game** — three beats of directional choices to reach your door
+- **In-room amenities** — TV (Shark Reef ch. 47, wave pool cam), sensor-enabled minibar, unlimited foreign calls, balcony decisions, 17 unlockable Vegas vignettes
+- **Guest Directory** — leather-bound lobby guest book with persistent signatures
+- **Real-time day/night cycle** — 2 hours real time = 1 in-game day; daily room/resort/parking charges; rotating check-in requirements (phone, desk, both, or whale net-positive)
+- **MGM Rewards phone** — press **P** in the web app for tier status, comps, reservation locate, and textable staff contacts
+
+Room types: Deluxe King → Panorama Suite → Chairman Penthouse. MGM Rewards tier comps can cover upgrades and room nights.
+
+### Pool complex
+
+The **11-acre pool expansion** includes wave pool timing, hot tubs, private cabanas, Shark Reef Aquarium species collection, topless beach club, and beach rave — with unlockable pool vignettes that chain into hotel room events.
+
+### MGM Rewards
+
+Lifetime wagered chips advance you through Sapphire → Pearl → Gold → Platinum → Noir → Chairman. Each tier unlocks narrative comps (welcome drink, slot free-play, buffet, room night, suite upgrade, penthouse fantasy) and perks that gate TV channels, phone calls, and VIP access.
+
+### Pixel RPG
+
+Walk the resort in a **Pokémon-style pixel overworld** built with Phaser 3:
+
+- **28 rooms, 61 NPCs** — the Boulevard and valet, registration, two casino floors, the book, High Limit Salon, Foundation Room, the Shoppes and sky bridge, two bars, the hotel tower and your own room, Delano, the spa, four pool zones, Shark Reef, House of Blues, ULTRA Arena, and the back of house
+- **Terminal parity, not a rewrite** — hotel, pool, shops, slots, sportsbook, racing, and cashier are the terminal's own screens mounted inside an encounter panel, so the two surfaces cannot drift
+- **Pokémon systems** — START menu, line-of-sight challengers, a quest board, a three-part dex, a bag, twelve cosmetic secrets, and NPCs who move with the clock
+- **One clock, one wallet** — daily resort charges, rotating reservation requirements, and eviction all reach the overworld
+- **Legible floors** — gold walkways connect every door, dark trim separates each zone, and floating signs name the room you're standing in
+- **Your guest, your sprite** — a character creator for archetype, skin tone, hair, and outfit, reopenable as the Trainer Card's wardrobe
+- **Plays on a phone** — tap a tile to walk, tap dialogue to advance
+- **Arcade polish** — DS-scale procedural textures, Web Audio BGM/SFX, cabinet bezel, room placards, Konami code
+- **Unified saves** — position, quests, flags, and chips ride the same slot as the terminal and the CLI
+
+See [`docs/rpg/GDD.md`](docs/rpg/GDD.md).
+
+## Save system
+
+- **5 save slots** with most-recent-first library ordering
+- Interactive picker on launch, or direct CLI: `--slot N`, `--slot N --new-save`
+- Ephemeral play: `--no-save`
+- Auto-save on leave, after activities, and on Ctrl+C
+- CLI storage: `~/.mandalay_bay/saves/` (override with `--save-dir` or `MANDALAY_BAY_SAVE_DIR`)
+- Browser storage: `localStorage` per slot (`mandalay-bay-library`)
+
+## Command-line options
+
+```bash
 python3 -m mandalay_bay --slot 2
-
-# Create a new save in slot 3
-python3 -m mandalay_bay --slot 3 --new-save --name "Alice"
-
-# Play without saving (ephemeral session)
-python3 -m mandalay_bay --no-save
+python3 -m mandalay_bay --slot 3 --new-save --name "Ace" --chips 2500
+python3 -m mandalay_bay --no-save --chips 5000
+python3 -m mandalay_bay --save-dir ./backups --list-saves
+python3 -m mandalay_bay --no-color --ascii --no-intro
+python3 -m blackjack --quick --bots 3 --rounds 10
 ```
 
 | Flag | Purpose |
 |------|---------|
-| `--chips` | Starting balance for **new** saves (default 1000) |
-| `--name` | Default player name for **new** saves |
-| `--slot` | Load save slot 1–5 directly (skip picker) |
-| `--new-save` | With `--slot`, create a new save in that slot |
-| `--no-save` | Ephemeral session — no save library |
-| `--no-color` | Disable ANSI colors |
-| `--ascii` | ASCII symbols instead of Unicode |
+| `--slot` | Load save slot 1–5 directly |
+| `--new-save` / `--new` | Create new save in `--slot` |
+| `--no-save` | Ephemeral session (no persistence) |
+| `--list-saves` | Print save library and exit |
+| `--save-dir` | Custom save directory |
+| `--chips` | Starting chips for new saves |
+| `--name` | Default player name |
+| `--no-color` / `--ascii` / `--no-intro` | Display options |
 
-### Save library
+## Project structure
 
-When you launch the casino, you enter the **Save Library** first:
+```
+degen-llms/
+├── mandalay_bay/              # Python source of truth — hub, resort systems, CLI activities
+│   ├── activities/            # Blackjack, Hold'em, roulette, slots, sportsbook, racing, equestrian, craps, lottery
+│   ├── craps.py / lottery.py / prediction_markets.py
+│   ├── hotel*.py / pool*.py / rewards*.py / casino_amenities*.py
+│   ├── hub.py / session.py / chips.py / saves.py
+│   └── data/                  # Sports catalog, staff manifest, guest directory, horse names
+├── blackjack/                 # Decoupled blackjack engine (casino + standalone modes)
+├── poker/                     # Texas Hold'em table engine (`holdem.py`) + hand evaluation
+├── docs/                      # Web terminal (GitHub Pages) + shared JS engine
+│   ├── js/                    # Browser parity modules (core, hotel, pool, sportsbook, craps, lottery, …)
+│   │   ├── blackjack/ / holdem/
+│   │   └── app.js             # Casino floor UI
+│   ├── css/                   # Terminal styling
+│   ├── *.md                   # Player & developer guides (mirrored in Quarto)
+│   └── rpg/                   # Phaser overworld (maps, NPCs, encounter overlays)
+├── tests/                     # pytest suite (200+ tests)
+├── scripts/                   # GitHub Pages deploy, Posit Connect publish, asset tooling
+├── .github/workflows/         # gh-pages deploy automation
+├── index.qmd / play.qmd       # Quarto documentation manuscript
+├── _quarto.yml / _publish.yml # Quarto site + Posit Connect Cloud publish target
+└── CONTRIBUTING-POSIT.md      # Connect Cloud deploy notes
+```
 
-- **5 save slots** — load an existing visit or create a new one in an empty slot
-- **Recent saves** — your most recently played slots appear at the top
-- **Auto-save** — progress saves after floor activities, when leaving, and via **Save Game** on the hub menu
-- **Storage** — saves live in `~/.mandalay_bay/saves/` (override with `MANDALAY_BAY_SAVE_DIR`)
+Python is the authoritative game logic; the web app mirrors it in vanilla ES modules. The RPG delegates casino/hotel mechanics to the shared `docs/js/` engine. The Quarto site (`index.qmd`, guides) publishes separately to Posit Connect Cloud.
 
-Each save stores your chip wallet, transaction ledger, activity stats, and player name.
+## Documentation
 
-## Blackjack (Table Games)
+Full docs in [`docs/`](docs/README.md) and on the **[GitHub Wiki](https://github.com/Exios66/degen-llms/wiki)** (source in [`wiki/`](wiki/); publish with `/sync-github-wiki` or `bash scripts/sync-github-wiki.sh`):
 
-Full Vegas-style rules: 6-deck shoe, H17, 3:2 blackjack, split/double/insurance/surrender, secure Fisher–Yates shuffle via `secrets.SystemRandom()`.
+| Guide | Description |
+|-------|-------------|
+| [Player Guide](docs/player-guide.md) | Every menu, dialog, hotel flow, and shortcut |
+| [Getting Started](docs/getting-started.md) | Install, launch, CLI flags |
+| [Save Slots](docs/saves.md) | Load, create, and manage saves |
+| [Chip Economy](docs/chip-economy.md) | Wallet, ledger, buy-ins, cash-outs |
+| [Blackjack](docs/blackjack.md) | Table rules, controls, casino & standalone modes |
+| [Slot Machines](docs/slots.md) | Machines, paytables, progressives |
+| [Sports Book](docs/sportsbook.md) | Events, moneyline, spread, settlement |
+| [Architecture](docs/architecture.md) | Packages, data flow, activity system |
+| [Adding Activities](docs/adding-activities.md) | Plug in new games |
+| [Testing](docs/testing.md) | Running and writing tests |
+| [Pixel RPG GDD](docs/rpg/GDD.md) | Overworld design & expansion roadmap |
 
-When played inside The Mandalay Bay, your chip wallet is synced after every hand. Standalone mode remains available:
+In-game help: **Casino Guide** from the main lobby.
+
+## GitHub Pages deployment
+
+The interactive web terminal + RPG source lives in [`docs/`](docs/) on **`main`**. GitHub Actions mirrors the entire `docs/` tree to the **`gh-pages`** branch (see [`.github/workflows/deploy-gh-pages.yml`](.github/workflows/deploy-gh-pages.yml)).
+
+**Enable Pages (one-time):** Repository **Settings → Pages → Deploy from branch → `gh-pages` → `/docs`.**
+
+Deployments trigger on pushes to `main` that touch `docs/**`, hourly drift checks, or manual workflow runs. Custom error screens (`404.html`, `maintenance.html`, `offline.html`) deploy with the site.
 
 ```bash
-python3 -m blackjack --quick --bots 3 --seat 2
+./scripts/sync-gh-pages.sh      # Manual sync
+./scripts/deploy-gh-pages.sh    # Full deploy
 ```
 
-## Slot Machines
+## Posit Connect Cloud (documentation site)
 
-Three-reel slots with weighted symbols and a classic paytable:
+A Quarto documentation website (overview manuscript + player/developer guides) publishes to the **JackJBurleson** Posit Connect Cloud account as its **own** content instance — it does **not** overwrite the PSYCH 755 manuscript.
 
-| Result | Payout |
-|--------|--------|
-| 7-7-7 | 100x |
-| 💎💎💎 | 50x |
-| 🔔🔔🔔 | 25x |
-| BAR×3 | 15x |
-| 🍒🍒🍒 | 10x |
-| Two cherries | 2x |
-| One cherry | Bet returned |
-
-## Sports Book
-
-Simulated events across NFL, NBA, MLB, and Soccer with moneyline and spread lines. Place tickets, then settle for randomly generated final scores (secure RNG).
-
-## Architecture
-
-```
-mandalay_bay/           # Casino hub & chip economy
-  hub.py                # Floor navigation / choose-your-adventure
-  chips.py              # Unified ChipWallet + ledger
-  session.py            # Player session & per-activity stats
-  activities/
-    blackjack.py        # Table game wrapper
-    slots.py            # Slot machines
-    sportsbook.py       # Sports wagering
-blackjack/              # Full blackjack engine
-tests/                  # pytest suite
+```bash
+# Requires Quarto ≥ 1.10, jupyter, pandas, matplotlib
+export PYTHONPATH="$PWD"
+quarto render
+python scripts/publish_posit_degen_llms.py   # creates or updates Connect Cloud content
 ```
 
-Activities implement a common `Activity` interface — new games (roulette, poker, etc.) plug in via the registry without changing the hub.
-
+See [`CONTRIBUTING-POSIT.md`](CONTRIBUTING-POSIT.md) and [`.cursor/skills/posit-connect-publish/SKILL.md`](.cursor/skills/posit-connect-publish/SKILL.md).
 ## RNG & legitimacy
 
-All random outcomes use `secrets.SystemRandom()` (OS CSPRNG):
-
-- Blackjack shoe shuffles
-- Slot reel spins (weighted symbol pool)
-- Sports event lines and final scores
-
-No outcome manipulation; payouts follow stated rules and paytables.
+All random outcomes use OS-backed CSPRNG (`secrets.SystemRandom()` in Python, `crypto.getRandomValues()` in the browser). No outcome manipulation.
 
 ## License
 

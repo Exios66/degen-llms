@@ -91,15 +91,23 @@ class TerminalUI:
     def pause(self) -> None:
         input("\nPress Enter to continue...")
 
-    def menu_choice(self, options: list[str], title: str | None = None) -> int:
+    def menu_choice(
+        self,
+        options: list[str],
+        title: str | None = None,
+        *,
+        allow_back: bool = True,
+        back_label: str = "Back",
+    ) -> int:
         if title:
             self.subtitle(title)
         for i, option in enumerate(options, start=1):
             self.print(f"  {i}) {option}")
-        self.print(f"  0) Back")
+        if allow_back:
+            self.print(f"  0) {back_label}")
         while True:
             raw = self.prompt("Choose: ")
-            if raw == "0":
+            if allow_back and raw == "0":
                 return 0
             try:
                 choice = int(raw)

@@ -1,0 +1,244 @@
+{
+  "version": 1,
+  "boardSize": 10,
+  "sports": {
+    "NFL": {
+      "label": "NFL",
+      "marketTypes": ["moneyline", "spread", "total", "prop"],
+      "homeField": 2.5,
+      "spreadStep": 0.5,
+      "juice": -110,
+      "scoringProfile": {
+        "type": "points",
+        "meanTotal": 44,
+        "stdPerTeam": 7,
+        "minPerTeam": 0,
+        "maxPerTeam": 45,
+        "allowTie": false
+      },
+      "teams": [
+        { "name": "Kansas City Chiefs", "conference": "AFC", "division": "West", "powerRating": 1540 },
+        { "name": "Buffalo Bills", "conference": "AFC", "division": "East", "powerRating": 1510 },
+        { "name": "Baltimore Ravens", "conference": "AFC", "division": "North", "powerRating": 1520 },
+        { "name": "Las Vegas Raiders", "conference": "AFC", "division": "West", "powerRating": 1420 },
+        { "name": "San Francisco 49ers", "conference": "NFC", "division": "West", "powerRating": 1530 },
+        { "name": "Dallas Cowboys", "conference": "NFC", "division": "East", "powerRating": 1480 },
+        { "name": "Philadelphia Eagles", "conference": "NFC", "division": "East", "powerRating": 1500 },
+        { "name": "Detroit Lions", "conference": "NFC", "division": "North", "powerRating": 1490 }
+      ]
+    },
+    "NBA": {
+      "label": "NBA",
+      "marketTypes": ["moneyline", "spread", "total", "prop"],
+      "homeField": 3.0,
+      "spreadStep": 0.5,
+      "juice": -110,
+      "scoringProfile": {
+        "type": "points",
+        "meanTotal": 224,
+        "stdPerTeam": 12,
+        "minPerTeam": 85,
+        "maxPerTeam": 140,
+        "allowTie": false
+      },
+      "teams": [
+        { "name": "Los Angeles Lakers", "conference": "West", "division": "Pacific", "powerRating": 1480 },
+        { "name": "Boston Celtics", "conference": "East", "division": "Atlantic", "powerRating": 1560 },
+        { "name": "Golden State Warriors", "conference": "West", "division": "Pacific", "powerRating": 1470 },
+        { "name": "Miami Heat", "conference": "East", "division": "Southeast", "powerRating": 1450 },
+        { "name": "Denver Nuggets", "conference": "West", "division": "Northwest", "powerRating": 1540 },
+        { "name": "Milwaukee Bucks", "conference": "East", "division": "Central", "powerRating": 1500 },
+        { "name": "Phoenix Suns", "conference": "West", "division": "Pacific", "powerRating": 1460 },
+        { "name": "New York Knicks", "conference": "East", "division": "Atlantic", "powerRating": 1490 }
+      ]
+    },
+    "MLB": {
+      "label": "MLB",
+      "marketTypes": ["moneyline", "spread", "total", "prop"],
+      "homeField": 0.4,
+      "spreadStep": 0.5,
+      "juice": -110,
+      "scoringProfile": {
+        "type": "runs",
+        "meanTotal": 8.5,
+        "stdPerTeam": 2.2,
+        "minPerTeam": 0,
+        "maxPerTeam": 15,
+        "allowTie": false
+      },
+      "teams": [
+        { "name": "New York Yankees", "conference": "AL", "division": "East", "powerRating": 1490 },
+        { "name": "Los Angeles Dodgers", "conference": "NL", "division": "West", "powerRating": 1550 },
+        { "name": "Boston Red Sox", "conference": "AL", "division": "East", "powerRating": 1440 },
+        { "name": "Chicago Cubs", "conference": "NL", "division": "Central", "powerRating": 1430 },
+        { "name": "San Francisco Giants", "conference": "NL", "division": "West", "powerRating": 1460 },
+        { "name": "New York Mets", "conference": "NL", "division": "East", "powerRating": 1480 },
+        { "name": "Houston Astros", "conference": "AL", "division": "West", "powerRating": 1500 },
+        { "name": "Atlanta Braves", "conference": "NL", "division": "East", "powerRating": 1510 }
+      ]
+    },
+    "Soccer": {
+      "label": "MLS",
+      "marketTypes": ["moneyline", "spread", "total", "prop"],
+      "homeField": 0.35,
+      "spreadStep": 0.5,
+      "juice": -110,
+      "scoringProfile": {
+        "type": "goals",
+        "meanTotal": 2.6,
+        "stdPerTeam": 0.9,
+        "minPerTeam": 0,
+        "maxPerTeam": 5,
+        "allowTie": true
+      },
+      "teams": [
+        { "name": "Bay FC", "conference": "West", "division": "West", "powerRating": 1380 },
+        { "name": "LA Galaxy", "conference": "West", "division": "West", "powerRating": 1450 },
+        { "name": "Seattle Sounders", "conference": "West", "division": "West", "powerRating": 1460 },
+        { "name": "Inter Miami", "conference": "East", "division": "East", "powerRating": 1520 },
+        { "name": "NYCFC", "conference": "East", "division": "East", "powerRating": 1420 },
+        { "name": "Austin FC", "conference": "West", "division": "West", "powerRating": 1400 },
+        { "name": "Columbus Crew", "conference": "East", "division": "East", "powerRating": 1470 },
+        { "name": "Atlanta United", "conference": "East", "division": "East", "powerRating": 1430 }
+      ]
+    },
+    "NHL": {
+      "label": "NHL",
+      "marketTypes": ["moneyline", "spread", "total", "prop"],
+      "homeField": 0.25,
+      "spreadStep": 0.5,
+      "juice": -110,
+      "scoringProfile": {
+        "type": "goals",
+        "meanTotal": 5.8,
+        "stdPerTeam": 1.1,
+        "minPerTeam": 0,
+        "maxPerTeam": 8,
+        "allowTie": false
+      },
+      "teams": [
+        { "name": "Vegas Golden Knights", "conference": "West", "division": "Pacific", "powerRating": 1490 },
+        { "name": "Edmonton Oilers", "conference": "West", "division": "Pacific", "powerRating": 1510 },
+        { "name": "Colorado Avalanche", "conference": "West", "division": "Central", "powerRating": 1500 },
+        { "name": "Florida Panthers", "conference": "East", "division": "Atlantic", "powerRating": 1520 },
+        { "name": "Boston Bruins", "conference": "East", "division": "Atlantic", "powerRating": 1470 },
+        { "name": "New York Rangers", "conference": "East", "division": "Metropolitan", "powerRating": 1480 },
+        { "name": "Toronto Maple Leafs", "conference": "East", "division": "Atlantic", "powerRating": 1460 },
+        { "name": "Dallas Stars", "conference": "West", "division": "Central", "powerRating": 1495 }
+      ]
+    },
+    "NCAAF": {
+      "label": "NCAA Football",
+      "marketTypes": ["moneyline", "spread", "total", "prop"],
+      "homeField": 3.0,
+      "spreadStep": 0.5,
+      "juice": -110,
+      "scoringProfile": {
+        "type": "points",
+        "meanTotal": 52,
+        "stdPerTeam": 10,
+        "minPerTeam": 0,
+        "maxPerTeam": 70,
+        "allowTie": false
+      },
+      "teams": [
+        { "name": "Alabama Crimson Tide", "conference": "SEC", "division": "SEC", "powerRating": 1540 },
+        { "name": "Georgia Bulldogs", "conference": "SEC", "division": "SEC", "powerRating": 1560 },
+        { "name": "Ohio State Buckeyes", "conference": "Big Ten", "division": "Big Ten", "powerRating": 1530 },
+        { "name": "Michigan Wolverines", "conference": "Big Ten", "division": "Big Ten", "powerRating": 1510 },
+        { "name": "Texas Longhorns", "conference": "SEC", "division": "SEC", "powerRating": 1500 },
+        { "name": "Oregon Ducks", "conference": "Big Ten", "division": "Big Ten", "powerRating": 1490 },
+        { "name": "Clemson Tigers", "conference": "ACC", "division": "ACC", "powerRating": 1470 },
+        { "name": "Notre Dame Fighting Irish", "conference": "Independent", "division": "Independent", "powerRating": 1480 }
+      ]
+    },
+    "NCAAB": {
+      "label": "NCAA Basketball",
+      "marketTypes": ["moneyline", "spread", "total", "prop"],
+      "homeField": 3.5,
+      "spreadStep": 0.5,
+      "juice": -110,
+      "scoringProfile": {
+        "type": "points",
+        "meanTotal": 145,
+        "stdPerTeam": 9,
+        "minPerTeam": 50,
+        "maxPerTeam": 95,
+        "allowTie": false
+      },
+      "teams": [
+        { "name": "Duke Blue Devils", "conference": "ACC", "division": "ACC", "powerRating": 1520 },
+        { "name": "Kentucky Wildcats", "conference": "SEC", "division": "SEC", "powerRating": 1490 },
+        { "name": "Kansas Jayhawks", "conference": "Big 12", "division": "Big 12", "powerRating": 1500 },
+        { "name": "UConn Huskies", "conference": "Big East", "division": "Big East", "powerRating": 1530 },
+        { "name": "Purdue Boilermakers", "conference": "Big Ten", "division": "Big Ten", "powerRating": 1510 },
+        { "name": "Arizona Wildcats", "conference": "Big 12", "division": "Big 12", "powerRating": 1480 },
+        { "name": "Houston Cougars", "conference": "Big 12", "division": "Big 12", "powerRating": 1505 },
+        { "name": "Gonzaga Bulldogs", "conference": "WCC", "division": "WCC", "powerRating": 1475 }
+      ]
+    },
+    "UFC": {
+      "label": "UFC",
+      "marketTypes": ["outright", "prop"],
+      "homeField": 0,
+      "spreadStep": 0,
+      "juice": -150,
+      "scoringProfile": {
+        "type": "outright",
+        "allowTie": false
+      },
+      "fighters": [
+        { "name": "Alex Pereira", "weightClass": "Light Heavyweight", "powerRating": 1540 },
+        { "name": "Jon Jones", "weightClass": "Heavyweight", "powerRating": 1560 },
+        { "name": "Ilia Topuria", "weightClass": "Featherweight", "powerRating": 1530 },
+        { "name": "Sean O'Malley", "weightClass": "Bantamweight", "powerRating": 1480 },
+        { "name": "Islam Makhachev", "weightClass": "Lightweight", "powerRating": 1550 },
+        { "name": "Leon Edwards", "weightClass": "Welterweight", "powerRating": 1490 },
+        { "name": "Charles Oliveira", "weightClass": "Lightweight", "powerRating": 1470 },
+        { "name": "Max Holloway", "weightClass": "Featherweight", "powerRating": 1500 }
+      ]
+    },
+    "Tennis": {
+      "label": "Tennis",
+      "marketTypes": ["outright"],
+      "homeField": 0,
+      "spreadStep": 0,
+      "juice": -120,
+      "scoringProfile": {
+        "type": "outright",
+        "allowTie": false
+      },
+      "players": [
+        { "name": "Novak Djokovic", "tour": "ATP", "powerRating": 1540 },
+        { "name": "Carlos Alcaraz", "tour": "ATP", "powerRating": 1560 },
+        { "name": "Jannik Sinner", "tour": "ATP", "powerRating": 1550 },
+        { "name": "Daniil Medvedev", "tour": "ATP", "powerRating": 1490 },
+        { "name": "Coco Gauff", "tour": "WTA", "powerRating": 1510 },
+        { "name": "Iga Swiatek", "tour": "WTA", "powerRating": 1530 },
+        { "name": "Aryna Sabalenka", "tour": "WTA", "powerRating": 1520 },
+        { "name": "Elena Rybakina", "tour": "WTA", "powerRating": 1480 }
+      ]
+    },
+    "Golf": {
+      "label": "PGA Tour",
+      "marketTypes": ["outright"],
+      "homeField": 0,
+      "spreadStep": 0,
+      "juice": 600,
+      "scoringProfile": {
+        "type": "outright",
+        "allowTie": false
+      },
+      "players": [
+        { "name": "Scottie Scheffler", "tour": "PGA", "powerRating": 1560 },
+        { "name": "Rory McIlroy", "tour": "PGA", "powerRating": 1520 },
+        { "name": "Jon Rahm", "tour": "PGA", "powerRating": 1500 },
+        { "name": "Xander Schauffele", "tour": "PGA", "powerRating": 1510 },
+        { "name": "Collin Morikawa", "tour": "PGA", "powerRating": 1470 },
+        { "name": "Viktor Hovland", "tour": "PGA", "powerRating": 1480 },
+        { "name": "Patrick Cantlay", "tour": "PGA", "powerRating": 1460 },
+        { "name": "Tommy Fleetwood", "tour": "PGA", "powerRating": 1450 }
+      ]
+    }
+  }
+}

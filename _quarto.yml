@@ -1,0 +1,144 @@
+project:
+  type: website
+  output-dir: _site
+  render:
+    - index.qmd
+    - play.qmd
+    - rpg.qmd
+    - docs/getting-started.md
+    - docs/player-guide.md
+    - docs/chip-economy.md
+    - docs/saves.md
+    - docs/blackjack.md
+    - docs/slots.md
+    - docs/sportsbook.md
+    - docs/architecture.md
+    - docs/adding-activities.md
+    - docs/testing.md
+    - docs/rpg/GDD.md
+    - CONTRIBUTING-POSIT.md
+
+website:
+  title: "The Mandalay Bay"
+  description: "Digital resort simulator — casino floor, hotel, pool complex, MGM Rewards, and pixel RPG"
+  favicon: docs/favicon.svg
+  site-url: https://connect.posit.cloud/jackjburleson/content/019f9a67-d5c9-226b-b6b1-a86d1655be69
+  repo-url: https://github.com/Exios66/degen-llms
+  repo-actions: [source, issue]
+  page-navigation: true
+  navbar:
+    background: "#C5050C"
+    foreground: white
+    left:
+      - href: index.qmd
+        text: Overview
+      - href: play.qmd
+        text: Play
+      - href: rpg.qmd
+        text: Pixel RPG
+      - text: Player Guides
+        menu:
+          - href: docs/getting-started.md
+            text: Getting Started
+          - href: docs/player-guide.md
+            text: Player Guide
+          - href: docs/chip-economy.md
+            text: Chip Economy
+          - href: docs/saves.md
+            text: Save Slots
+          - href: docs/blackjack.md
+            text: Blackjack
+          - href: docs/slots.md
+            text: Slot Machines
+          - href: docs/sportsbook.md
+            text: Sports Book
+      - text: Developer
+        menu:
+          - href: docs/architecture.md
+            text: Architecture
+          - href: docs/adding-activities.md
+            text: Adding Activities
+          - href: docs/testing.md
+            text: Testing
+          - href: docs/rpg/GDD.md
+            text: Pixel RPG GDD
+          - href: CONTRIBUTING-POSIT.md
+            text: Posit Deploy Notes
+    right:
+      - icon: github
+        href: https://github.com/Exios66/degen-llms
+        aria-label: GitHub repository Exios66/degen-llms
+      - icon: github
+        href: https://github.com/Exios66
+        text: Exios66
+        aria-label: GitHub profile Exios66
+      - text: Live Game
+        href: https://exios66.github.io/degen-llms/
+  page-footer:
+    left: "The Mandalay Bay · degen-llms · Jack J. Burleson"
+    right:
+      - text: "Built with Quarto"
+      - icon: github
+        href: https://github.com/Exios66/degen-llms
+        aria-label: GitHub repository
+      - icon: github
+        href: https://github.com/Exios66
+        text: Exios66
+        aria-label: GitHub profile Exios66
+  sidebar:
+    style: "floating"
+    contents:
+      - section: "Site"
+        contents:
+          - index.qmd
+          - play.qmd
+          - rpg.qmd
+      - section: "Player Guides"
+        contents:
+          - docs/getting-started.md
+          - docs/player-guide.md
+          - docs/chip-economy.md
+          - docs/saves.md
+          - docs/blackjack.md
+          - docs/slots.md
+          - docs/sportsbook.md
+      - section: "Developer Docs"
+        contents:
+          - docs/architecture.md
+          - docs/adding-activities.md
+          - docs/testing.md
+          - docs/rpg/GDD.md
+          - CONTRIBUTING-POSIT.md
+
+crossref:
+  fig-title: "Figure"
+  tbl-title: "Table"
+  title-delim: "."
+
+format:
+  html:
+    theme:
+      - cosmo
+      - styles.scss
+    toc: true
+    toc-depth: 3
+    toc-location: right
+    number-sections: true
+    code-fold: true
+    code-tools: true
+    code-link: true
+    df-print: paged
+    link-external-newwindow: true
+    smooth-scroll: true
+    citations-hover: true
+    footnotes-hover: true
+    fig-cap-location: bottom
+    tbl-cap-location: top
+    mermaid:
+      theme: neutral
+
+execute:
+  echo: true
+  warning: false
+  message: false
+  freeze: auto

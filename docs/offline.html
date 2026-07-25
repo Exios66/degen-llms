@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="You are offline — The Mandalay Bay casino floor is unreachable.">
+  <title>Offline — Connection Lost | The Mandalay Bay</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/casino.css">
+</head>
+<body>
+  <main class="error-screen" role="main">
+    <div class="banner">
+      <h1>The Mandalay Bay</h1>
+    </div>
+
+    <span class="placeholder-badge">Network</span>
+
+    <pre class="error-ascii" aria-hidden="true">╔══════════════════════════════════════╗
+║         THE MANDALAY BAY             ║
+║      ░░░  SIGNAL LOST  ░░░           ║
+╚══════════════════════════════════════╝</pre>
+
+    <p class="error-code">OFFLINE — NO SIGNAL</p>
+    <p class="error-slots" aria-hidden="true">📡 ❌ 📡</p>
+    <p class="error-message">
+      Connection to the casino floor lost.<br>
+      Reconnect to the network and try again.
+    </p>
+    <p class="dim">Your browser couldn't reach The Mandalay Bay servers.</p>
+
+    <div class="error-actions">
+      <a class="btn-link primary" href="./" onclick="window.location.reload(); return false;">Retry Connection</a>
+    </div>
+
+    <p class="footer-note">The Mandalay Bay — digital casino · play in your browser</p>
+  </main>
+</body>
+</html>

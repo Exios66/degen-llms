@@ -1,34 +1,52 @@
 name: Deploy GitHub Pages
 
+# DISABLED: automatic publish (push + schedule) — fails on account billing limits and spams errors.
+# Publish manually instead: bash .cursor/skills/sync-gh-pages/scripts/run-sync.sh
+# Live site: gh-pages branch /docs/ → https://exios66.github.io/degen-llms/
+
 on:
-  push:
-    branches: [main]
-    paths:
-      - "docs/**"
-      - ".github/workflows/deploy-gh-pages.yml"
+  # Optional manual run from Actions tab only (normally use sync-gh-pages skill / run-sync.sh).
   workflow_dispatch:
 
 permissions:
   contents: write
-  pages: write
-  id-token: write
 
 concurrency:
-  group: gh-pages-deploy
+  group: pages-sync
   cancel-in-progress: false
 
 jobs:
-  deploy:
+  sync-gh-pages:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Deploy docs/ to gh-pages branch (docs/ subfolder)
-        uses: JamesIves/github-pages-deploy-action@v4
         with:
-          folder: docs
-          branch: gh-pages
-          target-folder: docs
-          clean: true
-          commit-message: "Deploy GitHub Pages from main@${{ github.sha }}"
+          fetch-depth: 0
+          ref: main
+
+      - name: Full sync docs/ to gh-pages and log build status
+        id: sync
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: bash scripts/sync-gh-pages.sh
+
+      - name: Site URL
+        if: success()
+        run: echo "Live at https://exios66.github.io/degen-llms/"
+
+      - name: Log workflow failure to build status log
+        if: failure()
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          if [[ "${{ steps.sync.outcome }}" == "success" ]]; then
+            echo "Sync step succeeded; build status already logged."
+            exit 0
+          fi
+          bash scripts/log-gh-pages-workflow-failure.sh failure \
+            "Deploy GitHub Pages workflow failed before or during sync (see Actions run for billing/checkout errors)"

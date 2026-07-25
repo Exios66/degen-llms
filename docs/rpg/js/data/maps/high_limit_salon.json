@@ -1,0 +1,98 @@
+{
+  "id": "high_limit_salon",
+  "label": "High Limit Salon",
+  "wing": "Casino",
+  "bgm": "secret",
+  "spawn": {
+    "x": 15,
+    "y": 26
+  },
+  "base": "WALL",
+  "rects": [
+    {
+      "tile": "VIP",
+      "x": 6,
+      "y": 3,
+      "w": 18,
+      "h": 25
+    },
+    {
+      "tile": "FELT",
+      "x": 9,
+      "y": 8,
+      "w": 12,
+      "h": 11
+    }
+  ],
+  "decor": [
+    {
+      "tile": "SLOT",
+      "x": 7,
+      "y": 10,
+      "w": 1,
+      "h": 8
+    },
+    {
+      "tile": "SLOT",
+      "x": 22,
+      "y": 10,
+      "w": 1,
+      "h": 8
+    },
+    {
+      "tile": "BAR",
+      "x": 8,
+      "y": 22,
+      "w": 3,
+      "h": 1
+    },
+    {
+      "tile": "ROPE",
+      "points": [
+        [
+          13,
+          3
+        ],
+        [
+          17,
+          3
+        ]
+      ]
+    }
+  ],
+  "clear": [
+    {
+      "tile": "VIP",
+      "x": 14,
+      "y": 1,
+      "w": 3,
+      "h": 6
+    },
+    {
+      "tile": "VIP",
+      "x": 14,
+      "y": 26,
+      "w": 3,
+      "h": 3
+    }
+  ],
+  "doors": [
+    {
+      "x": 15,
+      "y": 27,
+      "to": "main_resort",
+      "toX": 15,
+      "toY": 4,
+      "message": "Back to the main floor."
+    },
+    {
+      "x": 15,
+      "y": 2,
+      "to": "foundation_room",
+      "toX": 15,
+      "toY": 26,
+      "message": "Foundation Room — Noir members only.",
+      "venueGate": "foundation_room"
+    }
+  ]
+}

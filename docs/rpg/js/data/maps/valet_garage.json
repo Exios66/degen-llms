@@ -1,0 +1,90 @@
+{
+  "id": "valet_garage",
+  "label": "Valet & Parking",
+  "wing": "Arrival",
+  "bgm": "lobby",
+  "spawn": {
+    "x": 26,
+    "y": 15
+  },
+  "base": "WALL",
+  "rects": [
+    {
+      "tile": "ROAD",
+      "x": 2,
+      "y": 2,
+      "w": 26,
+      "h": 26
+    }
+  ],
+  "decor": [
+    {
+      "tile": "SCREEN",
+      "x": 4,
+      "y": 4,
+      "w": 1,
+      "h": 8
+    },
+    {
+      "tile": "SCREEN",
+      "x": 25,
+      "y": 4,
+      "w": 1,
+      "h": 8
+    },
+    {
+      "tile": "BAR",
+      "x": 12,
+      "y": 6,
+      "w": 6,
+      "h": 1
+    },
+    {
+      "tile": "PLANT",
+      "points": [
+        [
+          8,
+          24
+        ],
+        [
+          21,
+          24
+        ]
+      ]
+    }
+  ],
+  "clear": [
+    {
+      "tile": "ROAD",
+      "x": 26,
+      "y": 14,
+      "w": 2,
+      "h": 3
+    },
+    {
+      "tile": "ROAD",
+      "x": 14,
+      "y": 26,
+      "w": 3,
+      "h": 2
+    }
+  ],
+  "doors": [
+    {
+      "x": 27,
+      "y": 15,
+      "to": "strip_sidewalk",
+      "toX": 3,
+      "toY": 24,
+      "message": "Back out to the Boulevard."
+    },
+    {
+      "x": 15,
+      "y": 27,
+      "to": "registration_lobby",
+      "toX": 15,
+      "toY": 4,
+      "message": "Elevator up to registration."
+    }
+  ]
+}

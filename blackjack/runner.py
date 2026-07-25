@@ -58,9 +58,8 @@ def run_casino_blackjack(
         if not display.prompt_continue():
             break
 
-    final = human.bankroll
-    wallet.sync_balance(final, activity_id, "Table exit balance sync")
-    return final - starting_chips
+    wallet.reconcile(human.bankroll, activity_id, "Table exit balance sync")
+    return human.bankroll - starting_chips
 
 
 def _config_with_bankroll(config: GameConfig, bankroll: int) -> GameConfig:
@@ -76,8 +75,4 @@ def _sync_wallet(
     after: int,
     activity_id: str,
 ) -> None:
-    delta = after - before
-    if delta > 0:
-        wallet.credit(delta, activity_id, "Hand win")
-    elif delta < 0:
-        wallet.debit(-delta, activity_id, "Hand loss")
+    wallet.apply_delta(after - before, activity_id, "Hand result")

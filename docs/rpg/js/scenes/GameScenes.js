@@ -1,5 +1,11 @@
 import Phaser from "phaser";
-import { createGameTextures, ensurePlayerTextures, playerTextureKey, playerAnimKey } from "../systems/TextureFactory.js";
+import {
+  createGameTextures,
+  ensurePlayerTextures,
+  playerTextureKey,
+  playerAnimKey,
+  tileTextureKey,
+} from "../systems/TextureFactory.js?v=texture-quality-2b";
 import { normalizeAppearance } from "../systems/CharacterAppearance.js";
 import {
   TILE_SIZE, MAP_WIDTH, MAP_HEIGHT, buildMapLayersForId, getNpcsForMap,
@@ -107,30 +113,47 @@ export class OverworldScene extends Phaser.Scene {
     }
 
     this.groundLayer = this.add.group();
+    this.waterTiles = [];
+    this.ambientGlows = [];
     for (let y = 0; y < MAP_HEIGHT; y++) {
       for (let x = 0; x < MAP_WIDTH; x++) {
         const tile = ground[y][x];
         if (tile === 0) continue;
-        const groundImg = this.add.image(
-          x * TILE_SIZE + TILE_SIZE / 2,
-          y * TILE_SIZE + TILE_SIZE / 2,
-          `tile_${tile}`
-        );
+        const cx = x * TILE_SIZE + TILE_SIZE / 2;
+        const cy = y * TILE_SIZE + TILE_SIZE / 2;
+        const texKey = tile === TILE.WATER || tile === TILE.AQUA
+          ? (tile === TILE.WATER ? "tile_water_f0" : tileTextureKey(tile, x, y))
+          : tileTextureKey(tile, x, y);
+        const groundImg = this.add.image(cx, cy, texKey);
         groundImg.setDepth(0);
         this.groundLayer.add(groundImg);
+        if (tile === TILE.WATER) {
+          this.waterTiles.push(groundImg);
+        }
         if (decor[y][x]) {
-          const decorKey = DECOR_KEYS[decor[y][x]] ?? "decor_plant";
-          const decorImg = this.add.image(
-            x * TILE_SIZE + TILE_SIZE / 2,
-            y * TILE_SIZE + TILE_SIZE / 2,
-            decorKey
-          );
+          const d = decor[y][x];
+          const decorKey = DECOR_KEYS[d] ?? "decor_plant";
+          let glowKey = null;
+          if (d === TILE.BAR) glowKey = "glow_red";
+          else if (d === TILE.SLOT) glowKey = "glow_gold";
+          else if (d === TILE.SCREEN) glowKey = "glow_cyan";
+          else if (d === TILE.GLASS) glowKey = "glow_cyan";
+          if (glowKey) {
+            const glow = this.add.image(cx, cy, glowKey);
+            glow.setDepth(1);
+            glow.setAlpha(0.45);
+            glow.setScale(1.85);
+            this.groundLayer.add(glow);
+            this.ambientGlows.push(glow);
+          }
+          const decorImg = this.add.image(cx, cy, decorKey);
           decorImg.setDepth(2);
           this.groundLayer.add(decorImg);
         }
       }
     }
     this._createZoneSigns(mapId);
+    this._startAtmosphereFx();
 
     const spawn = this.saveAdapter.rpg;
     const mapDef = getMapDefinition(mapId);
@@ -420,16 +443,14 @@ export class OverworldScene extends Phaser.Scene {
     for (const sign of signs) {
       const x = sign.x * TILE_SIZE + TILE_SIZE / 2;
       const y = sign.y * TILE_SIZE + TILE_SIZE / 2;
-      const padW = sign.text.length * fontSize * 0.72 + 14;
-      const padH = fontSize + 10;
-      const glow = this.add.rectangle(x, y, padW + 4, padH + 4, 0xe8c547, 0.12);
+      const padW = sign.text.length * fontSize * 0.72 + 18;
+      const padH = fontSize + 14;
+      const glow = this.add.rectangle(x, y, padW + 6, padH + 6, 0xe8c547, 0.1);
       glow.setDepth(2);
-      const bg = this.add.rectangle(x, y, padW, padH, 0x0a0812, 0.9);
-      bg.setStrokeStyle(2, sign.stroke ?? 0xe8c547);
-      bg.setDepth(3);
-      const inner = this.add.rectangle(x, y, padW - 4, padH - 4, 0x14101f, 0.55);
-      inner.setStrokeStyle(1, 0x684810);
-      inner.setDepth(3);
+      const plaque = this.add.image(x, y, "sign_plaque");
+      plaque.setDisplaySize(padW, padH);
+      plaque.setDepth(3);
+      plaque.setAlpha(0.96);
       const text = this.add.text(x, y, sign.text, {
         fontFamily: "Press Start 2P",
         fontSize: `${fontSize}px`,
@@ -437,7 +458,35 @@ export class OverworldScene extends Phaser.Scene {
         stroke: sign.stroke ?? "#684810",
         strokeThickness: 2,
       }).setOrigin(0.5).setDepth(4);
-      this.zoneSigns.push(glow, bg, inner, text);
+      this.zoneSigns.push(glow, plaque, text);
+    }
+  }
+
+  _startAtmosphereFx() {
+    // Soft neon pulse on ambient glows
+    for (const glow of this.ambientGlows) {
+      this.tweens.add({
+        targets: glow,
+        alpha: { from: 0.32, to: 0.58 },
+        scale: { from: 1.7, to: 2.05 },
+        duration: 1400 + Math.floor(Math.random() * 600),
+        yoyo: true,
+        repeat: -1,
+        ease: "Sine.easeInOut",
+      });
+    }
+    // Cycle water caustic frames
+    if (this.waterTiles.length) {
+      this._waterFrame = 0;
+      this.time.addEvent({
+        delay: 380,
+        loop: true,
+        callback: () => {
+          this._waterFrame = (this._waterFrame + 1) % 3;
+          const key = `tile_water_f${this._waterFrame}`;
+          for (const img of this.waterTiles) img.setTexture(key);
+        },
+      });
     }
   }
 

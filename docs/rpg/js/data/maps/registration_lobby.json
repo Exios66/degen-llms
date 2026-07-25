@@ -139,6 +139,20 @@
       "text": "BLVD ↓",
       "color": "#a8e8ff",
       "stroke": "#184868"
+    },
+    {
+      "x": 8,
+      "y": 4.5,
+      "text": "GUEST FLOOR ↑",
+      "color": "#a8e8ff",
+      "stroke": "#184868"
+    },
+    {
+      "x": 21,
+      "y": 4.5,
+      "text": "ROOM 24-118 ↑",
+      "color": "#ffe890",
+      "stroke": "#684810"
     }
   ],
   "clear": [
@@ -167,6 +181,20 @@
       "tile": "LOBBY",
       "x": 25,
       "y": 14,
+      "w": 3,
+      "h": 3
+    },
+    {
+      "tile": "LOBBY",
+      "x": 7,
+      "y": 2,
+      "w": 3,
+      "h": 3
+    },
+    {
+      "tile": "LOBBY",
+      "x": 20,
+      "y": 2,
       "w": 3,
       "h": 3
     }
@@ -203,6 +231,23 @@
       "toX": 15,
       "toY": 26,
       "message": "Gold elevators to the tower."
+    },
+    {
+      "x": 8,
+      "y": 3,
+      "to": "guest_corridor",
+      "toX": 3,
+      "toY": 15,
+      "message": "Guest elevators — 24th floor."
+    },
+    {
+      "x": 21,
+      "y": 3,
+      "to": "guest_room",
+      "toX": 15,
+      "toY": 26,
+      "message": "Express lift — Room 24-118.",
+      "requiresRoomKey": true
     }
   ]
 }

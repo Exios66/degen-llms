@@ -8,16 +8,11 @@ render. Run with: python3 scripts/smoke-test-web.py [--rpg-only|--terminal-only]
 from __future__ import annotations
 
 import argparse
-import functools
-import http.server
-import socket
-import socketserver
 import sys
-import threading
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
-DOCS = ROOT / "docs"
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from smoke_test_helpers import free_port, serve  # noqa: E402
 
 TERMINAL_VIEWS = [
     "hub", "floor", "cashier", "cashier-buy", "cashier-cashout", "cashier-ledger",
@@ -52,20 +47,6 @@ TERMINAL_FLOWS = [
     ("amenities", "casino-floor", [".menu-list li:nth-child(1) .menu-btn"]),
     ("stake-tier", "floor", [".menu-list li:nth-child(1) .menu-btn", ".menu-list li:nth-child(2) .menu-btn"]),
 ]
-
-
-def free_port() -> int:
-    with socket.socket() as s:
-        s.bind(("127.0.0.1", 0))
-        return s.getsockname()[1]
-
-
-def serve(port: int) -> socketserver.TCPServer:
-    handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=str(DOCS))
-    httpd = socketserver.ThreadingTCPServer(("127.0.0.1", port), handler)
-    httpd.daemon_threads = True
-    threading.Thread(target=httpd.serve_forever, daemon=True).start()
-    return httpd
 
 
 def main() -> int:
@@ -119,7 +100,10 @@ def main() -> int:
 
         if not args.terminal_only:
             errors.clear()
-            page.goto(f"{base}/rpg/index.html?guest=1&chips=250000", wait_until="load")
+            page.goto(
+                f"{base}/rpg/index.html?guest=1&chips=250000&archetype=weekend_warrior",
+                wait_until="load",
+            )
             try:
                 page.wait_for_function("window.__rpgReady === true", timeout=20000)
                 print("  rpg/boot                          ok")
@@ -127,6 +111,42 @@ def main() -> int:
                 failures.append(f"rpg boot: {exc}")
             for err in errors:
                 failures.append(f"rpg: {err}")
+
+            encounters = page.evaluate("window.__rpg.encounters.knownEncounters()")
+            for encounter in encounters:
+                errors.clear()
+                page.evaluate(
+                    """(id) => {
+                        window.__rpgEncounterPromise = window.__rpg.encounters.start(id, {});
+                    }""",
+                    encounter,
+                )
+                page.wait_for_timeout(250)
+                text = page.evaluate(
+                    """() => {
+                        const roots = ['terminal-overlay', 'blackjack-overlay', 'roulette-overlay',
+                                       'holdem-overlay', 'rhythm-overlay'];
+                        for (const id of roots) {
+                          const el = document.getElementById(id);
+                          if (el && !el.hidden) return el.innerText;
+                        }
+                        return '';
+                    }"""
+                )
+                if len(text.strip()) < 10:
+                    failures.append(f"rpg encounter {encounter}: nothing rendered")
+                page.evaluate(
+                    """() => {
+                        window.__rpg.terminalHost?.isActive() && window.__rpg.terminalHost.close();
+                        for (const o of Object.values(window.__rpg.encounters.overlays)) {
+                          if (o?.isActive?.()) o.close();
+                        }
+                    }"""
+                )
+                page.wait_for_timeout(120)
+                for err in errors:
+                    failures.append(f"rpg encounter {encounter}: {err}")
+                print(f"  rpg/encounter/{encounter:<24} {'FAIL' if errors else 'ok'}")
 
         browser.close()
     httpd.shutdown()

@@ -223,6 +223,8 @@ export class OverworldScene extends Phaser.Scene {
     }
 
     this.input.keyboard.on("keydown", (ev) => this._trackKonami(ev));
+
+    window.__rpgReady = true;
   }
 
   _applyDayNightTint(worldTime) {

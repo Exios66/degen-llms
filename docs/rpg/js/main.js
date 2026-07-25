@@ -8,16 +8,9 @@ import {
   EncounterBridge,
   RouletteOverlay,
   HoldemOverlay,
-  SlotsOverlay,
-  SportsbookOverlay,
-  HorseRacingOverlay,
-  EquestrianOverlay,
-  PoolOverlay,
-  HotelOverlay,
-  AmenitiesOverlay,
-  CashierOverlay,
   RhythmOverlay,
 } from "./systems/EncounterBridge.js";
+import { TerminalHostOverlay } from "./systems/TerminalHostOverlay.js";
 import { QuestManager } from "./systems/QuestManager.js";
 import { audioManager } from "./systems/AudioManager.js";
 import { TILE_SIZE, MAP_WIDTH, MAP_HEIGHT } from "./systems/MapData.js";
@@ -37,6 +30,7 @@ let saveAdapter = null;
 let rewardsPhone = null;
 let questManager = null;
 let encounters = null;
+let terminalHost = null;
 
 const hudRoot = document.getElementById("hud");
 const rewardsRoot = document.getElementById("rewards-phone");
@@ -145,34 +139,24 @@ async function startOverworld(activeSession) {
     }),
     roulette: new RouletteOverlay(document.getElementById("roulette-overlay"), session, hooks),
     holdem: new HoldemOverlay(document.getElementById("holdem-overlay"), session, hooks),
-    slots: new SlotsOverlay(document.getElementById("slots-overlay"), session, {
-      ...hooks,
-      onBigWin: shake,
-    }),
-    sportsbook: new SportsbookOverlay(document.getElementById("sportsbook-overlay"), session, hooks),
-    horse_racing: new HorseRacingOverlay(document.getElementById("racing-overlay"), session, hooks),
-    dressage: new EquestrianOverlay(document.getElementById("dressage-overlay"), session, hooks, "dressage"),
-    jumper: new EquestrianOverlay(document.getElementById("jumper-overlay"), session, hooks, "jumper"),
-    hotel: new HotelOverlay(document.getElementById("hotel-overlay"), session, hooks),
-    pool: new PoolOverlay(document.getElementById("pool-overlay"), session, {
-      ...hooks,
-      onSharkPhoto: (speciesId) => {
-        questManager.advance("shark_photos");
-        if (questManager.isComplete("shark_photos")) {
-          audioManager.sfx("secret");
-        }
-      },
-    }),
-    amenities: new AmenitiesOverlay(document.getElementById("amenities-overlay"), session, hooks),
-    cashier: new CashierOverlay(document.getElementById("cashier-overlay"), session, hooks),
     rhythm: new RhythmOverlay(document.getElementById("rhythm-overlay"), session, hooks),
   };
+
+  terminalHost = new TerminalHostOverlay(document.getElementById("terminal-overlay"), session, {
+    ...hooks,
+    onPersist: () => persistAll(),
+    rewardsPhone,
+  });
 
   encounters = new EncounterBridge({
     session,
     overlays,
+    terminalHost,
     onPersist: () => persistAll(),
     questManager,
+    onEncounterEnd: (encounterId, result) => {
+      if (result?.net >= 500) shake();
+    },
   });
 
   renderHud(hudRoot, saveAdapter, questManager);
@@ -211,8 +195,17 @@ async function startOverworld(activeSession) {
     },
     scene: [OverworldScene],
   });
-  // Debug/test hook for movement verification
+  // Debug/test hook for movement and encounter verification
   window.__rpgGame = game;
+  window.__rpg = {
+    get scene() { return game?.scene?.getScene("OverworldScene") ?? null; },
+    session,
+    saveAdapter,
+    encounters,
+    terminalHost,
+    questManager,
+    dialogue,
+  };
 
   game.scene.start("OverworldScene", {
     session,
@@ -247,9 +240,13 @@ function parseRpgLaunchParams() {
   const params = new URLSearchParams(window.location.search);
   const slotRaw = params.get("slot");
   const slotId = slotRaw ? parseInt(slotRaw, 10) : null;
+  const chipsRaw = params.get("chips");
   return {
     launchSlotId: slotId >= 1 && slotId <= 5 ? slotId : null,
     launchGuest: params.get("guest") === "1",
+    launchArchetype: params.get("archetype"),
+    launchChips: chipsRaw ? Math.max(0, parseInt(chipsRaw, 10)) : null,
+    skipIntro: params.get("skipIntro") === "1" || Boolean(params.get("archetype")),
   };
 }
 

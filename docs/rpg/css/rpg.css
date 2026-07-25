@@ -792,3 +792,173 @@ body {
     text-overflow: ellipsis;
   }
 }
+
+/* ─── Hosted terminal screens ──────────────────────────────────────────────
+   Shared docs/js/ui renderers mounted inside an encounter panel. The terminal
+   stylesheet supplies layout; these rules re-skin it for the pixel cabinet. */
+
+#terminal-overlay,
+#menu-overlay {
+  align-items: center;
+  background: rgba(10, 8, 18, 0.82);
+}
+
+.encounter-panel--terminal {
+  width: min(100%, 720px);
+  max-height: min(92vh, 720px);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  border-color: var(--gold);
+}
+
+.terminal-host-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #0a0812;
+  border-bottom: 3px solid var(--gold);
+  color: var(--gold);
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+}
+
+.terminal-host-exit {
+  background: transparent;
+  border: 2px solid var(--red);
+  color: var(--red);
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.terminal-host-exit:hover {
+  background: var(--red);
+  color: #0a0812;
+}
+
+.terminal-host-mount {
+  overflow: auto;
+  padding: 4px 12px 12px;
+  font-family: var(--font-mono, "JetBrains Mono", monospace);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* Terminal widgets adopt the cabinet palette. */
+.terminal-host-mount .panel,
+.terminal-host-mount .hub-features {
+  background: rgba(20, 16, 31, 0.85);
+  border: 2px solid var(--border);
+  border-radius: 0;
+  margin: 8px 0;
+  padding: 10px;
+}
+
+.terminal-host-mount .banner {
+  border-top: 2px solid var(--gold);
+  border-bottom: 2px solid var(--gold);
+  margin: 8px 0;
+}
+
+.terminal-host-mount .banner h1,
+.terminal-host-mount .banner h2 {
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  color: var(--gold);
+}
+
+.terminal-host-mount .subtitle {
+  color: var(--cyan);
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  letter-spacing: 0.04em;
+}
+
+.terminal-host-mount .menu-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.terminal-host-mount .menu-btn {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 2px solid var(--border);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 12px;
+  padding: 7px 9px;
+  margin: 4px 0;
+  cursor: pointer;
+}
+
+.terminal-host-mount .menu-btn:hover,
+.terminal-host-mount .menu-btn:focus {
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
+
+.terminal-host-mount .menu-btn.back {
+  border-color: #3a3048;
+  color: var(--dim);
+}
+
+.terminal-host-mount .menu-btn .num {
+  color: var(--gold);
+}
+
+.terminal-host-mount .btn {
+  background: var(--panel);
+  border: 2px solid var(--border);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.terminal-host-mount .btn.primary {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.terminal-host-mount .btn.danger {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+.terminal-host-mount .chip-line,
+.terminal-host-mount .hud-chips {
+  color: var(--gold);
+}
+
+.terminal-host-mount .log-area,
+.terminal-host-mount .machine-log {
+  background: #0a0812;
+  border: 2px solid var(--border);
+  max-height: 180px;
+}
+
+.terminal-host-mount .status-banner {
+  border: 2px solid var(--cyan);
+  border-radius: 0;
+}
+
+.terminal-host-mount .settings-bar {
+  display: none;
+}
+
+/* The cabinet is small — keep big terminal art from blowing out the panel. */
+.terminal-host-mount .slot-cabinet,
+.terminal-host-mount .video-machine,
+.terminal-host-mount .race-track-view {
+  transform-origin: top center;
+  max-width: 100%;
+}

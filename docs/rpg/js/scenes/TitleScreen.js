@@ -29,6 +29,9 @@ export class TitleScreen {
     this.onStart = onStart;
     this.launchSlotId = options.launchSlotId ?? null;
     this.launchGuest = options.launchGuest ?? false;
+    this.launchArchetype = options.launchArchetype ?? null;
+    this.launchChips = options.launchChips ?? null;
+    this.skipIntro = options.skipIntro ?? false;
     this._introTimer = null;
     this._introDone = false;
     this._skipHandler = null;
@@ -42,6 +45,7 @@ export class TitleScreen {
     this.root.classList.add("title-overlay--intro");
     this._renderIntro();
     this._armAttract();
+    if (this.skipIntro) this._finishIntro();
   }
 
   hide() {
@@ -146,7 +150,15 @@ export class TitleScreen {
 
     setTimeout(() => {
       if (this.launchGuest) {
-        this._promptArchetype(initSessionRpg(createGuestSession()));
+        const guest = initSessionRpg(createGuestSession(
+          this.launchChips != null ? { chips: this.launchChips } : {}
+        ));
+        if (this.launchArchetype) {
+          this._applyArchetype(guest, this.launchArchetype);
+          this._start(guest);
+          return;
+        }
+        this._promptArchetype(guest);
         return;
       }
       if (this.launchSlotId != null) {
@@ -325,15 +337,19 @@ export class TitleScreen {
       btn.className = "archetype-btn";
       btn.innerHTML = `<strong>${a.name}</strong><br><span class="dim">${a.perk}</span>`;
       btn.onclick = () => {
-        const rpg = session.ensureRpgState();
-        rpg.archetype = a.id;
-        rpg.playerSprite = a.id;
-        if (a.id === "local") rpg.flags.hint_north_wall = true;
+        this._applyArchetype(session, a.id);
         this._start(session);
       };
       panel.appendChild(btn);
     }
     this.root.appendChild(panel);
+  }
+
+  _applyArchetype(session, archetypeId) {
+    const rpg = session.ensureRpgState();
+    rpg.archetype = archetypeId;
+    rpg.playerSprite = archetypeId;
+    if (archetypeId === "local") rpg.flags.hint_north_wall = true;
   }
 
   _loadAndStart(slotId) {

@@ -46,6 +46,7 @@ export function defaultRpgState(overrides = {}) {
     y: 26,
     playerSprite: "weekend_warrior",
     archetype: "weekend_warrior",
+    appearance: { skin: "fair", hair: "teal", outfit: "teal" },
     quests: {},
     flags: {},
     playTimeMinutes: 0,

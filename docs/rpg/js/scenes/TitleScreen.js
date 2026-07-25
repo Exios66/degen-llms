@@ -12,6 +12,9 @@ import {
 import { getActiveProfileSummary, getActiveSlotId } from "../../../js/profileCache.js";
 import { getWorldCycleState } from "../../../js/world-cycle.js";
 import { SaveAdapter, initSessionRpg } from "../systems/SaveAdapter.js";
+import { renderCharacterCreator } from "../systems/CharacterCreator.js";
+import { archetypeLabel, normalizeAppearance, resolvePalette } from "../systems/CharacterAppearance.js";
+import { drawCharacterToCanvas } from "../systems/TextureFactory.js";
 
 const INTRO_AUTO_MS = 3200;
 
@@ -185,7 +188,7 @@ export class TitleScreen {
 
     const sub = document.createElement("p");
     sub.className = "subtitle";
-    sub.textContent = "Pixel RPG — Phases 2–4";
+    sub.textContent = "Pixel RPG — 28 rooms of Mandalay Bay";
     panel.appendChild(sub);
 
     const active = getActiveProfileSummary(listSlots);
@@ -300,7 +303,7 @@ export class TitleScreen {
 
     const createBtn = document.createElement("button");
     createBtn.type = "button";
-    createBtn.textContent = "Choose archetype →";
+    createBtn.textContent = "Customize guest →";
     createBtn.onclick = () => {
       const session = createSlot(slotId, {
         playerName: nameInput.value.trim() || "Guest",
@@ -320,30 +323,12 @@ export class TitleScreen {
   }
 
   _promptArchetype(session) {
-    this.root.innerHTML = "";
-    const panel = document.createElement("div");
-    panel.className = "title-panel title-panel--enter title-panel--visible";
-    const h1 = document.createElement("h1");
-    h1.textContent = "Choose Your Guest";
-    panel.appendChild(h1);
-    const archetypes = [
-      { id: "weekend_warrior", name: "Weekend Warrior", perk: "+10% first slot spin payout" },
-      { id: "high_roller", name: "High Roller", perk: "High Limit access at 5,000 chips" },
-      { id: "convention_goer", name: "Convention Goer", perk: "10% cashier buy-in bonus" },
-      { id: "local", name: "Local", perk: "Back-hall shortcut unlocked" },
-    ];
-    for (const a of archetypes) {
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "archetype-btn";
-      btn.innerHTML = `<strong>${a.name}</strong><br><span class="dim">${a.perk}</span>`;
-      btn.onclick = () => {
-        this._applyArchetype(session, a.id);
-        this._start(session);
-      };
-      panel.appendChild(btn);
-    }
-    this.root.appendChild(panel);
+    renderCharacterCreator(this.root, {
+      session,
+      title: "Choose Your Guest",
+      onComplete: (s) => this._start(s),
+      onBack: () => this._renderMain(),
+    });
   }
 
   _applyArchetype(session, archetypeId) {
@@ -387,32 +372,60 @@ export function renderHud(hudRoot, saveAdapter, questManager = null) {
       <span class="hud-chips">${lines.chips}</span>
       <span class="hud-time">Day ${cycle.displayDay} · ${hour}:${mins} · ${cycle.phase.label}</span>
       ${evicted}
-      <span class="hud-hint">WASD move · E talk · Esc menu · P phone · Shift run · badges ${badges}</span>
+      <span class="hud-hint">Tap to move · WASD · E talk · Esc menu · P phone · T trainer · Shift run · badges ${badges}</span>
     </div>
   `;
 }
 
-export function renderTrainerCard(root, saveAdapter, questManager) {
+export function renderTrainerCard(root, saveAdapter, questManager, hooks = {}) {
   if (!root) return;
-  if (!root.hidden && root.dataset.open === "1") {
+  if (!root.hidden && root.dataset.open === "1" && !root.dataset.wardrobe) {
     root.hidden = true;
     root.dataset.open = "0";
     return;
   }
   const rpg = saveAdapter.rpg;
+  const appearance = normalizeAppearance(rpg);
   const lines = questManager?.summaryLines?.() ?? [];
   const rep = rpg.reputation ?? {};
   root.hidden = false;
   root.dataset.open = "1";
+  root.dataset.wardrobe = "0";
   root.innerHTML = `
     <div class="trainer-card-panel">
-      <h2>Trainer Card</h2>
-      <p>${saveAdapter.session.playerName} · ${rpg.archetype ?? "guest"}</p>
+      <div class="trainer-card__header">
+        <canvas class="trainer-card__portrait" id="trainer-portrait" width="64" height="88" aria-hidden="true"></canvas>
+        <div>
+          <h2>Trainer Card</h2>
+          <p>${saveAdapter.session.playerName}</p>
+          <p class="dim">${archetypeLabel(rpg.archetype ?? "guest")}</p>
+        </div>
+      </div>
       <p class="dim">Rep — whales ${rep.whales ?? 0} · staff ${rep.staff ?? 0} · tourists ${rep.tourists ?? 0}</p>
       <ul>${lines.map((l) => `<li>${l}</li>`).join("") || "<li>No quests yet</li>"}</ul>
-      <button type="button" id="trainer-close">Close (T)</button>
+      <div class="trainer-card__actions">
+        <button type="button" id="trainer-wardrobe">Change outfit</button>
+        <button type="button" id="trainer-close">Close (T)</button>
+      </div>
     </div>
   `;
+  const portrait = root.querySelector("#trainer-portrait");
+  if (portrait) {
+    drawCharacterToCanvas(portrait, resolvePalette(appearance), "down", 0, 3);
+  }
+  root.querySelector("#trainer-wardrobe")?.addEventListener("click", () => {
+    root.dataset.wardrobe = "1";
+    renderCharacterCreator(root, {
+      session: saveAdapter.session,
+      title: "Wardrobe",
+      onComplete: (session) => {
+        saveAdapter.persist();
+        hooks.onAppearanceChange?.();
+        renderTrainerCard(root, saveAdapter, questManager, hooks);
+      },
+      onBack: () => renderTrainerCard(root, saveAdapter, questManager, hooks),
+    });
+  });
   root.querySelector("#trainer-close")?.addEventListener("click", () => {
     root.hidden = true;
     root.dataset.open = "0";

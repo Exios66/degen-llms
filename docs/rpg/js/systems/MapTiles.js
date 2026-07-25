@@ -22,11 +22,17 @@ export const TILE = {
   SPA: 15,
   GLASS: 16,
   ROPE: 17,
+  /** Bright gold walkway — the navigation spine between zones. */
+  PATH: 18,
+  /** Dark border trim that separates one floor type from the next. */
+  TRIM: 19,
 };
 
-export const TILE_SIZE = 16;
+export const TILE_SIZE = 32;
 export const MAP_WIDTH = 30;
 export const MAP_HEIGHT = 30;
+/** Logical art grid unit — textures draw at TILE_SIZE as 2×16px DS cells. */
+export const ART_UNIT = 16;
 
 /** Tiles (and decor props) the player cannot walk through. */
 export const COLLISION = new Set([

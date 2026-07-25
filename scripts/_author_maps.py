@@ -35,6 +35,25 @@ def room(floor, x=2, y=2, w=26, h=26):
     return [rect(floor, x, y, w, h)]
 
 
+def trim_ring(x, y, w, h):
+    """A one-tile TRIM border around a zone, so floors read as separate rooms."""
+    return [
+        rect("TRIM", x, y, w, 1),
+        rect("TRIM", x, y + h - 1, w, 1),
+        rect("TRIM", x, y + 1, 1, h - 2),
+        rect("TRIM", x + w - 1, y + 1, 1, h - 2),
+    ]
+
+
+def sign(x, y, text, color="#ffe890", stroke="#684810"):
+    """Floating floor signage. Placed in tile coords; fractions nudge it."""
+    return {"x": x, "y": y, "text": text, "color": color, "stroke": stroke}
+
+
+COOL_SIGN = {"color": "#a8e8ff", "stroke": "#184868"}
+FELT_SIGN = {"color": "#b8ffd0", "stroke": "#0a5028"}
+
+
 # Every map is 30x30. Doorways sit on the outermost walkable ring so the warp
 # fires as the player steps onto it.
 MAPS_SPEC: list[dict] = [
@@ -94,10 +113,26 @@ MAPS_SPEC: list[dict] = [
         "rects": [
             rect("LOBBY", 2, 2, 26, 26),
             rect("CARPET", 8, 10, 14, 10),
+            # Gold leads where you can actually walk: down the middle to the
+            # Boulevard, across to valet and the tower, and around the desk —
+            # which blocks the straight line to the casino doors.
+            rect("PATH", 14, 10, 3, 16),
+            rect("PATH", 3, 14, 24, 1),
+            rect("PATH", 8, 9, 14, 1),
+            rect("PATH", 8, 4, 1, 5),
+            rect("PATH", 21, 4, 1, 5),
+            rect("PATH", 8, 4, 14, 1),
         ],
         "decor": [
             rect("BAR", 10, 7, 10, 1),
             points("PLANT", [(4, 6), (25, 6), (4, 21), (25, 21), (11, 23), (18, 23)]),
+        ],
+        "signs": [
+            sign(15, 8.6, "FRONT DESK", color="#fff8e8", stroke="#8a6a28"),
+            sign(15, 3.4, "CASINO \u2191"),
+            sign(4.5, 12.5, "\u2190 VALET", **COOL_SIGN),
+            sign(25.5, 12.5, "TOWER \u2192"),
+            sign(15, 26.2, "BLVD \u2193", **COOL_SIGN),
         ],
         "clear": [
             rect("LOBBY", 14, 2, 3, 3),
@@ -118,18 +153,34 @@ MAPS_SPEC: list[dict] = [
         "bgm": "casino",
         "spawn": {"x": 15, "y": 26},
         "base": "WALL",
+        # Zones read as separate rooms: trim rings the pit, and a gold walkway
+        # spine connects the entrance, the aisles, and every door.
         "rects": [
             rect("CARPET", 2, 2, 26, 26),
             rect("FELT", 9, 8, 13, 9),
+            *trim_ring(8, 7, 15, 11),
             rect("VIP", 13, 2, 5, 4),
             rect("LOBBY", 3, 20, 24, 7),
+            rect("PATH", 3, 18, 24, 1),
+            rect("PATH", 6, 8, 1, 11),
+            rect("PATH", 23, 8, 1, 11),
+            rect("PATH", 14, 19, 3, 7),
+            rect("PATH", 14, 6, 3, 2),
         ],
         "decor": [
-            rect("SLOT", 25, 10, 1, 8),
-            rect("SLOT", 22, 10, 1, 8),
+            rect("SLOT", 26, 10, 1, 8),
+            rect("SLOT", 24, 10, 1, 8),
             rect("SCREEN", 4, 10, 1, 8),
             rect("BAR", 19, 23, 3, 1),
             points("PLANT", [(7, 6), (24, 6), (7, 19), (24, 19)]),
+        ],
+        "signs": [
+            sign(15, 7.4, "TABLE PIT", **FELT_SIGN),
+            sign(23.5, 8.6, "SLOTS"),
+            sign(5, 8.6, "SPORTS", **COOL_SIGN),
+            sign(15, 4, "HIGH LIMIT"),
+            sign(15, 22, "LOBBY", color="#fff8e8", stroke="#8a6a28"),
+            sign(26, 6, "SOUTH \u2192", **COOL_SIGN),
         ],
         "scatter": [{"tile": "PLANT", "mod": 11, "on": ["LOBBY"], "bounds": rect("LOBBY", 3, 21, 24, 5)}],
         "clear": [
@@ -160,13 +211,27 @@ MAPS_SPEC: list[dict] = [
         "rects": [
             rect("CARPET", 2, 2, 26, 26),
             rect("FELT", 10, 10, 11, 8),
+            *trim_ring(9, 9, 13, 10),
             rect("LOBBY", 3, 21, 24, 6),
+            rect("PATH", 3, 19, 24, 1),
+            rect("PATH", 14, 5, 3, 5),
+            rect("PATH", 14, 20, 3, 7),
+            rect("PATH", 5, 19, 2, 5),
+            rect("PATH", 23, 19, 2, 5),
         ],
         "decor": [
             rect("SLOT", 5, 5, 1, 12),
             rect("SLOT", 8, 5, 1, 12),
             rect("SLOT", 24, 5, 1, 12),
             points("PLANT", [(13, 6), (18, 6), (13, 20), (18, 20)]),
+        ],
+        "signs": [
+            sign(15, 9.4, "TABLE PIT", **FELT_SIGN),
+            sign(6.5, 3.6, "SLOTS"),
+            sign(15, 3.4, "NORTH \u2191", **COOL_SIGN),
+            sign(5, 22.5, "\u2190 SHOPPES"),
+            sign(25, 22.5, "HOB \u2192"),
+            sign(15, 26.2, "POOL \u2193", **COOL_SIGN),
         ],
         "clear": [
             rect("CARPET", 14, 1, 3, 4),

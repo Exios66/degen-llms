@@ -1,8 +1,9 @@
 import Phaser from "phaser";
-import { OverworldScene } from "./scenes/GameScenes.js?v=gfx-move-5";
+import { OverworldScene } from "./scenes/GameScenes.js?v=casino-floor-legibility-1";
 import { TitleScreen, renderHud, renderTrainerCard } from "./scenes/TitleScreen.js";
 import { DialogueManager } from "./systems/DialogueManager.js";
 import { SaveAdapter } from "./systems/SaveAdapter.js";
+import { defaultAppearance } from "./systems/CharacterAppearance.js";
 import {
   BlackjackOverlay,
   EncounterBridge,
@@ -124,6 +125,7 @@ async function startOverworld(activeSession) {
   saveAdapter = new SaveAdapter(session);
   const rpg = saveAdapter.rpg;
   if (!rpg.archetype) rpg.archetype = rpg.playerSprite || "weekend_warrior";
+  if (!rpg.appearance) rpg.appearance = defaultAppearance(rpg.archetype);
   if (rpg.worldTime == null) rpg.worldTime = 720;
   if (!rpg.reputation) rpg.reputation = { whales: 0, staff: 0, tourists: 0 };
 
@@ -240,6 +242,8 @@ async function startOverworld(activeSession) {
     backgroundColor: "#0a0812",
     pixelArt: true,
     input: {
+      activePointers: 2,
+      touch: { capture: true },
       keyboard: {
         capture: [
           "W", "A", "S", "D",
@@ -294,7 +298,12 @@ async function startOverworld(activeSession) {
       renderHud(hudRoot, saveAdapter, questManager);
       rewardsPhone?.sync();
       if (opts?.trainerCard) {
-        renderTrainerCard(trainerRoot, saveAdapter, questManager);
+        renderTrainerCard(trainerRoot, saveAdapter, questManager, {
+          onAppearanceChange: () => {
+            game?.scene?.getScene("OverworldScene")?.refreshPlayerAppearance?.();
+            persistAll();
+          },
+        });
       }
     },
   });

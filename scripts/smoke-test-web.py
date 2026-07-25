@@ -73,7 +73,8 @@ VISIBLE_OVERLAY_TEXT = """() => {
 
 PLAYER_TILE = """() => {
   const s = window.__rpg.scene;
-  return [Math.floor(s.player.x / 16), Math.floor(s.player.y / 16)];
+  const size = s.tileSize;
+  return [Math.floor(s.player.x / size), Math.floor(s.player.y / size)];
 }"""
 
 
@@ -117,7 +118,8 @@ def rpg_journey(page, base, failures: list[str], errors: list[str]) -> None:
     page.wait_for_timeout(900)
     page.evaluate("""() => {
       const s = window.__rpg.scene;
-      s.player.setPosition(15 * 16 + 8, 11 * 16 + 8);
+      const size = s.tileSize;
+      s.player.setPosition(15 * size + size / 2, 11 * size + size / 2);
     }""")
     page.wait_for_timeout(1200)
     challenged = page.evaluate(
@@ -150,8 +152,9 @@ def rpg_journey(page, base, failures: list[str], errors: list[str]) -> None:
     # Reload: position, map, and chips must all come back off the save slot.
     before = page.evaluate("""() => {
       const s = window.__rpg.scene;
-      const tx = Math.floor(s.player.x / 16);
-      const ty = Math.floor(s.player.y / 16);
+      const size = s.tileSize;
+      const tx = Math.floor(s.player.x / size);
+      const ty = Math.floor(s.player.y / size);
       s.saveAdapter.updatePosition(tx, ty, s.currentMapId);
       s.saveAdapter.persist();
       return { x: tx, y: ty, mapId: s.currentMapId,

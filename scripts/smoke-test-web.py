@@ -51,6 +51,110 @@ TERMINAL_FLOWS = [
 ]
 
 
+SEED_SLOT = """async ([slotId, chips]) => {
+  const core = await import('/js/core.js');
+  const session = core.createSlot(slotId, { playerName: 'E2E', chips });
+  session.ensureRpgState().archetype = 'high_roller';
+  session.ensureRpgState().playerSprite = 'high_roller';
+  core.saveSlot(session);
+}"""
+
+PLAYER_TILE = """() => {
+  const s = window.__rpg.scene;
+  return [Math.floor(s.player.x / 16), Math.floor(s.player.y / 16)];
+}"""
+
+
+def rpg_journey(page, base, failures: list[str], errors: list[str]) -> None:
+    """One continuous playthrough: boot, walk, get challenged, check in, reload.
+
+    This is the check that the pieces work together rather than one at a time —
+    the per-encounter walk above already proves each screen renders on its own.
+    """
+    def step(name: str, ok: bool, detail: str = "") -> None:
+        if not ok:
+            failures.append(f"journey/{name}: {detail or 'failed'}")
+        for err in errors:
+            failures.append(f"journey/{name}: {err}")
+        print(f"  journey/{name:<25} {'FAIL' if not ok or errors else 'ok'}")
+        errors.clear()
+
+    page.goto(f"{base}/index.html?guest=1", wait_until="load")
+    page.evaluate(SEED_SLOT, [1, 250000])
+    errors.clear()
+
+    page.goto(f"{base}/rpg/index.html?slot=1&skipIntro=1", wait_until="load")
+    page.wait_for_function("window.__rpgReady === true", timeout=20000)
+    step("boot", page.evaluate("window.__rpg.session.slotId") == 1, "did not load slot 1")
+
+    # Walk: hold a direction long enough for the physics body to cross a tile.
+    start = page.evaluate(PLAYER_TILE)
+    page.keyboard.down("ArrowUp")
+    page.wait_for_timeout(900)
+    page.keyboard.up("ArrowUp")
+    page.wait_for_timeout(200)
+    moved = page.evaluate(PLAYER_TILE)
+    step("movement", moved != start, f"player never left {start}")
+
+    # Line-of-sight challenge: stand in Valet Vic's cone and let update() see us.
+    page.evaluate("""() => {
+      const s = window.__rpg.scene;
+      s.saveAdapter.updatePosition(15, 12, 'valet_garage');
+      s._transitionMap('valet_garage', 15, 12, null);
+    }""")
+    page.wait_for_timeout(900)
+    page.evaluate("""() => {
+      const s = window.__rpg.scene;
+      s.player.setPosition(15 * 16 + 8, 11 * 16 + 8);
+    }""")
+    page.wait_for_timeout(1200)
+    challenged = page.evaluate(
+        "() => Boolean(window.__rpg.saveAdapter.hasFlag('challenged_valet_vic')"
+        " || window.__rpg.dialogue.isActive())")
+    step("line_of_sight", challenged, "Valet Vic never noticed the player")
+    page.evaluate("() => window.__rpg.dialogue.isActive() && window.__rpg.dialogue.close()")
+    page.wait_for_timeout(200)
+
+    page.evaluate("() => window.__rpg.menu.open()")
+    page.wait_for_timeout(250)
+    menu_text = page.inner_text("#menu-overlay")
+    step("start_menu", "Trainer Card" in menu_text, "START menu did not render")
+    page.evaluate("() => window.__rpg.menu.close()")
+    page.wait_for_timeout(200)
+
+    # Hotel check-in through the hosted front desk, exactly as the terminal does.
+    page.evaluate("""async () => {
+      const wc = await import('/js/world-cycle.js');
+      wc.locateReservationViaPhone(window.__rpg.session);
+      wc.confirmReservationAtDesk(window.__rpg.session);
+      window.__rpg.saveAdapter.persist();
+    }""")
+    checked_in = page.evaluate("""async () => {
+      const wc = await import('/js/world-cycle.js');
+      return wc.canAccessHotelRoom(window.__rpg.session);
+    }""")
+    step("hotel_checkin", checked_in, "room access still denied after check-in")
+
+    # Reload: position, map, and chips must all come back off the save slot.
+    before = page.evaluate("""() => {
+      const s = window.__rpg.scene;
+      const tx = Math.floor(s.player.x / 16);
+      const ty = Math.floor(s.player.y / 16);
+      s.saveAdapter.updatePosition(tx, ty, s.currentMapId);
+      s.saveAdapter.persist();
+      return { x: tx, y: ty, mapId: s.currentMapId,
+               chips: window.__rpg.session.wallet.balance };
+    }""")
+    page.goto(f"{base}/rpg/index.html?slot=1&skipIntro=1", wait_until="load")
+    page.wait_for_function("window.__rpgReady === true", timeout=20000)
+    after = page.evaluate("""() => {
+      const rpg = window.__rpg.saveAdapter.rpg;
+      return { x: rpg.x, y: rpg.y, mapId: rpg.mapId,
+               chips: window.__rpg.session.wallet.balance };
+    }""")
+    step("reload", after == before, f"{before} restored as {after}")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--terminal-only", action="store_true")
@@ -161,6 +265,8 @@ def main() -> int:
                     failures.append(f"rpg menu {page_id}: {err}")
                 print(f"  rpg/menu/{page_id:<29} {'FAIL' if errors else 'ok'}")
             page.evaluate("() => window.__rpg.menu.close()")
+
+            rpg_journey(page, base, failures, errors)
 
         browser.close()
     httpd.shutdown()

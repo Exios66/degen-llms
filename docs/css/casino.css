@@ -1548,12 +1548,77 @@ body {
   text-transform: uppercase;
 }
 
+.holdem-street-timeline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  justify-content: center;
+  width: 100%;
+}
+
+.holdem-street-step {
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.4);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.holdem-street-step--done {
+  color: rgba(180, 230, 180, 0.9);
+  border-color: rgba(120, 200, 120, 0.35);
+}
+
+.holdem-street-step--active {
+  color: #111;
+  background: var(--gold);
+  border-color: var(--gold);
+  font-weight: 700;
+}
+
+.holdem-street-step--upcoming {
+  opacity: 0.7;
+}
+
 .holdem-players {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 0.5rem;
   width: 100%;
   margin-top: 0.5rem;
+}
+
+.holdem-players--five {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.holdem-raise-controls {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.holdem-raise-label {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.holdem-raise-input {
+  width: 5.5rem;
+  min-width: 4.5rem;
+}
+
+.holdem-action-bar {
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.holdem-seat--allin {
+  border-color: rgba(255, 140, 80, 0.55);
 }
 
 .holdem-seat {
@@ -3147,6 +3212,18 @@ body {
 
   .holdem-rank-ref {
     columns: 1;
+  }
+
+  .holdem-players--five {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .holdem-raise-controls {
+    width: 100%;
+  }
+
+  .holdem-raise-input {
+    flex: 1 1 5rem;
   }
 
   .machine-controls .btn {

@@ -24,7 +24,7 @@ import {
   canEnterHighLimitSalon, canEnterFoundationRoom, HIGH_LIMIT_SALON_CHIP_MIN, SALON_STAKE_TIER_IDS,
 } from "./venues.js";
 import { BlackjackGame, defaultConfig, Action } from "./blackjack/game.js";
-import { HoldemTable, BettingAction } from "./holdem/game.js";
+import { HoldemTable, BettingAction, STREET_ORDER, Street } from "./holdem/game.js";
 import { HAND_CLASS_NAMES } from "./holdem/hand_eval.js";
 import { BET_TYPES, spinWheel, wheelColor, resolveBet, RED_NUMBERS } from "./roulette.js";
 import { generateRace, simulateRace, settleTicket, fmtOdds as fmtRaceOdds, loadBundledHorseNames, parseHorseNamesCSV, setCustomHorseNames, getHorseNamePool } from "./horse_racing.js";
@@ -627,31 +627,60 @@ function renderTable(snapshot) {
   return container;
 }
 
+function holdemStreetTimeline(street) {
+  const streets = [
+    { id: Street.PREFLOP, label: "Preflop" },
+    { id: Street.FLOP, label: "Flop" },
+    { id: Street.TURN, label: "Turn" },
+    { id: Street.RIVER, label: "River" },
+    { id: Street.SHOWDOWN, label: "Showdown" },
+  ];
+  const currentIdx = STREET_ORDER.indexOf(street);
+  return el("div", { className: "holdem-street-timeline", "aria-label": "Hand streets" }, streets.map((s, i) => {
+    const state = i < currentIdx ? "done" : i === currentIdx ? "active" : "upcoming";
+    return el("div", {
+      className: `holdem-street-step holdem-street-step--${state}`,
+      textContent: s.label,
+    });
+  }));
+}
+
 function renderHoldemTable(table) {
   const felt = el("div", { className: "felt-table holdem-table-layout" });
   felt.appendChild(el("div", { className: "holdem-pot", textContent: `Pot ${fmtChips(table.pot)}` }));
-  felt.appendChild(el("div", { className: "holdem-street", textContent: table.street }));
+  felt.appendChild(holdemStreetTimeline(table.street));
+  felt.appendChild(el("div", {
+    className: "holdem-street",
+    textContent: table.handOver
+      ? (table.winners.length ? `Winner: ${table.winners.join(" & ")}` : table.lastMessage)
+      : `To call ${fmtChips(Math.max(0, table.currentBet - (table.players[table.actionIndex]?.betThisStreet || 0)))} · Bet ${fmtChips(table.currentBet)}`,
+  }));
 
   const boardCards = [];
   for (let i = 0; i < 5; i++) boardCards.push(table.community[i] ?? null);
   felt.appendChild(cardRow(boardCards, { slots: 5 }));
 
-  const playersEl = el("div", { className: "holdem-players" });
+  const playersEl = el("div", { className: "holdem-players holdem-players--five" });
   for (const p of table.players) {
     const isActive = !table.handOver && table.players[table.actionIndex] === p;
     const holeCards = p.isHuman || table.handOver
       ? p.hole
       : p.hole.map(() => null);
+    const betLine = p.betThisStreet > 0 ? ` · bet ${fmtChips(p.betThisStreet)}` : "";
     const seat = el("div", {
       className: [
         "holdem-seat",
         p.isHuman ? "holdem-seat--you" : "",
         p.folded ? "holdem-seat--folded" : "",
         isActive ? "holdem-seat--active" : "",
+        p.allIn ? "holdem-seat--allin" : "",
       ].filter(Boolean).join(" "),
     }, [
-      el("div", { className: "holdem-seat-name", textContent: p.name }),
-      el("div", { className: "holdem-seat-stack", textContent: `${fmtChips(p.stack)}${p.folded ? " · folded" : ""}${p.allIn ? " · all-in" : ""}` }),
+      el("div", { className: "holdem-seat-name", textContent: `${p.name}${isActive ? " · ACTING" : ""}` }),
+      el("div", {
+        className: "holdem-seat-stack",
+        textContent: `${fmtChips(p.stack)}${betLine}${p.folded ? " · folded" : ""}${p.allIn ? " · all-in" : ""}`,
+      }),
       el("div", { className: "holdem-hole-cards" }, [cardRow(holeCards, { hiddenMask: (_, c) => !c })]),
     ]);
     playersEl.appendChild(seat);
@@ -2345,10 +2374,14 @@ function renderHoldemMenu() {
     title: "TEXAS HOLD'EM",
     screenChildren: [
       dealerPanel("holdem"),
+      el("p", {
+        className: "dim",
+        textContent: "No-limit Hold'em · 5-handed (you + 4 bots) · Preflop → Flop → Turn → River. Buy-in stays on the table across hands.",
+      }),
       el("p", { className: "machine-screen-label", textContent: "Hand rankings" }),
       ranksEl,
       el("div", { className: "form-row" }, [
-        el("label", { textContent: `Buy-in (${act.minBet}–${session.wallet.balance})` }),
+        el("label", { textContent: `Buy-in (${buyInStakes.minBet}–${buyInStakes.maxBet})` }),
         buyInInput,
       ]),
     ],
@@ -2363,8 +2396,9 @@ function renderHoldemMenu() {
           if (!session.wallet.debit(buyIn, "holdem", `Hold'em buy-in ${fmtChips(buyIn)}`)) {
             alert("Insufficient chips."); return;
           }
+          persist();
           holdemState = {
-            table: HoldemTable.quickTable(buyIn),
+            table: HoldemTable.quickTable(buyIn, 4),
             buyIn,
             sessionNet: 0,
             hands: 0,
@@ -2384,7 +2418,7 @@ function processHoldemBots() {
   if (!holdemState || holdemState.table.handOver) return;
   const table = holdemState.table;
   let guard = 0;
-  while (!table.handOver && guard < 40) {
+  while (!table.handOver && guard < 80) {
     guard += 1;
     const player = table.players[table.actionIndex];
     if (!player || player.folded || player.allIn) {
@@ -2393,8 +2427,8 @@ function processHoldemBots() {
       continue;
     }
     if (player.isHuman) break;
-    const action = table.botAction(player);
-    const msg = table.applyAction(player, action);
+    const decision = table.botAction(player);
+    const msg = table.applyAction(player, decision.action, decision.raiseTo);
     holdemState.log.push(msg);
   }
 }
@@ -2407,6 +2441,11 @@ function renderHoldemPlay() {
     ]),
   ]);
   const table = holdemState.table;
+
+  // Keep the action log in sync with engine street / bot messages.
+  if (table.actionLog?.length) {
+    holdemState.log = [...table.actionLog];
+  }
   const logLines = [...holdemState.log];
 
   if (table.handOver) {
@@ -2415,10 +2454,11 @@ function renderHoldemPlay() {
         logLines.push({ text: `${name}: ${score.name}`, type: "" });
       }
     }
-    logLines.push({ text: table.lastMessage, type: "success" });
+    if (table.lastMessage) logLines.push({ text: table.lastMessage, type: "success" });
   }
 
-  const actionBar = el("div", { className: "action-bar" });
+  const sessionDelta = table.human.stack - holdemState.buyIn;
+  const actionBar = el("div", { className: "action-bar holdem-action-bar" });
 
   if (table.handOver) {
     if (table.human.stack >= table.bigBlind) {
@@ -2443,22 +2483,100 @@ function renderHoldemPlay() {
     const player = table.players[table.actionIndex];
     if (player?.isHuman) {
       const legal = table.legalActions(player);
-      for (const act of [BettingAction.CHECK, BettingAction.CALL, BettingAction.RAISE, BettingAction.FOLD]) {
-        if (legal.has(act)) {
-          actionBar.appendChild(el("button", {
-            className: "btn primary",
-            textContent: act.charAt(0).toUpperCase() + act.slice(1),
-            onclick: () => {
-              holdemState.log.push(table.applyAction(player, act));
-              processHoldemBots();
-              render();
-            },
-          }));
-        }
+      const toCall = Math.max(0, table.currentBet - player.betThisStreet);
+      if (legal.has(BettingAction.CHECK)) {
+        actionBar.appendChild(el("button", {
+          className: "btn primary",
+          textContent: "Check",
+          onclick: () => {
+            table.applyAction(player, BettingAction.CHECK);
+            processHoldemBots();
+            render();
+          },
+        }));
+      }
+      if (legal.has(BettingAction.CALL)) {
+        actionBar.appendChild(el("button", {
+          className: "btn primary",
+          textContent: toCall >= player.stack ? `All-in ${fmtChips(player.stack)}` : `Call ${fmtChips(toCall)}`,
+          onclick: () => {
+            table.applyAction(player, BettingAction.CALL);
+            processHoldemBots();
+            render();
+          },
+        }));
+      }
+      if (legal.has(BettingAction.RAISE)) {
+        const minTo = table.minRaiseTo(player);
+        const maxTo = table.maxRaiseTo(player);
+        const raiseWrap = el("div", { className: "holdem-raise-controls" });
+        const raiseInput = el("input", {
+          type: "number",
+          className: "holdem-raise-input",
+          min: String(minTo),
+          max: String(maxTo),
+          value: String(minTo),
+          title: `Raise to between ${minTo} and ${maxTo}`,
+        });
+        raiseWrap.appendChild(el("label", {
+          className: "holdem-raise-label",
+          textContent: toCall > 0 ? "Raise to" : "Bet",
+        }));
+        raiseWrap.appendChild(raiseInput);
+        raiseWrap.appendChild(el("button", {
+          className: "btn primary",
+          textContent: maxTo <= minTo ? `All-in ${fmtChips(maxTo)}` : (toCall > 0 ? "Raise" : "Bet"),
+          onclick: () => {
+            let raiseTo = parseInt(raiseInput.value, 10);
+            if (!Number.isFinite(raiseTo)) raiseTo = minTo;
+            if (raiseTo < minTo && raiseTo < maxTo) {
+              alert(`Raise must be at least ${fmtChips(minTo)}, or go all-in for ${fmtChips(maxTo)}.`);
+              return;
+            }
+            raiseTo = Math.min(Math.max(raiseTo, Math.min(minTo, maxTo)), maxTo);
+            try {
+              table.applyAction(player, BettingAction.RAISE, raiseTo);
+            } catch (err) {
+              alert(err.message || String(err));
+              return;
+            }
+            processHoldemBots();
+            render();
+          },
+        }));
+        raiseWrap.appendChild(el("button", {
+          className: "btn",
+          textContent: "All-in",
+          onclick: () => {
+            try {
+              table.applyAction(player, BettingAction.RAISE, maxTo);
+            } catch (err) {
+              alert(err.message || String(err));
+              return;
+            }
+            processHoldemBots();
+            render();
+          },
+        }));
+        actionBar.appendChild(raiseWrap);
+      }
+      if (legal.has(BettingAction.FOLD)) {
+        actionBar.appendChild(el("button", {
+          className: "btn",
+          textContent: "Fold",
+          onclick: () => {
+            table.applyAction(player, BettingAction.FOLD);
+            processHoldemBots();
+            render();
+          },
+        }));
       }
     } else {
-      actionBar.appendChild(el("p", { className: "dim", textContent: "Waiting for action…" }));
-      processHoldemBots();
+      actionBar.appendChild(el("p", { className: "dim", textContent: "Bots acting…" }));
+      queueMicrotask(() => {
+        processHoldemBots();
+        render();
+      });
     }
     actionBar.appendChild(el("button", {
       className: "btn",
@@ -2472,15 +2590,15 @@ function renderHoldemPlay() {
     screenChildren: [
       el("p", {
         className: "machine-status",
-        textContent: `Table stack: ${fmtChips(table.human.stack)} · Blinds ${fmtChips(table.smallBlind)}/${fmtChips(table.bigBlind)}`,
+        textContent: `Stack ${fmtChips(table.human.stack)} · Buy-in ${fmtChips(holdemState.buyIn)} · Session ${signedChips(sessionDelta)} · Blinds ${fmtChips(table.smallBlind)}/${fmtChips(table.bigBlind)} · ${table.players.length} players`,
       }),
       renderHoldemTable(table),
-      machineLog(logLines),
+      machineLog(logLines, { max: 16 }),
     ],
     controls: actionBar,
     footerExtra: el("span", {
       className: "machine-led",
-      textContent: `HAND ${holdemState.hands + 1}`,
+      textContent: `HAND ${holdemState.hands + 1} · ${String(table.street).toUpperCase()}`,
     }),
   });
 }

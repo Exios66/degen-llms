@@ -112,11 +112,14 @@ Hand categories follow the UCI / Kaggle poker-hands dataset (CLASS 0–9):
   8 Straight flush   9 Royal flush
 
 Gameplay:
-  • Buy in at the table; blinds post automatically each hand
-  • Pre-flop → flop → turn → river betting rounds
-  • Actions: fold, check, call, raise (minimum raise = big blind)
+  • 5-handed no-limit table: you + 4 AI opponents
+  • Buy in once; your stack carries across hands with wins and losses
+  • Blinds post automatically each hand
+  • Full street flow: pre-flop → flop → turn → river → showdown
+  • Each street has a betting round; bots fold, call, or raise
+  • Raise to any amount from the minimum up to your stack (no-limit)
   • Best five-card hand from your two hole cards + five community cards
-  • Play vs AI opponents until you leave or bust
+  • Cash out when you leave — remaining stack returns to your wallet
 """
 
 ROULETTE_HELP = """

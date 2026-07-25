@@ -33,16 +33,18 @@ Saves use the same `localStorage` key (`mandalay-bay-library`) as the web termin
 
 ---
 
-## Player archetypes
+## Your guest
 
-Choose on the title screen:
+The title screen's character creator picks an archetype and then the sprite you
+actually walk around as — skin tone, hair color, and outfit, with a live
+preview. The Trainer Card's wardrobe reopens the same creator mid-game.
 
-| Archetype | Flavor |
-|-----------|--------|
-| `weekend_warrior` | Default tourist |
-| `high_roller` | Whale energy |
-| `convention_goer` | Badge and lanyard |
-| `local` | Knows the shortcuts |
+| Archetype | Flavor | Perk |
+|-----------|--------|------|
+| `weekend_warrior` | Default tourist | +10% first slot spin payout |
+| `high_roller` | Whale energy | High Limit access at 5,000 chips |
+| `convention_goer` | Badge and lanyard | 10% cashier buy-in bonus |
+| `local` | Knows the shortcuts | Back-hall shortcut unlocked |
 
 ---
 
@@ -51,11 +53,15 @@ Choose on the title screen:
 | Input | Action |
 |-------|--------|
 | Arrow keys / WASD | Move |
+| Tap / click a tile | Walk there — the resort is playable on a phone |
 | Shift | Run |
 | E / Enter / Space | Talk / advance dialogue |
 | Mouse | Dialogue choices, game buttons |
-| **T** | Trainer Card (quests + reputation) |
+| **T** | Trainer Card (quests, reputation, wardrobe) |
 | **P** | MGM Rewards phone |
+
+Gold walkways connect every door, dark trim borders each zone, and floating
+signs name the room you're in — follow the gold and you can't get lost.
 
 ---
 

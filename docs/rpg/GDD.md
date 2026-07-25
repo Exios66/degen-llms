@@ -111,6 +111,8 @@ turns each record into ground, collision, and decor layers at boot.
   "scatter": [{ "tile": "PLANT", "mod": 11, "on": ["LOBBY"],
                 "bounds": { "x": 3, "y": 21, "w": 24, "h": 5 } }],
   "clear":   [{ "tile": "CARPET", "x": 14, "y": 26, "w": 3, "h": 3 }],
+  "signs":   [{ "x": 15, "y": 22, "text": "LOBBY",
+                "color": "#fff8e8", "stroke": "#8a6a28" }],
   "doors":   [{ "x": 15, "y": 27, "to": "main_resort", "toX": 4, "toY": 23,
                 "message": "Back to the casino floor." }]
 }
@@ -120,6 +122,13 @@ Layers are applied in order: `base` → `rects` → `decor` → `scatter` → `c
 `clear` runs last so a doorway can always be punched through greenery.
 `scatter` uses a deterministic hash, never a random number, so a saved position
 can never end up inside new decor after an edit.
+
+Two tiles exist purely to make a room readable at a glance. `PATH` is the gold
+walkway that connects entrances, aisles, and doors, and `TRIM` is the dark
+border that separates one floor type from the next — a `trim_ring()` helper in
+the authoring script wraps a zone in one call. `signs` floats zone labels over
+the floor in tile coordinates, fractions included, so a label can sit between
+two tiles. Both are walkable; neither carries meaning beyond wayfinding.
 
 Door options: `requiresFlag`, `requiresChips` (+ `highRollerAlt`),
 `venueGate` (`high_limit_salon` | `foundation_room`, checked against
@@ -270,9 +279,10 @@ position and chips came back.
 | Input | Action |
 |-------|--------|
 | WASD / arrows | Walk |
+| Tap / click a tile | Walk there (touch-first, same handler) |
 | Shift | Run (faster with the comped golf cart at Platinum+) |
 | E / Enter / Space | Talk, advance dialogue |
 | Esc / X | START menu |
-| T | Trainer Card |
+| T | Trainer Card and wardrobe |
 | P | Rewards phone |
 | ↑↑↓↓←→←→BA | Retro palette |

@@ -61,7 +61,8 @@ WING_ORDER = [
 
 # What it is
 
-Pick an archetype, arrive on Las Vegas Blvd, and walk in through the gold doors.
+Build a guest — archetype, skin tone, hair, outfit — arrive on Las Vegas Blvd,
+and walk in through the gold doors.
 From there the resort is a place rather than a menu tree: you cross the casino
 floor to reach the sports book, ride the tower up to a room that charges you
 nightly, and get stopped by staff who spotted you from across the carpet.
@@ -315,12 +316,17 @@ opening until you settle at the desk or win it back on the floor.
 | Input | Action |
 |-------|--------|
 | WASD / arrows | Walk |
+| Tap / click a tile | Walk there — the resort is playable on a phone |
 | Shift | Run — faster once a host comps the golf cart at Platinum |
 | E / Enter / Space | Talk to whoever you are facing, advance dialogue |
 | Esc / X | START menu |
-| T | Trainer Card |
+| T | Trainer Card and wardrobe |
 | P | MGM Rewards phone |
 | ↑↑↓↓←→←→BA | Retro palette |
+
+Gold walkways are the wayfinding: they connect the entrance, the pits, the
+aisles, and every door. Dark trim marks where one floor type ends, and floating
+signs name the zone you are standing in.
 
 # Saves
 

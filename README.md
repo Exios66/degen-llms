@@ -86,7 +86,10 @@ Walk the resort in a **Pokémon-style pixel overworld** built with Phaser 3:
 - **Terminal parity, not a rewrite** — hotel, pool, shops, slots, sportsbook, racing, and cashier are the terminal's own screens mounted inside an encounter panel, so the two surfaces cannot drift
 - **Pokémon systems** — START menu, line-of-sight challengers, a quest board, a three-part dex, a bag, twelve cosmetic secrets, and NPCs who move with the clock
 - **One clock, one wallet** — daily resort charges, rotating reservation requirements, and eviction all reach the overworld
-- **Arcade polish** — procedural textures, Web Audio BGM/SFX, cabinet bezel, room placards, Konami code
+- **Legible floors** — gold walkways connect every door, dark trim separates each zone, and floating signs name the room you're standing in
+- **Your guest, your sprite** — a character creator for archetype, skin tone, hair, and outfit, reopenable as the Trainer Card's wardrobe
+- **Plays on a phone** — tap a tile to walk, tap dialogue to advance
+- **Arcade polish** — DS-scale procedural textures, Web Audio BGM/SFX, cabinet bezel, room placards, Konami code
 - **Unified saves** — position, quests, flags, and chips ride the same slot as the terminal and the CLI
 
 See [`docs/rpg/GDD.md`](docs/rpg/GDD.md).

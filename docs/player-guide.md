@@ -325,9 +325,11 @@ The hotel lobby and in-room hub show progress: room vignettes, pool vignettes, T
 
 ## The pixel RPG
 
-Open `/rpg/index.html` and pick an archetype. You arrive on Las Vegas Blvd and
-walk in through the gold doors. Everything below runs on the same wallet, the
-same save slot, and the same rules as the terminal — the RPG mounts the
+Open `/rpg/index.html`, pick a guest type, and set your skin tone, hair, and
+outfit — the preview is the sprite you'll actually walk around as, and you can
+change it later from the Trainer Card's wardrobe. You arrive on Las Vegas Blvd
+and walk in through the gold doors. Everything below runs on the same wallet,
+the same save slot, and the same rules as the terminal — the RPG mounts the
 terminal's own screens rather than reimplementing them.
 
 ### Controls
@@ -335,11 +337,16 @@ terminal's own screens rather than reimplementing them.
 | Input | Action |
 |-------|--------|
 | WASD / arrows | Walk |
+| Tap / click a tile | Walk there — the whole game is playable on a phone |
 | Shift | Run — faster once a host comps you the golf cart at Platinum |
 | E / Enter / Space | Talk to whoever you are facing, advance dialogue |
 | Esc / X | START menu |
-| T | Trainer Card |
+| T | Trainer Card and wardrobe |
 | P | MGM Rewards phone |
+
+Gold walkways are the resort's wayfinding: follow them and they connect the
+entrance, the pits, the aisles, and every door. Dark trim marks where one floor
+ends and the next begins, and floating signs name the zone you're standing in.
 
 ### Getting around
 

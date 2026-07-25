@@ -1,6 +1,6 @@
 # The Mandalay Bay — Pixel RPG Game Design Document
 
-**Version:** Phase 1 (complete)  
+**Version:** Phases 2–4 (complete)  
 **Audience:** Future developers expanding the Epic Furious–style pixel RPG  
 **Play URL:** `/rpg/index.html` (GitHub Pages: `https://exios66.github.io/degen-llms/rpg/`)
 
@@ -174,11 +174,11 @@ Terminal and RPG modes share `localStorage` key `mandalay-bay-library`. RPG adds
 
 **Checklist per activity:**
 
-- [ ] Create `XOverlay` class in `EncounterBridge.js` (copy `BlackjackOverlay` structure)
-- [ ] Add `EncounterBridge.start()` case
-- [ ] Add NPC dialogue branch with `"encounter": "..."`
-- [ ] Call `session.recordVisit()` / `session.recordResult()`
-- [ ] Sync wallet through existing engine callbacks
+- [x] Create `XOverlay` classes under `js/systems/overlays/` (blackjack pattern)
+- [x] Add `EncounterBridge.start()` routing for all encounter ids
+- [x] Add NPC dialogue branches with `"encounter": "..."`
+- [x] Call `session.recordVisit()` / `session.recordResult()`
+- [x] Sync wallet through existing engine callbacks
 - [ ] Add pytest parity tests if Python activity logic changes
 
 ### 2.3 NPC roster (Phase 2)
@@ -455,9 +455,9 @@ RPG lives under `docs/rpg/` and deploys with GitHub Pages:
 | Phase | Focus | Exit criteria |
 |-------|-------|---------------|
 | **1** ✅ | Lobby → blackjack vertical slice | Walk, talk, play, save |
-| **2** | Slots + sportsbook + expanded floor | All 3 casino games as encounters |
-| **3** | Beach, aquarium, quests | Second map + collection quest |
-| **4** | Art, audio, juice, Easter eggs | Tiled maps, 8+ tracks, 30 secrets |
+| **2** ✅ | Full floor + all activity encounters | Slots, sportsbook, holdem, roulette, racing, hotel, pool, amenities |
+| **3** ✅ | Resort maps + quests | shark_reef, HoB, arena, foundation; QuestManager; day/night |
+| **4** ✅ | Procedural polish | TextureFactory zones, Web Audio, arcade bezel, Easter eggs |
 | **5** | Live ops | Seasonal events, weekly sportsbook |
 
 ---

@@ -1,4 +1,4 @@
-/** @typedef {'blackjack' | 'holdem' | 'roulette' | 'horse_racing'} GameId */
+/** @typedef {'blackjack' | 'holdem' | 'roulette' | 'horse_racing' | 'craps'} GameId */
 
 /** @typedef {'greeting' | 'deal' | 'win' | 'lose' | 'push' | 'idle' | 'tagline'} QuipKind */
 
@@ -18,6 +18,7 @@ const GAME_SLOT_OFFSET = {
   holdem: 1,
   roulette: 2,
   horse_racing: 3,
+  craps: 4,
 };
 
 /** @type {DealerProfile[]} */
@@ -25,7 +26,7 @@ export const DEALER_ROSTER = [
   {
     id: "steve_harvey",
     name: "Steve Harvey",
-    games: ["roulette", "horse_racing"],
+    games: ["roulette", "horse_racing", "craps"],
     sprite: "npc_gold",
     tagline: "Survey says… bet responsibly!",
     quips: {

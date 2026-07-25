@@ -58,6 +58,13 @@ export function initSessionRpg(session, spawn = null) {
   if (!session.rpg.playerSprite) {
     session.rpg.playerSprite = "weekend_warrior";
   }
+  if (!session.rpg.archetype) {
+    session.rpg.archetype = session.rpg.playerSprite || "weekend_warrior";
+  }
+  if (session.rpg.worldTime == null) session.rpg.worldTime = 720;
+  if (!session.rpg.reputation) {
+    session.rpg.reputation = { whales: 0, staff: 0, tourists: 0 };
+  }
   return session;
 }
 

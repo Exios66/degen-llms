@@ -98,6 +98,30 @@ Each new day:
 - Resets hallway and reservation confirmation
 - Evicts room access if charges cannot be paid (settle at front desk or win on the floor)
 
+## RPG state (browser pixel mode)
+
+When present, `rpg` on a save slot includes:
+
+```json
+{
+  "mapId": "main_resort",
+  "x": 15,
+  "y": 26,
+  "playerSprite": "weekend_warrior",
+  "archetype": "weekend_warrior",
+  "quests": {
+    "shark_photos": { "stage": 2, "target": 5 },
+    "dana_lucky_hand": { "stage": "complete" }
+  },
+  "flags": { "tutorial_complete": true, "easter_cherry": true },
+  "playTimeMinutes": 12,
+  "worldTime": 720,
+  "reputation": { "whales": 0, "staff": 1, "tourists": 0 }
+}
+```
+
+`worldTime` is minutes 0–1439 (day/night tint). Archetypes: `weekend_warrior`, `high_roller`, `convention_goer`, `local`. Shared with terminal mode via `localStorage` key `mandalay-bay-library`.
+
 ## Auto-save
 
 Progress saves automatically when:

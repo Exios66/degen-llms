@@ -323,11 +323,20 @@ Platinum+ tiers reduce resort fees; Chairman tier waives them narratively.
 
 The hotel lobby and in-room hub show progress: room vignettes, pool vignettes, TV channels sampled, guest book signed. Unlock all room events to auto-sign the guest directory.
 
-### RPG maps (Phase 3)
+### RPG maps (Phases 2–4)
 
-From the casino lobby overworld:
-- **East lobby tile** → Hotel Tower (Clerk Carmen, room door)
-- **West lobby tile** → Mandalay Beach pool map (wave pool, shark reef, beach rave NPCs sync pool-complex saves)
+Open `/rpg/index.html`. Choose an archetype, then explore:
+
+- **East lobby** → Hotel Tower (Carmen + hotel encounter)
+- **West lobby** → Mandalay Beach (wave / rave encounters; warp to Shark Reef)
+- **East carpet** → Slot aisle (Spinster Sal)
+- **West carpet** → Sports book (Bookie Blake)
+- **North** → High Limit / Foundation Room (chip gate)
+- **Far west / east doors** → House of Blues rhythm stage / ULTRA Arena
+- **T** → Trainer Card (quests + reputation)
+- **P** → MGM Rewards phone
+
+All major terminal games (blackjack, holdem, roulette, slots, sportsbook, racing, dressage/jumper, hotel, pool, shops/bar, cashier) launch as in-RPG overlays — no terminal redirect required.
 
 ---
 

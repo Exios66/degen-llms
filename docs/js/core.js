@@ -42,9 +42,12 @@ export function defaultRpgState(overrides = {}) {
     x: 15,
     y: 26,
     playerSprite: "weekend_warrior",
+    archetype: "weekend_warrior",
     quests: {},
     flags: {},
     playTimeMinutes: 0,
+    worldTime: 720,
+    reputation: { whales: 0, staff: 0, tourists: 0 },
     ...overrides,
   };
 }
@@ -545,6 +548,13 @@ export const ACTIVITIES = {
     minBet: 5,
     description: "European single-zero wheel — straights, colors, dozens, and even-money bets.",
   },
+  craps: {
+    id: "craps",
+    name: "Mandalay Craps",
+    floor: "Table Games",
+    minBet: 5,
+    description: "Dice table — Pass / Don't Pass, Field, props, and hardways.",
+  },
   slots: {
     id: "slots",
     name: "Mandalay Bay Slots",
@@ -552,12 +562,19 @@ export const ACTIVITIES = {
     minBet: 1,
     description: "Nearly 1,000 reel games from penny slots to high-limit progressives.",
   },
+  lottery: {
+    id: "lottery",
+    name: "Mandalay Lottery",
+    floor: "Lottery Counter",
+    minBet: 2,
+    description: "Pick 3/4, Mega jackpot draws, and instant scratchers.",
+  },
   sportsbook: {
     id: "sportsbook",
     name: "Mandalay Sports Book",
     floor: "Sports Book",
     minBet: 10,
-    description: "Sports wagering and prediction markets — spreads, totals, props, and high-volatility YES/NO contracts.",
+    description: "Sports wagering and prediction markets — history desk, headlines, and easter-egg YES/NO contracts.",
   },
   horse_racing: {
     id: "horse_racing",
@@ -582,4 +599,11 @@ export const ACTIVITIES = {
   },
 };
 
-export const FLOOR_ORDER = ["Table Games", "Slot Machines", "Sports Book", "Racing Pavilion", "Equestrian Arena"];
+export const FLOOR_ORDER = [
+  "Table Games",
+  "Slot Machines",
+  "Lottery Counter",
+  "Sports Book",
+  "Racing Pavilion",
+  "Equestrian Arena",
+];

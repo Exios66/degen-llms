@@ -19,14 +19,19 @@ import {
 } from "./slots.js";
 import { getMachineUI, paytableEntries, SLOT_CATEGORIES } from "./slots-ui.js";
 import { SportsbookState, fmtOdds, oddsForSelection, formatEventScore } from "./sportsbook.js";
-import { categoryLabel, predictionPayout } from "./predictionMarkets.js";
+import { categoryLabel, predictionPayout, MARKET_CATEGORIES, filterMarkets } from "./predictionMarkets.js";
 import {
   canEnterHighLimitSalon, canEnterFoundationRoom, HIGH_LIMIT_SALON_CHIP_MIN, SALON_STAKE_TIER_IDS,
 } from "./venues.js";
 import { BlackjackGame, defaultConfig, Action } from "./blackjack/game.js";
-import { HoldemTable, BettingAction } from "./holdem/game.js";
+import { HoldemTable, BettingAction, STREET_ORDER, Street } from "./holdem/game.js";
 import { HAND_CLASS_NAMES } from "./holdem/hand_eval.js";
-import { BET_TYPES, spinWheel, wheelColor, resolveBet, RED_NUMBERS } from "./roulette.js";
+import { BET_TYPES, spinWheel, wheelColor, resolveBet, RED_NUMBERS, appendSpinHistory } from "./roulette.js";
+import { CrapsTable, SIDE_BETS as CRAPS_SIDE_BETS } from "./craps.js";
+import {
+  TICKET_TYPES, quickPickDigits, quickPickMega, parsePickInput,
+  resolvePick3, resolvePick4, resolveMega, resolveScratcher,
+} from "./lottery.js";
 import { generateRace, simulateRace, settleTicket, fmtOdds as fmtRaceOdds, loadBundledHorseNames, parseHorseNamesCSV, setCustomHorseNames, getHorseNamePool } from "./horse_racing.js";
 import { generateDressage, simulateDressage, settleDressageTicket, generateJumper, simulateJumper, settleJumperTicket, fmtOddsEq } from "./equestrian.js";
 import { createHorseSpriteCanvas, getHorseSprite, getJockeySilks, HORSE_SPRITE_ROSTER } from "./horse-sprites.js";
@@ -57,10 +62,30 @@ let rewardsPhone = null;
 let sportsbook = new SportsbookState();
 let blackjackGame = null;
 let blackjackSessionNet = 0;
-let slotsState = { machine: null, sessionNet: 0, spins: 0, tier: null };
+let slotsState = { machine: null, sessionNet: 0, spins: 0, tier: null, lastBet: null };
 let slotsSpinTimers = [];
 let holdemState = null;
-let rouletteState = { sessionNet: 0, spins: 0, lastNumber: null, spinning: false, tier: null };
+let crapsState = {
+  table: null,
+  sessionNet: 0,
+  rolls: 0,
+  tier: null,
+  lineBet: null,
+  hardways: {},
+  lastWager: null,
+  log: [],
+};
+let lotteryState = { sessionNet: 0, tickets: 0, lastResult: null, lastTicketId: "pick3" };
+let rouletteState = {
+  sessionNet: 0,
+  spins: 0,
+  lastNumber: null,
+  spinning: false,
+  tier: null,
+  history: [],
+  historyPulse: false,
+  lastWager: null,
+};
 let horseRacingState = { card: null, pending: [], sessionNet: 0, races: 0, tier: null };
 let dressageState = { card: null, pending: [], sessionNet: 0, events: 0, tier: null };
 let jumperState = { card: null, pending: [], sessionNet: 0, events: 0, tier: null };
@@ -203,6 +228,7 @@ const MACHINE_GAMES = {
   blackjack: { label: "BLACKJACK", icon: "♠♥", variant: "blackjack" },
   holdem: { label: "TEXAS HOLD'EM", icon: "♣♦", variant: "holdem" },
   roulette: { label: "ROULETTE", icon: "◉", variant: "roulette" },
+  craps: { label: "CRAPS", icon: "⚄⚀", variant: "craps" },
 };
 
 function machineGameNav(activeGame) {
@@ -210,6 +236,7 @@ function machineGameNav(activeGame) {
     ["blackjack", "BJ"],
     ["holdem", "HOLD'EM"],
     ["roulette", "ROULETTE"],
+    ["craps", "CRAPS"],
   ];
   return el("div", { className: "machine-game-nav" }, tabs.map(([id, label]) =>
     el("span", {
@@ -497,9 +524,37 @@ function enterCasino(nextSession) {
   resetSportsbookFromSession();
   blackjackGame = null;
   blackjackSessionNet = 0;
-  slotsState = { machine: null, sessionNet: 0, spins: 0, spinning: false, lastWin: false, lastReels: null, lastMessage: null };
+  slotsState = {
+    machine: null,
+    sessionNet: 0,
+    spins: 0,
+    spinning: false,
+    lastWin: false,
+    lastReels: null,
+    lastMessage: null,
+    lastBet: null,
+  };
   holdemState = null;
-  rouletteState = { sessionNet: 0, spins: 0, lastNumber: null, spinning: false };
+  rouletteState = {
+    sessionNet: 0,
+    spins: 0,
+    lastNumber: null,
+    spinning: false,
+    history: [],
+    historyPulse: false,
+    lastWager: null,
+  };
+  crapsState = {
+    table: null,
+    sessionNet: 0,
+    rolls: 0,
+    tier: null,
+    lineBet: null,
+    hardways: {},
+    lastWager: null,
+    log: [],
+  };
+  lotteryState = { sessionNet: 0, tickets: 0, lastResult: null, lastTicketId: "pick3" };
   horseRacingState = { card: null, pending: [], sessionNet: 0, races: 0 };
   viewStack = [{ name: "hub", data: {} }];
   clearStatus();
@@ -627,31 +682,60 @@ function renderTable(snapshot) {
   return container;
 }
 
+function holdemStreetTimeline(street) {
+  const streets = [
+    { id: Street.PREFLOP, label: "Preflop" },
+    { id: Street.FLOP, label: "Flop" },
+    { id: Street.TURN, label: "Turn" },
+    { id: Street.RIVER, label: "River" },
+    { id: Street.SHOWDOWN, label: "Showdown" },
+  ];
+  const currentIdx = STREET_ORDER.indexOf(street);
+  return el("div", { className: "holdem-street-timeline", "aria-label": "Hand streets" }, streets.map((s, i) => {
+    const state = i < currentIdx ? "done" : i === currentIdx ? "active" : "upcoming";
+    return el("div", {
+      className: `holdem-street-step holdem-street-step--${state}`,
+      textContent: s.label,
+    });
+  }));
+}
+
 function renderHoldemTable(table) {
   const felt = el("div", { className: "felt-table holdem-table-layout" });
   felt.appendChild(el("div", { className: "holdem-pot", textContent: `Pot ${fmtChips(table.pot)}` }));
-  felt.appendChild(el("div", { className: "holdem-street", textContent: table.street }));
+  felt.appendChild(holdemStreetTimeline(table.street));
+  felt.appendChild(el("div", {
+    className: "holdem-street",
+    textContent: table.handOver
+      ? (table.winners.length ? `Winner: ${table.winners.join(" & ")}` : table.lastMessage)
+      : `To call ${fmtChips(Math.max(0, table.currentBet - (table.players[table.actionIndex]?.betThisStreet || 0)))} · Bet ${fmtChips(table.currentBet)}`,
+  }));
 
   const boardCards = [];
   for (let i = 0; i < 5; i++) boardCards.push(table.community[i] ?? null);
   felt.appendChild(cardRow(boardCards, { slots: 5 }));
 
-  const playersEl = el("div", { className: "holdem-players" });
+  const playersEl = el("div", { className: "holdem-players holdem-players--five" });
   for (const p of table.players) {
     const isActive = !table.handOver && table.players[table.actionIndex] === p;
     const holeCards = p.isHuman || table.handOver
       ? p.hole
       : p.hole.map(() => null);
+    const betLine = p.betThisStreet > 0 ? ` · bet ${fmtChips(p.betThisStreet)}` : "";
     const seat = el("div", {
       className: [
         "holdem-seat",
         p.isHuman ? "holdem-seat--you" : "",
         p.folded ? "holdem-seat--folded" : "",
         isActive ? "holdem-seat--active" : "",
+        p.allIn ? "holdem-seat--allin" : "",
       ].filter(Boolean).join(" "),
     }, [
-      el("div", { className: "holdem-seat-name", textContent: p.name }),
-      el("div", { className: "holdem-seat-stack", textContent: `${fmtChips(p.stack)}${p.folded ? " · folded" : ""}${p.allIn ? " · all-in" : ""}` }),
+      el("div", { className: "holdem-seat-name", textContent: `${p.name}${isActive ? " · ACTING" : ""}` }),
+      el("div", {
+        className: "holdem-seat-stack",
+        textContent: `${fmtChips(p.stack)}${betLine}${p.folded ? " · folded" : ""}${p.allIn ? " · all-in" : ""}`,
+      }),
       el("div", { className: "holdem-hole-cards" }, [cardRow(holeCards, { hiddenMask: (_, c) => !c })]),
     ]);
     playersEl.appendChild(seat);
@@ -679,6 +763,42 @@ function renderRouletteWheel(lastNumber = null, spinning = false) {
     }),
   ]);
   return wrap;
+}
+
+/** Animated recent-spin strip — newest result on the left. */
+function renderRouletteHistory(history = [], { pulseNewest = false } = {}) {
+  const strip = el("div", {
+    className: `roulette-history${pulseNewest ? " roulette-history--pulse" : ""}`,
+    "aria-label": "Roulette spin history",
+  });
+  strip.appendChild(el("div", { className: "roulette-history-label", textContent: "Spin history" }));
+  const track = el("div", { className: "roulette-history-track" });
+  if (!history.length) {
+    track.appendChild(el("span", {
+      className: "roulette-history-empty",
+      textContent: "Results appear here as the wheel spins",
+    }));
+  } else {
+    history.forEach((entry, i) => {
+      track.appendChild(el("div", {
+        className: [
+          "roulette-history-chip",
+          `roulette-history-chip--${entry.color}`,
+          i === 0 && pulseNewest ? "roulette-history-chip--enter" : "",
+        ].filter(Boolean).join(" "),
+        textContent: String(entry.number),
+        title: `${entry.number} · ${entry.color}`,
+        "aria-label": `${entry.number} ${entry.color}`,
+      }));
+    });
+  }
+  strip.appendChild(track);
+  return strip;
+}
+
+function pushRouletteHistory(number) {
+  rouletteState.history = appendSpinHistory(rouletteState.history || [], number, { limit: 18 });
+  rouletteState.historyPulse = true;
 }
 
 function renderRouletteBetMat(straightInput, onPick) {
@@ -1008,7 +1128,9 @@ function renderFloor({ floor }) {
     if (act.id === "blackjack") pushView("stake-tier", { activityId: "blackjack", nextView: "blackjack-menu" });
     else if (act.id === "holdem") pushView("stake-tier", { activityId: "holdem", nextView: "holdem-menu" });
     else if (act.id === "roulette") pushView("stake-tier", { activityId: "roulette", nextView: "roulette" });
+    else if (act.id === "craps") pushView("stake-tier", { activityId: "craps", nextView: "craps" });
     else if (act.id === "slots") pushView("stake-tier", { activityId: "slots", nextView: "slots-menu" });
+    else if (act.id === "lottery") pushView("stake-tier", { activityId: "lottery", nextView: "lottery" });
     else if (act.id === "sportsbook") pushView("stake-tier", { activityId: "sportsbook", nextView: "sportsbook" });
     else if (act.id === "horse_racing") pushView("stake-tier", { activityId: "horse_racing", nextView: "horse-racing" });
     else if (act.id === "dressage") pushView("stake-tier", { activityId: "dressage", nextView: "dressage" });
@@ -1528,6 +1650,7 @@ function renderStakeTier({ activityId, nextView }) {
       currentStakeTier = tier;
       if (activityId === "slots") slotsState.tier = tier;
       if (activityId === "roulette") rouletteState.tier = tier;
+      if (activityId === "craps") crapsState.tier = tier;
       if (activityId === "horse_racing") horseRacingState.tier = tier;
       if (activityId === "dressage") dressageState.tier = tier;
       if (activityId === "jumper") jumperState.tier = tier;
@@ -1568,7 +1691,17 @@ function renderSlotsMenu() {
       el("h3", { className: "slot-category-title", textContent: cat.label }),
       el("div", { className: "slot-machine-grid" }, machines.map((m) =>
         slotMachineCard(m, () => {
-          slotsState = { machine: m, sessionNet: 0, spins: 0, spinning: false, lastWin: false, lastReels: null, lastMessage: null };
+          slotsState = {
+            machine: m,
+            sessionNet: 0,
+            spins: 0,
+            spinning: false,
+            lastWin: false,
+            lastReels: null,
+            lastMessage: null,
+            lastBet: null,
+            tier: slotsState.tier ?? currentStakeTier,
+          };
           pushView("slots-play");
         })
       )),
@@ -1590,9 +1723,16 @@ function renderSlotsPlay() {
   const stakes = effectiveSlotStakes(machine, tier, session.wallet.balance);
   const minBet = stakes.minBet;
   const maxBet = stakes.maxBet;
+  const rememberedBet = Number.isFinite(slotsState.lastBet)
+    ? Math.min(maxBet, Math.max(minBet, slotsState.lastBet))
+    : minBet;
   const betInput = el("input", {
-    type: "number", min: String(minBet), max: String(maxBet), value: String(minBet),
+    type: "number", min: String(minBet), max: String(maxBet), value: String(rememberedBet),
   });
+  betInput.oninput = () => {
+    const typed = parseInt(betInput.value, 10);
+    if (Number.isFinite(typed) && typed > 0) slotsState.lastBet = typed;
+  };
   const reelsStopped = slotsState.reelsStopped ?? 3;
   const reelsForDisplay = (slotsState.spinning || reelsStopped < 3)
     ? (slotsState.displayReels ?? slotsState.lastReels)
@@ -1650,6 +1790,9 @@ function renderSlotsPlay() {
       render();
       return;
     }
+
+    // Keep the player's last wager as the default for the next pull.
+    slotsState.lastBet = bet;
 
     clearSlotsSpinTimers();
     const timing = getActivityTiming(tier.id);
@@ -1815,6 +1958,21 @@ function renderSportsbook() {
     onclick: () => { sportsbook.activeTab = "predictions"; render(); },
   });
 
+  const predFilter = sportsbook.predictions.categoryFilter || "all";
+  const filteredPredictions = filterMarkets(sportsbook.predictions.markets, predFilter);
+  const categoryChips = el("div", { className: "prediction-filter-chips" }, [
+    el("button", {
+      className: `prediction-chip${predFilter === "all" ? " prediction-chip--active" : ""}`,
+      textContent: "All",
+      onclick: () => { sportsbook.predictions.categoryFilter = "all"; persist(); render(); },
+    }),
+    ...MARKET_CATEGORIES.map((cat) => el("button", {
+      className: `prediction-chip${predFilter === cat.id ? " prediction-chip--active" : ""}`,
+      textContent: cat.label,
+      onclick: () => { sportsbook.predictions.categoryFilter = cat.id; persist(); render(); },
+    })),
+  ]);
+
   const board = sportsbook.activeTab === "sports"
     ? el("div", {}, sportsbook.events.map((event, i) =>
       el("div", { className: "event-card" }, [
@@ -1828,13 +1986,27 @@ function renderSportsbook() {
           : null,
       ])
     ))
-    : el("div", {}, sportsbook.predictions.markets.map((market, i) =>
-      el("div", { className: "event-card prediction-card" }, [
-        el("div", { className: "sport", textContent: categoryLabel(market.category) }),
-        el("div", { innerHTML: `<strong>${i + 1}) ${market.question}</strong>` }),
-        el("div", { className: "dim", textContent: `YES ${market.yesPrice}¢ · NO ${market.noPrice}¢ · Vol ${market.volume.toLocaleString()}` }),
-      ])
-    ));
+    : el("div", {}, [
+      el("p", {
+        className: "dim",
+        textContent: "History Desk settles to recorded truth. Easter Eggs are chaotic longshots. Filter the board, then buy YES/NO.",
+      }),
+      categoryChips,
+      ...filteredPredictions.map((market, i) =>
+        el("div", {
+          className: `event-card prediction-card prediction-card--${market.category}`,
+        }, [
+          el("div", { className: "sport", textContent: categoryLabel(market.category) }),
+          el("div", { innerHTML: `<strong>${i + 1}) ${market.question}</strong>` }),
+          market.blurb ? el("div", { className: "prediction-blurb", textContent: market.blurb }) : null,
+          el("div", {
+            className: "dim",
+            textContent: `YES ${market.yesPrice}¢ · NO ${market.noPrice}¢ · Vol ${market.volume.toLocaleString()}${market.fixedResolution ? " · History Desk" : ""}`,
+          }),
+        ])
+      ),
+      filteredPredictions.length ? null : el("p", { className: "dim", textContent: "No markets in this category — try All or refresh." }),
+    ]);
 
   const pendingEl = el("div", { className: "pending-tickets" });
   if (sportsbook.pending.length || sportsbook.predictions.positions.length) {
@@ -2015,8 +2187,13 @@ function renderSportsbookPrediction() {
     ? effectiveTableStakes(tier, session.wallet.balance, act.minBet)
     : { minBet: act.minBet, maxBet: session.wallet.balance };
 
-  const marketSelect = el("select", {}, sportsbook.predictions.markets.map((m, i) =>
-    el("option", { value: String(i), textContent: `${i + 1}) ${m.question}` })
+  const marketsForSelect = filterMarkets(
+    sportsbook.predictions.markets,
+    sportsbook.predictions.categoryFilter || "all",
+  );
+  const marketPool = marketsForSelect.length ? marketsForSelect : sportsbook.predictions.markets;
+  const marketSelect = el("select", {}, marketPool.map((m, i) =>
+    el("option", { value: String(i), textContent: `${i + 1}) [${categoryLabel(m.category)}] ${m.question}` })
   ));
   const sideSelect = el("select", {}, [
     el("option", { value: "yes", textContent: "YES" }),
@@ -2028,7 +2205,7 @@ function renderSportsbookPrediction() {
   });
 
   function refreshPrice() {
-    const market = sportsbook.predictions.markets[parseInt(marketSelect.value, 10)];
+    const market = marketPool[parseInt(marketSelect.value, 10)];
     if (!market) return;
     const side = sideSelect.value;
     const price = side === "yes" ? market.yesPrice : market.noPrice;
@@ -2053,7 +2230,7 @@ function renderSportsbookPrediction() {
         className: "btn primary",
         textContent: "Buy contract",
         onclick: () => {
-          const market = sportsbook.predictions.markets[parseInt(marketSelect.value, 10)];
+          const market = marketPool[parseInt(marketSelect.value, 10)];
           const side = sideSelect.value;
           const amount = parseInt(amountInput.value, 10);
           const priceCents = side === "yes" ? market.yesPrice : market.noPrice;
@@ -2158,14 +2335,15 @@ function renderHighLimitSalon() {
     el("p", { className: "dim", textContent: "Velvet ropes, private felt, and stakes that make the main floor nervous. Salon limits apply." }),
     el("p", { className: "subtitle", textContent: `${currentStakeTier?.name ?? "High Limit"} · ${session.wallet.balance.toLocaleString()} chips on the floor` }),
     menu(
-      ["Blackjack (salon limits)", "Texas Hold'em", "Roulette", "High-limit slots"],
+      ["Blackjack (salon limits)", "Texas Hold'em", "Roulette", "Craps", "High-limit slots"],
       "Salon tables:",
       (choice) => {
         if (choice === 0) { goBack(); return; }
         if (choice === 1) pushView("stake-tier", { activityId: "blackjack", nextView: "blackjack-menu" });
         else if (choice === 2) pushView("stake-tier", { activityId: "holdem", nextView: "holdem-menu" });
         else if (choice === 3) pushView("stake-tier", { activityId: "roulette", nextView: "roulette" });
-        else if (choice === 4) pushView("stake-tier", { activityId: "slots", nextView: "slots-menu" });
+        else if (choice === 4) pushView("stake-tier", { activityId: "craps", nextView: "craps" });
+        else if (choice === 5) pushView("stake-tier", { activityId: "slots", nextView: "slots-menu" });
       },
     ),
   ]);
@@ -2345,10 +2523,14 @@ function renderHoldemMenu() {
     title: "TEXAS HOLD'EM",
     screenChildren: [
       dealerPanel("holdem"),
+      el("p", {
+        className: "dim",
+        textContent: "No-limit Hold'em · 5-handed (you + 4 bots) · Preflop → Flop → Turn → River. Buy-in stays on the table across hands.",
+      }),
       el("p", { className: "machine-screen-label", textContent: "Hand rankings" }),
       ranksEl,
       el("div", { className: "form-row" }, [
-        el("label", { textContent: `Buy-in (${act.minBet}–${session.wallet.balance})` }),
+        el("label", { textContent: `Buy-in (${buyInStakes.minBet}–${buyInStakes.maxBet})` }),
         buyInInput,
       ]),
     ],
@@ -2363,8 +2545,9 @@ function renderHoldemMenu() {
           if (!session.wallet.debit(buyIn, "holdem", `Hold'em buy-in ${fmtChips(buyIn)}`)) {
             alert("Insufficient chips."); return;
           }
+          persist();
           holdemState = {
-            table: HoldemTable.quickTable(buyIn),
+            table: HoldemTable.quickTable(buyIn, 4),
             buyIn,
             sessionNet: 0,
             hands: 0,
@@ -2384,7 +2567,7 @@ function processHoldemBots() {
   if (!holdemState || holdemState.table.handOver) return;
   const table = holdemState.table;
   let guard = 0;
-  while (!table.handOver && guard < 40) {
+  while (!table.handOver && guard < 80) {
     guard += 1;
     const player = table.players[table.actionIndex];
     if (!player || player.folded || player.allIn) {
@@ -2393,8 +2576,8 @@ function processHoldemBots() {
       continue;
     }
     if (player.isHuman) break;
-    const action = table.botAction(player);
-    const msg = table.applyAction(player, action);
+    const decision = table.botAction(player);
+    const msg = table.applyAction(player, decision.action, decision.raiseTo);
     holdemState.log.push(msg);
   }
 }
@@ -2407,6 +2590,11 @@ function renderHoldemPlay() {
     ]),
   ]);
   const table = holdemState.table;
+
+  // Keep the action log in sync with engine street / bot messages.
+  if (table.actionLog?.length) {
+    holdemState.log = [...table.actionLog];
+  }
   const logLines = [...holdemState.log];
 
   if (table.handOver) {
@@ -2415,10 +2603,11 @@ function renderHoldemPlay() {
         logLines.push({ text: `${name}: ${score.name}`, type: "" });
       }
     }
-    logLines.push({ text: table.lastMessage, type: "success" });
+    if (table.lastMessage) logLines.push({ text: table.lastMessage, type: "success" });
   }
 
-  const actionBar = el("div", { className: "action-bar" });
+  const sessionDelta = table.human.stack - holdemState.buyIn;
+  const actionBar = el("div", { className: "action-bar holdem-action-bar" });
 
   if (table.handOver) {
     if (table.human.stack >= table.bigBlind) {
@@ -2443,22 +2632,100 @@ function renderHoldemPlay() {
     const player = table.players[table.actionIndex];
     if (player?.isHuman) {
       const legal = table.legalActions(player);
-      for (const act of [BettingAction.CHECK, BettingAction.CALL, BettingAction.RAISE, BettingAction.FOLD]) {
-        if (legal.has(act)) {
-          actionBar.appendChild(el("button", {
-            className: "btn primary",
-            textContent: act.charAt(0).toUpperCase() + act.slice(1),
-            onclick: () => {
-              holdemState.log.push(table.applyAction(player, act));
-              processHoldemBots();
-              render();
-            },
-          }));
-        }
+      const toCall = Math.max(0, table.currentBet - player.betThisStreet);
+      if (legal.has(BettingAction.CHECK)) {
+        actionBar.appendChild(el("button", {
+          className: "btn primary",
+          textContent: "Check",
+          onclick: () => {
+            table.applyAction(player, BettingAction.CHECK);
+            processHoldemBots();
+            render();
+          },
+        }));
+      }
+      if (legal.has(BettingAction.CALL)) {
+        actionBar.appendChild(el("button", {
+          className: "btn primary",
+          textContent: toCall >= player.stack ? `All-in ${fmtChips(player.stack)}` : `Call ${fmtChips(toCall)}`,
+          onclick: () => {
+            table.applyAction(player, BettingAction.CALL);
+            processHoldemBots();
+            render();
+          },
+        }));
+      }
+      if (legal.has(BettingAction.RAISE)) {
+        const minTo = table.minRaiseTo(player);
+        const maxTo = table.maxRaiseTo(player);
+        const raiseWrap = el("div", { className: "holdem-raise-controls" });
+        const raiseInput = el("input", {
+          type: "number",
+          className: "holdem-raise-input",
+          min: String(minTo),
+          max: String(maxTo),
+          value: String(minTo),
+          title: `Raise to between ${minTo} and ${maxTo}`,
+        });
+        raiseWrap.appendChild(el("label", {
+          className: "holdem-raise-label",
+          textContent: toCall > 0 ? "Raise to" : "Bet",
+        }));
+        raiseWrap.appendChild(raiseInput);
+        raiseWrap.appendChild(el("button", {
+          className: "btn primary",
+          textContent: maxTo <= minTo ? `All-in ${fmtChips(maxTo)}` : (toCall > 0 ? "Raise" : "Bet"),
+          onclick: () => {
+            let raiseTo = parseInt(raiseInput.value, 10);
+            if (!Number.isFinite(raiseTo)) raiseTo = minTo;
+            if (raiseTo < minTo && raiseTo < maxTo) {
+              alert(`Raise must be at least ${fmtChips(minTo)}, or go all-in for ${fmtChips(maxTo)}.`);
+              return;
+            }
+            raiseTo = Math.min(Math.max(raiseTo, Math.min(minTo, maxTo)), maxTo);
+            try {
+              table.applyAction(player, BettingAction.RAISE, raiseTo);
+            } catch (err) {
+              alert(err.message || String(err));
+              return;
+            }
+            processHoldemBots();
+            render();
+          },
+        }));
+        raiseWrap.appendChild(el("button", {
+          className: "btn",
+          textContent: "All-in",
+          onclick: () => {
+            try {
+              table.applyAction(player, BettingAction.RAISE, maxTo);
+            } catch (err) {
+              alert(err.message || String(err));
+              return;
+            }
+            processHoldemBots();
+            render();
+          },
+        }));
+        actionBar.appendChild(raiseWrap);
+      }
+      if (legal.has(BettingAction.FOLD)) {
+        actionBar.appendChild(el("button", {
+          className: "btn",
+          textContent: "Fold",
+          onclick: () => {
+            table.applyAction(player, BettingAction.FOLD);
+            processHoldemBots();
+            render();
+          },
+        }));
       }
     } else {
-      actionBar.appendChild(el("p", { className: "dim", textContent: "Waiting for action…" }));
-      processHoldemBots();
+      actionBar.appendChild(el("p", { className: "dim", textContent: "Bots acting…" }));
+      queueMicrotask(() => {
+        processHoldemBots();
+        render();
+      });
     }
     actionBar.appendChild(el("button", {
       className: "btn",
@@ -2472,15 +2739,15 @@ function renderHoldemPlay() {
     screenChildren: [
       el("p", {
         className: "machine-status",
-        textContent: `Table stack: ${fmtChips(table.human.stack)} · Blinds ${fmtChips(table.smallBlind)}/${fmtChips(table.bigBlind)}`,
+        textContent: `Stack ${fmtChips(table.human.stack)} · Buy-in ${fmtChips(holdemState.buyIn)} · Session ${signedChips(sessionDelta)} · Blinds ${fmtChips(table.smallBlind)}/${fmtChips(table.bigBlind)} · ${table.players.length} players`,
       }),
       renderHoldemTable(table),
-      machineLog(logLines),
+      machineLog(logLines, { max: 16 }),
     ],
     controls: actionBar,
     footerExtra: el("span", {
       className: "machine-led",
-      textContent: `HAND ${holdemState.hands + 1}`,
+      textContent: `HAND ${holdemState.hands + 1} · ${String(table.street).toUpperCase()}`,
     }),
   });
 }
@@ -2536,9 +2803,19 @@ function renderRoulette() {
     straightRow.style.display = BET_TYPES[betSelect.value].kind === "straight" ? "" : "none";
   };
 
+  const rememberedWager = Number.isFinite(rouletteState.lastWager)
+    ? Math.min(wagerStakes.maxBet, Math.max(wagerStakes.minBet, rouletteState.lastWager))
+    : wagerStakes.minBet;
   const amountInput = el("input", {
-    type: "number", min: String(wagerStakes.minBet), max: String(wagerStakes.maxBet), value: String(wagerStakes.minBet),
+    type: "number",
+    min: String(wagerStakes.minBet),
+    max: String(wagerStakes.maxBet),
+    value: String(rememberedWager),
   });
+  amountInput.oninput = () => {
+    const typed = parseInt(amountInput.value, 10);
+    if (Number.isFinite(typed) && typed > 0) rouletteState.lastWager = typed;
+  };
   const resultEl = el("p", {
     className: "dim",
     textContent: rouletteState.lastNumber != null
@@ -2551,6 +2828,12 @@ function renderRoulette() {
       ? `Session: ${signedChips(rouletteState.sessionNet)} over ${rouletteState.spins} spin(s)`
       : "",
   });
+  const pulseNewest = Boolean(rouletteState.historyPulse);
+  if (rouletteState.historyPulse) {
+    // Consume the pulse flag so only the newly landed number animates in.
+    rouletteState.historyPulse = false;
+  }
+  const historyEl = renderRouletteHistory(rouletteState.history || [], { pulseNewest });
 
   const onMatPick = (n) => {
     betSelect.value = "0";
@@ -2576,6 +2859,7 @@ function renderRoulette() {
       resultEl.textContent = "Insufficient chips.";
       return;
     }
+    rouletteState.lastWager = amount;
     const dealer = activeTableDealer ?? getSessionDealer(session, "roulette");
     resultEl.className = "dim";
     resultEl.textContent = `${dealer.name}: "${pickQuip(dealer, "deal")}"`;
@@ -2589,6 +2873,7 @@ function renderRoulette() {
       rouletteState.spins += 1;
       rouletteState.lastNumber = number;
       rouletteState.spinning = false;
+      pushRouletteHistory(number);
       resultEl.className = win > 0 ? "success" : "dim";
       const quip = pickQuip(dealer, win > 0 ? "win" : "lose");
       resultEl.textContent = `Ball lands on ${number} (${wheelColor(number)}) — ${reason}. ${dealer.name}: "${quip}"`;
@@ -2608,6 +2893,7 @@ function renderRoulette() {
     title: "ROULETTE",
     screenChildren: [
       dealerPanel("roulette"),
+      historyEl,
       rouletteDisplay,
       el("div", { className: "roulette-outside-bets" }, [
         el("div", { className: "form-row" }, [el("label", { textContent: "Bet type" }), betSelect]),
@@ -2618,7 +2904,12 @@ function renderRoulette() {
       summaryEl,
     ],
     controls: el("div", { className: "action-bar" }, [
-      el("button", { className: "btn primary", textContent: "Spin", onclick: doSpin }),
+      el("button", {
+        className: "btn primary",
+        textContent: "Spin",
+        onclick: doSpin,
+        disabled: rouletteState.spinning,
+      }),
       el("button", {
         className: "btn",
         textContent: "Leave table",
@@ -3633,6 +3924,334 @@ const amenitiesRenderers = buildAmenitiesRenderers({
   showStatus,
 });
 
+
+function ensureCrapsTable() {
+  if (!crapsState.table) crapsState.table = new CrapsTable();
+  return crapsState.table;
+}
+
+function renderCrapsDice(roll) {
+  if (!roll) {
+    return el("div", { className: "craps-dice craps-dice--idle", textContent: "⚄ ⚀" });
+  }
+  return el("div", { className: "craps-dice" }, [
+    el("span", { className: "craps-die", textContent: String(roll.die1) }),
+    el("span", { className: "craps-die", textContent: String(roll.die2) }),
+    el("span", { className: "craps-total", textContent: `= ${roll.total}${roll.isHard ? " hard" : ""}` }),
+  ]);
+}
+
+function renderCraps() {
+  const act = ACTIVITIES.craps;
+  if (session.wallet.balance < act.minBet && !crapsState.lineBet && !Object.keys(crapsState.hardways || {}).length) {
+    return videoMachine("craps", {
+      title: "CRAPS",
+      screenChildren: [el("p", { className: "error", textContent: `You need at least ${act.minBet} chips to shoot.` })],
+      controls: el("div", { className: "action-bar" }, [
+        el("button", { className: "btn", textContent: "Back", onclick: () => goBack() }),
+      ]),
+    });
+  }
+  recordActivityVisit("craps");
+  persist();
+  const table = ensureCrapsTable();
+  const tier = crapsState.tier ?? currentStakeTier;
+  const wagerStakes = tier
+    ? effectiveTableStakes(tier, session.wallet.balance, act.minBet)
+    : { minBet: act.minBet, maxBet: session.wallet.balance };
+  const remembered = Number.isFinite(crapsState.lastWager)
+    ? Math.min(wagerStakes.maxBet, Math.max(wagerStakes.minBet, crapsState.lastWager))
+    : wagerStakes.minBet;
+
+  const lineSelect = el("select", {}, [
+    el("option", { value: "pass", textContent: "Pass Line" }),
+    el("option", { value: "dont", textContent: "Don't Pass" }),
+    el("option", { value: "none", textContent: "No new line (props only)" }),
+  ]);
+  if (crapsState.lineBet) lineSelect.disabled = true;
+  const amountInput = el("input", {
+    type: "number",
+    min: String(wagerStakes.minBet),
+    max: String(wagerStakes.maxBet),
+    value: String(remembered),
+  });
+  const fieldInput = el("input", { type: "number", min: "0", max: String(wagerStakes.maxBet), value: "0" });
+  const anyCrapsInput = el("input", { type: "number", min: "0", max: String(wagerStakes.maxBet), value: "0" });
+  const anySevenInput = el("input", { type: "number", min: "0", max: String(wagerStakes.maxBet), value: "0" });
+
+  const phaseLabel = table.point ? `POINT ${table.point}` : "COME-OUT";
+  const workingLine = crapsState.lineBet
+    ? `${crapsState.lineBet.kind === "dont" ? "Don't Pass" : "Pass Line"} ${fmtChips(crapsState.lineBet.amount)}`
+    : "none";
+
+  function leaveCraps() {
+    if (crapsState.lineBet) {
+      session.wallet.credit(crapsState.lineBet.amount, "craps", "Craps leave — line returned");
+      crapsState.sessionNet += crapsState.lineBet.amount;
+      crapsState.lineBet = null;
+    }
+    for (const [id, amt] of Object.entries(crapsState.hardways || {})) {
+      session.wallet.credit(amt, "craps", `Craps leave — ${id} returned`);
+      crapsState.sessionNet += amt;
+    }
+    crapsState.hardways = {};
+    recordActivityResult("craps", crapsState.sessionNet, crapsState.rolls);
+    persist();
+    crapsState.table = null;
+    crapsState.log = [];
+    goBack();
+  }
+
+  function doRoll() {
+    const sideStakes = {};
+    const sides = [
+      ["field", parseInt(fieldInput.value, 10) || 0],
+      ["any_craps", parseInt(anyCrapsInput.value, 10) || 0],
+      ["any_seven", parseInt(anySevenInput.value, 10) || 0],
+    ];
+    for (const [id, amt] of sides) {
+      if (amt <= 0) continue;
+      if (amt < wagerStakes.minBet) { alert(`Side bets need at least ${wagerStakes.minBet}.`); return; }
+      if (!session.wallet.debit(amt, "craps", `Craps ${id}`)) { alert("Insufficient chips."); return; }
+      sideStakes[id] = amt;
+      crapsState.sessionNet -= amt;
+    }
+
+    if (!crapsState.lineBet) {
+      const kind = lineSelect.value;
+      if (kind !== "none") {
+        const amount = parseInt(amountInput.value, 10);
+        if (amount < wagerStakes.minBet) { alert(`Minimum line bet is ${wagerStakes.minBet}.`); return; }
+        if (!session.wallet.debit(amount, "craps", `Craps ${kind}`)) { alert("Insufficient chips."); return; }
+        crapsState.lineBet = { kind, amount };
+        crapsState.lastWager = amount;
+        crapsState.sessionNet -= amount;
+      } else if (!Object.keys(sideStakes).length) {
+        alert("Place a line bet or at least one side bet.");
+        return;
+      }
+    }
+
+    const pointBefore = table.point;
+    const roll = table.roll();
+    crapsState.rolls += 1;
+    const messages = [`🎲 ${roll.label}`];
+
+    if (crapsState.lineBet) {
+      const result = crapsState.lineBet.kind === "pass"
+        ? table.resolvePassLine(crapsState.lineBet.amount, roll)
+        : table.resolveDontPass(crapsState.lineBet.amount, roll, pointBefore);
+      messages.push(result.message);
+      if (!result.working) {
+        if (result.payout > 0) {
+          session.wallet.credit(result.payout, "craps", result.message);
+          crapsState.sessionNet += result.payout;
+        }
+        crapsState.lineBet = null;
+      }
+    }
+
+    for (const [id, amt] of Object.entries(sideStakes)) {
+      const result = table.resolveSideBet(id, amt, roll);
+      messages.push(result.message);
+      if (result.payout > 0) {
+        session.wallet.credit(result.payout, "craps", result.message);
+        crapsState.sessionNet += result.payout;
+      }
+    }
+
+    for (const [id, amt] of Object.entries({ ...crapsState.hardways })) {
+      const result = table.resolveSideBet(id, amt, roll);
+      messages.push(result.message);
+      if (!result.working) {
+        delete crapsState.hardways[id];
+        if (result.payout > 0) {
+          session.wallet.credit(result.payout, "craps", result.message);
+          crapsState.sessionNet += result.payout;
+        }
+      }
+    }
+
+    crapsState.log = [...messages, ...(crapsState.log || [])].slice(0, 12);
+    persist();
+    render();
+  }
+
+  function pressHardway(id) {
+    const amount = parseInt(amountInput.value, 10) || wagerStakes.minBet;
+    if (crapsState.hardways[id]) { alert("That hardway is already working."); return; }
+    if (amount < wagerStakes.minBet) { alert(`Minimum is ${wagerStakes.minBet}.`); return; }
+    if (!session.wallet.debit(amount, "craps", `Craps ${id}`)) { alert("Insufficient chips."); return; }
+    crapsState.hardways[id] = amount;
+    crapsState.lastWager = amount;
+    crapsState.sessionNet -= amount;
+    crapsState.log = [`Hardway ${id} pressed for ${fmtChips(amount)}.`, ...(crapsState.log || [])].slice(0, 12);
+    persist();
+    render();
+  }
+
+  return videoMachine("craps", {
+    title: "CRAPS",
+    screenChildren: [
+      dealerPanel("craps"),
+      el("p", {
+        className: "machine-status",
+        textContent: `${phaseLabel} · Line ${workingLine} · Session ${signedChips(crapsState.sessionNet)} · ${crapsState.rolls} roll(s)`,
+      }),
+      renderCrapsDice(table.lastRoll),
+      el("div", { className: "craps-point-lamp" }, [
+        el("span", { textContent: table.point ? `Point: ${table.point}` : "Come-out" }),
+      ]),
+      machineLog(crapsState.log || [], { max: 10 }),
+      el("div", { className: "form-row" }, [el("label", { textContent: "Line" }), lineSelect]),
+      el("div", { className: "form-row" }, [el("label", { textContent: "Amount" }), amountInput]),
+      el("div", { className: "craps-sides" }, [
+        el("div", { className: "form-row" }, [el("label", { textContent: "Field" }), fieldInput]),
+        el("div", { className: "form-row" }, [el("label", { textContent: "Any Craps" }), anyCrapsInput]),
+        el("div", { className: "form-row" }, [el("label", { textContent: "Any Seven" }), anySevenInput]),
+      ]),
+    ],
+    controls: el("div", { className: "action-bar" }, [
+      el("button", { className: "btn primary", textContent: "Roll dice", onclick: doRoll }),
+      el("button", { className: "btn", textContent: "Hard 4", onclick: () => pressHardway("hard_4") }),
+      el("button", { className: "btn", textContent: "Hard 6", onclick: () => pressHardway("hard_6") }),
+      el("button", { className: "btn", textContent: "Hard 8", onclick: () => pressHardway("hard_8") }),
+      el("button", { className: "btn", textContent: "Hard 10", onclick: () => pressHardway("hard_10") }),
+      el("button", { className: "btn", textContent: "Leave table", onclick: leaveCraps }),
+    ]),
+    footerExtra: el("span", { className: "machine-led", textContent: phaseLabel }),
+  });
+}
+
+function renderLottery() {
+  const act = ACTIVITIES.lottery;
+  if (session.wallet.balance < act.minBet) {
+    return el("div", { className: "panel" }, [
+      banner("Lottery Counter"),
+      el("p", { className: "error", textContent: `You need at least ${act.minBet} chips for a ticket.` }),
+      el("div", { className: "action-bar" }, [
+        el("button", { className: "btn", textContent: "Back", onclick: () => goBack() }),
+      ]),
+    ]);
+  }
+  recordActivityVisit("lottery");
+  persist();
+
+  const ticketIds = Object.keys(TICKET_TYPES);
+  const ticketSelect = el("select", {}, ticketIds.map((id) =>
+    el("option", {
+      value: id,
+      textContent: `${TICKET_TYPES[id].name} — ${TICKET_TYPES[id].price} chips`,
+      selected: id === lotteryState.lastTicketId,
+    })
+  ));
+  const picksInput = el("input", {
+    type: "text",
+    placeholder: "Digits / balls (blank = Quick Pick)",
+    value: "",
+  });
+  const megaInput = el("input", { type: "number", min: "1", max: "20", value: "7" });
+  const resultEl = el("div", { className: "lottery-result" });
+  if (lotteryState.lastResult) {
+    const r = lotteryState.lastResult;
+    resultEl.appendChild(el("p", {
+      className: r.win > 0 ? "success" : "dim",
+      textContent: r.reason,
+    }));
+    if (r.playerPicks?.length) {
+      resultEl.appendChild(el("p", { className: "dim", textContent: `Your pick: ${r.playerPicks.join(" ")}` }));
+    }
+    if (r.draw?.length) {
+      resultEl.appendChild(el("p", { className: "lottery-draw", textContent: `Draw: ${r.draw.join(" ")}` }));
+    }
+  }
+
+  function buyTicket() {
+    const ticketId = ticketSelect.value;
+    const meta = TICKET_TYPES[ticketId];
+    const price = meta.price;
+    if (!session.wallet.canAfford?.(price) && session.wallet.balance < price) {
+      alert("Insufficient chips.");
+      return;
+    }
+    let result;
+    if (ticketId === "pick3" || ticketId === "pick4") {
+      const digits = meta.digits;
+      let picks = parsePickInput(picksInput.value, digits);
+      if (!picks) picks = quickPickDigits(digits);
+      if (!session.wallet.debit(price, "lottery", meta.name)) { alert("Insufficient chips."); return; }
+      result = ticketId === "pick3" ? resolvePick3(picks, price) : resolvePick4(picks, price);
+    } else if (ticketId === "mega") {
+      let balls;
+      let mega;
+      const raw = picksInput.value.trim();
+      if (raw) {
+        balls = raw.split(/[,\s]+/).map((x) => parseInt(x, 10)).filter((n) => Number.isFinite(n));
+        balls = [...new Set(balls)].sort((a, b) => a - b);
+        if (balls.length !== 5 || balls.some((b) => b < 1 || b > 45)) {
+          alert("Enter five unique balls from 1–45.");
+          return;
+        }
+        mega = parseInt(megaInput.value, 10) || 7;
+      } else {
+        ({ balls, mega } = quickPickMega());
+      }
+      if (!session.wallet.debit(price, "lottery", meta.name)) { alert("Insufficient chips."); return; }
+      result = resolveMega(balls, mega, price);
+    } else {
+      if (!session.wallet.debit(price, "lottery", meta.name)) { alert("Insufficient chips."); return; }
+      result = resolveScratcher(ticketId);
+    }
+    lotteryState.tickets += 1;
+    lotteryState.sessionNet -= price;
+    lotteryState.lastTicketId = ticketId;
+    if (result.win > 0) {
+      session.wallet.credit(result.win, "lottery", result.reason);
+      lotteryState.sessionNet += result.win;
+    }
+    lotteryState.lastResult = result;
+    persist();
+    render();
+  }
+
+  return el("div", { className: "panel lottery-panel" }, [
+    banner("Lottery Counter — Mandalay Lottery"),
+    chipLine(),
+    el("p", {
+      className: "dim",
+      textContent: `Session ${signedChips(lotteryState.sessionNet)} · ${lotteryState.tickets} ticket(s)`,
+    }),
+    el("div", { className: "lottery-ticket-grid" }, ticketIds.map((id) => {
+      const t = TICKET_TYPES[id];
+      return el("button", {
+        className: `lottery-ticket-card${lotteryState.lastTicketId === id ? " lottery-ticket-card--active" : ""}`,
+        onclick: () => { ticketSelect.value = id; lotteryState.lastTicketId = id; render(); },
+      }, [
+        el("div", { className: "lottery-ticket-name", textContent: t.name }),
+        el("div", { className: "lottery-ticket-price", textContent: `${t.price} chips` }),
+        el("div", { className: "dim", textContent: t.description }),
+      ]);
+    })),
+    el("div", { className: "form-row" }, [el("label", { textContent: "Ticket" }), ticketSelect]),
+    el("div", { className: "form-row" }, [el("label", { textContent: "Numbers (optional)" }), picksInput]),
+    el("div", { className: "form-row" }, [el("label", { textContent: "Mega ball" }), megaInput]),
+    resultEl,
+    el("div", { className: "action-bar" }, [
+      el("button", { className: "btn primary", textContent: "Buy ticket", onclick: buyTicket }),
+      el("button", {
+        className: "btn",
+        textContent: "Leave counter",
+        onclick: () => {
+          recordActivityResult("lottery", lotteryState.sessionNet, lotteryState.tickets);
+          persist();
+          goBack();
+        },
+      }),
+    ]),
+  ]);
+}
+
+
 const RENDERERS = {
   "save-picker": renderSavePicker,
   "save-create": renderSaveCreate,
@@ -3667,6 +4286,8 @@ const RENDERERS = {
   "holdem-menu": renderHoldemMenu,
   "holdem-play": renderHoldemPlay,
   roulette: renderRoulette,
+  craps: renderCraps,
+  lottery: renderLottery,
   "horse-racing": renderHorseRacing,
   "horse-racing-wager": renderHorseRacingWager,
   "horse-racing-settle": renderHorseRacingSettle,

@@ -56,6 +56,8 @@ export function defaultRpgState(overrides = {}) {
     dex: {},
     eggs: {},
     mapVisits: {},
+    /** Tier preselected at every table and machine; set at the stakes desk. */
+    stakeTier: "penny",
     options: { muted: false, textSpeed: "normal", footsteps: true },
     ...overrides,
   };

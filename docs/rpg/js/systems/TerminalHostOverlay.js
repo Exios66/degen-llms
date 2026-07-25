@@ -1,4 +1,5 @@
 import { SportsbookState } from "../../../js/sportsbook.js";
+import { getTier } from "../../../js/stakes.js";
 import { onActivityVisit, onSessionSwing, syncContactIntros } from "../../../js/phone-contacts.js";
 import { createRuntime, createShell, createViewStack } from "../../../js/ui/shell.js";
 import { buildStakesRenderers } from "../../../js/ui/stakes-ui.js";
@@ -48,6 +49,10 @@ export class TerminalHostOverlay {
     this.runtime = createRuntime({
       sportsbook: SportsbookState.fromJSON(session.sportsbookData),
     });
+    // Carry the tier chosen at the stakes desk (or at the last table) into the
+    // next one, so a high roller is not re-picking "penny" all evening.
+    const saved = session.ensureRpgState?.().stakeTier;
+    if (saved) this.setStakeTier(getTier(saved));
 
     const ctx = {
       get session() { return session; },
@@ -104,10 +109,26 @@ export class TerminalHostOverlay {
       ...buildAmenitiesRenderers(ctx),
       [STAKE_DONE_VIEW]: () => {
         this._stakeChosen = true;
+        if (this.runtime.stakeTier) this.setStakeTier(this.runtime.stakeTier);
         queueMicrotask(() => this.close());
         return null;
       },
     };
+  }
+
+  /**
+   * Preselect a stake tier everywhere it is read.
+   *
+   * The per-activity copies exist because each game reads its own; setting the
+   * shared one alone would leave slots and craps on whatever they last saw.
+   */
+  setStakeTier(tier) {
+    this.runtime.stakeTier = tier;
+    for (const game of ["slots", "roulette", "craps", "horseRacing", "dressage", "jumper"]) {
+      if (this.runtime[game]) this.runtime[game].tier = tier;
+    }
+    const rpg = this.session.ensureRpgState?.();
+    if (rpg) rpg.stakeTier = tier.id;
   }
 
   /**

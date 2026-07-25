@@ -1,6 +1,8 @@
 import { fmtChips } from "../../../js/core.js";
 import { getResortCompletion } from "../../../js/resort-completion.js";
 import { getWorldCycleSummary } from "../../../js/world-cycle.js";
+import { STAKE_TIERS, TIER_ORDER, getTier } from "../../../js/stakes.js";
+import { doorsForMap, getMapDefinition, mapIds } from "./MapData.js";
 import { DEX_COLLECTIONS, dexEntries, dexProgress } from "./Dex.js";
 import { bagContents, equipItem } from "./Inventory.js";
 import { EGG_REGISTRY, foundEggs } from "./EasterEggs.js";
@@ -156,6 +158,8 @@ export class MenuOverlay {
       root: () => this._renderRoot(body),
       trainer: () => this._renderTrainer(body),
       wardrobe: () => this._renderWardrobe(body),
+      stakes: () => this._renderStakes(body),
+      directory: () => this._renderDirectory(body),
       quests: () => this._renderQuests(body),
       dex: () => this._renderDex(body),
       bag: () => this._renderBag(body),
@@ -222,6 +226,8 @@ export class MenuOverlay {
     this._list(body, [
       { label: "Trainer Card", detail: `${quests.filter((q) => q.complete).length} badges`, onSelect: () => this._go("trainer") },
       { label: "Wardrobe", detail: "Restyle your guest", onSelect: () => this._go("wardrobe") },
+      { label: "Stakes Desk", detail: this._tierName(), onSelect: () => this._go("stakes") },
+      { label: "Resort Directory", detail: `${this._visitedCount()}/${mapIds().length} rooms`, onSelect: () => this._go("directory") },
       { label: "Quests", detail: `${openQuests} open`, onSelect: () => this._go("quests") },
       { label: "Dex", detail: `${dex} found`, onSelect: () => this._go("dex") },
       { label: "Bag", detail: `${bagContents(this.session).length} items`, onSelect: () => this._go("bag") },
@@ -262,6 +268,113 @@ export class MenuOverlay {
     this._list(body, [
       { label: "Change outfit", onSelect: () => this._go("wardrobe") },
     ]);
+  }
+
+  _tierName() {
+    return getTier(this.rpg.stakeTier ?? "penny").name;
+  }
+
+  _visitedCount() {
+    return mapIds().filter((id) => this.rpg.mapVisits?.[id]).length;
+  }
+
+  /**
+   * Stakes desk: pick the tier you sit down at, away from a table.
+   *
+   * The picker that runs when you take a seat only ever showed the tiers in
+   * passing, so which ones existed and what they cost was something you learned
+   * by walking up to a dealer. Choosing here presets every table and machine.
+   */
+  _renderStakes(body) {
+    const balance = this.session.wallet.balance;
+    const current = this.rpg.stakeTier ?? "penny";
+    body.innerHTML = `
+      <h3>Stakes Desk</h3>
+      <p class="dim">The tier you pick here is preselected at every table and
+      machine. You can still change it when you sit down.</p>
+      <p>Floor chips: ${fmtChips(balance)}</p>
+    `;
+    this._list(body, TIER_ORDER.map((id) => {
+      const tier = STAKE_TIERS[id];
+      const max = tier.maxBet === null ? "no max" : fmtChips(tier.maxBet);
+      const afford = balance >= tier.minBet;
+      return {
+        label: `${tier.name}${id === current ? " ✓" : ""}`,
+        detail: afford
+          ? `${fmtChips(tier.minBet)}–${max}`
+          : `locked · needs ${fmtChips(tier.minBet)}`,
+        onSelect: () => {
+          if (!afford) {
+            this._status = `${tier.name} opens at ${fmtChips(tier.minBet)} chips.`;
+            this._render();
+            return;
+          }
+          this.rpg.stakeTier = id;
+          this.deps.terminalHost?.setStakeTier?.(tier);
+          this.deps.onPersist?.();
+          this._status = `Stakes set to ${tier.name}.`;
+          this._render();
+        },
+      };
+    }));
+  }
+
+  /**
+   * Resort directory: what exists, what you have seen, and how rooms connect.
+   *
+   * The resort is 30-odd rooms deep and several are behind a gate or a flag, so
+   * without this the only way to know a wing exists is to have already found it.
+   */
+  _renderDirectory(body) {
+    const here = this.rpg.mapId;
+    const visits = this.rpg.mapVisits ?? {};
+    body.innerHTML = `
+      <h3>Resort Directory</h3>
+      <p class="dim">You are in <strong>${getMapDefinition(here)?.label ?? here}</strong>.
+      ${this._visitedCount()} of ${mapIds().length} rooms explored.</p>
+    `;
+    // A room you have stood in is listed with its exits. A room you have only
+    // seen a door to is listed as a lead. The rest stay hidden, rather than
+    // padding the list with two dozen identical "???" rows.
+    const label = (id) => getMapDefinition(id)?.label ?? id;
+    const leads = new Map();
+    for (const id of mapIds()) {
+      if (!visits[id]) continue;
+      for (const door of doorsForMap(id)) {
+        if (visits[door.targetMap]) continue;
+        if (!leads.has(door.targetMap)) leads.set(door.targetMap, []);
+        leads.get(door.targetMap).push(label(id));
+      }
+    }
+
+    const ul = document.createElement("ul");
+    ul.className = "menu-quest-list";
+    for (const id of mapIds().filter((m) => visits[m])) {
+      const exits = doorsForMap(id).map((d) => label(d.targetMap));
+      const li = document.createElement("li");
+      li.className = id === here ? "quest-complete" : "";
+      li.innerHTML = `<strong>${label(id)}</strong>` +
+        `<span class="menu-detail">${id === here ? "you are here" : "visited"}</span>` +
+        `<span class="dim">Exits: ${exits.join(" · ") || "none"}</span>`;
+      ul.appendChild(li);
+    }
+    for (const [id, from] of leads) {
+      const li = document.createElement("li");
+      li.innerHTML = `<strong>${label(id)}</strong>` +
+        `<span class="menu-detail">not yet visited</span>` +
+        `<span class="dim">Door from ${from.join(" · ")}</span>`;
+      ul.appendChild(li);
+    }
+    body.appendChild(ul);
+
+    const hidden = mapIds().filter((id) => !visits[id] && !leads.has(id)).length;
+    if (hidden) {
+      const p = document.createElement("p");
+      p.className = "dim";
+      p.textContent = `${hidden} more ${hidden === 1 ? "room is" : "rooms are"} still hidden ` +
+        "somewhere in the resort.";
+      body.appendChild(p);
+    }
   }
 
   /**

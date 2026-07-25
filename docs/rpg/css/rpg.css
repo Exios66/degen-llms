@@ -43,17 +43,21 @@ body {
   align-items: center;
   justify-content: center;
   background:
-    radial-gradient(ellipse at 50% 0%, rgba(232, 197, 71, 0.08) 0%, transparent 55%),
-    var(--bg);
+    radial-gradient(ellipse at 50% 12%, rgba(232, 197, 71, 0.14) 0%, transparent 42%),
+    radial-gradient(ellipse at 20% 80%, rgba(57, 197, 207, 0.06) 0%, transparent 40%),
+    radial-gradient(ellipse at 80% 75%, rgba(198, 120, 221, 0.05) 0%, transparent 38%),
+    linear-gradient(180deg, #120e1c 0%, var(--bg) 45%, #08060e 100%);
 }
 
 #game-shell.arcade-cabinet {
   border: 14px solid #1a1520;
   box-shadow:
-    inset 0 0 0 4px #3a3048,
-    inset 0 0 0 8px #0a0812,
-    0 0 0 6px #2a2438,
-    0 24px 64px rgba(0, 0, 0, 0.75);
+    inset 0 0 0 3px #4a3a58,
+    inset 0 0 0 7px #2a2038,
+    inset 0 0 0 10px #0a0812,
+    0 0 0 2px #e8c54733,
+    0 0 0 7px #2a2438,
+    0 28px 72px rgba(0, 0, 0, 0.8);
 }
 
 #game-shell.arcade-cabinet::before {
@@ -65,20 +69,43 @@ body {
   z-index: 30;
   font-size: 7px;
   color: var(--gold);
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
   pointer-events: none;
-  opacity: 0.85;
+  opacity: 0.92;
+  text-shadow: 0 0 8px rgba(232, 197, 71, 0.35);
+}
+
+#game-shell.arcade-cabinet::after {
+  content: "";
+  position: absolute;
+  inset: 14px;
+  z-index: 25;
+  pointer-events: none;
+  border-radius: 2px;
+  box-shadow:
+    inset 0 0 48px rgba(0, 0, 0, 0.45),
+    inset 0 0 120px rgba(8, 4, 16, 0.35);
+  background:
+    radial-gradient(ellipse at 50% 40%, transparent 55%, rgba(0, 0, 0, 0.28) 100%);
 }
 
 #game-shell.konami-mode {
   filter: contrast(1.15) saturate(0.65) hue-rotate(-15deg);
 }
 
+#phaser-root {
+  position: relative;
+  z-index: 1;
+}
+
 #phaser-root canvas {
   image-rendering: pixelated;
   image-rendering: crisp-edges;
   touch-action: none;
-  box-shadow: 0 0 0 4px var(--border), 0 12px 48px rgba(0, 0, 0, 0.6);
+  box-shadow:
+    0 0 0 3px #3a3048,
+    0 0 0 5px #0a0812,
+    0 16px 56px rgba(0, 0, 0, 0.7);
 }
 
 #hud {

@@ -1,0 +1,70 @@
+# Mandalay Bay — dedicated PyPI / pip publish manifest
+#
+# Bundles mandalay_bay + blackjack (shared monorepo libs; circular imports).
+#
+# Build wheel + sdist (from repository root):
+#   bash scripts/build_mandalay_bay_package.sh
+#
+# Or manually:
+#   python -m pip install build twine
+#   bash scripts/build_mandalay_bay_package.sh
+#   twine upload dist/mandalay-bay/*
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mandalay-bay"
+version = "1.0.0"
+description = "The Mandalay Bay — digital resort simulator CLI (casino, hotel, pool, MGM Rewards)"
+readme = "mandalay_bay/README.md"
+license = "MIT"
+requires-python = ">=3.11"
+authors = [
+  { name = "Jack J. Burleson", email = "jackjburleson@users.noreply.github.com" },
+]
+maintainers = [
+  { name = "Jack J. Burleson", email = "jackjburleson@users.noreply.github.com" },
+]
+keywords = [
+  "casino",
+  "game",
+  "cli",
+  "vegas",
+  "resort",
+  "blackjack",
+  "slots",
+  "sportsbook",
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Environment :: Console",
+  "Intended Audience :: End Users/Desktop",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Games/Entertainment",
+]
+
+[project.urls]
+Homepage = "https://exios66.github.io/degen-llms/"
+Documentation = "https://github.com/Exios66/degen-llms/wiki"
+Repository = "https://github.com/Exios66/degen-llms"
+Issues = "https://github.com/Exios66/degen-llms/issues"
+"Play (Web)" = "https://exios66.github.io/degen-llms/"
+"Pixel RPG" = "https://exios66.github.io/degen-llms/rpg/"
+
+[project.scripts]
+mandalay-bay = "mandalay_bay.main:main"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["mandalay_bay*", "blackjack*"]
+
+[tool.setuptools.package-data]
+mandalay_bay = ["data/*.json", "data/*.csv"]

@@ -1,0 +1,82 @@
+{
+  "id": "foundation_room",
+  "label": "Foundation Room",
+  "bgm": "secret",
+  "spawn": {
+    "x": 15,
+    "y": 26
+  },
+  "base": "WALL",
+  "rects": [
+    {
+      "tile": "VIP",
+      "x": 3,
+      "y": 3,
+      "w": 24,
+      "h": 25
+    },
+    {
+      "tile": "FELT",
+      "x": 9,
+      "y": 9,
+      "w": 13,
+      "h": 10
+    },
+    {
+      "tile": "GLASS",
+      "x": 3,
+      "y": 3,
+      "w": 24,
+      "h": 1
+    }
+  ],
+  "decor": [
+    {
+      "tile": "BAR",
+      "x": 12,
+      "y": 6,
+      "w": 7,
+      "h": 1
+    },
+    {
+      "tile": "PLANT",
+      "points": [
+        [
+          5,
+          12
+        ],
+        [
+          25,
+          12
+        ],
+        [
+          5,
+          22
+        ],
+        [
+          25,
+          22
+        ]
+      ]
+    }
+  ],
+  "clear": [
+    {
+      "tile": "VIP",
+      "x": 14,
+      "y": 26,
+      "w": 3,
+      "h": 3
+    }
+  ],
+  "doors": [
+    {
+      "x": 15,
+      "y": 27,
+      "to": "high_limit_salon",
+      "toX": 15,
+      "toY": 4,
+      "message": "Back to the high limit salon."
+    }
+  ]
+}

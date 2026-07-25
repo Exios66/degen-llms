@@ -1,0 +1,97 @@
+{
+  "id": "beach_club",
+  "label": "Moorea Beach Club",
+  "bgm": "encounter",
+  "spawn": {
+    "x": 15,
+    "y": 3
+  },
+  "base": "WALL",
+  "rects": [
+    {
+      "tile": "SAND",
+      "x": 2,
+      "y": 2,
+      "w": 26,
+      "h": 26
+    },
+    {
+      "tile": "STAGE",
+      "x": 10,
+      "y": 8,
+      "w": 11,
+      "h": 8
+    }
+  ],
+  "decor": [
+    {
+      "tile": "BAR",
+      "x": 6,
+      "y": 22,
+      "w": 6,
+      "h": 1
+    },
+    {
+      "tile": "BAR",
+      "x": 18,
+      "y": 22,
+      "w": 6,
+      "h": 1
+    },
+    {
+      "tile": "PLANT",
+      "points": [
+        [
+          4,
+          5
+        ],
+        [
+          25,
+          5
+        ],
+        [
+          4,
+          25
+        ],
+        [
+          25,
+          25
+        ]
+      ]
+    }
+  ],
+  "clear": [
+    {
+      "tile": "SAND",
+      "x": 14,
+      "y": 1,
+      "w": 3,
+      "h": 4
+    },
+    {
+      "tile": "SAND",
+      "x": 25,
+      "y": 14,
+      "w": 3,
+      "h": 3
+    }
+  ],
+  "doors": [
+    {
+      "x": 15,
+      "y": 2,
+      "to": "mandalay_beach",
+      "toX": 15,
+      "toY": 26,
+      "message": "Back to the beach."
+    },
+    {
+      "x": 27,
+      "y": 15,
+      "to": "rave_stage",
+      "toX": 15,
+      "toY": 26,
+      "message": "The rave stage, after dark."
+    }
+  ]
+}

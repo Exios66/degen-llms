@@ -16,7 +16,10 @@ import { MenuOverlay } from "./systems/MenuOverlay.js";
 import { loadEggRegistry, syncEggsFromFlags, discoverEgg, eggForFlag } from "./systems/EasterEggs.js";
 import { RPG_ITEMS, giveItem } from "./systems/Inventory.js";
 import { audioManager } from "./systems/AudioManager.js";
-import { TILE_SIZE, MAP_WIDTH, MAP_HEIGHT } from "./systems/MapData.js";
+import {
+  TILE_SIZE, MAP_WIDTH, MAP_HEIGHT, installWorld, DEFAULT_MAP_ID,
+} from "./systems/MapData.js";
+import { loadWorld } from "./systems/MapLoader.js";
 import { RewardsPhone } from "../../js/RewardsPhone.js";
 import { syncRewardsFlags } from "../../js/rewards.js";
 import { enterZone, ensurePoolComplex } from "../../js/pool-complex.js";
@@ -128,12 +131,20 @@ async function startOverworld(activeSession) {
   syncContactIntros(session);
   dialogue.setFlags(rpg.flags ?? {});
 
-  const [dialogues, triggers, questDefs, eggDefs] = await Promise.all([
+  const [dialogues, triggers, questDefs, eggDefs, world] = await Promise.all([
     loadDialogues(),
     loadJson("js/data/triggers.json", []),
     loadJson("js/data/quests.json", null),
     loadJson("js/data/easter_eggs.json", null),
+    loadWorld(),
   ]);
+  const knownMaps = new Set(installWorld(world));
+  // A save can point at a map id that a later world revision dropped.
+  if (!knownMaps.has(rpg.mapId)) {
+    rpg.mapId = DEFAULT_MAP_ID;
+    rpg.x = null;
+    rpg.y = null;
+  }
   loadEggRegistry(eggDefs);
   syncEggsFromFlags(session);
 

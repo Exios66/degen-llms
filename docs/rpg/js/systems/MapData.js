@@ -1,33 +1,7 @@
-/** Tile type constants for the resort maps. */
-export const TILE = {
-  VOID: 0,
-  LOBBY: 1,
-  CARPET: 2,
-  FELT: 3,
-  PLANT: 4,
-  WATER: 5,
-  WALL: 6,
-  BAR: 7,
-  SLOT: 8,
-  SCREEN: 9,
-  VIP: 10,
-  AQUA: 11,
-};
+import { COLLISION, MAP_HEIGHT, MAP_WIDTH, TILE, TILE_SIZE } from "./MapTiles.js";
+import { compileMap, finalizeLayers } from "./MapLoader.js";
 
-export const TILE_SIZE = 16;
-export const MAP_WIDTH = 30;
-export const MAP_HEIGHT = 30;
-
-/** Collision tiles — player cannot walk here. */
-export const COLLISION = new Set([
-  TILE.VOID,
-  TILE.PLANT,
-  TILE.WALL,
-  TILE.WATER,
-  TILE.BAR,
-  TILE.SLOT,
-  TILE.SCREEN,
-]);
+export { COLLISION, MAP_HEIGHT, MAP_WIDTH, TILE, TILE_SIZE };
 
 /** @typedef {'blackjack' | 'holdem' | 'roulette'} PitZone */
 
@@ -59,31 +33,8 @@ function emptyLayers() {
   return { ground, collision, decor };
 }
 
-function sealWalls(ground, collision) {
-  for (let y = 0; y < MAP_HEIGHT; y++) {
-    for (let x = 0; x < MAP_WIDTH; x++) {
-      if (x === 0 || x === MAP_WIDTH - 1 || y === 0 || y === MAP_HEIGHT - 1) {
-        ground[y][x] = TILE.WALL;
-        collision[y][x] = 1;
-      }
-    }
-  }
-}
-
 function finalize(ground, collision, decor) {
-  for (let y = 0; y < MAP_HEIGHT; y++) {
-    for (let x = 0; x < MAP_WIDTH; x++) {
-      const tile = ground[y][x];
-      const decorTile = decor[y][x];
-      // decor 0 means "no decor" — do not treat as TILE.VOID collision
-      const blocked =
-        COLLISION.has(tile) ||
-        (decorTile !== 0 && COLLISION.has(decorTile));
-      collision[y][x] = blocked ? 1 : 0;
-    }
-  }
-  sealWalls(ground, collision);
-  return { ground, collision, decor };
+  return finalizeLayers(ground, collision, decor);
 }
 
 /** Phase 2+ NPC placements — pit zones + venue staff. */
@@ -329,8 +280,8 @@ export function buildMapLayers() {
 
 export const SPAWN_DEFAULT = { x: 15, y: 26 };
 
-/** Door warps between resort maps. */
-export const DOOR_TRIGGERS = [
+/** Fallback door warps, used only when js/data/maps/ cannot be fetched. */
+const FALLBACK_DOORS = [
   { mapId: "main_resort", x: 26, y: 21, targetMap: "hotel_tower", targetX: 15, targetY: 26, message: "Gold elevator to the hotel tower." },
   { mapId: "main_resort", x: 3, y: 21, targetMap: "mandalay_beach", targetX: 15, targetY: 26, message: "Exit to the 11-acre pool complex." },
   { mapId: "main_resort", x: 15, y: 2, targetMap: "high_limit_salon", targetX: 15, targetY: 26, message: "High Limit Salon — velvet rope.", venueGate: "high_limit_salon" },
@@ -349,8 +300,8 @@ export const DOOR_TRIGGERS = [
   { mapId: "main_resort", x: 15, y: 1, targetMap: "staff_corridor", targetX: 15, targetY: 26, message: "STAFF ONLY — you found the back room.", requiresFlag: "hint_north_wall" },
 ];
 
-/** NPCs per map. */
-export const MAP_NPCS = {
+/** Fallback NPC placements, used only when js/data/npcs.json is unavailable. */
+const FALLBACK_NPCS = {
   main_resort: NPCS,
   hotel_tower: [
     {
@@ -524,10 +475,6 @@ export const MAP_NPCS = {
   ],
 };
 
-export function getNpcsForMap(mapId) {
-  return MAP_NPCS[mapId] ?? MAP_NPCS.main_resort;
-}
-
 function buildCorridorMap(floorTile, centerDecor = 0) {
   const { ground, collision, decor } = emptyLayers();
   for (let y = 1; y < MAP_HEIGHT - 1; y++) {
@@ -648,7 +595,8 @@ export function buildHighLimitSalonLayers() {
   return finalize(ground, collision, decor);
 }
 
-export const MAP_REGISTRY = {
+/** Procedural fallback builders, kept as the generator of last resort. */
+const FALLBACK_REGISTRY = {
   main_resort: { build: buildMapLayers, spawn: { x: 15, y: 26 }, label: "Casino Lobby" },
   hotel_tower: { build: buildHotelTowerLayers, spawn: { x: 15, y: 26 }, label: "Hotel Tower" },
   mandalay_beach: { build: buildMandalayBeachLayers, spawn: { x: 15, y: 26 }, label: "Pool Complex" },
@@ -660,12 +608,106 @@ export const MAP_REGISTRY = {
   high_limit_salon: { build: buildHighLimitSalonLayers, spawn: { x: 15, y: 26 }, label: "High Limit Salon" },
 };
 
+// ── Authored world ─────────────────────────────────────────────────────────
+//
+// `installWorld()` swaps in the records fetched from js/data/maps/ and
+// js/data/npcs.json. Until then — and if the fetch fails — every accessor
+// answers from the procedural fallbacks above, so the RPG always boots.
+
+/** @type {Record<string, object>} */
+let authoredMaps = {};
+/** @type {Record<string, object[]>} */
+let authoredNpcs = {};
+const layerCache = new Map();
+
+/**
+ * @param {{ maps: Record<string, object>, npcs: Record<string, object[]> } | null} world
+ */
+export function installWorld(world) {
+  authoredMaps = world?.maps ?? {};
+  authoredNpcs = world?.npcs ?? {};
+  layerCache.clear();
+  return mapIds();
+}
+
+/** True once authored map data has been installed. */
+export function hasAuthoredWorld() {
+  return Object.keys(authoredMaps).length > 0;
+}
+
+export function mapIds() {
+  return hasAuthoredWorld() ? Object.keys(authoredMaps) : Object.keys(FALLBACK_REGISTRY);
+}
+
+/** The map every save falls back to when its recorded map no longer exists. */
+export const DEFAULT_MAP_ID = "main_resort";
+
+/**
+ * @returns {{ id: string, label: string, spawn: { x: number, y: number },
+ *             bgm?: string, doors: object[] }}
+ */
 export function getMapDefinition(mapId) {
-  return MAP_REGISTRY[mapId] ?? MAP_REGISTRY.main_resort;
+  const authored = authoredMaps[mapId] ?? authoredMaps[DEFAULT_MAP_ID];
+  if (authored) {
+    return {
+      id: authored.id,
+      label: authored.label ?? authored.id,
+      spawn: authored.spawn ?? SPAWN_DEFAULT,
+      bgm: authored.bgm,
+      doors: authored.doors ?? [],
+    };
+  }
+  const fallback = FALLBACK_REGISTRY[mapId] ?? FALLBACK_REGISTRY[DEFAULT_MAP_ID];
+  return {
+    id: mapId in FALLBACK_REGISTRY ? mapId : DEFAULT_MAP_ID,
+    label: fallback.label,
+    spawn: fallback.spawn,
+    doors: FALLBACK_DOORS.filter((d) => d.mapId === mapId),
+  };
 }
 
 export function buildMapLayersForId(mapId) {
-  return getMapDefinition(mapId).build();
+  const id = getMapDefinition(mapId).id;
+  if (!layerCache.has(id)) {
+    const authored = authoredMaps[id];
+    layerCache.set(id, authored
+      ? compileMap(authored)
+      : (FALLBACK_REGISTRY[id] ?? FALLBACK_REGISTRY[DEFAULT_MAP_ID]).build());
+  }
+  // Hand out a copy: the scene punches holes in the grid for unlocked shortcuts.
+  const cached = layerCache.get(id);
+  return {
+    ground: cached.ground.map((row) => row.slice()),
+    collision: cached.collision.map((row) => row.slice()),
+    decor: cached.decor.map((row) => row.slice()),
+  };
+}
+
+export function getNpcsForMap(mapId) {
+  if (hasAuthoredWorld()) return authoredNpcs[mapId] ?? [];
+  return FALLBACK_NPCS[mapId] ?? FALLBACK_NPCS[DEFAULT_MAP_ID];
+}
+
+/**
+ * Every warp leaving a map, normalized to one shape whichever source it came
+ * from. Authored doors use `to`/`toX`/`toY`; the fallbacks use the older
+ * `targetMap`/`targetX`/`targetY`.
+ * @returns {{ x: number, y: number, targetMap: string, targetX: number,
+ *             targetY: number, message?: string, venueGate?: string,
+ *             requiresFlag?: string, requiresChips?: number }[]}
+ */
+export function doorsForMap(mapId) {
+  return getMapDefinition(mapId).doors.map((d) => ({
+    ...d,
+    targetMap: d.to ?? d.targetMap,
+    targetX: d.toX ?? d.targetX,
+    targetY: d.toY ?? d.targetY,
+  }));
+}
+
+/** @returns {object | null} the door on `mapId` at this tile, if any */
+export function doorAt(mapId, x, y) {
+  return doorsForMap(mapId).find((d) => d.x === x && d.y === y) ?? null;
 }
 
 /** Day-phase ids from world-cycle.js, in order. */

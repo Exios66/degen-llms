@@ -1,0 +1,98 @@
+{
+  "id": "delano_wing",
+  "label": "Delano Wing",
+  "bgm": "secret",
+  "spawn": {
+    "x": 26,
+    "y": 15
+  },
+  "base": "WALL",
+  "rects": [
+    {
+      "tile": "LOBBY",
+      "x": 2,
+      "y": 2,
+      "w": 26,
+      "h": 26
+    },
+    {
+      "tile": "VIP",
+      "x": 8,
+      "y": 8,
+      "w": 14,
+      "h": 14
+    }
+  ],
+  "decor": [
+    {
+      "tile": "PLANT",
+      "points": [
+        [
+          5,
+          5
+        ],
+        [
+          24,
+          5
+        ],
+        [
+          5,
+          24
+        ],
+        [
+          24,
+          24
+        ],
+        [
+          14,
+          5
+        ],
+        [
+          15,
+          24
+        ]
+      ]
+    },
+    {
+      "tile": "BAR",
+      "x": 12,
+      "y": 12,
+      "w": 6,
+      "h": 1
+    }
+  ],
+  "clear": [
+    {
+      "tile": "LOBBY",
+      "x": 25,
+      "y": 14,
+      "w": 3,
+      "h": 3
+    },
+    {
+      "tile": "LOBBY",
+      "x": 14,
+      "y": 26,
+      "w": 3,
+      "h": 3
+    }
+  ],
+  "doors": [
+    {
+      "x": 27,
+      "y": 15,
+      "to": "hotel_tower",
+      "toX": 3,
+      "toY": 15,
+      "message": "Back to the Mandalay tower."
+    },
+    {
+      "x": 15,
+      "y": 27,
+      "to": "spa",
+      "toX": 15,
+      "toY": 3,
+      "message": "Bathhouse spa, lower level."
+    }
+  ]
+}

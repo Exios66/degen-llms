@@ -1,0 +1,758 @@
+{
+  "strip_sidewalk": [
+    {
+      "id": "doorman_dante",
+      "name": "Doorman Dante",
+      "x": 15,
+      "y": 6,
+      "sprite": "npc_red",
+      "dialogueId": "doorman_dante_greet",
+      "direction": "down"
+    },
+    {
+      "id": "cab_line_carl",
+      "name": "Cab Line Carl",
+      "x": 9,
+      "y": 21,
+      "sprite": "npc_silver",
+      "dialogueId": "cab_line_carl_greet",
+      "direction": "up",
+      "schedule": {
+        "late": {
+          "x": 20,
+          "y": 21
+        }
+      }
+    }
+  ],
+  "valet_garage": [
+    {
+      "id": "valet_vic",
+      "name": "Valet Vic",
+      "x": 15,
+      "y": 8,
+      "sprite": "npc_orange",
+      "dialogueId": "valet_vic_greet",
+      "direction": "down",
+      "sight": {
+        "dir": "down",
+        "range": 4
+      },
+      "challengeDialogueId": "valet_vic_challenge"
+    }
+  ],
+  "registration_lobby": [
+    {
+      "id": "chip_chandler",
+      "name": "Chip Chandler",
+      "x": 15,
+      "y": 22,
+      "sprite": "npc_gold",
+      "dialogueId": "chip_chandler_intro",
+      "direction": "down"
+    },
+    {
+      "id": "lobby_statue",
+      "name": "Golden Statue",
+      "x": 15,
+      "y": 15,
+      "sprite": "npc_gold",
+      "dialogueId": "lobby_statue",
+      "direction": "down"
+    },
+    {
+      "id": "tourist_tina",
+      "name": "Tourist Tina",
+      "x": 9,
+      "y": 18,
+      "sprite": "npc_silver",
+      "dialogueId": "tourist_tina",
+      "direction": "right",
+      "schedule": {
+        "dawn": {
+          "x": 20,
+          "y": 22
+        },
+        "dusk": {
+          "x": 21,
+          "y": 12
+        },
+        "late": {
+          "x": 6,
+          "y": 22
+        }
+      }
+    },
+    {
+      "id": "bell_desk_bruno",
+      "name": "Bell Desk Bruno",
+      "x": 12,
+      "y": 8,
+      "sprite": "npc_teal",
+      "dialogueId": "bell_desk_bruno_greet",
+      "direction": "down"
+    }
+  ],
+  "main_resort": [
+    {
+      "id": "pit_blackjack",
+      "name": "Blackjack Pit",
+      "x": 15,
+      "y": 11,
+      "sprite": "npc_green",
+      "dialogueId": "pit_blackjack_greet",
+      "zone": "blackjack",
+      "encounter": "blackjack",
+      "direction": "down",
+      "sight": {
+        "dir": "down",
+        "range": 5
+      }
+    },
+    {
+      "id": "pit_holdem",
+      "name": "Hold'em Pit",
+      "x": 11,
+      "y": 14,
+      "sprite": "npc_teal",
+      "dialogueId": "pit_holdem_greet",
+      "zone": "holdem",
+      "encounter": "holdem",
+      "direction": "down"
+    },
+    {
+      "id": "pit_roulette",
+      "name": "Roulette Pit",
+      "x": 19,
+      "y": 14,
+      "sprite": "npc_red",
+      "dialogueId": "pit_roulette_greet",
+      "zone": "roulette",
+      "encounter": "roulette",
+      "direction": "down"
+    },
+    {
+      "id": "spinster_sal",
+      "name": "Spinster Sal",
+      "x": 24,
+      "y": 14,
+      "sprite": "npc_pink",
+      "dialogueId": "spinster_sal_greet",
+      "challengeDialogueId": "spinster_sal_challenge",
+      "encounter": "slots_fortune",
+      "direction": "left",
+      "sight": {
+        "dir": "left",
+        "range": 4
+      },
+      "schedule": {
+        "dawn": {
+          "x": 24,
+          "y": 17
+        }
+      }
+    },
+    {
+      "id": "cashier_carmen",
+      "name": "Cashier Carmen",
+      "x": 20,
+      "y": 24,
+      "sprite": "npc_gold",
+      "dialogueId": "cashier_carmen_greet",
+      "encounter": "cashier",
+      "direction": "down"
+    },
+    {
+      "id": "security_sam",
+      "name": "Security Sam",
+      "x": 15,
+      "y": 6,
+      "sprite": "npc_red",
+      "dialogueId": "security_sam_greet",
+      "direction": "down",
+      "schedule": {
+        "dawn": {
+          "x": 11,
+          "y": 6
+        },
+        "midday": {
+          "x": 20,
+          "y": 19
+        },
+        "dusk": {
+          "x": 15,
+          "y": 6
+        },
+        "late": {
+          "x": 8,
+          "y": 22
+        }
+      }
+    },
+    {
+      "id": "high_limit_host",
+      "name": "High Limit Host",
+      "x": 15,
+      "y": 5,
+      "sprite": "npc_gold",
+      "dialogueId": "high_limit_host_greet",
+      "encounter": "high_limit_salon",
+      "direction": "down"
+    },
+    {
+      "id": "shop_clerk",
+      "name": "Shop Clerk",
+      "x": 10,
+      "y": 22,
+      "sprite": "npc_pink",
+      "dialogueId": "shop_clerk_greet",
+      "encounter": "amenities",
+      "direction": "down"
+    }
+  ],
+  "casino_floor_south": [
+    {
+      "id": "pavilion_paula",
+      "name": "Pavilion Paula",
+      "x": 20,
+      "y": 6,
+      "sprite": "npc_pink",
+      "dialogueId": "pavilion_paula_greet",
+      "encounter": "horse_racing",
+      "direction": "down"
+    },
+    {
+      "id": "arena_alex",
+      "name": "Arena Alex",
+      "x": 12,
+      "y": 6,
+      "sprite": "npc_teal",
+      "dialogueId": "arena_alex_greet",
+      "encounter": "dressage",
+      "direction": "down"
+    },
+    {
+      "id": "slot_tech_tessa",
+      "name": "Slot Tech Tessa",
+      "x": 6,
+      "y": 12,
+      "sprite": "npc_orange",
+      "dialogueId": "slot_tech_tessa_greet",
+      "encounter": "slots",
+      "direction": "right",
+      "sight": {
+        "dir": "right",
+        "range": 4
+      },
+      "challengeDialogueId": "slot_tech_tessa_challenge"
+    },
+    {
+      "id": "cocktail_cora",
+      "name": "Cocktail Cora",
+      "x": 15,
+      "y": 23,
+      "sprite": "npc_pink",
+      "dialogueId": "cocktail_cora_greet",
+      "encounter": "bar",
+      "direction": "down",
+      "schedule": {
+        "dawn": {
+          "x": 7,
+          "y": 23
+        }
+      }
+    }
+  ],
+  "race_sports_book": [
+    {
+      "id": "bookie_blake",
+      "name": "Bookie Blake",
+      "x": 15,
+      "y": 8,
+      "sprite": "npc_silver",
+      "dialogueId": "bookie_blake_greet",
+      "challengeDialogueId": "bookie_blake_challenge",
+      "encounter": "sportsbook",
+      "direction": "down",
+      "sight": {
+        "dir": "down",
+        "range": 5
+      },
+      "schedule": {
+        "late": {
+          "x": 8,
+          "y": 21
+        }
+      }
+    },
+    {
+      "id": "stable_hand_stu",
+      "name": "Stable Hand Stu",
+      "x": 24,
+      "y": 20,
+      "sprite": "npc_green",
+      "dialogueId": "stable_hand_stu_greet",
+      "encounter": "horse_stables",
+      "direction": "left"
+    }
+  ],
+  "high_limit_salon": [
+    {
+      "id": "salon_pit_boss",
+      "name": "Salon Pit Boss",
+      "x": 15,
+      "y": 21,
+      "sprite": "npc_gold",
+      "dialogueId": "salon_pit_boss_greet",
+      "encounter": "high_limit_salon",
+      "direction": "down"
+    },
+    {
+      "id": "salon_dealer",
+      "name": "Salon Dealer",
+      "x": 15,
+      "y": 12,
+      "sprite": "npc_green",
+      "dialogueId": "salon_dealer_greet",
+      "challengeDialogueId": "salon_dealer_challenge",
+      "zone": "blackjack",
+      "encounter": "blackjack",
+      "direction": "down",
+      "sight": {
+        "dir": "down",
+        "range": 6
+      }
+    },
+    {
+      "id": "salon_cage",
+      "name": "Salon Cage",
+      "x": 9,
+      "y": 21,
+      "sprite": "npc_silver",
+      "dialogueId": "salon_cage_greet",
+      "encounter": "cashier",
+      "direction": "right"
+    }
+  ],
+  "foundation_room": [
+    {
+      "id": "whale_whitney",
+      "name": "Whale Whitney",
+      "x": 11,
+      "y": 14,
+      "sprite": "npc_gold",
+      "dialogueId": "whale_whitney_greet",
+      "direction": "right"
+    },
+    {
+      "id": "whale_warren",
+      "name": "Whale Warren",
+      "x": 20,
+      "y": 14,
+      "sprite": "npc_gold",
+      "dialogueId": "whale_warren_greet",
+      "challengeDialogueId": "whale_warren_challenge",
+      "encounter": "slots_high_roller",
+      "direction": "left",
+      "sight": {
+        "dir": "left",
+        "range": 5
+      }
+    },
+    {
+      "id": "host_alexandra",
+      "name": "Host Alexandra",
+      "x": 15,
+      "y": 8,
+      "sprite": "npc_pink",
+      "dialogueId": "host_alexandra_greet",
+      "direction": "down"
+    }
+  ],
+  "mandalay_place": [
+    {
+      "id": "boutique_bianca",
+      "name": "Boutique Bianca",
+      "x": 8,
+      "y": 9,
+      "sprite": "npc_pink",
+      "dialogueId": "boutique_bianca_greet",
+      "encounter": "shops",
+      "direction": "right"
+    },
+    {
+      "id": "bag_check_bev",
+      "name": "Bag Check Bev",
+      "x": 21,
+      "y": 19,
+      "sprite": "npc_silver",
+      "dialogueId": "bag_check_bev_greet",
+      "encounter": "mall_bag",
+      "direction": "left"
+    }
+  ],
+  "sky_bridge": [
+    {
+      "id": "busker_bo",
+      "name": "Busker Bo",
+      "x": 15,
+      "y": 14,
+      "sprite": "npc_orange",
+      "dialogueId": "busker_bo_greet",
+      "direction": "down",
+      "sight": {
+        "dir": "down",
+        "range": 4
+      },
+      "challengeDialogueId": "busker_bo_challenge"
+    }
+  ],
+  "convention_center": [
+    {
+      "id": "badge_barry",
+      "name": "Badge Barry",
+      "x": 15,
+      "y": 12,
+      "sprite": "npc_teal",
+      "dialogueId": "badge_barry_greet",
+      "direction": "down"
+    },
+    {
+      "id": "vendor_val",
+      "name": "Vendor Val",
+      "x": 9,
+      "y": 18,
+      "sprite": "npc_orange",
+      "dialogueId": "vendor_val_greet",
+      "encounter": "shops",
+      "direction": "down"
+    }
+  ],
+  "betty_bar": [
+    {
+      "id": "barkeep_betty",
+      "name": "Barkeep Betty",
+      "x": 15,
+      "y": 8,
+      "sprite": "npc_orange",
+      "dialogueId": "barkeep_betty_greet",
+      "encounter": "bar",
+      "direction": "down",
+      "schedule": {
+        "dawn": {
+          "x": 10,
+          "y": 20
+        }
+      }
+    },
+    {
+      "id": "regular_reggie",
+      "name": "Regular Reggie",
+      "x": 11,
+      "y": 10,
+      "sprite": "npc_silver",
+      "dialogueId": "regular_reggie_greet",
+      "direction": "right"
+    }
+  ],
+  "skyfall_lounge": [
+    {
+      "id": "sommelier_sy",
+      "name": "Sommelier Sy",
+      "x": 15,
+      "y": 10,
+      "sprite": "npc_gold",
+      "dialogueId": "sommelier_sy_greet",
+      "encounter": "bar",
+      "direction": "down"
+    }
+  ],
+  "hotel_tower": [
+    {
+      "id": "clerk_carmen",
+      "name": "Clerk Carmen",
+      "x": 15,
+      "y": 9,
+      "sprite": "npc_pink",
+      "dialogueId": "clerk_carmen_greet",
+      "encounter": "hotel_front_desk",
+      "direction": "down"
+    },
+    {
+      "id": "concierge_cleo",
+      "name": "Concierge Cleo",
+      "x": 21,
+      "y": 12,
+      "sprite": "npc_teal",
+      "dialogueId": "concierge_cleo_greet",
+      "encounter": "guest_directory",
+      "direction": "left"
+    }
+  ],
+  "guest_corridor": [
+    {
+      "id": "housekeeper_hana",
+      "name": "Housekeeper Hana",
+      "x": 15,
+      "y": 12,
+      "sprite": "npc_green",
+      "dialogueId": "housekeeper_hana_greet",
+      "direction": "down",
+      "sight": {
+        "dir": "down",
+        "range": 5
+      },
+      "challengeDialogueId": "housekeeper_hana_challenge",
+      "schedule": {
+        "late": {
+          "x": 15,
+          "y": 22
+        }
+      }
+    },
+    {
+      "id": "hotel_room_door",
+      "name": "Room 24-118",
+      "x": 12,
+      "y": 8,
+      "sprite": "npc_gold",
+      "dialogueId": "hotel_room_door",
+      "encounter": "hotel_hallway",
+      "direction": "right"
+    }
+  ],
+  "guest_room": [
+    {
+      "id": "room_console",
+      "name": "Room Console",
+      "x": 15,
+      "y": 12,
+      "sprite": "npc_gold",
+      "dialogueId": "room_console_greet",
+      "encounter": "hotel_room",
+      "direction": "down"
+    },
+    {
+      "id": "minibar",
+      "name": "Minibar",
+      "x": 10,
+      "y": 11,
+      "sprite": "npc_orange",
+      "dialogueId": "minibar_greet",
+      "encounter": "hotel_dining",
+      "direction": "down"
+    }
+  ],
+  "delano_wing": [
+    {
+      "id": "delano_dana",
+      "name": "Delano Dana",
+      "x": 15,
+      "y": 15,
+      "sprite": "npc_silver",
+      "dialogueId": "delano_dana_greet",
+      "direction": "down"
+    }
+  ],
+  "spa": [
+    {
+      "id": "spa_attendant_ash",
+      "name": "Attendant Ash",
+      "x": 15,
+      "y": 22,
+      "sprite": "npc_teal",
+      "dialogueId": "spa_attendant_ash_greet",
+      "direction": "down"
+    }
+  ],
+  "mandalay_beach": [
+    {
+      "id": "lifeguard_lou",
+      "name": "Lifeguard Lou",
+      "x": 15,
+      "y": 22,
+      "sprite": "npc_teal",
+      "dialogueId": "lifeguard_lou_greet",
+      "challengeDialogueId": "lifeguard_lou_challenge",
+      "encounter": "pool_wave",
+      "direction": "down",
+      "sight": {
+        "dir": "down",
+        "range": 4
+      },
+      "schedule": {
+        "late": {
+          "x": 22,
+          "y": 23
+        }
+      }
+    },
+    {
+      "id": "shark_reef_guide",
+      "name": "Reef Guide",
+      "x": 6,
+      "y": 12,
+      "sprite": "npc_green",
+      "dialogueId": "shark_reef_guide_greet",
+      "direction": "right"
+    }
+  ],
+  "cabana_row": [
+    {
+      "id": "cabana_curtis",
+      "name": "Cabana Curtis",
+      "x": 15,
+      "y": 17,
+      "sprite": "npc_orange",
+      "dialogueId": "cabana_curtis_greet",
+      "encounter": "pool_cabanas",
+      "direction": "down"
+    },
+    {
+      "id": "hot_tub_hal",
+      "name": "Hot Tub Hal",
+      "x": 15,
+      "y": 12,
+      "sprite": "npc_red",
+      "dialogueId": "hot_tub_hal_greet",
+      "encounter": "pool_hot_tubs",
+      "direction": "up"
+    }
+  ],
+  "beach_club": [
+    {
+      "id": "beach_dj",
+      "name": "Beach DJ",
+      "x": 15,
+      "y": 17,
+      "sprite": "npc_orange",
+      "dialogueId": "beach_dj_greet",
+      "encounter": "pool_beach_club",
+      "direction": "up"
+    }
+  ],
+  "rave_stage": [
+    {
+      "id": "rave_dj",
+      "name": "Moonlight DJ",
+      "x": 15,
+      "y": 15,
+      "sprite": "npc_pink",
+      "dialogueId": "rave_dj_greet",
+      "encounter": "pool_rave",
+      "direction": "down",
+      "sight": {
+        "dir": "down",
+        "range": 5
+      },
+      "challengeDialogueId": "rave_dj_challenge"
+    }
+  ],
+  "reef_tunnel": [
+    {
+      "id": "photo_kiosk",
+      "name": "Photo Kiosk",
+      "x": 10,
+      "y": 15,
+      "sprite": "npc_teal",
+      "dialogueId": "photo_kiosk",
+      "encounter": "pool_reef",
+      "direction": "down"
+    }
+  ],
+  "shark_reef": [
+    {
+      "id": "reef_docent",
+      "name": "Reef Docent",
+      "x": 15,
+      "y": 21,
+      "sprite": "npc_green",
+      "dialogueId": "reef_docent_greet",
+      "encounter": "pool_reef",
+      "direction": "down"
+    },
+    {
+      "id": "reef_dj",
+      "name": "Reef DJ",
+      "x": 6,
+      "y": 12,
+      "sprite": "npc_orange",
+      "dialogueId": "reef_dj_greet",
+      "direction": "right"
+    }
+  ],
+  "house_of_blues": [
+    {
+      "id": "hob_stage",
+      "name": "Stage Manager",
+      "x": 15,
+      "y": 16,
+      "sprite": "npc_orange",
+      "dialogueId": "hob_stage_greet",
+      "encounter": "house_of_blues",
+      "direction": "up"
+    },
+    {
+      "id": "hob_bouncer",
+      "name": "HOB Bouncer",
+      "x": 6,
+      "y": 15,
+      "sprite": "npc_red",
+      "dialogueId": "hob_bouncer_greet",
+      "direction": "left"
+    }
+  ],
+  "hob_green_room": [
+    {
+      "id": "hob_headliner",
+      "name": "The Headliner",
+      "x": 15,
+      "y": 15,
+      "sprite": "npc_pink",
+      "dialogueId": "hob_headliner_greet",
+      "direction": "down"
+    }
+  ],
+  "ultra_arena": [
+    {
+      "id": "arena_usher",
+      "name": "Arena Usher",
+      "x": 15,
+      "y": 22,
+      "sprite": "npc_silver",
+      "dialogueId": "arena_usher_greet",
+      "direction": "down"
+    },
+    {
+      "id": "merch_marge",
+      "name": "Merch Marge",
+      "x": 6,
+      "y": 22,
+      "sprite": "npc_pink",
+      "dialogueId": "merch_marge_greet",
+      "encounter": "shops",
+      "direction": "up"
+    }
+  ],
+  "staff_corridor": [
+    {
+      "id": "janitor_joe",
+      "name": "Janitor Joe",
+      "x": 15,
+      "y": 14,
+      "sprite": "npc_silver",
+      "dialogueId": "janitor_joe_greet",
+      "direction": "down"
+    },
+    {
+      "id": "count_room_cal",
+      "name": "Count Room Cal",
+      "x": 8,
+      "y": 14,
+      "sprite": "npc_gold",
+      "dialogueId": "count_room_cal_greet",
+      "encounter": "bank",
+      "direction": "right"
+    }
+  ]
+}

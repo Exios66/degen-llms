@@ -1,0 +1,128 @@
+{
+  "id": "registration_lobby",
+  "label": "Registration Lobby",
+  "bgm": "lobby",
+  "spawn": {
+    "x": 15,
+    "y": 26
+  },
+  "base": "WALL",
+  "rects": [
+    {
+      "tile": "LOBBY",
+      "x": 2,
+      "y": 2,
+      "w": 26,
+      "h": 26
+    },
+    {
+      "tile": "CARPET",
+      "x": 8,
+      "y": 10,
+      "w": 14,
+      "h": 10
+    }
+  ],
+  "decor": [
+    {
+      "tile": "BAR",
+      "x": 10,
+      "y": 7,
+      "w": 10,
+      "h": 1
+    },
+    {
+      "tile": "PLANT",
+      "points": [
+        [
+          4,
+          6
+        ],
+        [
+          25,
+          6
+        ],
+        [
+          4,
+          21
+        ],
+        [
+          25,
+          21
+        ],
+        [
+          11,
+          23
+        ],
+        [
+          18,
+          23
+        ]
+      ]
+    }
+  ],
+  "clear": [
+    {
+      "tile": "LOBBY",
+      "x": 14,
+      "y": 2,
+      "w": 3,
+      "h": 3
+    },
+    {
+      "tile": "LOBBY",
+      "x": 14,
+      "y": 26,
+      "w": 3,
+      "h": 3
+    },
+    {
+      "tile": "LOBBY",
+      "x": 2,
+      "y": 14,
+      "w": 3,
+      "h": 3
+    },
+    {
+      "tile": "LOBBY",
+      "x": 25,
+      "y": 14,
+      "w": 3,
+      "h": 3
+    }
+  ],
+  "doors": [
+    {
+      "x": 15,
+      "y": 27,
+      "to": "strip_sidewalk",
+      "toX": 15,
+      "toY": 5,
+      "message": "Out to the Boulevard."
+    },
+    {
+      "x": 15,
+      "y": 3,
+      "to": "main_resort",
+      "toX": 15,
+      "toY": 26,
+      "message": "Casino floor — north."
+    },
+    {
+      "x": 2,
+      "y": 15,
+      "to": "valet_garage",
+      "toX": 15,
+      "toY": 26,
+      "message": "Down to the garage."
+    },
+    {
+      "x": 27,
+      "y": 15,
+      "to": "hotel_tower",
+      "toX": 15,
+      "toY": 26,
+      "message": "Gold elevators to the tower."
+    }
+  ]
+}

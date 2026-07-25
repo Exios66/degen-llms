@@ -1,0 +1,68 @@
+{
+  "id": "staff_corridor",
+  "label": "Back of House",
+  "bgm": "secret",
+  "spawn": {
+    "x": 15,
+    "y": 26
+  },
+  "base": "WALL",
+  "rects": [
+    {
+      "tile": "CARPET",
+      "x": 12,
+      "y": 4,
+      "w": 6,
+      "h": 24
+    },
+    {
+      "tile": "CARPET",
+      "x": 4,
+      "y": 12,
+      "w": 22,
+      "h": 5
+    }
+  ],
+  "decor": [
+    {
+      "tile": "BAR",
+      "x": 5,
+      "y": 14,
+      "w": 2,
+      "h": 1
+    },
+    {
+      "tile": "BAR",
+      "x": 23,
+      "y": 14,
+      "w": 2,
+      "h": 1
+    },
+    {
+      "tile": "SCREEN",
+      "x": 14,
+      "y": 5,
+      "w": 2,
+      "h": 1
+    }
+  ],
+  "clear": [
+    {
+      "tile": "CARPET",
+      "x": 14,
+      "y": 26,
+      "w": 3,
+      "h": 3
+    }
+  ],
+  "doors": [
+    {
+      "x": 15,
+      "y": 27,
+      "to": "main_resort",
+      "toX": 15,
+      "toY": 3,
+      "message": "Slip back onto the floor."
+    }
+  ]
+}

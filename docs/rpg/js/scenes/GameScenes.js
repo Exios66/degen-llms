@@ -2,7 +2,7 @@ import Phaser from "phaser";
 import { createGameTextures, playerTextureKey, playerAnimKey } from "../systems/TextureFactory.js";
 import {
   TILE_SIZE, MAP_WIDTH, MAP_HEIGHT, buildMapLayersForId, getNpcsForMap,
-  DOOR_TRIGGERS, getMapDefinition, SPAWN_DEFAULT, TILE, resolveNpcPosition,
+  doorAt, getMapDefinition, SPAWN_DEFAULT, TILE, resolveNpcPosition,
 } from "../systems/MapData.js";
 import { getSessionDealer } from "../../../js/dealers.js";
 import { resolveNpc } from "../../../js/staff-manifest.js";
@@ -26,6 +26,20 @@ const FOOTSTEP_SFX = {
   [TILE.VIP]: "foot_vip",
   [TILE.AQUA]: "foot_water",
   [TILE.WATER]: "foot_water",
+  [TILE.SAND]: "foot_lobby",
+  [TILE.ROAD]: "foot_lobby",
+  [TILE.STAGE]: "foot_vip",
+  [TILE.SPA]: "foot_water",
+};
+
+/** Decor props are drawn from the same tile vocabulary as the ground. */
+const DECOR_KEYS = {
+  [TILE.BAR]: "decor_bar",
+  [TILE.PLANT]: "decor_plant",
+  [TILE.SLOT]: "decor_slot",
+  [TILE.SCREEN]: "decor_screen",
+  [TILE.GLASS]: "decor_glass",
+  [TILE.ROPE]: "decor_rope",
 };
 
 export class OverworldScene extends Phaser.Scene {
@@ -83,11 +97,7 @@ export class OverworldScene extends Phaser.Scene {
           this.add.image(x * TILE_SIZE + TILE_SIZE / 2, y * TILE_SIZE + TILE_SIZE / 2, `tile_${tile}`)
         );
         if (decor[y][x]) {
-          const d = decor[y][x];
-          let decorKey = "decor_plant";
-          if (d === TILE.BAR) decorKey = "decor_bar";
-          else if (d === TILE.SLOT) decorKey = "decor_slot";
-          else if (d === TILE.SCREEN) decorKey = "decor_screen";
+          const decorKey = DECOR_KEYS[decor[y][x]] ?? "decor_plant";
           this.groundLayer.add(
             this.add.image(x * TILE_SIZE + TILE_SIZE / 2, y * TILE_SIZE + TILE_SIZE / 2, decorKey)
           );
@@ -235,11 +245,11 @@ export class OverworldScene extends Phaser.Scene {
     this._applyPlayerAnim(false);
 
     this._applyDayNightTint(worldTime);
-    this.audio?.playBgm?.(this.audio.bgmForMap(mapId));
+    this.audio?.playBgm?.(mapDef.bgm ?? this.audio.bgmForMap(mapId));
 
     this._recordMapVisit(mapId);
     this._applyWalkSpeed();
-    this.onMapBanner?.(getMapDefinition(mapId).label ?? mapId, this.dayPhase?.label ?? "");
+    this.onMapBanner?.(mapDef.label ?? mapId, this.dayPhase?.label ?? "");
 
     this.onHudUpdate?.();
     this.scale.on("resize", this._fitCamera, this);
@@ -645,8 +655,7 @@ export class OverworldScene extends Phaser.Scene {
     const key = `${tx},${ty}`;
     if (this._lastDoorTile === key) return;
     this._lastDoorTile = key;
-    const trigger = DOOR_TRIGGERS.find((d) =>
-      d.mapId === this.currentMapId && d.x === tx && d.y === ty);
+    const trigger = doorAt(this.currentMapId, tx, ty);
     if (!trigger) return;
 
     if (trigger.requiresFlag && !this.saveAdapter.hasFlag(trigger.requiresFlag)) {

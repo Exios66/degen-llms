@@ -1,0 +1,67 @@
+{
+  "id": "hob_green_room",
+  "label": "HOB Green Room",
+  "bgm": "secret",
+  "spawn": {
+    "x": 26,
+    "y": 15
+  },
+  "base": "WALL",
+  "rects": [
+    {
+      "tile": "CARPET",
+      "x": 6,
+      "y": 8,
+      "w": 18,
+      "h": 14
+    }
+  ],
+  "decor": [
+    {
+      "tile": "BAR",
+      "x": 9,
+      "y": 11,
+      "w": 5,
+      "h": 1
+    },
+    {
+      "tile": "BAR",
+      "x": 17,
+      "y": 11,
+      "w": 5,
+      "h": 1
+    },
+    {
+      "tile": "PLANT",
+      "points": [
+        [
+          7,
+          20
+        ],
+        [
+          22,
+          20
+        ]
+      ]
+    }
+  ],
+  "clear": [
+    {
+      "tile": "CARPET",
+      "x": 24,
+      "y": 14,
+      "w": 4,
+      "h": 3
+    }
+  ],
+  "doors": [
+    {
+      "x": 27,
+      "y": 15,
+      "to": "house_of_blues",
+      "toX": 3,
+      "toY": 15,
+      "message": "Back to the stage."
+    }
+  ]
+}

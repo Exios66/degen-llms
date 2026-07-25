@@ -1,4 +1,4 @@
-import { TILE, TILE_SIZE } from "./MapData.js";
+import { TILE, TILE_SIZE } from "./MapTiles.js";
 
 /**
  * Rich procedural 16×16 pixel textures (no external art files).
@@ -96,6 +96,66 @@ function drawVoidTile(g) {
   px(g, 0x05040a, 0, 0, 16, 16);
 }
 
+function drawRoadTile(g) {
+  // Porte-cochère asphalt with a worn lane stripe
+  px(g, 0x22212a, 0, 0, 16, 16);
+  px(g, 0x2a2933, 1, 1, 14, 14);
+  px(g, 0x1a1922, 3, 6, 4, 1);
+  px(g, 0x1a1922, 9, 11, 5, 1);
+  px(g, 0x33323d, 11, 3, 3, 1);
+  px(g, 0x6a6752, 0, 7, 6, 2);
+}
+
+function drawSandTile(g) {
+  px(g, 0xc9ad72, 0, 0, 16, 16);
+  px(g, 0xd8bd83, 1, 1, 14, 14);
+  px(g, 0xb89a5e, 3, 5, 3, 1);
+  px(g, 0xb89a5e, 9, 10, 4, 1);
+  px(g, 0xe6cf9c, 6, 3, 2, 1);
+  px(g, 0xe6cf9c, 12, 13, 2, 1);
+}
+
+function drawStageTile(g) {
+  // Black lacquered boards under stage wash
+  px(g, 0x14101c, 0, 0, 16, 16);
+  px(g, 0x1e1828, 0, 1, 16, 6);
+  px(g, 0x1a1424, 0, 9, 16, 6);
+  px(g, 0x0c0a14, 0, 7, 16, 2);
+  px(g, 0x5a2a6a, 2, 2, 5, 1);
+  px(g, 0x2a5a6a, 10, 11, 4, 1);
+}
+
+function drawSpaTile(g) {
+  // Bathhouse stone with grout lines
+  px(g, 0x4a5a60, 0, 0, 16, 16);
+  px(g, 0x5c6d74, 1, 1, 6, 6);
+  px(g, 0x5c6d74, 9, 1, 6, 6);
+  px(g, 0x5c6d74, 1, 9, 6, 6);
+  px(g, 0x5c6d74, 9, 9, 6, 6);
+  px(g, 0x6e8188, 2, 2, 2, 1);
+  px(g, 0x6e8188, 10, 10, 2, 1);
+}
+
+function drawGlassTile(g) {
+  px(g, 0x18303c, 0, 0, 16, 16);
+  px(g, 0x24485a, 1, 1, 14, 14);
+  px(g, 0x39c5cf, 2, 2, 5, 12);
+  px(g, 0x2a94a4, 9, 2, 5, 12);
+  px(g, 0xa8e8f0, 3, 3, 1, 8);
+  px(g, 0x0e1c24, 7, 0, 2, 16);
+}
+
+function drawRopeTile(g) {
+  // Velvet rope stanchion
+  px(g, 0x2a2010, 0, 0, 16, 16);
+  px(g, 0x3a2a14, 1, 1, 14, 14);
+  px(g, 0xe8c547, 6, 3, 4, 2);
+  px(g, 0xc4a030, 7, 5, 2, 9);
+  px(g, 0xe8c547, 5, 13, 6, 2);
+  px(g, 0x8a1030, 0, 6, 6, 3);
+  px(g, 0x8a1030, 10, 6, 6, 3);
+}
+
 const TILE_DRAWERS = {
   [TILE.VOID]: drawVoidTile,
   [TILE.LOBBY]: drawLobbyTile,
@@ -109,6 +169,12 @@ const TILE_DRAWERS = {
   [TILE.SCREEN]: drawCarpetTile,
   [TILE.VIP]: drawVipTile,
   [TILE.AQUA]: drawAquaTile,
+  [TILE.ROAD]: drawRoadTile,
+  [TILE.SAND]: drawSandTile,
+  [TILE.STAGE]: drawStageTile,
+  [TILE.SPA]: drawSpaTile,
+  [TILE.GLASS]: drawGlassTile,
+  [TILE.ROPE]: drawRopeTile,
 };
 
 /**
@@ -154,6 +220,8 @@ export function createGameTextures(scene) {
   makeTex(scene, "decor_plant", drawPlantDecor);
   makeTex(scene, "decor_slot", drawSlotDecor);
   makeTex(scene, "decor_screen", drawScreenDecor);
+  makeTex(scene, "decor_glass", drawGlassTile);
+  makeTex(scene, "decor_rope", drawRopeTile);
   makeTex(scene, "shadow", (g) => {
     px(g, 0x000000, 2, 4, 12, 4);
     px(g, 0x000000, 3, 3, 10, 6);

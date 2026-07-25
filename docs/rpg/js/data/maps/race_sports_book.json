@@ -1,0 +1,109 @@
+{
+  "id": "race_sports_book",
+  "label": "Race & Sports Book",
+  "bgm": "casino",
+  "spawn": {
+    "x": 26,
+    "y": 15
+  },
+  "base": "WALL",
+  "rects": [
+    {
+      "tile": "CARPET",
+      "x": 2,
+      "y": 2,
+      "w": 26,
+      "h": 26
+    },
+    {
+      "tile": "LOBBY",
+      "x": 6,
+      "y": 6,
+      "w": 18,
+      "h": 4
+    }
+  ],
+  "decor": [
+    {
+      "tile": "SCREEN",
+      "x": 5,
+      "y": 4,
+      "w": 20,
+      "h": 1
+    },
+    {
+      "tile": "BAR",
+      "x": 8,
+      "y": 12,
+      "w": 3,
+      "h": 1
+    },
+    {
+      "tile": "BAR",
+      "x": 14,
+      "y": 12,
+      "w": 3,
+      "h": 1
+    },
+    {
+      "tile": "BAR",
+      "x": 20,
+      "y": 12,
+      "w": 3,
+      "h": 1
+    },
+    {
+      "tile": "BAR",
+      "x": 8,
+      "y": 18,
+      "w": 3,
+      "h": 1
+    },
+    {
+      "tile": "BAR",
+      "x": 14,
+      "y": 18,
+      "w": 3,
+      "h": 1
+    },
+    {
+      "tile": "BAR",
+      "x": 20,
+      "y": 18,
+      "w": 3,
+      "h": 1
+    },
+    {
+      "tile": "PLANT",
+      "points": [
+        [
+          4,
+          24
+        ],
+        [
+          25,
+          24
+        ]
+      ]
+    }
+  ],
+  "clear": [
+    {
+      "tile": "CARPET",
+      "x": 25,
+      "y": 14,
+      "w": 3,
+      "h": 3
+    }
+  ],
+  "doors": [
+    {
+      "x": 27,
+      "y": 15,
+      "to": "main_resort",
+      "toX": 3,
+      "toY": 15,
+      "message": "Back to the casino floor."
+    }
+  ]
+}

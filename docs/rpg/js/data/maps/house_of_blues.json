@@ -1,0 +1,84 @@
+{
+  "id": "house_of_blues",
+  "label": "House of Blues",
+  "bgm": "encounter",
+  "spawn": {
+    "x": 15,
+    "y": 26
+  },
+  "base": "WALL",
+  "rects": [
+    {
+      "tile": "CARPET",
+      "x": 4,
+      "y": 4,
+      "w": 22,
+      "h": 24
+    },
+    {
+      "tile": "STAGE",
+      "x": 9,
+      "y": 6,
+      "w": 13,
+      "h": 8
+    }
+  ],
+  "decor": [
+    {
+      "tile": "BAR",
+      "x": 5,
+      "y": 22,
+      "w": 4,
+      "h": 1
+    },
+    {
+      "tile": "BAR",
+      "x": 21,
+      "y": 22,
+      "w": 4,
+      "h": 1
+    },
+    {
+      "tile": "SCREEN",
+      "x": 12,
+      "y": 5,
+      "w": 7,
+      "h": 1
+    }
+  ],
+  "clear": [
+    {
+      "tile": "CARPET",
+      "x": 14,
+      "y": 26,
+      "w": 3,
+      "h": 3
+    },
+    {
+      "tile": "CARPET",
+      "x": 2,
+      "y": 14,
+      "w": 3,
+      "h": 3
+    }
+  ],
+  "doors": [
+    {
+      "x": 15,
+      "y": 27,
+      "to": "casino_floor_south",
+      "toX": 26,
+      "toY": 23,
+      "message": "Back to the casino."
+    },
+    {
+      "x": 2,
+      "y": 15,
+      "to": "hob_green_room",
+      "toX": 26,
+      "toY": 15,
+      "message": "Green room — badge only.",
+      "requiresFlag": "hob_backstage"
+    }
+  ]
+}

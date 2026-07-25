@@ -1,0 +1,203 @@
+{
+  "id": "main_resort",
+  "label": "Casino Floor North",
+  "bgm": "casino",
+  "spawn": {
+    "x": 15,
+    "y": 26
+  },
+  "base": "WALL",
+  "rects": [
+    {
+      "tile": "CARPET",
+      "x": 2,
+      "y": 2,
+      "w": 26,
+      "h": 26
+    },
+    {
+      "tile": "FELT",
+      "x": 9,
+      "y": 8,
+      "w": 13,
+      "h": 9
+    },
+    {
+      "tile": "VIP",
+      "x": 13,
+      "y": 2,
+      "w": 5,
+      "h": 4
+    },
+    {
+      "tile": "LOBBY",
+      "x": 3,
+      "y": 20,
+      "w": 24,
+      "h": 7
+    }
+  ],
+  "decor": [
+    {
+      "tile": "SLOT",
+      "x": 25,
+      "y": 10,
+      "w": 1,
+      "h": 8
+    },
+    {
+      "tile": "SLOT",
+      "x": 22,
+      "y": 10,
+      "w": 1,
+      "h": 8
+    },
+    {
+      "tile": "SCREEN",
+      "x": 4,
+      "y": 10,
+      "w": 1,
+      "h": 8
+    },
+    {
+      "tile": "BAR",
+      "x": 19,
+      "y": 23,
+      "w": 3,
+      "h": 1
+    },
+    {
+      "tile": "PLANT",
+      "points": [
+        [
+          7,
+          6
+        ],
+        [
+          24,
+          6
+        ],
+        [
+          7,
+          19
+        ],
+        [
+          24,
+          19
+        ]
+      ]
+    }
+  ],
+  "scatter": [
+    {
+      "tile": "PLANT",
+      "mod": 11,
+      "on": [
+        "LOBBY"
+      ],
+      "bounds": {
+        "tile": "LOBBY",
+        "x": 3,
+        "y": 21,
+        "w": 24,
+        "h": 5
+      }
+    }
+  ],
+  "clear": [
+    {
+      "tile": "VIP",
+      "x": 14,
+      "y": 1,
+      "w": 3,
+      "h": 5
+    },
+    {
+      "tile": "CARPET",
+      "x": 14,
+      "y": 26,
+      "w": 3,
+      "h": 3
+    },
+    {
+      "tile": "CARPET",
+      "x": 2,
+      "y": 14,
+      "w": 3,
+      "h": 3
+    },
+    {
+      "tile": "CARPET",
+      "x": 25,
+      "y": 14,
+      "w": 3,
+      "h": 3
+    },
+    {
+      "tile": "LOBBY",
+      "x": 3,
+      "y": 22,
+      "w": 3,
+      "h": 3
+    },
+    {
+      "tile": "LOBBY",
+      "x": 24,
+      "y": 22,
+      "w": 3,
+      "h": 3
+    }
+  ],
+  "doors": [
+    {
+      "x": 15,
+      "y": 27,
+      "to": "registration_lobby",
+      "toX": 15,
+      "toY": 4,
+      "message": "Back to registration."
+    },
+    {
+      "x": 15,
+      "y": 2,
+      "to": "high_limit_salon",
+      "toX": 15,
+      "toY": 26,
+      "message": "High Limit Salon — velvet rope.",
+      "venueGate": "high_limit_salon"
+    },
+    {
+      "x": 15,
+      "y": 1,
+      "to": "staff_corridor",
+      "toX": 15,
+      "toY": 26,
+      "message": "STAFF ONLY — you found the back room.",
+      "requiresFlag": "hint_north_wall"
+    },
+    {
+      "x": 2,
+      "y": 15,
+      "to": "race_sports_book",
+      "toX": 26,
+      "toY": 15,
+      "message": "Race & Sports Book."
+    },
+    {
+      "x": 27,
+      "y": 15,
+      "to": "casino_floor_south",
+      "toX": 15,
+      "toY": 3,
+      "message": "Casino floor — south."
+    },
+    {
+      "x": 4,
+      "y": 23,
+      "to": "betty_bar",
+      "toX": 15,
+      "toY": 26,
+      "message": "Betty's Bar, west lobby."
+    }
+  ]
+}

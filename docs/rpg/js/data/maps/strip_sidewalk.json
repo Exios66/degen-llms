@@ -1,0 +1,96 @@
+{
+  "id": "strip_sidewalk",
+  "label": "Las Vegas Blvd",
+  "bgm": "lobby",
+  "spawn": {
+    "x": 15,
+    "y": 26
+  },
+  "base": "WALL",
+  "rects": [
+    {
+      "tile": "ROAD",
+      "x": 1,
+      "y": 18,
+      "w": 28,
+      "h": 11
+    },
+    {
+      "tile": "LOBBY",
+      "x": 6,
+      "y": 4,
+      "w": 18,
+      "h": 14
+    },
+    {
+      "tile": "ROAD",
+      "x": 12,
+      "y": 1,
+      "w": 6,
+      "h": 4
+    }
+  ],
+  "decor": [
+    {
+      "tile": "PLANT",
+      "points": [
+        [
+          6,
+          6
+        ],
+        [
+          23,
+          6
+        ],
+        [
+          6,
+          15
+        ],
+        [
+          23,
+          15
+        ],
+        [
+          4,
+          20
+        ],
+        [
+          25,
+          20
+        ]
+      ]
+    },
+    {
+      "tile": "SCREEN",
+      "x": 9,
+      "y": 3,
+      "w": 2,
+      "h": 1
+    },
+    {
+      "tile": "SCREEN",
+      "x": 19,
+      "y": 3,
+      "w": 2,
+      "h": 1
+    }
+  ],
+  "doors": [
+    {
+      "x": 15,
+      "y": 4,
+      "to": "registration_lobby",
+      "toX": 15,
+      "toY": 27,
+      "message": "Through the gold doors — Mandalay Bay."
+    },
+    {
+      "x": 3,
+      "y": 22,
+      "to": "valet_garage",
+      "toX": 26,
+      "toY": 15,
+      "message": "Valet ramp, level P1."
+    }
+  ]
+}

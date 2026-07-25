@@ -1,0 +1,90 @@
+{
+  "id": "ultra_arena",
+  "label": "ULTRA Arena Concourse",
+  "bgm": "lobby",
+  "spawn": {
+    "x": 15,
+    "y": 26
+  },
+  "base": "WALL",
+  "rects": [
+    {
+      "tile": "LOBBY",
+      "x": 2,
+      "y": 2,
+      "w": 26,
+      "h": 26
+    },
+    {
+      "tile": "FELT",
+      "x": 8,
+      "y": 8,
+      "w": 15,
+      "h": 12
+    }
+  ],
+  "decor": [
+    {
+      "tile": "SCREEN",
+      "x": 9,
+      "y": 6,
+      "w": 4,
+      "h": 1
+    },
+    {
+      "tile": "SCREEN",
+      "x": 18,
+      "y": 6,
+      "w": 4,
+      "h": 1
+    },
+    {
+      "tile": "BAR",
+      "x": 4,
+      "y": 23,
+      "w": 5,
+      "h": 1
+    },
+    {
+      "tile": "BAR",
+      "x": 21,
+      "y": 23,
+      "w": 5,
+      "h": 1
+    }
+  ],
+  "clear": [
+    {
+      "tile": "LOBBY",
+      "x": 14,
+      "y": 26,
+      "w": 3,
+      "h": 3
+    },
+    {
+      "tile": "LOBBY",
+      "x": 25,
+      "y": 14,
+      "w": 3,
+      "h": 3
+    }
+  ],
+  "doors": [
+    {
+      "x": 15,
+      "y": 27,
+      "to": "casino_floor_south",
+      "toX": 26,
+      "toY": 7,
+      "message": "Back to the casino floor."
+    },
+    {
+      "x": 27,
+      "y": 15,
+      "to": "convention_center",
+      "toX": 3,
+      "toY": 15,
+      "message": "Convention concourse."
+    }
+  ]
+}

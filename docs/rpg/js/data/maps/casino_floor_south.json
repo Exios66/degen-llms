@@ -1,0 +1,156 @@
+{
+  "id": "casino_floor_south",
+  "label": "Casino Floor South",
+  "bgm": "casino",
+  "spawn": {
+    "x": 15,
+    "y": 3
+  },
+  "base": "WALL",
+  "rects": [
+    {
+      "tile": "CARPET",
+      "x": 2,
+      "y": 2,
+      "w": 26,
+      "h": 26
+    },
+    {
+      "tile": "FELT",
+      "x": 10,
+      "y": 10,
+      "w": 11,
+      "h": 8
+    },
+    {
+      "tile": "LOBBY",
+      "x": 3,
+      "y": 21,
+      "w": 24,
+      "h": 6
+    }
+  ],
+  "decor": [
+    {
+      "tile": "SLOT",
+      "x": 5,
+      "y": 5,
+      "w": 1,
+      "h": 12
+    },
+    {
+      "tile": "SLOT",
+      "x": 8,
+      "y": 5,
+      "w": 1,
+      "h": 12
+    },
+    {
+      "tile": "SLOT",
+      "x": 24,
+      "y": 5,
+      "w": 1,
+      "h": 12
+    },
+    {
+      "tile": "PLANT",
+      "points": [
+        [
+          13,
+          6
+        ],
+        [
+          18,
+          6
+        ],
+        [
+          13,
+          20
+        ],
+        [
+          18,
+          20
+        ]
+      ]
+    }
+  ],
+  "clear": [
+    {
+      "tile": "CARPET",
+      "x": 14,
+      "y": 1,
+      "w": 3,
+      "h": 4
+    },
+    {
+      "tile": "LOBBY",
+      "x": 2,
+      "y": 22,
+      "w": 3,
+      "h": 3
+    },
+    {
+      "tile": "LOBBY",
+      "x": 25,
+      "y": 22,
+      "w": 3,
+      "h": 3
+    },
+    {
+      "tile": "CARPET",
+      "x": 25,
+      "y": 6,
+      "w": 3,
+      "h": 3
+    },
+    {
+      "tile": "LOBBY",
+      "x": 14,
+      "y": 26,
+      "w": 3,
+      "h": 3
+    }
+  ],
+  "doors": [
+    {
+      "x": 15,
+      "y": 2,
+      "to": "main_resort",
+      "toX": 15,
+      "toY": 26,
+      "message": "Casino floor — north."
+    },
+    {
+      "x": 2,
+      "y": 23,
+      "to": "mandalay_place",
+      "toX": 15,
+      "toY": 26,
+      "message": "The Shoppes at Mandalay Place."
+    },
+    {
+      "x": 27,
+      "y": 23,
+      "to": "house_of_blues",
+      "toX": 15,
+      "toY": 26,
+      "message": "House of Blues stage door."
+    },
+    {
+      "x": 27,
+      "y": 7,
+      "to": "ultra_arena",
+      "toX": 15,
+      "toY": 26,
+      "message": "Michelob ULTRA Arena concourse."
+    },
+    {
+      "x": 15,
+      "y": 27,
+      "to": "mandalay_beach",
+      "toX": 15,
+      "toY": 3,
+      "message": "Out to the eleven acres."
+    }
+  ]
+}

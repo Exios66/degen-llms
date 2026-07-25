@@ -1,0 +1,137 @@
+{
+  "id": "mandalay_beach",
+  "label": "Mandalay Beach",
+  "bgm": "lobby",
+  "spawn": {
+    "x": 15,
+    "y": 3
+  },
+  "base": "WALL",
+  "rects": [
+    {
+      "tile": "SAND",
+      "x": 2,
+      "y": 2,
+      "w": 26,
+      "h": 26
+    },
+    {
+      "tile": "WATER",
+      "x": 9,
+      "y": 9,
+      "w": 13,
+      "h": 12
+    }
+  ],
+  "decor": [
+    {
+      "tile": "PLANT",
+      "points": [
+        [
+          5,
+          5
+        ],
+        [
+          24,
+          5
+        ],
+        [
+          5,
+          24
+        ],
+        [
+          24,
+          24
+        ],
+        [
+          5,
+          14
+        ],
+        [
+          24,
+          14
+        ]
+      ]
+    },
+    {
+      "tile": "BAR",
+      "x": 12,
+      "y": 25,
+      "w": 6,
+      "h": 1
+    }
+  ],
+  "scatter": [
+    {
+      "tile": "PLANT",
+      "mod": 13,
+      "on": [
+        "SAND"
+      ]
+    }
+  ],
+  "clear": [
+    {
+      "tile": "SAND",
+      "x": 14,
+      "y": 1,
+      "w": 3,
+      "h": 4
+    },
+    {
+      "tile": "SAND",
+      "x": 2,
+      "y": 14,
+      "w": 3,
+      "h": 3
+    },
+    {
+      "tile": "SAND",
+      "x": 25,
+      "y": 14,
+      "w": 3,
+      "h": 3
+    },
+    {
+      "tile": "SAND",
+      "x": 14,
+      "y": 26,
+      "w": 3,
+      "h": 3
+    }
+  ],
+  "doors": [
+    {
+      "x": 15,
+      "y": 2,
+      "to": "casino_floor_south",
+      "toX": 15,
+      "toY": 26,
+      "message": "Back inside to the casino."
+    },
+    {
+      "x": 2,
+      "y": 15,
+      "to": "reef_tunnel",
+      "toX": 26,
+      "toY": 15,
+      "message": "Shark Reef Aquarium entrance."
+    },
+    {
+      "x": 27,
+      "y": 15,
+      "to": "cabana_row",
+      "toX": 3,
+      "toY": 15,
+      "message": "Cabanas and hot tubs."
+    },
+    {
+      "x": 15,
+      "y": 27,
+      "to": "beach_club",
+      "toX": 15,
+      "toY": 3,
+      "message": "Moorea Beach Club."
+    }
+  ]
+}

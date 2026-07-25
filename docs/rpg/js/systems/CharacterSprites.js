@@ -312,13 +312,18 @@ export function drawCharacterToCanvas(canvas, spec, dir = "down", frame = 0, pix
 
 // Warm portrait cache for HTML overlays (creator / dialogue before Phaser boots).
 function bootPortraitCache() {
-  const img = new Image();
-  img.src = assetUrl(HERO.file);
-  portraitImages.set(HERO.key, img);
-  for (const sheet of Object.values(SORA_SHEETS)) {
-    const soraImg = new Image();
-    soraImg.src = assetUrl(sheet.file);
-    portraitImages.set(sheet.key, soraImg);
+  if (typeof Image === "undefined") return;
+  try {
+    const img = new Image();
+    img.src = assetUrl(HERO.file);
+    portraitImages.set(HERO.key, img);
+    for (const sheet of Object.values(SORA_SHEETS)) {
+      const soraImg = new Image();
+      soraImg.src = assetUrl(sheet.file);
+      portraitImages.set(sheet.key, soraImg);
+    }
+  } catch (err) {
+    console.warn("Character portrait cache warm-up failed", err);
   }
 }
 bootPortraitCache();

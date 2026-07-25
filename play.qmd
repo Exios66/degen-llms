@@ -68,9 +68,9 @@ Full navigation: [Player Guide](docs/player-guide.md) · first launch: [Getting 
 | `mandalay_bay/` | Hub, hotel, pool, rewards, activities |
 | `blackjack/` | Decoupled blackjack engine |
 | `poker/` | Texas Hold'em hand evaluation |
-| `docs/` | GitHub Pages web terminal + shared JS |
+| `docs/` | Web terminal + shared JS (mirrored to `gh-pages` `/docs`) |
 | `docs/rpg/` | Phaser overworld |
-| `tests/` | pytest suite (180+ tests) |
+| `tests/` | pytest suite (200+ tests) |
 
 ## RNG note
 

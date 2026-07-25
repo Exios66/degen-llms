@@ -768,7 +768,7 @@ MAPS_SPEC: list[dict] = [
         ],
         "decor": [
             points("PLANT", [
-                (10, 8), (19, 8), (10, 22), (19, 22), (6, 15), (24, 15),
+                (10, 8), (19, 8), (10, 22), (19, 22), (6, 15), (24, 12),
                 (11, 5), (18, 5), (11, 18), (18, 18),
             ]),
             points("LANTERN", [(10, 11), (19, 11), (10, 19), (19, 19), (7, 13), (23, 13)]),
@@ -791,6 +791,7 @@ MAPS_SPEC: list[dict] = [
             rect("CARPET", 6, 1, 3, 3),
             rect("CARPET", 22, 1, 3, 3),
             rect("CARPET", 2, 14, 3, 3),
+            rect("CARPET", 25, 14, 3, 3),
             rect("CARPET", 14, 26, 3, 3),
         ],
         "doors": [
@@ -798,6 +799,7 @@ MAPS_SPEC: list[dict] = [
             door(15, 2, "guest_room", 15, 26, "Room 24-118 — key card.",
                  requiresRoomKey=True),
             door(3, 15, "registration_lobby", 8, 4, "West elevators down to registration."),
+            door(26, 15, "delano_wing", 15, 3, "Sky bridge to the suite wing — Delano."),
         ],
     },
     {
@@ -855,9 +857,14 @@ MAPS_SPEC: list[dict] = [
             {"tile": "LANTERN", "mod": 16, "on": ["LOBBY"]},
             {"tile": "PLANT", "mod": 12, "on": ["LOBBY"]},
         ],
-        "clear": [rect("LOBBY", 25, 14, 3, 3), rect("LOBBY", 14, 26, 3, 3)],
+        "clear": [
+            rect("LOBBY", 25, 14, 3, 3),
+            rect("LOBBY", 14, 1, 3, 3),
+            rect("LOBBY", 14, 26, 3, 3),
+        ],
         "doors": [
             door(27, 15, "hotel_tower", 3, 15, "Back to the Mandalay tower."),
+            door(15, 2, "guest_corridor", 25, 15, "Sky bridge back to the guest corridor."),
             door(15, 27, "spa", 15, 3, "Bathhouse spa, lower level."),
         ],
     },

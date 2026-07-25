@@ -38,7 +38,7 @@ Sports wagering and prediction markets — moneyline, spread, totals, and Polyma
 
 ## Pixel RPG overworld
 
-Walk the resort in 16-bit JRPG style — NPCs, pit zones, and unified chip HUD.
+Walk the resort in Pokémon-style pixel art — NPCs, pit zones, and unified chip HUD.
 
 ![Pixel RPG overworld — casino carpet, NPCs, and chip HUD](images/pixel-rpg-overworld.png)
 

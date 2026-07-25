@@ -2,10 +2,10 @@
 name: gh-pages-deploy-loop
 description: >-
   Deploy or refresh the live GitHub Pages site (gh-pages branch) for The Mandalay
-  Bay casino. Runs on a 12-hour GitHub Actions schedule or on demand. Use when the
-  user asks to deploy, publish, sync, or update GitHub Pages; set up or change the
-  deploy loop; mentions gh-pages, exios66.github.io/degen-llms, or wants the live
-  casino/RPG site refreshed. Invoke via /gh-pages-deploy-loop.
+  Bay resort. Manual or optional Actions workflow_dispatch only — automatic
+  push/schedule publish is disabled. Use when the user asks to deploy, publish,
+  sync, or update GitHub Pages; mentions gh-pages, exios66.github.io/degen-llms,
+  or wants the live casino/RPG site refreshed. Invoke via /gh-pages-deploy-loop.
 disable-model-invocation: true
 ---
 
@@ -15,9 +15,10 @@ Keep **https://exios66.github.io/degen-llms/** in sync with `main/docs/`.
 
 | Mode | How it runs | Log `trigger=` |
 |------|-------------|----------------|
-| **Manual** | This skill or Actions → Run workflow | `manual_run` or `workflow_dispatch` |
-| **12-hour loop** | GitHub Actions cron (`0 */12 * * *` UTC) | `schedule` |
-| **On push** | `docs/**` changes merged to `main` | `push` |
+| **Manual** | This skill or local wrapper | `manual_run` |
+| **Actions tab** | Optional `workflow_dispatch` | `workflow_dispatch` |
+
+Automatic **push** and **schedule** triggers are **disabled** in [`.github/workflows/deploy-gh-pages.yml`](../../../.github/workflows/deploy-gh-pages.yml) (billing limits / error spam). Do not document them as live.
 
 ## Manual deploy (agent)
 
@@ -36,27 +37,6 @@ Keep **https://exios66.github.io/degen-llms/** in sync with `main/docs/`.
 
 Do **not** call `scripts/sync-gh-pages.sh` directly from this skill — use the wrapper so logs show an explicit manual run.
 
-## 12-hour automated loop
-
-Configured in [`.github/workflows/deploy-gh-pages.yml`](../../../.github/workflows/deploy-gh-pages.yml):
-
-```yaml
-schedule:
-  - cron: "0 */12 * * *"   # 00:00 and 12:00 UTC daily
-```
-
-The workflow calls `scripts/sync-gh-pages.sh` with `GITHUB_EVENT_NAME=schedule`. No agent action needed unless the user asks to change the interval.
-
-### Change the interval
-
-Edit the `cron` expression in `deploy-gh-pages.yml`, commit, push to `main`. Common patterns:
-
-| Interval | Cron |
-|----------|------|
-| Every 12 hours | `0 */12 * * *` |
-| Every 6 hours | `0 */6 * * *` |
-| Daily at 06:00 UTC | `0 6 * * *` |
-
 ## What sync does
 
 - Full replace of `gh-pages` branch `docs/` from `origin/main`
@@ -72,21 +52,18 @@ Edit the `cron` expression in `deploy-gh-pages.yml`, commit, push to `main`. Com
 |-------|-----|
 | Clean working tree | Script checks out `gh-pages` |
 | Push access to `main` and `gh-pages` | Both branches are updated |
-| Billing / Actions enabled | Scheduled and push triggers need Actions |
+| Pages source = branch `gh-pages` / `/docs` | Not “GitHub Actions” artifact deploy |
 
 ## Troubleshooting
 
 | Problem | Action |
 |---------|--------|
-| `GBP-002` checkout blocked | Commit or stash local changes |
-| `GBP-010` workflow failed (billing) | Run manual sync locally: `bash .cursor/skills/gh-pages-deploy-loop/scripts/run-manual.sh` |
-| Site stale 1–3 min after sync | Normal GitHub Pages propagation delay |
-| `up_to_date` but user expects changes | Confirm changes are on `origin/main` in `docs/` |
-
-Full code reference: [reference.md](reference.md)
+| Dirty tree | Commit or stash, re-run |
+| `GBP-010` / Actions billing | Use this skill locally; do not re-enable schedule |
+| Site stale after sync | Wait 1–3 minutes; run `scripts/verify-gh-pages-live.sh` |
 
 ## Related
 
-- [`.cursor/skills/sync-gh-pages/`](../sync-gh-pages/) — legacy manual-only skill (prefer this skill)
-- [`scripts/sync-gh-pages.sh`](../../../scripts/sync-gh-pages.sh) — core sync logic
-- [`logs/README.md`](../../../logs/README.md) — log field definitions
+- [`reference.md`](reference.md) — triggers, codes, Pages settings
+- [`scripts/sync-gh-pages.sh`](../../../scripts/sync-gh-pages.sh) — core sync (legacy direct call)
+- [`.cursor/skills/sync-gh-pages/`](../sync-gh-pages/) — legacy skill; prefer this one

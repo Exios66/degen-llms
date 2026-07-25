@@ -25,7 +25,7 @@ timestamp=2026-07-05T07:28:38Z | outcome=success | code=GBP-000 | debug=GBP-SYNC
 | `outcome` | `success` \| `failure` | Overall result |
 | `code` | `GBP-000` … `GBP-010` | Primary error/success code (see below) |
 | `debug` | Comma-separated codes | Granular steps and failure hints |
-| `trigger` | `push`, `schedule`, `workflow_dispatch`, `manual_run` | What started the run |
+| `trigger` | `manual_run`, `workflow_dispatch` (active); `push`, `schedule` (historical — automation disabled) | What started the run |
 | `deploy_method` | `gh-pages-branch-docs` | Always branch deploy (not Actions artifact Pages) |
 | `error` | Quoted string | Human-readable failure message (failures only) |
 

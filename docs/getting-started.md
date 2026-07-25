@@ -87,23 +87,20 @@ python3 -m pytest -v
 
 See [Testing](testing.md) for details.
 
-## GitHub Pages (web casino)
+## GitHub Pages (web terminal + RPG)
 
-The browser casino and pixel RPG live in [`docs/`](.) and publish to **https://exios66.github.io/degen-llms/** via GitHub Actions.
+The browser terminal and pixel RPG live in [`docs/`](.) and publish to **https://exios66.github.io/degen-llms/** from the **`gh-pages`** branch `/docs` folder.
 
-**One-time setup:** Repository **Settings → Pages → Source: GitHub Actions**.
+**One-time setup:** Repository **Settings → Pages → Deploy from branch → `gh-pages` → `/docs`.**
 
-**Automatic deploy:** pushes to `main` that change `docs/**` run [`.github/workflows/deploy-gh-pages.yml`](../.github/workflows/deploy-gh-pages.yml).
-
-**Manual fallback** (branch mirror):
+Automatic push/schedule deploy is **disabled**. Publish manually:
 
 ```bash
-./scripts/deploy-gh-pages.sh
+bash .cursor/skills/gh-pages-deploy-loop/scripts/run-manual.sh
+# or: gh workflow run deploy-gh-pages.yml   # workflow_dispatch only
 ```
 
-Only needed when Pages is configured for branch deploy (`gh-pages` / `/docs`) instead of GitHub Actions.
-
-- Terminal casino: `/` ( [`index.html`](index.html) )
+- Web terminal: `/` ([`index.html`](index.html))
 - Pixel RPG: [`/rpg/`](rpg/index.html)
 
 ## Next steps

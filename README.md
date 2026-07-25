@@ -37,12 +37,13 @@ python3 -m pytest -v                     # 200+ tests
 
 ### Casino floor
 
-Five floors, eight activities, one chip wallet:
+Six floors, ten activities, one chip wallet:
 
 | Floor | Activities | Min bet |
 |-------|------------|---------|
-| **Table Games** | Blackjack, Texas Hold'em, Mandalay Roulette | 10 chips |
+| **Table Games** | Blackjack, Texas Hold'em, Mandalay Roulette, Craps | 10 chips |
 | **Slot Machines** | 14 machines incl. Megabucks & linked progressives | 1 chip |
+| **Lottery Counter** | Pick 3, Pick 4, Mega draw, scratchers | Varies |
 | **Sports Book** | Moneyline, spread, prediction markets | 10 chips |
 | **Racing Pavilion** | Mandalay Racing (thoroughbred sim) | 5 chips |
 | **Equestrian Arena** | Dressage & show jumping | 10 chips |
@@ -147,7 +148,7 @@ degen-llms/
 │   └── rpg/                   # Phaser overworld (maps, NPCs, encounter overlays)
 ├── tests/                     # pytest suite (200+ tests)
 ├── scripts/                   # GitHub Pages deploy, Posit Connect publish, asset tooling
-├── .github/workflows/         # gh-pages deploy automation
+├── .github/workflows/         # gh-pages deploy (workflow_dispatch only)
 ├── index.qmd / play.qmd       # Quarto documentation manuscript
 ├── _quarto.yml / _publish.yml # Quarto site + Posit Connect Cloud publish target
 └── CONTRIBUTING-POSIT.md      # Connect Cloud deploy notes
@@ -161,32 +162,42 @@ Full docs in [`docs/`](docs/README.md) and on the **[GitHub Wiki](https://github
 
 | Guide | Description |
 |-------|-------------|
+| [About](docs/about.md) | Vision, design pillars, history |
+| [Casino Offerings](docs/casino-offerings.md) | Full floor catalog and amenities |
 | [Player Guide](docs/player-guide.md) | Every menu, dialog, hotel flow, and shortcut |
 | [Getting Started](docs/getting-started.md) | Install, launch, CLI flags |
 | [Save Slots](docs/saves.md) | Load, create, and manage saves |
 | [Chip Economy](docs/chip-economy.md) | Wallet, ledger, buy-ins, cash-outs |
 | [Blackjack](docs/blackjack.md) | Table rules, controls, casino & standalone modes |
+| [Table Games](docs/table-games.md) | Hold'em, roulette, craps |
 | [Slot Machines](docs/slots.md) | Machines, paytables, progressives |
-| [Sports Book](docs/sportsbook.md) | Events, moneyline, spread, settlement |
+| [Lottery](docs/lottery.md) | Pick 3/4, Mega, scratchers |
+| [Sports Book](docs/sportsbook.md) | Events, moneyline, spread, prediction markets |
+| [Racing](docs/racing.md) | Thoroughbred + equestrian |
+| [Hotel](docs/hotel.md) / [Pool](docs/pool-complex.md) / [Rewards](docs/mgm-rewards.md) | Resort off the floor |
 | [Architecture](docs/architecture.md) | Packages, data flow, activity system |
 | [Adding Activities](docs/adding-activities.md) | Plug in new games |
 | [Testing](docs/testing.md) | Running and writing tests |
-| [Pixel RPG GDD](docs/rpg/GDD.md) | Overworld design & expansion roadmap |
+| [RNG](docs/rng.md) | CSPRNG guarantees |
+| [Pixel RPG](docs/pixel-rpg.md) / [GDD](docs/rpg/GDD.md) | Overworld design (Phases 1–6) |
 
 In-game help: **Casino Guide** from the main lobby.
 
 ## GitHub Pages deployment
 
-The interactive web terminal + RPG source lives in [`docs/`](docs/) on **`main`**. GitHub Actions mirrors the entire `docs/` tree to the **`gh-pages`** branch (see [`.github/workflows/deploy-gh-pages.yml`](.github/workflows/deploy-gh-pages.yml)).
+The interactive web terminal + RPG source lives in [`docs/`](docs/) on **`main`**. That tree is mirrored to the **`gh-pages`** branch `/docs` folder for the live site.
 
 **Enable Pages (one-time):** Repository **Settings → Pages → Deploy from branch → `gh-pages` → `/docs`.**
 
-Deployments trigger on pushes to `main` that touch `docs/**`, hourly drift checks, or manual workflow runs. Custom error screens (`404.html`, `maintenance.html`, `offline.html`) deploy with the site.
+Automatic push/schedule deploy is **disabled** (Actions billing limits). Publish manually with the preferred skill wrapper, or optionally run the workflow from the Actions tab (`workflow_dispatch` only):
 
 ```bash
-./scripts/sync-gh-pages.sh      # Manual sync
-./scripts/deploy-gh-pages.sh    # Full deploy
+bash .cursor/skills/gh-pages-deploy-loop/scripts/run-manual.sh   # Preferred
+# or: gh workflow run deploy-gh-pages.yml
+# legacy: SYNC_TRIGGER=manual_run ./scripts/sync-gh-pages.sh
 ```
+
+Custom error screens (`404.html`, `maintenance.html`, `offline.html`) deploy with the site. See [`.cursor/skills/gh-pages-deploy-loop/SKILL.md`](.cursor/skills/gh-pages-deploy-loop/SKILL.md).
 
 ## Posit Connect Cloud (documentation site)
 

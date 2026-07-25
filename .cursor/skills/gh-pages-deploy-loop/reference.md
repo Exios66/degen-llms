@@ -8,12 +8,12 @@
 
 ## Workflow triggers
 
-| Event | When | `trigger` in logs |
-|-------|------|-------------------|
-| `schedule` | Cron every 12h (00:00 & 12:00 UTC) | `schedule` |
-| `push` | `docs/**` or deploy scripts change on `main` | `push` |
-| `workflow_dispatch` | Actions tab → Run workflow | `workflow_dispatch` |
-| Skill / local wrapper | Agent or maintainer | `manual_run` |
+| Event | Status | `trigger` in logs |
+|-------|--------|-------------------|
+| Skill / local wrapper | **Active** | `manual_run` |
+| `workflow_dispatch` | **Active** (optional) | `workflow_dispatch` |
+| `schedule` | **Disabled** | `schedule` (historical log lines only) |
+| `push` | **Disabled** | `push` (historical log lines only) |
 
 ## Manual commands
 

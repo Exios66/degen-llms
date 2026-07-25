@@ -275,6 +275,7 @@ async function startOverworld(activeSession) {
     questManager,
     dialogue,
     get menu() { return menu; },
+    get rewardsPhone() { return rewardsPhone; },
   };
 
   touchPad = mountTouchControls();

@@ -195,6 +195,35 @@ def rpg_journey(page, base, failures: list[str], errors: list[str]) -> None:
     # then leave it: "return to casino floor" closes the panel in the overworld.
     page.evaluate("() => { window.__rpg.encounters.start('hotel_front_desk', {}); }")
     page.wait_for_timeout(300)
+    desk_actions = page.evaluate("""() => {
+      const mount = document.querySelector('.terminal-host-mount');
+      const labels = [...document.querySelectorAll('#terminal-overlay .menu-btn')]
+        .map((b) => b.textContent.trim());
+      const style = mount ? getComputedStyle(mount) : null;
+      return {
+        labels,
+        canScroll: Boolean(mount && mount.scrollHeight > mount.clientHeight - 1),
+        touchAction: style?.touchAction || '',
+      };
+    }""")
+    needed = (
+        "Locate reservation",
+        "Settle overdue",
+        "Upgrade to Panorama",
+        "Review folio",
+        "Standard checkout",
+        "Dining recommendations",
+        "Guest Directory",
+    )
+    missing = [n for n in needed if not any(n.lower() in lab.lower() for lab in desk_actions["labels"])]
+    step("hotel_desk_actions", not missing,
+         f"front desk missing interactions: {missing or desk_actions['labels']}")
+    step("hotel_desk_scroll",
+         "pan-y" in (desk_actions["touchAction"] or "")
+         or desk_actions["canScroll"]
+         or len(desk_actions["labels"]) >= 8,
+         f"front desk not scroll-friendly: {desk_actions}")
+
     room_btn = page.query_selector(
         "#terminal-overlay .menu-btn:text-matches('Enter your room|Find my room')")
     if room_btn:
@@ -346,6 +375,64 @@ def rpg_phone(browser, base, failures: list[str]) -> None:
     step("tap_advances", page.inner_text("#dialogue-overlay") != before
          or not page.evaluate("() => window.__rpg.dialogue.isActive()"),
          "tapping the screen did not move the conversation on")
+
+    # Close dialogue so the Rewards Phone FAB is free, then open it. On a phone
+    # viewport the flip shell must stay fully on-screen (not above the FAB).
+    page.evaluate("() => { const d = window.__rpg.dialogue; if (d.isActive()) d.close(); }")
+    page.wait_for_timeout(200)
+    page.evaluate("() => window.__rpg.rewardsPhone.open('reservation')")
+    page.wait_for_timeout(200)
+    phone_box = page.evaluate("""() => {
+      const root = document.querySelector('.rewards-phone-root');
+      const phone = document.querySelector('.rewards-phone');
+      if (!root || !phone || phone.hidden) return null;
+      const r = phone.getBoundingClientRect();
+      return {
+        top: r.top, bottom: r.bottom, left: r.left, right: r.right,
+        vw: window.innerWidth, vh: window.innerHeight,
+        isOpen: root.classList.contains('is-open'),
+        hasPad: document.body.classList.contains('has-touch-pad'),
+      };
+    }""")
+    in_view = bool(phone_box) and phone_box["isOpen"] and phone_box["hasPad"] \
+        and phone_box["top"] >= -1 and phone_box["left"] >= -1 \
+        and phone_box["bottom"] <= phone_box["vh"] + 1 \
+        and phone_box["right"] <= phone_box["vw"] + 1
+    step("rewards_phone_in_view", in_view,
+         f"rewards phone left the viewport: {phone_box}")
+    page.evaluate("() => window.__rpg.rewardsPhone.close()")
+
+    # Suite wing must be a real door off the guest corridor, with a return path.
+    suite = page.evaluate("""async () => {
+      const [corridor, delano] = await Promise.all([
+        fetch('/rpg/js/data/maps/guest_corridor.json').then((r) => r.json()),
+        fetch('/rpg/js/data/maps/delano_wing.json').then((r) => r.json()),
+      ]);
+      const east = (corridor.doors || []).find((d) => d.to === 'delano_wing');
+      const back = (delano.doors || []).find((d) => d.to === 'guest_corridor');
+      return { east, back };
+    }""")
+    step("suite_wing_door", bool(suite.get("east")) and bool(suite.get("back")),
+         f"suite wing doors missing: {suite}")
+
+    # Front desk on a phone: locate + core stay actions must be present and pan-able.
+    page.evaluate("() => { window.__rpg.encounters.start('hotel_front_desk', {}); }")
+    page.wait_for_timeout(300)
+    mobile_desk = page.evaluate("""() => {
+      const mount = document.querySelector('.terminal-host-mount');
+      const labels = [...document.querySelectorAll('#terminal-overlay .menu-btn')]
+        .map((b) => b.textContent.trim());
+      return {
+        labels,
+        touchAction: mount ? getComputedStyle(mount).touchAction : '',
+      };
+    }""")
+    step("mobile_desk_locate",
+         any("locate reservation" in lab.lower() for lab in mobile_desk["labels"]),
+         f"locate missing on mobile desk: {mobile_desk['labels']}")
+    step("mobile_desk_touch",
+         "pan-y" in (mobile_desk["touchAction"] or ""),
+         f"terminal mount touch-action={mobile_desk['touchAction']!r}")
 
     context.close()
 

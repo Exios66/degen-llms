@@ -60,6 +60,14 @@ preview. The Trainer Card's wardrobe reopens the same creator mid-game.
 | **T** | Trainer Card (quests, reputation, wardrobe) |
 | **P** | MGM Rewards phone |
 
+### On a phone
+
+The canvas fills the screen and a thumb pad mounts in the bottom corners: a
+d-pad on the left, **B** to run, **A** to talk, **☰** for the START menu. It
+hides itself whenever a conversation or a panel is up. The pad is optional —
+tap a tile to walk there (`Pathfinder.js` routes around the furniture), tap a
+person to walk over and talk, and tap anywhere to advance dialogue.
+
 Gold walkways connect every door, dark trim borders each zone, and floating
 signs name the room you're in — follow the gold and you can't get lost.
 

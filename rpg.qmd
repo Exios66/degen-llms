@@ -324,6 +324,12 @@ opening until you settle at the desk or win it back on the floor.
 | P | MGM Rewards phone |
 | ↑↑↓↓←→←→BA | Retro palette |
 
+On a phone the canvas fills the screen and a thumb pad appears in the bottom
+corners — a d-pad, **B** to run, **A** to talk, **☰** for the START menu — and
+it hides itself whenever a conversation or a panel takes over. You can also
+ignore the pad completely: tap a tile to walk there, tap a person to walk over
+and talk, and tap anywhere to advance dialogue.
+
 Gold walkways are the wayfinding: they connect the entrance, the pits, the
 aisles, and every door. Dark trim marks where one floor type ends, and floating
 signs name the zone you are standing in.

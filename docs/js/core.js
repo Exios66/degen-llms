@@ -1,12 +1,14 @@
 import { attachRewardsToSession } from "./rewards.js";
 import { attachHotelToSession } from "./hotel.js";
 import { attachAmenitiesToSession } from "./casino-amenities.js";
+import { attachClubToSession } from "./gentlemans-club.js";
 import { attachPoolComplexToSession } from "./pool-complex.js";
 import { attachWorldCycleToSession } from "./world-cycle.js";
 import { attachBankToSession } from "./bank-account.js";
 import { attachStaffOverridesToSession } from "./staff-manifest.js";
 import { attachIntoxicationToSession } from "./intoxication-effects.js";
 import { attachDiningToSession } from "./dining.js";
+import { attachBalconySmokeToSession } from "./balcony-smoke.js";
 import {
   getActiveSlotId,
   mirrorLibraryToCache,
@@ -291,10 +293,12 @@ export class PlayerSession {
     this.rewards = null;
     this.hotel = null;
     this.amenities = null;
+    this.gentlemansClub = null;
     this.poolComplex = null;
     this.worldCycle = null;
     this.intoxication = null;
     this.dining = null;
+    this.balconySmoke = null;
     this.progressivePools = {};
     this.horseRacingCustomNames = null;
     this.horseRacingNameOffset = 0;
@@ -351,10 +355,12 @@ export class PlayerSession {
     if (this.rewards) payload.rewards = this.rewards;
     if (this.hotel) payload.hotel = this.hotel;
     if (this.amenities) payload.amenities = this.amenities;
+    if (this.gentlemansClub) payload.gentlemansClub = this.gentlemansClub;
     if (this.poolComplex) payload.poolComplex = this.poolComplex;
     if (this.worldCycle) payload.worldCycle = this.worldCycle;
     if (this.intoxication) payload.intoxication = this.intoxication;
     if (this.dining) payload.dining = this.dining;
+    if (this.balconySmoke) payload.balconySmoke = this.balconySmoke;
     return payload;
   }
 
@@ -380,12 +386,14 @@ export class PlayerSession {
     attachRewardsToSession(s, data);
     attachHotelToSession(s, data);
     attachAmenitiesToSession(s, data);
+    attachClubToSession(s, data);
     attachPoolComplexToSession(s, data);
     attachWorldCycleToSession(s, data);
     attachBankToSession(s, data);
     attachStaffOverridesToSession(s, data);
     attachIntoxicationToSession(s, data);
     attachDiningToSession(s, data);
+    attachBalconySmokeToSession(s, data);
     s.casinoTimeMs = data.casinoTimeMs ?? 0;
     return s;
   }

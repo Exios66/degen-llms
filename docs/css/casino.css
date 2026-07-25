@@ -816,6 +816,25 @@ body {
   border-left: 3px solid var(--teal-accent, #2a9d8f);
 }
 
+.amenities-panel.gentlemans-club {
+  border-left-color: rgba(212, 175, 55, 0.85);
+  background:
+    radial-gradient(ellipse at 20% 0%, rgba(120, 40, 60, 0.18), transparent 55%),
+    radial-gradient(ellipse at 90% 100%, rgba(40, 20, 50, 0.22), transparent 50%),
+    rgba(18, 10, 16, 0.35);
+}
+
+.gc-meter {
+  font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, monospace;
+  letter-spacing: 0.08em;
+  font-size: 1.1rem;
+  padding: 0.65rem 0.75rem;
+  margin: 0.75rem 0;
+  color: #e8c547;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(232, 197, 71, 0.28);
+}
+
 .amenities-shortcuts {
   margin-top: 0.75rem;
   border-left: 3px solid var(--teal-accent, #2a9d8f);
@@ -4210,8 +4229,14 @@ body {
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.35);
 }
 
+.market-ticker-scope-hint {
+  margin: 0.35rem 0 0.15rem;
+  font-size: 0.78rem;
+}
+
 .market-ticker__header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.55rem;
   padding: 0.35rem 0.65rem 0.15rem;
@@ -4219,6 +4244,13 @@ body {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.62);
+}
+
+.market-ticker__scope {
+  margin-left: auto;
+  color: var(--gold, #ffd700);
+  font-weight: 700;
+  letter-spacing: 0.04em;
 }
 
 .market-ticker__live {
@@ -4279,6 +4311,17 @@ body {
   font-size: 0.78rem;
 }
 
+.market-ticker__class {
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.4);
+  min-width: 1.6rem;
+}
+
+.market-ticker__item--crypto .market-ticker__class { color: #39c5cf; }
+.market-ticker__item--commodities .market-ticker__class { color: #e8a838; }
+.market-ticker__item--nyse .market-ticker__class { color: #9ab0ff; }
+
 .market-ticker__sym {
   color: var(--gold, #ffd700);
   font-weight: 700;
@@ -4291,6 +4334,90 @@ body {
 
 .market-ticker__chg {
   font-size: 0.7rem;
+}
+
+.market-ticker__chg--week {
+  opacity: 0.85;
+}
+
+.market-ticker__tf-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.15rem;
+}
+
+.market-ticker__tf {
+  font: inherit;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.65);
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 2px;
+  padding: 0.2rem 0.45rem;
+  cursor: pointer;
+}
+
+.market-ticker__tf.is-active {
+  color: #0a1210;
+  background: var(--gold, #ffd700);
+  border-color: rgba(255, 230, 150, 0.5);
+}
+
+.market-ticker__tf-hint {
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+}
+
+.market-ticker__badge {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.35rem;
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  border: 1px solid rgba(255, 215, 0, 0.35);
+  color: var(--gold, #ffd700);
+  border-radius: 2px;
+  vertical-align: middle;
+}
+
+.market-ticker__activity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.55rem;
+  margin-top: 0.35rem;
+  font-size: 0.68rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.market-ticker__activity-label {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 700;
+}
+
+.market-ticker__print {
+  font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  padding: 0.1rem 0.35rem;
+  border-radius: 2px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.market-ticker__print--up { color: #3dcc8c; }
+.market-ticker__print--down { color: #ff6b6b; }
+
+.market-ticker--compact .market-ticker__canvas {
+  height: 64px;
+}
+
+.market-ticker-host--pretrade {
+  margin-bottom: 0.75rem;
 }
 
 .market-ticker__chg.is-up,
@@ -4319,7 +4446,7 @@ body {
 
 .market-ticker__canvas {
   width: 100%;
-  height: 72px;
+  height: 88px;
   display: block;
 }
 

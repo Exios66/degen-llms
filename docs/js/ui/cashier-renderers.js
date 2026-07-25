@@ -1,7 +1,8 @@
 // Extracted from app.js — shared by the web terminal and the pixel RPG.
 import {
-  OUTSIDE_EXPENSE_CATEGORIES, buyInForSession, cashOutToBank, ensureBank,
-  expenseCategoryLabel, fundBankFromOutside, payBankExpense, renameBankAccount,
+  BANK_RESORT_PURCHASES, OUTSIDE_EXPENSE_GROUPS, buyInForSession, cashOutToBank, ensureBank,
+  expenseCategoryLabel, expenseGroupById, fundBankFromOutside, payBankExpense,
+  purchaseBankResortItem, renameBankAccount, resortPurchaseAvailable,
 } from "../bank-account.js";
 import {
   BUY_CHIPS_MAX, CASHOUT_TO_BANK_MAX, bankWithdrawMaxForSession, cashOutMaxForSession,
@@ -192,17 +193,24 @@ export function buildCashierRenderers(ctx) {
       chipLine(),
       el("p", {
         className: "dim",
-        textContent: "Your private offshore account — cashed-out chips land here for life outside the casino.",
+        textContent: "Your private offshore account — park winnings, pay life & business costs, or buy resort privileges.",
       }),
       menu(
-        ["Deposit outside funds", "Pay outside expense", "Rename account", "View bank ledger"],
+        [
+          "Deposit outside funds",
+          "Life & business expenses",
+          "Buy resort privileges",
+          "Rename account",
+          "View bank ledger",
+        ],
         "Offshore banking:",
         (choice) => {
           if (choice === 0) { goBack(); return; }
           if (choice === 1) pushView("bank-deposit");
-          else if (choice === 2) pushView("bank-expense");
-          else if (choice === 3) pushView("bank-rename");
-          else if (choice === 4) pushView("bank-ledger");
+          else if (choice === 2) pushView("bank-expense-groups");
+          else if (choice === 3) pushView("bank-resort");
+          else if (choice === 4) pushView("bank-rename");
+          else if (choice === 5) pushView("bank-ledger");
         },
         { showCasinoBanner: false },
       ),
@@ -234,11 +242,46 @@ export function buildCashierRenderers(ctx) {
     ]);
   }
 
-  function renderBankExpense() {
+  function renderBankExpenseGroups() {
     const bank = ensureBank(ctx.session);
     if (bank.balance <= 0) {
       return el("div", { className: "panel" }, [
-        banner("Pay Outside Expense"),
+        banner("Life & Business Expenses"),
+        el("p", { className: "error", textContent: "Your bank account is empty." }),
+        el("div", { className: "action-bar" }, [
+          el("button", { className: "btn", textContent: "Back", onclick: () => goBack() }),
+        ]),
+      ]);
+    }
+    return el("div", {}, [
+      statusBanner(),
+      banner("Life & Business Expenses"),
+      chipLine(),
+      el("p", {
+        className: "dim",
+        textContent: "Choose a ledger branch — personal lifestyle, legal & debt, business, or misc.",
+      }),
+      menu(
+        OUTSIDE_EXPENSE_GROUPS.map((g) => g.label),
+        "Expense branch:",
+        (choice) => {
+          if (choice === 0) { goBack(); return; }
+          const group = OUTSIDE_EXPENSE_GROUPS[choice - 1];
+          if (!group) return;
+          runtime.bankExpenseGroupId = group.id;
+          pushView("bank-expense");
+        },
+        { showCasinoBanner: false },
+      ),
+    ]);
+  }
+
+  function renderBankExpense() {
+    const bank = ensureBank(ctx.session);
+    const group = expenseGroupById(runtime.bankExpenseGroupId) || OUTSIDE_EXPENSE_GROUPS[0];
+    if (bank.balance <= 0) {
+      return el("div", { className: "panel" }, [
+        banner(group.label),
         el("p", { className: "error", textContent: "Your bank account is empty." }),
         el("div", { className: "action-bar" }, [
           el("button", { className: "btn", textContent: "Back", onclick: () => goBack() }),
@@ -249,7 +292,7 @@ export function buildCashierRenderers(ctx) {
     const withdrawMax = bankWithdrawMaxForSession(ctx.session);
     const tier = tierForWagered(ctx.session.rewards?.lifetimeWagered ?? 0);
     const spendCap = Math.min(bank.balance, withdrawMax);
-    const categorySelect = el("select", {}, OUTSIDE_EXPENSE_CATEGORIES.map(([id, label]) =>
+    const categorySelect = el("select", {}, group.categories.map(([id, label]) =>
       el("option", { value: id, textContent: label })
     ));
     const amountInput = el("input", {
@@ -258,14 +301,15 @@ export function buildCashierRenderers(ctx) {
       max: String(spendCap),
       value: String(Math.min(100, spendCap)),
     });
-    const memoInput = el("input", { type: "text", placeholder: "Optional memo" });
+    const memoInput = el("input", { type: "text", placeholder: "Optional memo / invoice note" });
 
     return el("div", { className: "panel" }, [
-      banner("Pay Outside Expense"),
+      banner(group.label),
       chipLine(),
+      el("p", { className: "dim", textContent: group.blurb }),
       el("p", {
         className: "dim",
-        textContent: `${tier.label} withdraw limit: $${withdrawMax.toLocaleString()} per transfer (scales with MGM Rewards).`,
+        textContent: `${tier.label} withdraw limit: $${withdrawMax.toLocaleString()} per transfer.`,
       }),
       el("div", { className: "form-row" }, [el("label", { textContent: "Category" }), categorySelect]),
       el("div", { className: "form-row" }, [el("label", { textContent: "Amount" }), amountInput]),
@@ -298,6 +342,69 @@ export function buildCashierRenderers(ctx) {
         }),
         el("button", { className: "btn", textContent: "Back", onclick: () => goBack() }),
       ]),
+    ]);
+  }
+
+  function renderBankResort() {
+    const bank = ensureBank(ctx.session);
+    if (bank.balance <= 0) {
+      return el("div", { className: "panel" }, [
+        banner("Resort Privileges"),
+        el("p", { className: "error", textContent: "Your bank account is empty." }),
+        el("div", { className: "action-bar" }, [
+          el("button", { className: "btn", textContent: "Back", onclick: () => goBack() }),
+        ]),
+      ]);
+    }
+
+    const withdrawMax = bankWithdrawMaxForSession(ctx.session);
+    const tier = tierForWagered(ctx.session.rewards?.lifetimeWagered ?? 0);
+    const labels = BANK_RESORT_PURCHASES.map((item) => {
+      const avail = resortPurchaseAvailable(ctx.session, item);
+      const tag = avail.ok ? `$${item.cost.toLocaleString()}` : "unavailable";
+      return `${item.label} (${tag})`;
+    });
+
+    return el("div", {}, [
+      statusBanner(),
+      banner("Resort Privileges"),
+      chipLine(),
+      el("p", {
+        className: "dim",
+        textContent: `Spend offshore cash on in-resort upgrades. ${tier.label} withdraw cap $${withdrawMax.toLocaleString()}.`,
+      }),
+      el("ul", { className: "dim", style: "margin:0.5rem 0 0.75rem;padding-left:1.1rem;font-size:0.85rem;" },
+        BANK_RESORT_PURCHASES.map((item) => el("li", { textContent: `${item.label} — ${item.blurb}` })),
+      ),
+      menu(
+        labels,
+        "Purchase:",
+        (choice) => {
+          if (choice === 0) { goBack(); return; }
+          const item = BANK_RESORT_PURCHASES[choice - 1];
+          if (!item) return;
+          const avail = resortPurchaseAvailable(ctx.session, item);
+          if (!avail.ok) {
+            showStatus(avail.reason || "Unavailable.", "error");
+            render();
+            return;
+          }
+          if (!confirm(`Buy ${item.label} for $${item.cost.toLocaleString()}?`)) return;
+          const outcome = purchaseBankResortItem(ctx.session, item.id);
+          if (outcome === "ok") {
+            persist();
+            showStatus(`Purchased ${item.label}. Bank balance: ${fmtChips(bank.balance)}`);
+            render();
+          } else if (outcome === "tier_withdraw_limit") {
+            showStatus(`${tier.label} withdraw limit is $${withdrawMax.toLocaleString()}.`, "error");
+          } else if (outcome === "insufficient") {
+            showStatus("Insufficient offshore balance.", "error");
+          } else {
+            showStatus(avail.reason || "Purchase failed.", "error");
+          }
+        },
+        { showCasinoBanner: false },
+      ),
     ]);
   }
 
@@ -361,7 +468,9 @@ export function buildCashierRenderers(ctx) {
     "cashier-ledger": renderCashierLedger,
     "bank-account": renderBankAccount,
     "bank-deposit": renderBankDeposit,
+    "bank-expense-groups": renderBankExpenseGroups,
     "bank-expense": renderBankExpense,
+    "bank-resort": renderBankResort,
     "bank-rename": renderBankRename,
     "bank-ledger": renderBankLedger,
   };

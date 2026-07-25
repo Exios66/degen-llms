@@ -1,5 +1,6 @@
 /**
- * VIP venue gates — High Limit salon and Foundation Room / Noir lounge.
+ * VIP venue gates — High Limit salon, Foundation Room / Noir lounge,
+ * and the Gentleman's Club (Velvet Ledger).
  * Keep chip thresholds aligned with docs/rpg/GDD.md where noted.
  */
 
@@ -21,26 +22,28 @@ export const FOUNDATION_MIN_REWARDS_TIER_IDX = 4;
 /** Minimum host rapport OR intox path for Foundation Room entry. */
 export const FOUNDATION_MIN_HOST_RAPPORT = 15;
 
+/** Gold+ opens the Gentleman's Club rope (or suite key / phone line). */
+export const GENTLEMANS_CLUB_MIN_REWARDS_TIER_IDX = 2;
+
 /**
  * @param {import("./core.js").PlayerSession} session
  * @param {{ id: string } | null} stakeTier
  */
 export function canEnterHighLimitSalon(session, stakeTier) {
   const balance = session.wallet?.balance ?? 0;
-  if (balance < HIGH_LIMIT_SALON_CHIP_MIN) {
+  const hasMarker = Boolean(session.bank?.resortPerks?.high_limit_marker);
+  if (balance < HIGH_LIMIT_SALON_CHIP_MIN && !hasMarker) {
     return {
       ok: false,
-      reason: `High Limit salon requires at least ${HIGH_LIMIT_SALON_CHIP_MIN.toLocaleString()} chips on the floor.`,
+      reason: `High Limit salon requires at least ${HIGH_LIMIT_SALON_CHIP_MIN.toLocaleString()} chips on the floor (or an offshore High Limit marker).`,
     };
   }
   const tierId = stakeTier?.id;
-  if (!tierId || !SALON_STAKE_TIER_IDS.includes(tierId)) {
-    return {
-      ok: false,
-      reason: `Choose a ${STAKE_TIERS.high_limit.name} stake tier or above before the salon door opens.`,
-    };
-  }
-  return { ok: true };
+  return {
+    ok: true,
+    needsStakeAssign: !tierId || !SALON_STAKE_TIER_IDS.includes(tierId),
+    hasMarker,
+  };
 }
 
 /**
@@ -61,20 +64,56 @@ export function canEnterFoundationRoom(session) {
   const hostRapport = getRapport(session, "host_representative");
   const calls = session.hotel?.roomAmenities?.phoneCalls ?? [];
   const calledFoundation = calls.includes("foundation_room");
+  const roomType = session.hotel?.roomType;
+  const suiteOrBetter = roomType === "suite" || roomType === "penthouse";
 
-  if (hostRapport < FOUNDATION_MIN_HOST_RAPPORT && !buzzed) {
+  const vipRetainer = Boolean(session.bank?.resortPerks?.vip_host_retainer);
+
+  // Any one social/atmosphere path opens the rope for Noir+ members.
+  if (
+    hostRapport >= FOUNDATION_MIN_HOST_RAPPORT
+    || buzzed
+    || calledFoundation
+    || suiteOrBetter
+    || vipRetainer
+  ) {
     return {
-      ok: false,
-      reason: "Velvet rope closed — build rapport with Alexandra (host line) or visit Betty's until the lounge recognizes you.",
+      ok: true,
+      rewardsTier,
+      hostRapport,
+      buzzed,
+      calledFoundation,
+      suiteOrBetter,
+      vipRetainer,
     };
   }
 
-  if (!buzzed && !calledFoundation) {
-    return {
-      ok: false,
-      reason: "Noir lounge whispers require atmosphere — call the Foundation Room line from your suite phone or loosen up at the bar first.",
-    };
+  return {
+    ok: false,
+    reason: "Velvet rope closed — build host rapport, call the Foundation Room from your suite phone, upgrade to a suite, loosen up at the bar, or buy a VIP host retainer offshore.",
+  };
+}
+
+/**
+ * Gentleman's Club (Velvet Ledger) — hotel amenity nightlife lounge.
+ * @param {import("./core.js").PlayerSession} session
+ */
+export function canEnterGentlemansClub(session) {
+  const rewardsTier = tierForWagered(session.rewards?.lifetimeWagered ?? 0);
+  const rewardsIdx = tierIndex(rewardsTier.id);
+  const roomType = session.hotel?.roomType;
+  const suiteOrBetter = roomType === "suite" || roomType === "penthouse";
+  const calls = session.hotel?.roomAmenities?.phoneCalls ?? [];
+  const calledClub = calls.includes("gentlemans_club");
+  const clubState = session.gentlemansClub;
+  const priorMember = (clubState?.visits ?? 0) > 0 || (clubState?.rainCount ?? 0) > 0;
+
+  if (rewardsIdx >= GENTLEMANS_CLUB_MIN_REWARDS_TIER_IDX || suiteOrBetter || calledClub || priorMember) {
+    return { ok: true, rewardsTier, suiteOrBetter, calledClub, priorMember };
   }
 
-  return { ok: true, rewardsTier, hostRapport, buzzed, calledFoundation };
+  return {
+    ok: false,
+    reason: `${rewardsTier.label} tier — The Velvet Ledger wants Gold+, a suite key, or the club phone line from your room.`,
+  };
 }

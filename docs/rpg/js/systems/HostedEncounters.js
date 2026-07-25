@@ -18,14 +18,14 @@ export const HOSTED_ENCOUNTERS = {
   guest_directory: { view: "hotel-guest-directory", title: "GUEST DIRECTORY" },
 
   // ── Pool complex ─────────────────────────────────────────────────────────
-  pool: { view: "pool-complex", activityId: "pool_complex", title: "MANDALAY BEACH" },
-  pool_wave: { view: "pool-wave", activityId: "pool_complex", title: "WAVE POOL" },
-  pool_hot_tubs: { view: "pool-hot-tubs", activityId: "pool_complex", title: "HOT TUBS" },
-  pool_cabanas: { view: "pool-cabanas", activityId: "pool_complex", title: "CABANAS" },
-  pool_reef: { view: "pool-reef", activityId: "pool_complex", title: "SHARK REEF" },
-  pool_beach_club: { view: "pool-beach-club", activityId: "pool_complex", title: "BEACH CLUB" },
-  pool_rave: { view: "pool-rave", activityId: "pool_complex", title: "MOONLIGHT RAVE" },
-  pool_events: { view: "pool-events", activityId: "pool_complex", title: "POOL EVENTS" },
+  pool: { view: "pool-complex", activityId: "pool_complex", zoneId: "hub", title: "MANDALAY BEACH" },
+  pool_wave: { view: "pool-wave", activityId: "pool_complex", zoneId: "wave_pool", title: "WAVE POOL" },
+  pool_hot_tubs: { view: "pool-hot-tubs", activityId: "pool_complex", zoneId: "hot_tubs", title: "HOT TUBS" },
+  pool_cabanas: { view: "pool-cabanas", activityId: "pool_complex", zoneId: "cabanas", title: "CABANAS" },
+  pool_reef: { view: "pool-reef", activityId: "pool_complex", zoneId: "shark_reef", title: "SHARK REEF" },
+  pool_beach_club: { view: "pool-beach-club", activityId: "pool_complex", zoneId: "beach_club", title: "BEACH CLUB" },
+  pool_rave: { view: "pool-rave", activityId: "pool_complex", zoneId: "beach_rave", title: "MOONLIGHT RAVE" },
+  pool_events: { view: "pool-events", activityId: "pool_complex", zoneId: "events", title: "POOL EVENTS" },
 
   // ── Shops and bars ───────────────────────────────────────────────────────
   amenities: { view: "casino-floor", activityId: "amenities", title: "RESORT AMENITIES" },
@@ -55,6 +55,7 @@ export const HOSTED_ENCOUNTERS = {
   // ── Gated venues ─────────────────────────────────────────────────────────
   high_limit_salon: { view: "high-limit-salon", title: "HIGH LIMIT SALON" },
   foundation_room_lounge: { view: "foundation-room", title: "FOUNDATION ROOM" },
+  gentlemans_club: { view: "gentlemans-club", activityId: "gentlemans_club", title: "GENTLEMAN'S CLUB" },
 };
 
 /** Encounters that keep their bespoke pixel battle screen but pick stakes first. */

@@ -79,6 +79,17 @@ Blackjack maintains a **table rail** (in-hand balance) that mirrors your wallet:
 
 This prevents desync between the table and the casino floor.
 
+## Off-strip bank account
+
+Park winnings outside the cage. From **Private Offshore Account**:
+
+1. Deposit outside funds
+2. Life & business expenses — personal lifestyle, legal/debt, business contracts, misc
+3. Buy resort privileges — floor floats, comps, arcade vouchers, late-checkout credit, VIP/High Limit markers, recovery spa
+4. Rename account / view bank ledger
+
+Spends respect MGM Rewards tier withdraw caps.
+
 ## Insufficient funds
 
 Activities check balance before accepting wagers:

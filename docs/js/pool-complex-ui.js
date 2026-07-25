@@ -6,14 +6,35 @@ import {
   getPoolSummary, getUnlockedPoolEvents,
 } from "./pool-complex.js";
 
+const VIEW_TO_ZONE = {
+  "pool-complex": "hub",
+  "pool-wave": "wave_pool",
+  "pool-hot-tubs": "hot_tubs",
+  "pool-cabanas": "cabanas",
+  "pool-reef": "shark_reef",
+  "pool-beach-club": "beach_club",
+  "pool-rave": "beach_rave",
+  "pool-events": "events",
+};
+
 /**
- * Pool Complex view renderers — accessible from hotel lobby.
+ * Pool Complex view renderers — prefer the graphic PoolComplexOverlay when mounted.
+ * Fallback text menus remain for deep-links / hosts without the overlay root.
  * @param {object} ctx
  */
 export function buildPoolRenderers(ctx) {
   const {
     session, pushView, goBack, navigateTo, persist, render, el, banner, chipLine, statusBanner, showStatus,
   } = ctx;
+
+  function openOverlay(zoneId) {
+    const overlay = ctx.poolOverlay;
+    if (!overlay) return false;
+    overlay.setSession(session);
+    if (overlay.active) overlay.openZone(zoneId);
+    else overlay.open(zoneId);
+    return true;
+  }
 
   function menuBtn(label, onclick, isBack = false) {
     return el("li", {}, [
@@ -45,8 +66,29 @@ export function buildPoolRenderers(ctx) {
     if (refresh) render();
   }
 
+  function overlayGateway(viewName) {
+    const zoneId = VIEW_TO_ZONE[viewName] || "hub";
+    if (openOverlay(zoneId)) {
+      return el("div", { className: "panel hotel-panel pool-complex-panel" }, [
+        statusBanner(),
+        banner("Mandalay Beach"),
+        chipLine(),
+        el("p", { className: "subtitle", textContent: "Pool Complex overlay" }),
+        el("p", { className: "dim", textContent: "Opening the graphic beach deck…" }),
+        el("ul", { className: "menu-list" }, [
+          menuBtn("Re-open pool complex", () => openOverlay(zoneId)),
+          menuBtn("Back", () => (viewName === "pool-complex" ? navigateTo("hotel-lobby") : navigateTo("pool-complex")), true),
+        ]),
+      ]);
+    }
+    return null;
+  }
+
   function renderPoolComplexHub() {
     ensurePoolComplex(session);
+    const gated = overlayGateway("pool-complex");
+    if (gated) return gated;
+
     const summary = getPoolSummary(session);
     const unlocked = getUnlockedPoolEvents(session);
 
@@ -76,6 +118,9 @@ export function buildPoolRenderers(ctx) {
   }
 
   function renderPoolWave() {
+    const gated = overlayGateway("pool-wave");
+    if (gated) return gated;
+
     const log = el("div", { className: "log-area hotel-log" });
     enterZone(session, "wave_pool");
     persist();
@@ -111,6 +156,9 @@ export function buildPoolRenderers(ctx) {
   }
 
   function renderPoolHotTubs() {
+    const gated = overlayGateway("pool-hot-tubs");
+    if (gated) return gated;
+
     const log = el("div", { className: "log-area hotel-log" });
     enterZone(session, "hot_tubs");
     persist();
@@ -139,6 +187,9 @@ export function buildPoolRenderers(ctx) {
   }
 
   function renderPoolCabanas() {
+    const gated = overlayGateway("pool-cabanas");
+    if (gated) return gated;
+
     const log = el("div", { className: "log-area hotel-log" });
     const pc = ensurePoolComplex(session);
 
@@ -172,13 +223,16 @@ export function buildPoolRenderers(ctx) {
   }
 
   function renderPoolReef() {
+    const gated = overlayGateway("pool-reef");
+    if (gated) return gated;
+
     const log = el("div", { className: "log-area hotel-log" });
     const pc = ensurePoolComplex(session);
     enterZone(session, "shark_reef");
     persist();
 
     const photoButtons = Object.values(SHARK_SPECIES).map((sp) =>
-      menuBtn(`📷 ${sp.label}`, () => {
+      menuBtn(sp.label, () => {
         runAction(log, photographShark(session, sp.id), { refresh: true });
       }),
     );
@@ -200,6 +254,9 @@ export function buildPoolRenderers(ctx) {
   }
 
   function renderPoolBeachClub() {
+    const gated = overlayGateway("pool-beach-club");
+    if (gated) return gated;
+
     const log = el("div", { className: "log-area hotel-log" });
     const pc = ensurePoolComplex(session);
 
@@ -233,6 +290,9 @@ export function buildPoolRenderers(ctx) {
   }
 
   function renderPoolRave() {
+    const gated = overlayGateway("pool-rave");
+    if (gated) return gated;
+
     const log = el("div", { className: "log-area hotel-log" });
     enterZone(session, "beach_rave");
     persist();
@@ -267,6 +327,9 @@ export function buildPoolRenderers(ctx) {
   }
 
   function renderPoolEvents() {
+    const gated = overlayGateway("pool-events");
+    if (gated) return gated;
+
     const pc = ensurePoolComplex(session);
     const unlocked = getUnlockedPoolEvents(session);
     const locked = Object.values(POOL_EVENTS).filter((e) => !pc.unlockedEvents.includes(e.id));

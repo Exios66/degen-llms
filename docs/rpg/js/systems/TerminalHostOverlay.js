@@ -10,6 +10,7 @@ import { buildRacingRenderers } from "../../../js/ui/racing-renderers.js";
 import { buildCashierRenderers } from "../../../js/ui/cashier-renderers.js";
 import { buildMetaRenderers } from "../../../js/ui/meta-renderers.js";
 import { buildVenueRenderers } from "../../../js/ui/venue-renderers.js";
+import { buildGentlemansClubRenderers } from "../../../js/ui/gentlemans-club-renderers.js";
 import { buildHotelRenderers } from "../../../js/hotel-ui.js";
 import { buildPoolRenderers } from "../../../js/pool-complex-ui.js";
 import { buildAmenitiesRenderers } from "../../../js/casino-amenities-ui.js";
@@ -35,7 +36,9 @@ export class TerminalHostOverlay {
    * @param {import("../../../js/core.js").PlayerSession} session
    * @param {{ onClose?: (r: { net: number }) => void, onPersist?: () => void,
    *           onView?: (view: string) => void, rewardsPhone?: object,
-   *           diningOverlay?: import("../../../js/DiningOverlay.js").DiningOverlay }} hooks
+   *           diningOverlay?: import("../../../js/DiningOverlay.js").DiningOverlay,
+   *           poolOverlay?: import("../../../js/PoolComplexOverlay.js").PoolComplexOverlay,
+   *           balconySmokeOverlay?: import("../../../js/BalconySmokeOverlay.js").BalconySmokeOverlay }} hooks
    */
   constructor(root, session, hooks = {}) {
     this.root = root;
@@ -54,6 +57,8 @@ export class TerminalHostOverlay {
       get session() { return session; },
       get rewardsPhone() { return hooks.rewardsPhone ?? null; },
       get diningOverlay() { return hooks.diningOverlay ?? null; },
+      get poolOverlay() { return hooks.poolOverlay ?? null; },
+      get balconySmokeOverlay() { return hooks.balconySmokeOverlay ?? null; },
       runtime: this.runtime,
       persist: () => this.persist(),
       render: () => this.render(),
@@ -101,6 +106,7 @@ export class TerminalHostOverlay {
       ...buildCashierRenderers(ctx),
       ...buildMetaRenderers(ctx),
       ...buildVenueRenderers(ctx),
+      ...buildGentlemansClubRenderers(ctx),
       ...buildHotelRenderers(ctx),
       ...buildPoolRenderers(ctx),
       ...buildAmenitiesRenderers(ctx),

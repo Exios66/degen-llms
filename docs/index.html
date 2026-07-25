@@ -12,11 +12,13 @@
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/casino.css?v=3df9731">
-  <link rel="stylesheet" href="css/intoxication-effects.css?v=3df9731">
-  <link rel="stylesheet" href="css/rewards-phone.css?v=3df9731">
-  <link rel="stylesheet" href="css/dining-overlay.css?v=3df9731">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/casino.css?v=a3c6519">
+  <link rel="stylesheet" href="css/intoxication-effects.css?v=a3c6519">
+  <link rel="stylesheet" href="css/rewards-phone.css?v=a3c6519">
+  <link rel="stylesheet" href="css/dining-overlay.css?v=a3c6519">
+  <link rel="stylesheet" href="css/pool-overlay.css?v=a3c6519">
+  <link rel="stylesheet" href="css/balcony-smoke-overlay.css?v=a3c6519">
 </head>
 <body>
   <div id="app" aria-live="polite">
@@ -56,7 +58,9 @@
   <div id="rewards-phone" aria-live="polite"></div>
   <div id="arcade-overlay" class="arcade-overlay" aria-hidden="true" aria-live="polite"></div>
   <div id="dining-overlay" class="dining-overlay" aria-hidden="true" aria-live="polite"></div>
-  <script type="module" src="js/app.js?v=3df9731"></script>
+  <div id="pool-overlay" class="pool-overlay" aria-hidden="true" aria-live="polite"></div>
+  <div id="balcony-smoke-overlay" class="balcony-smoke-overlay" aria-hidden="true" aria-live="polite"></div>
+  <script type="module" src="js/app.js?v=a3c6519"></script>
   <script>
     window.addEventListener("error", function (e) {
       var app = document.getElementById("app");

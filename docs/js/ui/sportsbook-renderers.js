@@ -6,6 +6,7 @@ import {
   getUniqueSports, oddsForSelection,
 } from "../sportsbook.js";
 import { effectiveTableStakes, formatStakeRange } from "../stakes.js";
+import { resolveActivityMin } from "../salon-exclusives.js";
 
 function eventCardLines(el, event, i) {
   const kids = [
@@ -62,7 +63,7 @@ export function buildSportsbookRenderers(ctx) {
     if (!runtime.sportsbook.events.length) {
       runtime.sportsbook.refreshBoardAsync(false).then(() => render());
       return el("div", { className: "panel" }, [
-        banner("Sports Book — Mandalay Sports Book"),
+        banner(runtime.sportsbook.salonDesk ? "Salon Sports Desk — Whale Lines" : "Sports Book — Mandalay Sports Book"),
         chipLine(),
         el("p", { className: "dim", textContent: "Loading scenario board…" }),
         el("div", { className: "action-bar" }, [
@@ -77,9 +78,11 @@ export function buildSportsbookRenderers(ctx) {
     runtime.sportsbook.predictions.syncMarkets(runtime.sportsbook.events);
 
     const tier = runtime.stakeTier;
+    const activityMin = resolveActivityMin(runtime, act.minBet);
     const wagerStakes = tier
-      ? effectiveTableStakes(tier, ctx.session.wallet.balance, act.minBet)
-      : { minBet: act.minBet, maxBet: ctx.session.wallet.balance };
+      ? effectiveTableStakes(tier, ctx.session.wallet.balance, activityMin)
+      : { minBet: activityMin, maxBet: ctx.session.wallet.balance };
+    const salonDesk = Boolean(runtime.sportsbook.salonDesk);
 
     const tabSports = el("button", {
       className: `sportsbook-tab${runtime.sportsbook.activeTab === "sports" ? " active" : ""}`,
@@ -186,8 +189,14 @@ export function buildSportsbookRenderers(ctx) {
       : ["Place prediction contract", "Refresh market prices", "Next prediction slate", "Settle all open positions"];
 
     return el("div", { className: "panel" }, [
-      banner("Sports Book — Mandalay Sports Book"),
+      banner(salonDesk ? "Salon Sports Desk — Whale Lines" : "Sports Book — Mandalay Sports Book"),
       chipLine(),
+      salonDesk
+        ? el("p", {
+          className: "success",
+          textContent: "High Limit Salon exclusives — these tickets never hit the main floor board.",
+        })
+        : null,
       tier ? el("p", { className: "dim", textContent: `${tier.name}: ${formatStakeRange(wagerStakes.minBet, wagerStakes.maxBet, { noCap: tier.maxBet == null })}` }) : null,
       el("div", { className: "sportsbook-tabs" }, [tabSports, tabPredictions]),
       el("p", { className: "subtitle", textContent: runtime.sportsbook.activeTab === "sports" ? "Today's Board" : "Prediction Markets" }),
@@ -230,8 +239,8 @@ export function buildSportsbookRenderers(ctx) {
     const act = ACTIVITIES.sportsbook;
     const tier = runtime.stakeTier;
     const wagerStakes = tier
-      ? effectiveTableStakes(tier, ctx.session.wallet.balance, act.minBet)
-      : { minBet: act.minBet, maxBet: ctx.session.wallet.balance };
+      ? effectiveTableStakes(tier, ctx.session.wallet.balance, resolveActivityMin(runtime, act.minBet))
+      : { minBet: resolveActivityMin(runtime, act.minBet), maxBet: ctx.session.wallet.balance };
     const visible = filterEvents(runtime.sportsbook.events, runtime.sportsbook.sportFilter);
     const eventPool = visible.length ? visible : runtime.sportsbook.events;
     const eventSelect = el("select", {}, eventPool.map((e, i) =>
@@ -364,8 +373,8 @@ export function buildSportsbookRenderers(ctx) {
     const act = ACTIVITIES.sportsbook;
     const tier = runtime.stakeTier;
     const wagerStakes = tier
-      ? effectiveTableStakes(tier, ctx.session.wallet.balance, act.minBet)
-      : { minBet: act.minBet, maxBet: ctx.session.wallet.balance };
+      ? effectiveTableStakes(tier, ctx.session.wallet.balance, resolveActivityMin(runtime, act.minBet))
+      : { minBet: resolveActivityMin(runtime, act.minBet), maxBet: ctx.session.wallet.balance };
 
     const legCount = Math.min(4, games.length);
     const legSelects = [];
@@ -479,8 +488,8 @@ export function buildSportsbookRenderers(ctx) {
     const act = ACTIVITIES.sportsbook;
     const tier = runtime.stakeTier;
     const wagerStakes = tier
-      ? effectiveTableStakes(tier, ctx.session.wallet.balance, act.minBet)
-      : { minBet: act.minBet, maxBet: ctx.session.wallet.balance };
+      ? effectiveTableStakes(tier, ctx.session.wallet.balance, resolveActivityMin(runtime, act.minBet))
+      : { minBet: resolveActivityMin(runtime, act.minBet), maxBet: ctx.session.wallet.balance };
 
     const marketsForSelect = filterMarkets(
       runtime.sportsbook.predictions.markets,

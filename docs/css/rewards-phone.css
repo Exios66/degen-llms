@@ -234,6 +234,13 @@
   color: #5a9c5a;
 }
 
+.rewards-member-room {
+  margin-top: 4px;
+  font-size: 6px;
+  color: #e8c547;
+  letter-spacing: 0.02em;
+}
+
 .rewards-member-card--noir {
   border-color: #c678dd;
 }
@@ -369,6 +376,18 @@
   flex: 1 1 45%;
 }
 
+.rewards-home-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: 6px;
+}
+
+.rewards-home-actions button {
+  flex: 1 1 40%;
+  min-width: 42px;
+}
+
 /* Responsive: keep the FAB reachable on narrow screens */
 @media (max-width: 480px) {
   .rewards-phone-root {
@@ -380,6 +399,126 @@
     width: 44px;
     height: 44px;
     font-size: 18px;
+  }
+}
+
+/*
+ * Desktop / laptop web terminal — enlarge the flip phone so LCD text, threads,
+ * and redeem options are readable. Touch RPG layout keeps its own constraints.
+ */
+@media (min-width: 768px) {
+  body:not(.has-touch-pad) .rewards-phone-shell {
+    width: 224px;
+    padding: 12px 10px 16px;
+    border-radius: 18px 18px 22px 22px;
+  }
+
+  body:not(.has-touch-pad) .rewards-phone-hinge {
+    width: 40px;
+    height: 5px;
+    margin-bottom: 8px;
+  }
+
+  body:not(.has-touch-pad) .rewards-lcd {
+    padding: 8px;
+    min-height: 320px;
+    max-height: 420px;
+    font-size: 9px;
+    line-height: 1.65;
+  }
+
+  body:not(.has-touch-pad) .rewards-lcd-header {
+    font-size: 10px;
+    margin-bottom: 8px;
+  }
+
+  body:not(.has-touch-pad) .rewards-tab {
+    font-size: 7px;
+    padding: 5px 3px;
+    min-width: 48px;
+  }
+
+  body:not(.has-touch-pad) .rewards-lcd-close button,
+  body:not(.has-touch-pad) .rewards-comp-row button,
+  body:not(.has-touch-pad) .rewards-lcd-body button {
+    font-size: 8px;
+    padding: 5px 8px;
+  }
+
+  body:not(.has-touch-pad) .rewards-contact-row {
+    font-size: 8px;
+    padding: 6px 5px;
+  }
+
+  body:not(.has-touch-pad) .rewards-contact-unread {
+    font-size: 7px;
+    min-width: 14px;
+  }
+
+  body:not(.has-touch-pad) .rewards-thread-log {
+    max-height: 160px;
+  }
+
+  body:not(.has-touch-pad) .rewards-text-options {
+    max-height: 120px;
+  }
+
+  body:not(.has-touch-pad) .rewards-msg,
+  body:not(.has-touch-pad) .rewards-text-option,
+  body:not(.has-touch-pad) .rewards-dialogue-choice,
+  body:not(.has-touch-pad) .rewards-dialogue-prompt,
+  body:not(.has-touch-pad) .rewards-rapport-line,
+  body:not(.has-touch-pad) .rewards-intox-line {
+    font-size: 8px;
+  }
+
+  body:not(.has-touch-pad) .rewards-tier {
+    font-size: 11px;
+  }
+
+  body:not(.has-touch-pad) .rewards-member-cost,
+  body:not(.has-touch-pad) .rewards-member-room {
+    font-size: 8px;
+  }
+
+  body:not(.has-touch-pad) .rewards-toast {
+    max-width: 280px;
+    font-size: 11px;
+    padding: 10px 12px;
+  }
+
+  body:not(.has-touch-pad) .rewards-phone-fab {
+    width: 58px;
+    height: 58px;
+    font-size: 24px;
+  }
+}
+
+@media (min-width: 1100px) {
+  body:not(.has-touch-pad) .rewards-phone-shell {
+    width: 260px;
+  }
+
+  body:not(.has-touch-pad) .rewards-lcd {
+    min-height: 360px;
+    max-height: 480px;
+    font-size: 10px;
+  }
+
+  body:not(.has-touch-pad) .rewards-lcd-header {
+    font-size: 11px;
+  }
+
+  body:not(.has-touch-pad) .rewards-tab {
+    font-size: 8px;
+  }
+
+  body:not(.has-touch-pad) .rewards-thread-log {
+    max-height: 190px;
+  }
+
+  body:not(.has-touch-pad) .rewards-text-options {
+    max-height: 140px;
   }
 }
 

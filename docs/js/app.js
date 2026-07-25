@@ -7,6 +7,10 @@ import { startCasinoClock, stopCasinoClock } from "./casino-time.js";
 import { formatVegasClockLabel } from "./vegas-time.js";
 import { onActivityVisit, syncContactIntros, onSessionSwing } from "./phone-contacts.js";
 import { applyIntoxicationEffects } from "./intoxication-effects.js";
+
+window.addEventListener("mandalay:intoxication-settled", () => {
+  persist();
+});
 import { SportsbookState } from "./sportsbook.js";
 import { TradingDeskState } from "./tradingDesk.js";
 import { Action } from "./blackjack/game.js";
@@ -28,8 +32,11 @@ import { buildTradingDeskRenderers } from "./ui/trading-desk-renderers.js";
 import { buildArcadeRenderers } from "./ui/arcade-renderers.js";
 import { ArcadeCabinetOverlay } from "./arcade/ArcadeCabinetOverlay.js";
 import { DiningOverlay } from "./DiningOverlay.js";
+import { PoolComplexOverlay } from "./PoolComplexOverlay.js";
+import { BalconySmokeOverlay } from "./BalconySmokeOverlay.js";
 import { buildRacingRenderers } from "./ui/racing-renderers.js";
 import { buildVenueRenderers } from "./ui/venue-renderers.js";
+import { buildGentlemansClubRenderers } from "./ui/gentlemans-club-renderers.js";
 import { buildCashierRenderers } from "./ui/cashier-renderers.js";
 import { buildMetaRenderers } from "./ui/meta-renderers.js";
 
@@ -41,6 +48,8 @@ let session = new PlayerSession();
 let rewardsPhone = null;
 let arcadeOverlay = null;
 let diningOverlay = null;
+let poolOverlay = null;
+let balconySmokeOverlay = null;
 let casinoTimeTicker = null;
 
 const runtime = createRuntime({
@@ -55,6 +64,8 @@ const ctx = {
   get rewardsPhone() { return rewardsPhone; },
   get arcadeOverlay() { return arcadeOverlay; },
   get diningOverlay() { return diningOverlay; },
+  get poolOverlay() { return poolOverlay; },
+  get balconySmokeOverlay() { return balconySmokeOverlay; },
   runtime,
   persist,
   render,
@@ -173,6 +184,37 @@ function mountDiningOverlay() {
   diningOverlay.setSession(session);
 }
 
+function mountPoolOverlay() {
+  const root = document.getElementById("pool-overlay");
+  if (!root) return;
+  poolOverlay = new PoolComplexOverlay(root, {
+    onPersist: () => persist(),
+    onStatus: (msg, kind) => showStatus(msg, kind),
+    onClosed: () => render(),
+    onChipDelta: () => {
+      const line = document.querySelector(".chip-line");
+      if (line) {
+        line.classList.remove("chip-pulse--up", "chip-pulse--down");
+        void line.offsetWidth;
+        line.classList.add("chip-pulse", "chip-pulse--up");
+      }
+    },
+  });
+  poolOverlay.setSession(session);
+}
+
+function mountBalconySmokeOverlay() {
+  const root = document.getElementById("balcony-smoke-overlay");
+  if (!root) return;
+  balconySmokeOverlay = new BalconySmokeOverlay(root, {
+    onPersist: () => persist(),
+    onStatus: (msg, kind) => showStatus(msg, kind),
+    onClosed: () => render(),
+    onIntoxChange: () => applyIntoxicationEffects(session),
+  });
+  balconySmokeOverlay.setSession(session);
+}
+
 
 
 
@@ -195,6 +237,8 @@ function enterCasino(nextSession) {
   mountRewardsPhone();
   mountArcadeOverlay();
   mountDiningOverlay();
+  mountPoolOverlay();
+  mountBalconySmokeOverlay();
   syncContactIntros(nextSession);
   applyIntoxicationEffects(session);
   render();
@@ -207,6 +251,8 @@ function returnToSavePicker() {
   rewardsPhone?.close();
   arcadeOverlay?.close();
   diningOverlay?.close();
+  poolOverlay?.close();
+  balconySmokeOverlay?.close();
   runtime.sportsbook = new SportsbookState();
   runtime.tradingDesk = new TradingDeskState();
   runtime.blackjackGame = null;
@@ -683,6 +729,7 @@ const tradingDeskRenderers = buildTradingDeskRenderers(ctx);
 const arcadeRenderers = buildArcadeRenderers(ctx);
 const { renderHorsePaddock, ...racingRenderers } = buildRacingRenderers(ctx);
 const venueRenderers = buildVenueRenderers(ctx);
+const gentlemansClubRenderers = buildGentlemansClubRenderers(ctx);
 const cashierRenderers = buildCashierRenderers(ctx);
 const metaRenderers = buildMetaRenderers(ctx);
 const crapsRenderers = buildCrapsRenderers(ctx);
@@ -712,6 +759,7 @@ const RENDERERS = {
   ...arcadeRenderers,
   ...racingRenderers,
   ...venueRenderers,
+  ...gentlemansClubRenderers,
   ...cashierRenderers,
   ...metaRenderers,
   ...hotelRenderers,
@@ -737,7 +785,9 @@ function render() {
     window.setTimeout(() => app.classList.remove("view-transition"), 240);
   }
   diningOverlay?.setSession(session);
+  poolOverlay?.setSession(session);
   arcadeOverlay?.setSession(session);
+  balconySmokeOverlay?.setSession(session);
   window.__casinoReady = true;
 }
 

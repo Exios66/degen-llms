@@ -69,7 +69,7 @@ Twenty-eight rooms across eight wings, authored as declarative JSON in `docs/rpg
 | Attractions | Shark Reef Tunnel, Shark Reef Exhibit Hall, House of Blues, HOB Green Room, ULTRA Arena Concourse |
 | Back of house | Back of House |
 
-Three doors are gated: High Limit Salon (chips + stake tier), Foundation Room (Noir+), and your room (unpaid folio lockout).
+Four doors are gated: High Limit Salon (chips + stake tier), Foundation Room (Noir+), Gentleman's Club / Velvet Ledger (Gold+ / suite / phone), and your room (unpaid folio lockout).
 
 ## Activity encounters
 

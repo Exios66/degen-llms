@@ -1,4 +1,4 @@
-/* Resort dining overlay — capacity minigame + encounter interrupts */
+/* Resort dining overlay — first-person eating POV + capacity minigame */
 
 :root {
   --dining-bg: #120c0a;
@@ -8,6 +8,8 @@
   --dining-wine: #8b1e3f;
   --dining-teal: #2a6f6f;
   --dining-ember: #c45c26;
+  --dining-fpv-wood: #3a2418;
+  --dining-fpv-cloth: #1e1410;
 }
 
 body.dining-overlay-active {
@@ -33,7 +35,7 @@ body.dining-overlay-active {
   display: flex;
   align-items: stretch;
   justify-content: center;
-  padding: 1rem;
+  padding: 0.75rem;
   background:
     radial-gradient(ellipse at 50% 0%, rgba(212, 168, 75, 0.18) 0%, transparent 55%),
     linear-gradient(160deg, #1b100c 0%, #0a0807 45%, #14100e 100%);
@@ -55,6 +57,17 @@ body.dining-overlay-active {
   font-family: "JetBrains Mono", ui-monospace, monospace;
 }
 
+/* FPV table shell: edge-to-edge stage + side menu */
+.dining-overlay__shell--fpv {
+  width: min(1280px, 100%);
+  max-height: 100%;
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(212, 168, 75, 0.4);
+}
+
 .dining-motif--wine-tower {
   background-image:
     linear-gradient(180deg, rgba(139, 30, 63, 0.2), transparent 50%),
@@ -71,6 +84,13 @@ body.dining-overlay-active {
   background-image:
     linear-gradient(180deg, rgba(196, 92, 38, 0.22), transparent 50%),
     linear-gradient(180deg, rgba(243, 230, 208, 0.06), transparent 40%);
+}
+
+.dining-overlay__shell--fpv.dining-motif--wine-tower,
+.dining-overlay__shell--fpv.dining-motif--poolside,
+.dining-overlay__shell--fpv.dining-motif--steakhouse {
+  background-image: none;
+  background-color: #0c0806;
 }
 
 .dining-overlay__eyebrow {
@@ -139,6 +159,885 @@ body.dining-overlay-active {
   font-size: 0.85rem;
 }
 
+/* ——— FPV layout ——— */
+.dining-fpv-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.9fr);
+  min-height: min(92vh, 820px);
+  max-height: 100%;
+}
+
+.dining-fpv-layout__stage {
+  position: relative;
+  min-height: 320px;
+  overflow: hidden;
+  background: #0a0604;
+}
+
+.dining-fpv-layout__panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 1rem 1rem 0.85rem;
+  overflow: auto;
+  max-height: min(92vh, 820px);
+  background:
+    linear-gradient(180deg, rgba(243, 230, 208, 0.07), transparent 30%),
+    rgba(18, 12, 10, 0.96);
+  border-left: 1px solid rgba(212, 168, 75, 0.28);
+}
+
+.dining-fpv-layout__panel .dining-overlay__tagline {
+  font-size: 0.82rem;
+  margin-bottom: 0.35rem;
+}
+
+.dining-fpv-layout__panel .dining-menu-columns {
+  flex: 1;
+}
+
+/* ——— First-person stage ——— */
+.dining-fpv {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+.dining-fpv__sky {
+  position: absolute;
+  inset: 0 0 42% 0;
+  background:
+    radial-gradient(ellipse at 50% 20%, rgba(255, 200, 120, 0.12), transparent 50%),
+    linear-gradient(180deg, #1a1210 0%, #2a1814 40%, #3a2218 100%);
+}
+
+.dining-fpv--wine-tower .dining-fpv__sky {
+  background:
+    radial-gradient(ellipse at 50% 10%, rgba(139, 30, 63, 0.35), transparent 55%),
+    linear-gradient(180deg, #140a10 0%, #2a1018 45%, #3a1820 100%);
+}
+
+.dining-fpv--poolside .dining-fpv__sky {
+  background:
+    radial-gradient(ellipse at 70% 10%, rgba(80, 180, 200, 0.25), transparent 50%),
+    linear-gradient(180deg, #0e1a1c 0%, #1a3034 40%, #244040 100%);
+}
+
+.dining-fpv--steakhouse .dining-fpv__sky {
+  background:
+    radial-gradient(ellipse at 40% 15%, rgba(196, 92, 38, 0.22), transparent 50%),
+    linear-gradient(180deg, #120c08 0%, #2a1810 40%, #3a2414 100%);
+}
+
+.dining-fpv__room {
+  position: absolute;
+  inset: 0 0 38% 0;
+  perspective: 900px;
+}
+
+.dining-fpv__backwall {
+  position: absolute;
+  inset: 8% 6% 20%;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      rgba(255, 220, 160, 0.03) 0 2px,
+      transparent 2px 28px
+    ),
+    linear-gradient(180deg, rgba(60, 36, 28, 0.85), rgba(30, 18, 14, 0.95));
+  border: 1px solid rgba(212, 168, 75, 0.12);
+  box-shadow: inset 0 0 80px rgba(0, 0, 0, 0.45);
+  transform: rotateX(4deg);
+}
+
+.dining-fpv--wine-tower .dining-fpv__backwall {
+  background:
+    repeating-linear-gradient(90deg, rgba(212, 168, 75, 0.06) 0 1px, transparent 1px 18px),
+    linear-gradient(180deg, rgba(60, 16, 32, 0.92), rgba(20, 8, 14, 0.96));
+  border-color: rgba(192, 80, 110, 0.25);
+}
+
+.dining-fpv--poolside .dining-fpv__backwall {
+  background:
+    linear-gradient(180deg, rgba(40, 90, 100, 0.35), rgba(20, 40, 45, 0.55)),
+    linear-gradient(180deg, rgba(30, 55, 58, 0.9), rgba(12, 24, 28, 0.95));
+  border-color: rgba(80, 180, 180, 0.22);
+  box-shadow: inset 0 0 60px rgba(40, 140, 160, 0.15);
+}
+
+.dining-fpv--steakhouse .dining-fpv__backwall {
+  background:
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.12) 0 3px, transparent 3px 14px),
+    linear-gradient(180deg, rgba(50, 28, 16, 0.92), rgba(18, 10, 6, 0.96));
+  border-color: rgba(196, 92, 38, 0.28);
+}
+
+/* ——— Per-venue scenery overlays ——— */
+.dining-venue-scenery {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.dining-venue-scenery__label {
+  position: absolute;
+  top: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(243, 230, 208, 0.55);
+  padding: 0.2rem 0.55rem;
+  border: 1px solid rgba(212, 168, 75, 0.2);
+  background: rgba(8, 4, 2, 0.35);
+  white-space: nowrap;
+}
+
+/* Aureole — four-story wine tower + wine angel */
+.dining-venue-scenery--aureole .dining-venue-scenery__tower {
+  position: absolute;
+  left: 50%;
+  top: 6%;
+  bottom: 28%;
+  width: min(28%, 140px);
+  transform: translateX(-50%);
+  background:
+    linear-gradient(90deg, transparent, rgba(212, 168, 75, 0.15) 8%, rgba(212, 168, 75, 0.15) 92%, transparent),
+    repeating-linear-gradient(
+      180deg,
+      rgba(80, 20, 40, 0.7) 0 10px,
+      rgba(40, 10, 20, 0.85) 10px 12px
+    );
+  border: 1px solid rgba(212, 168, 75, 0.35);
+  box-shadow:
+    0 0 40px rgba(139, 30, 63, 0.45),
+    inset 0 0 30px rgba(0, 0, 0, 0.5);
+  border-radius: 4px 4px 0 0;
+}
+
+.dining-venue-scenery__tower-glow {
+  position: absolute;
+  inset: -10% -30%;
+  background: radial-gradient(ellipse at 50% 40%, rgba(180, 60, 90, 0.35), transparent 65%);
+  animation: dining-tower-pulse 4s ease-in-out infinite;
+}
+
+.dining-venue-scenery__bottle {
+  position: absolute;
+  width: 10px;
+  height: 22px;
+  left: 18%;
+  top: 12%;
+  background: linear-gradient(180deg, #3a1020, #1a0810 70%, #8b1e3f);
+  border-radius: 2px 2px 4px 4px;
+  box-shadow: 0 0 6px rgba(139, 30, 63, 0.5);
+}
+
+.dining-venue-scenery__bottle--2 { left: 42%; top: 28%; background: linear-gradient(180deg, #2a1830, #100818 70%, #6a2040); }
+.dining-venue-scenery__bottle--3 { left: 68%; top: 16%; height: 18px; }
+.dining-venue-scenery__bottle--4 { left: 30%; top: 48%; height: 20px; background: linear-gradient(180deg, #402018, #180c08 70%, #a84828); }
+
+.dining-venue-scenery__cable {
+  position: absolute;
+  left: 50%;
+  top: 8%;
+  width: 2px;
+  height: 55%;
+  background: linear-gradient(180deg, rgba(212, 168, 75, 0.7), rgba(212, 168, 75, 0.15));
+  transform: translateX(-50%);
+}
+
+.dining-venue-scenery__angel {
+  position: absolute;
+  left: 50%;
+  top: 38%;
+  width: 22px;
+  height: 38px;
+  transform: translateX(-50%);
+  background: linear-gradient(180deg, rgba(243, 230, 208, 0.75), rgba(180, 140, 100, 0.5));
+  clip-path: polygon(35% 0, 65% 0, 78% 22%, 70% 22%, 85% 100%, 15% 100%, 30% 22%, 22% 22%);
+  filter: drop-shadow(0 0 8px rgba(255, 200, 160, 0.45));
+  animation: dining-angel-sway 5s ease-in-out infinite;
+}
+
+.dining-venue-scenery__velvet {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: 22%;
+  height: 12%;
+  background:
+    repeating-linear-gradient(90deg, rgba(80, 16, 36, 0.5) 0 12px, rgba(50, 10, 24, 0.55) 12px 24px),
+    linear-gradient(180deg, rgba(90, 20, 40, 0.4), transparent);
+  border-top: 1px solid rgba(212, 168, 75, 0.2);
+}
+
+.dining-venue-scenery--aureole .dining-venue-scenery__label {
+  color: rgba(240, 180, 200, 0.7);
+  border-color: rgba(192, 80, 110, 0.35);
+}
+
+/* Border Grill — poolside windows + lazy river */
+.dining-venue-scenery--border .dining-venue-scenery__window {
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  top: 8%;
+  bottom: 30%;
+  border: 3px solid rgba(200, 180, 140, 0.35);
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: inset 0 0 40px rgba(40, 160, 180, 0.2);
+  background: linear-gradient(180deg, #4a90a8 0%, #2a6878 40%, #1a4850 100%);
+}
+
+.dining-venue-scenery__sky-wash {
+  position: absolute;
+  inset: 0 0 45%;
+  background: linear-gradient(180deg, #87ceeb 0%, #5aa8c0 100%);
+}
+
+.dining-venue-scenery__sun {
+  position: absolute;
+  top: 10%;
+  right: 18%;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff6c0 0%, #f0c060 45%, transparent 70%);
+  box-shadow: 0 0 30px rgba(255, 200, 80, 0.65);
+}
+
+.dining-venue-scenery__water {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 48%;
+  background:
+    linear-gradient(180deg, rgba(60, 180, 200, 0.85), rgba(20, 90, 110, 0.95));
+}
+
+.dining-venue-scenery__wave {
+  position: absolute;
+  left: -10%;
+  bottom: 28%;
+  width: 120%;
+  height: 18%;
+  background: radial-gradient(ellipse at 50% 50%, rgba(180, 240, 255, 0.45), transparent 70%);
+  animation: dining-wave-drift 4.5s ease-in-out infinite;
+}
+
+.dining-venue-scenery__wave--2 {
+  bottom: 18%;
+  opacity: 0.6;
+  animation-delay: -2s;
+}
+
+.dining-venue-scenery__palm {
+  position: absolute;
+  bottom: 35%;
+  left: 8%;
+  width: 8px;
+  height: 45%;
+  background: linear-gradient(180deg, #3a6820, #1a3810);
+  border-radius: 4px;
+}
+
+.dining-venue-scenery__palm::before {
+  content: "";
+  position: absolute;
+  top: -8%;
+  left: -18px;
+  width: 44px;
+  height: 28px;
+  background: radial-gradient(ellipse at 50% 80%, #4a8828, transparent 70%);
+}
+
+.dining-venue-scenery__palm--2 {
+  left: auto;
+  right: 12%;
+  height: 38%;
+}
+
+.dining-venue-scenery__tile {
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  bottom: 20%;
+  height: 10%;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      #c45c26 0 14px,
+      #e8c878 14px 28px,
+      #2a6f6f 28px 42px,
+      #f0e0c0 42px 56px
+    );
+  opacity: 0.55;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.dining-venue-scenery--border .dining-venue-scenery__label {
+  color: rgba(180, 230, 230, 0.75);
+  border-color: rgba(80, 180, 180, 0.4);
+}
+
+/* Stripsteak — leather booth + open-grill embers */
+.dining-venue-scenery--strip .dining-venue-scenery__booth {
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  top: 12%;
+  bottom: 32%;
+  background:
+    radial-gradient(ellipse at 50% 20%, rgba(196, 92, 38, 0.15), transparent 50%),
+    linear-gradient(180deg, #2a1810 0%, #1a100c 60%, #120c08 100%);
+  border: 1px solid rgba(196, 92, 38, 0.25);
+  border-radius: 8px 8px 0 0;
+  box-shadow: inset 0 20px 40px rgba(0, 0, 0, 0.45);
+}
+
+.dining-venue-scenery--strip .dining-venue-scenery__booth::before,
+.dining-venue-scenery--strip .dining-venue-scenery__booth::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  width: 22%;
+  height: 55%;
+  background: linear-gradient(180deg, #4a2818, #1a0c08);
+  border: 1px solid rgba(120, 60, 30, 0.4);
+  border-radius: 6px 6px 0 0;
+}
+
+.dining-venue-scenery--strip .dining-venue-scenery__booth::before { left: 8%; }
+.dining-venue-scenery--strip .dining-venue-scenery__booth::after { right: 8%; }
+
+.dining-venue-scenery__grill {
+  position: absolute;
+  left: 50%;
+  bottom: 34%;
+  width: min(36%, 160px);
+  height: 18%;
+  transform: translateX(-50%);
+  background: linear-gradient(180deg, #1a0c08, #0a0604);
+  border: 1px solid rgba(196, 92, 38, 0.45);
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 0 24px rgba(196, 92, 38, 0.35);
+}
+
+.dining-venue-scenery__ember {
+  position: absolute;
+  bottom: 10%;
+  left: 20%;
+  width: 18px;
+  height: 14px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #ff9040, #c45c26 50%, transparent 70%);
+  animation: dining-ember 1.6s ease-in-out infinite alternate;
+}
+
+.dining-venue-scenery__ember--2 {
+  left: 45%;
+  width: 22px;
+  height: 16px;
+  animation-delay: -0.5s;
+}
+
+.dining-venue-scenery__ember--3 {
+  left: 68%;
+  width: 16px;
+  animation-delay: -1s;
+}
+
+.dining-venue-scenery__spark {
+  position: absolute;
+  left: 50%;
+  bottom: 40%;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #fff6a0;
+  box-shadow: 0 0 6px #ff9040;
+  animation: dining-spark 2.2s ease-out infinite;
+}
+
+.dining-venue-scenery__brass {
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  bottom: 26%;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #d4a84b 20%, #f0d080 50%, #d4a84b 80%, transparent);
+  opacity: 0.55;
+  box-shadow: 0 0 12px rgba(212, 168, 75, 0.4);
+}
+
+.dining-venue-scenery--strip .dining-venue-scenery__label {
+  color: rgba(240, 180, 120, 0.75);
+  border-color: rgba(196, 92, 38, 0.4);
+}
+
+.dining-fpv__lights {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.dining-fpv__pendant {
+  position: absolute;
+  top: 6%;
+  left: 28%;
+  width: 18px;
+  height: 48px;
+  background: linear-gradient(180deg, #2a1810, #d4a84b 40%, #f0d080 55%, transparent 70%);
+  filter: drop-shadow(0 0 18px rgba(240, 200, 100, 0.55));
+  animation: dining-pendant-glow 3.2s ease-in-out infinite;
+}
+
+.dining-fpv__pendant--2 {
+  left: auto;
+  right: 30%;
+  animation-delay: -1.4s;
+}
+
+.dining-fpv__candle {
+  position: absolute;
+  bottom: 28%;
+  left: 42%;
+  width: 8px;
+  height: 22px;
+  background: linear-gradient(180deg, #f5e6c8, #e8c878);
+  border-radius: 2px 2px 0 0;
+  box-shadow: 0 0 20px rgba(255, 180, 80, 0.65);
+}
+
+.dining-fpv__candle::after {
+  content: "";
+  position: absolute;
+  top: -10px;
+  left: 1px;
+  width: 6px;
+  height: 10px;
+  background: radial-gradient(ellipse at 50% 70%, #fff6a0, #ff8a30 60%, transparent 70%);
+  animation: dining-flame 0.9s ease-in-out infinite alternate;
+}
+
+.dining-fpv__candle--2 {
+  left: auto;
+  right: 38%;
+}
+
+.dining-fpv__diners {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.dining-fpv__sil {
+  position: absolute;
+  bottom: 22%;
+  left: 18%;
+  width: 42px;
+  height: 78px;
+  background: linear-gradient(180deg, rgba(40, 24, 20, 0.55), rgba(10, 6, 4, 0.75));
+  clip-path: polygon(35% 0, 65% 0, 78% 28%, 72% 28%, 85% 100%, 15% 100%, 28% 28%, 22% 28%);
+  opacity: 0.55;
+}
+
+.dining-fpv__sil--r {
+  left: auto;
+  right: 16%;
+  opacity: 0.4;
+  transform: scaleX(-1);
+}
+
+.dining-fpv__table {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 58%;
+  perspective: 1000px;
+}
+
+.dining-fpv__tablecloth {
+  position: absolute;
+  left: -8%;
+  right: -8%;
+  bottom: 0;
+  height: 100%;
+  background:
+    linear-gradient(180deg, transparent 0%, rgba(20, 12, 8, 0.35) 12%, transparent 13%),
+    linear-gradient(180deg, #4a3020 0%, #2a1810 28%, #1a100c 70%, #120c0a 100%);
+  transform: rotateX(52deg) translateY(-6%);
+  transform-origin: center top;
+  box-shadow:
+    inset 0 40px 60px rgba(255, 200, 120, 0.06),
+    0 -20px 60px rgba(0, 0, 0, 0.5);
+  border-top: 2px solid rgba(212, 168, 75, 0.25);
+}
+
+.dining-fpv--poolside .dining-fpv__tablecloth {
+  background:
+    linear-gradient(180deg, transparent 0%, rgba(20, 40, 40, 0.35) 12%, transparent 13%),
+    repeating-linear-gradient(90deg, rgba(42, 111, 111, 0.12) 0 8px, transparent 8px 16px),
+    linear-gradient(180deg, #2a4a48 0%, #1a3030 30%, #122020 70%, #0c1414 100%);
+  border-top-color: rgba(80, 180, 180, 0.35);
+}
+
+.dining-fpv--wine-tower .dining-fpv__tablecloth {
+  background:
+    linear-gradient(180deg, transparent 0%, rgba(40, 10, 20, 0.4) 12%, transparent 13%),
+    radial-gradient(ellipse at 50% 0%, rgba(139, 30, 63, 0.2), transparent 50%),
+    linear-gradient(180deg, #3a1a24 0%, #241018 30%, #160c10 70%, #0e080a 100%);
+  border-top-color: rgba(192, 80, 110, 0.4);
+}
+
+.dining-fpv--steakhouse .dining-fpv__tablecloth {
+  background:
+    linear-gradient(180deg, transparent 0%, rgba(20, 12, 8, 0.4) 12%, transparent 13%),
+    repeating-linear-gradient(90deg, rgba(80, 40, 20, 0.15) 0 3px, transparent 3px 18px),
+    linear-gradient(180deg, #4a3020 0%, #2a1810 28%, #1a100c 70%, #120c0a 100%);
+  border-top-color: rgba(196, 92, 38, 0.4);
+}
+
+/* Venue panel chrome */
+.dining-fpv-layout__panel--wine-tower {
+  background:
+    linear-gradient(180deg, rgba(139, 30, 63, 0.18), transparent 28%),
+    rgba(18, 10, 14, 0.97);
+  border-left-color: rgba(192, 80, 110, 0.35);
+}
+
+.dining-fpv-layout__panel--poolside {
+  background:
+    linear-gradient(180deg, rgba(42, 111, 111, 0.2), transparent 28%),
+    rgba(10, 16, 18, 0.97);
+  border-left-color: rgba(80, 180, 180, 0.35);
+}
+
+.dining-fpv-layout__panel--steakhouse {
+  background:
+    linear-gradient(180deg, rgba(196, 92, 38, 0.16), transparent 28%),
+    rgba(16, 10, 6, 0.97);
+  border-left-color: rgba(196, 92, 38, 0.35);
+}
+
+.dining-fpv-layout__panel--wine-tower .dining-overlay__eyebrow { color: #e090a8; }
+.dining-fpv-layout__panel--poolside .dining-overlay__eyebrow { color: #6ec8c8; }
+.dining-fpv-layout__panel--steakhouse .dining-overlay__eyebrow { color: #e09860; }
+
+.dining-fpv--poolside .dining-fpv__pendant {
+  background: linear-gradient(180deg, #1a3030, #6ec8c8 40%, #a8e8e8 55%, transparent 70%);
+  filter: drop-shadow(0 0 18px rgba(110, 200, 200, 0.55));
+}
+
+.dining-fpv--wine-tower .dining-fpv__pendant {
+  background: linear-gradient(180deg, #2a1018, #c06080 40%, #f0a0b8 55%, transparent 70%);
+  filter: drop-shadow(0 0 18px rgba(192, 80, 110, 0.55));
+}
+
+.dining-fpv--steakhouse .dining-fpv__candle {
+  box-shadow: 0 0 24px rgba(255, 140, 60, 0.75);
+}
+
+.dining-fpv--poolside .dining-fpv__candle {
+  display: none;
+}
+
+.dining-fpv__place {
+  position: absolute;
+  inset: 8% 8% 18%;
+  z-index: 2;
+}
+
+.dining-fpv__plate-well {
+  position: absolute;
+  left: 50%;
+  top: 18%;
+  width: min(72%, 340px);
+  aspect-ratio: 4 / 3;
+  transform: translateX(-54%);
+}
+
+.dining-fpv__plate-empty {
+  position: absolute;
+  inset: 18% 10% 10%;
+  display: grid;
+  place-items: center;
+  transition: opacity 280ms ease;
+}
+
+.dining-fpv__plate-empty.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.dining-fpv__plate-ring {
+  width: 78%;
+  aspect-ratio: 1.4;
+  border-radius: 50%;
+  background:
+    radial-gradient(ellipse at 40% 35%, #fff8ee, #e0c8a0 55%, #a08060 100%);
+  box-shadow:
+    0 10px 24px rgba(0, 0, 0, 0.45),
+    inset 0 2px 8px rgba(255, 255, 255, 0.35);
+}
+
+.dining-fpv__plate-hint {
+  position: absolute;
+  bottom: 18%;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(243, 230, 208, 0.45);
+}
+
+.dining-fpv__food {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  transform: translate3d(0, 18px, 0) scale(0.92);
+  transition: opacity 320ms cubic-bezier(0.2, 0.8, 0.2, 1), transform 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.45));
+}
+
+.dining-fpv__food.is-served {
+  opacity: 1;
+  transform: translate3d(0, 0, 0) scale(1);
+}
+
+.dining-fpv__food.is-bitten {
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.45)) brightness(0.92) saturate(0.9);
+  transform: translate3d(0, 2px, 0) scale(0.97);
+}
+
+.dining-fpv__food .dining-sprite-svg {
+  width: 100%;
+  height: auto;
+  max-height: 100%;
+  image-rendering: auto;
+}
+
+.dining-fpv__glass-well {
+  position: absolute;
+  right: 2%;
+  top: 4%;
+  width: min(28%, 120px);
+  aspect-ratio: 5 / 7;
+}
+
+.dining-fpv__glass-empty {
+  position: absolute;
+  inset: 10% 20% 5%;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.12), transparent 40%, rgba(255, 255, 255, 0.18));
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px 6px 10px 10px;
+  opacity: 0.35;
+  clip-path: polygon(20% 0, 80% 0, 90% 85%, 70% 100%, 30% 100%, 10% 85%);
+  transition: opacity 280ms ease;
+}
+
+.dining-fpv__glass-empty.is-hidden {
+  opacity: 0;
+}
+
+.dining-fpv__drink {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  transform: translate3d(0, 12px, 0) scale(0.9);
+  transition: opacity 300ms cubic-bezier(0.2, 0.8, 0.2, 1), transform 300ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.5));
+}
+
+.dining-fpv__drink.is-served {
+  opacity: 1;
+  transform: translate3d(0, 0, 0) scale(1);
+}
+
+.dining-fpv__drink .dining-sprite-svg {
+  width: 90%;
+  height: auto;
+  max-height: 100%;
+}
+
+.dining-fpv__utensils {
+  position: absolute;
+  left: 4%;
+  top: 30%;
+  width: 18%;
+  height: 50%;
+  pointer-events: none;
+}
+
+.dining-fpv__fork,
+.dining-fpv__knife {
+  position: absolute;
+  width: 10px;
+  height: 70%;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #e8e0d0, #9a9080);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.35);
+}
+
+.dining-fpv__fork {
+  left: 20%;
+  transform: rotate(-12deg);
+}
+
+.dining-fpv__fork::before {
+  content: "";
+  position: absolute;
+  top: -2%;
+  left: -4px;
+  width: 18px;
+  height: 22%;
+  background: repeating-linear-gradient(90deg, #e8e0d0 0 3px, transparent 3px 5px);
+}
+
+.dining-fpv__knife {
+  left: 55%;
+  transform: rotate(14deg);
+  background: linear-gradient(180deg, #f0ece4, #8a8070 55%, #5a4030 55%, #3a2818);
+}
+
+.dining-fpv__hands {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 28%;
+  z-index: 4;
+  pointer-events: none;
+}
+
+.dining-fpv__arm {
+  position: absolute;
+  bottom: -8%;
+  width: 42%;
+  height: 100%;
+  background:
+    radial-gradient(ellipse at 50% 20%, rgba(255, 200, 160, 0.25), transparent 50%),
+    linear-gradient(180deg, #c49a78 0%, #8a6048 40%, #5a3a28 100%);
+  border-radius: 40% 40% 0 0;
+  box-shadow: inset 0 12px 24px rgba(255, 220, 180, 0.15);
+  transition: transform 420ms cubic-bezier(0.2, 0.75, 0.2, 1);
+}
+
+.dining-fpv__arm--left {
+  left: -6%;
+  transform: rotate(8deg) translateY(12%);
+  clip-path: ellipse(70% 90% at 60% 100%);
+}
+
+.dining-fpv__arm--right {
+  right: -6%;
+  transform: rotate(-8deg) translateY(12%);
+  clip-path: ellipse(70% 90% at 40% 100%);
+  background:
+    radial-gradient(ellipse at 50% 20%, rgba(255, 200, 160, 0.2), transparent 50%),
+    linear-gradient(180deg, #b89070 0%, #7a5440 40%, #4a3020 100%);
+}
+
+.dining-fpv__hands.is-biting .dining-fpv__arm--left {
+  transform: rotate(2deg) translateY(-18%) translateX(8%);
+}
+
+.dining-fpv__hands.is-biting .dining-fpv__arm--right {
+  transform: rotate(-4deg) translateY(-10%) translateX(-4%);
+}
+
+.dining-fpv__hands.is-sipping .dining-fpv__arm--right {
+  transform: rotate(-22deg) translateY(-42%) translateX(-18%);
+}
+
+.dining-fpv__bite {
+  position: absolute;
+  left: 50%;
+  bottom: 22%;
+  width: min(38%, 180px);
+  aspect-ratio: 1;
+  transform: translate3d(-50%, 40px, 0) scale(0.55);
+  opacity: 0;
+  z-index: 5;
+  pointer-events: none;
+  filter: drop-shadow(0 12px 20px rgba(0, 0, 0, 0.55));
+}
+
+.dining-fpv__bite.is-active {
+  animation: dining-bite-lift 780ms cubic-bezier(0.18, 0.85, 0.22, 1) forwards;
+}
+
+.dining-fpv__bite--sip.is-active {
+  animation: dining-sip-lift 680ms cubic-bezier(0.18, 0.85, 0.22, 1) forwards;
+}
+
+.dining-fpv__bite .dining-sprite-svg {
+  width: 100%;
+  height: auto;
+}
+
+.dining-fpv__food.dining-fpv__anim-arrive,
+.dining-fpv__drink.dining-fpv__anim-arrive {
+  animation: dining-serve-in 420ms cubic-bezier(0.2, 0.85, 0.2, 1) both;
+}
+
+.dining-fpv__food.dining-fpv__anim-bite {
+  animation: dining-plate-nudge 820ms ease both;
+}
+
+.dining-fpv__drink.dining-fpv__anim-sip {
+  animation: dining-glass-tip 720ms ease both;
+}
+
+.dining-fpv__vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 50% 45%, transparent 35%, rgba(8, 4, 2, 0.55) 100%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.25) 0%, transparent 25%, transparent 70%, rgba(0, 0, 0, 0.45) 100%);
+}
+
+.dining-fpv__caption {
+  position: absolute;
+  left: 50%;
+  bottom: 3%;
+  transform: translateX(-50%);
+  z-index: 7;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(243, 230, 208, 0.85);
+  background: rgba(10, 6, 4, 0.55);
+  border: 1px solid rgba(212, 168, 75, 0.25);
+  white-space: nowrap;
+  max-width: 90%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+.dining-fpv--consuming .dining-fpv__caption {
+  color: var(--dining-gold);
+  border-color: rgba(212, 168, 75, 0.5);
+}
+
+/* HUD / menu (panel) */
 .dining-hud {
   display: grid;
   gap: 0.65rem;
@@ -161,7 +1060,8 @@ body.dining-overlay-active {
 .dining-meter__fill {
   height: 100%;
   border-radius: inherit;
-  transition: width 280ms ease;
+  transition: width 360ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  will-change: width;
 }
 
 .dining-meter--fullness .dining-meter__fill {
@@ -188,6 +1088,7 @@ body.dining-overlay-active {
   padding: 0.65rem 0.75rem;
   background: rgba(0, 0, 0, 0.3);
   border-left: 3px solid var(--dining-gold);
+  transition: background-color 200ms ease;
 }
 
 .dining-pace-bar {
@@ -204,6 +1105,7 @@ body.dining-overlay-active {
   border: 1px solid rgba(243, 230, 208, 0.2);
   padding: 0.4rem 0.75rem;
   cursor: pointer;
+  transition: border-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
 }
 
 .dining-pace-btn.is-active {
@@ -212,9 +1114,14 @@ body.dining-overlay-active {
   box-shadow: inset 0 0 0 1px rgba(212, 168, 75, 0.35);
 }
 
+.dining-pace-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .dining-menu-columns {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 0.85rem;
 }
 
@@ -237,7 +1144,7 @@ body.dining-overlay-active {
   padding: 0.65rem 0.75rem;
   margin-bottom: 0.5rem;
   cursor: pointer;
-  transition: border-color 140ms ease, transform 140ms ease;
+  transition: border-color 140ms ease, transform 140ms ease, background-color 140ms ease;
 }
 
 .dining-menu-item:hover:not(:disabled),
@@ -245,6 +1152,7 @@ body.dining-overlay-active {
   border-color: rgba(212, 168, 75, 0.55);
   transform: translateX(2px);
   outline: none;
+  background: rgba(40, 24, 16, 0.55);
 }
 
 .dining-menu-item:disabled {
@@ -276,6 +1184,11 @@ body.dining-overlay-active {
   margin-top: 1rem;
   padding-top: 0.75rem;
   border-top: 1px solid rgba(212, 168, 75, 0.2);
+}
+
+.dining-overlay__shell--fpv .dining-overlay__footer {
+  margin-top: auto;
+  padding: 0.75rem 0 0;
 }
 
 .dining-overlay__exit {
@@ -393,7 +1306,6 @@ body.dining-overlay-active {
   line-height: 1.7;
 }
 
-/* Chip flourish + view transitions (shared polish) */
 .chip-pulse {
   display: inline-block;
   transition: color 160ms ease;
@@ -442,6 +1354,74 @@ body.dining-overlay-active {
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes dining-pendant-glow {
+  0%, 100% { filter: drop-shadow(0 0 14px rgba(240, 200, 100, 0.45)); opacity: 0.9; }
+  50% { filter: drop-shadow(0 0 26px rgba(255, 220, 140, 0.75)); opacity: 1; }
+}
+
+@keyframes dining-flame {
+  from { transform: scaleY(1) translateX(0); opacity: 0.85; }
+  to { transform: scaleY(1.15) translateX(1px); opacity: 1; }
+}
+
+@keyframes dining-serve-in {
+  0% { opacity: 0; transform: translate3d(0, 28px, 0) scale(0.86); }
+  60% { opacity: 1; transform: translate3d(0, -4px, 0) scale(1.03); }
+  100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+
+@keyframes dining-bite-lift {
+  0% { opacity: 0; transform: translate3d(-50%, 36px, 0) scale(0.5); }
+  25% { opacity: 1; transform: translate3d(-50%, 8px, 0) scale(0.85); }
+  70% { opacity: 1; transform: translate3d(-50%, -48px, 0) scale(1.15); }
+  100% { opacity: 0; transform: translate3d(-50%, -90px, 0) scale(0.7); }
+}
+
+@keyframes dining-sip-lift {
+  0% { opacity: 0; transform: translate3d(-20%, 20px, 0) scale(0.55) rotate(0deg); }
+  30% { opacity: 1; transform: translate3d(-10%, -10px, 0) scale(0.9) rotate(-8deg); }
+  70% { opacity: 1; transform: translate3d(10%, -55px, 0) scale(1.05) rotate(-18deg); }
+  100% { opacity: 0; transform: translate3d(18%, -88px, 0) scale(0.75) rotate(-22deg); }
+}
+
+@keyframes dining-plate-nudge {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  35% { transform: translate3d(0, -6px, 0) scale(0.96); }
+  60% { transform: translate3d(0, 2px, 0) scale(0.98); }
+}
+
+@keyframes dining-glass-tip {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
+  40% { transform: translate3d(-8px, -18px, 0) rotate(-16deg) scale(1.05); }
+  70% { transform: translate3d(-4px, -10px, 0) rotate(-10deg) scale(1.02); }
+}
+
+@keyframes dining-tower-pulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+@keyframes dining-angel-sway {
+  0%, 100% { transform: translateX(-50%) translateY(0) rotate(-2deg); }
+  50% { transform: translateX(-42%) translateY(6px) rotate(3deg); }
+}
+
+@keyframes dining-wave-drift {
+  0%, 100% { transform: translateX(0); opacity: 0.55; }
+  50% { transform: translateX(4%); opacity: 0.85; }
+}
+
+@keyframes dining-ember {
+  from { transform: scale(0.9); opacity: 0.7; filter: brightness(0.9); }
+  to { transform: scale(1.15); opacity: 1; filter: brightness(1.25); }
+}
+
+@keyframes dining-spark {
+  0% { transform: translate(-50%, 0) scale(1); opacity: 0; }
+  20% { opacity: 1; }
+  100% { transform: translate(-50%, -28px) scale(0.4); opacity: 0; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .dining-overlay__backdrop,
   .dining-encounter,
@@ -450,28 +1430,70 @@ body.dining-overlay-active {
   .chip-pulse--up,
   .chip-pulse--down,
   #app.view-transition > .panel,
-  #app.view-transition > div {
+  #app.view-transition > div,
+  .dining-fpv__pendant,
+  .dining-fpv__candle::after,
+  .dining-fpv__bite.is-active,
+  .dining-fpv__bite--sip.is-active,
+  .dining-fpv__food.dining-fpv__anim-arrive,
+  .dining-fpv__drink.dining-fpv__anim-arrive,
+  .dining-fpv__food.dining-fpv__anim-bite,
+  .dining-fpv__drink.dining-fpv__anim-sip,
+  .dining-venue-scenery__tower-glow,
+  .dining-venue-scenery__angel,
+  .dining-venue-scenery__wave,
+  .dining-venue-scenery__ember,
+  .dining-venue-scenery__spark {
     animation: none !important;
   }
 
   .dining-venue-card,
   .dining-menu-item,
-  .dining-meter__fill {
+  .dining-meter__fill,
+  .dining-fpv__food,
+  .dining-fpv__drink,
+  .dining-fpv__arm {
     transition: none !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .dining-fpv-layout {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
+  .dining-fpv-layout__stage {
+    min-height: 42vh;
+    max-height: 46vh;
+  }
+
+  .dining-fpv-layout__panel {
+    max-height: min(52vh, 480px);
+    border-left: none;
+    border-top: 1px solid rgba(212, 168, 75, 0.28);
   }
 }
 
 @media (max-width: 640px) {
   .dining-overlay__backdrop {
-    padding: 0.5rem;
+    padding: 0.35rem;
   }
 
   .dining-overlay__shell {
     padding: 0.9rem;
   }
 
+  .dining-overlay__shell--fpv {
+    padding: 0;
+  }
+
   .dining-menu-item__row {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .dining-fpv__caption {
+    font-size: 0.65rem;
   }
 }

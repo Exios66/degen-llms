@@ -121,7 +121,7 @@ turns each record into ground, collision, and decor layers at boot.
 | Casino | Casino Floor North, Casino Floor South, Race & Sports Book, High Limit Salon, Foundation Room |
 | Retail | The Shoppes at Mandalay Place, Sky Bridge, Convention Center |
 | Bars | Betty's Bar, Skyfall Lounge |
-| Hotel | Hotel Tower, Guest Corridor, Room 24-118, Delano Wing, Bathhouse & Spa |
+| Hotel | Hotel Tower, Gentleman's Club (Velvet Ledger), Guest Corridor, Room 24-118, Delano Wing, Bathhouse & Spa |
 | Pool | Mandalay Beach, Cabana Row, Beach Club, Moonlight Rave Stage |
 | Attractions | Shark Reef Tunnel, Shark Reef Exhibit, House of Blues, HOB Green Room, ULTRA Arena |
 | Back of house | Staff Corridor |

@@ -1,7 +1,7 @@
 import { signedChips, fmtChips } from "./core.js";
 import {
   ensureHotel, getRoomType, getProperty, reservationHint, findReservation, findReservationAtDesk,
-  currentHallwayBeat, hallwayChoice, upgradeRoom, extendStay, resetHallway,
+  currentHallwayBeat, hallwayChoice, upgradeRoom, extendStay, resetHallway, useRoomKeyToDoor,
   isNetPositive, sessionNetChips, reviewFolio, lateCheckout, triggerWakeUpCall,
   checkoutStay, expressCheckout, getWorldCycleSummary, settleHotelOverdue, reservationStatusMessage,
   canAccessHotelRoom, recordFrontDeskVisit, grantRoomKeyIfReservationReady,
@@ -41,8 +41,76 @@ export function buildHotelRenderers(ctx) {
     ]);
   }
 
+  function ensureCarmenLog(hotel) {
+    if (!Array.isArray(hotel.carmenDeskLog)) hotel.carmenDeskLog = [];
+    return hotel.carmenDeskLog;
+  }
+
+  /** Persist Carmen dialogue so re-renders don't wipe her replies. */
+  function pushCarmenLines(hotel, text, ok = true) {
+    const log = ensureCarmenLog(hotel);
+    const lines = String(text ?? "").split("\n").filter((line) => line.trim().length);
+    if (!lines.length) {
+      log.push({ ok, text: "Carmen: …terminal hiccup. Try that again." });
+      return;
+    }
+    for (const line of lines) {
+      const body = line.startsWith("Carmen:") ? line : `Carmen: ${line}`;
+      log.push({ ok, text: body });
+    }
+    while (log.length > 24) log.shift();
+  }
+
+  function paintCarmenLog(container, hotel) {
+    container.replaceChildren();
+    for (const entry of ensureCarmenLog(hotel).slice(-12)) {
+      container.appendChild(el("div", {
+        className: `line ${entry.ok ? "success" : "error"}`,
+        textContent: entry.text,
+      }));
+    }
+  }
+
   function appendResult(log, res) {
-    log.appendChild(el("div", { className: `line ${res.ok ? "success" : "error"}`, textContent: res.message }));
+    const hotel = ensureHotel(session);
+    pushCarmenLines(hotel, res?.message ?? "No reply from the terminal.", Boolean(res?.ok));
+    paintCarmenLog(log, hotel);
+  }
+
+  function carmenLine(log, text, ok = true) {
+    const hotel = ensureHotel(session);
+    pushCarmenLines(hotel, text, ok);
+    paintCarmenLog(log, hotel);
+  }
+
+  /**
+   * Run a Carmen desk action with visible feedback. Always showStatus + persist log,
+   * then re-render so hallway / key options appear when check-in succeeds.
+   */
+  function carmenAction(log, fn, { notifyTitle = null, navigate = null } = {}) {
+    const hotel = ensureHotel(session);
+    try {
+      const r = fn();
+      const ok = Boolean(r?.ok);
+      const message = r?.message ?? (ok ? "Done." : "That didn't work.");
+      pushCarmenLines(hotel, message, ok);
+      showStatus(String(message).split("\n")[0], ok ? "success" : "error");
+      if (ok && notifyTitle) {
+        try { tracker()?.pushNotification(notifyTitle, message); } catch { /* phone optional */ }
+      }
+      persist();
+      if (navigate && ok) {
+        navigate();
+        return;
+      }
+      render();
+    } catch (err) {
+      const msg = err?.message ? `Terminal glitch — ${err.message}` : "Terminal glitch. Try again.";
+      pushCarmenLines(hotel, msg, false);
+      showStatus(msg, "error");
+      persist();
+      render();
+    }
   }
 
   function renderWorldCycleBanner() {
@@ -93,7 +161,24 @@ export function buildHotelRenderers(ctx) {
     ]);
   }
 
+  function openBalconySmokePov(opts = {}) {
+    const overlay = ctx.balconySmokeOverlay;
+    if (!overlay) {
+      showStatus("Balcony POV overlay not ready.", "error");
+      return false;
+    }
+    overlay.setSession(session);
+    overlay.open(opts);
+    return true;
+  }
+
   function schematicZoneView(zoneId) {
+    if (zoneId === "balcony") {
+      const hotel = ensureHotel(session);
+      if (hotel.roomType === "suite" || hotel.roomType === "penthouse") {
+        if (openBalconySmokePov({ recordDecision: true })) return;
+      }
+    }
     const map = {
       tv: "hotel-room-tv",
       minibar: "hotel-room-minibar",
@@ -130,7 +215,9 @@ export function buildHotelRenderers(ctx) {
               : el("p", { className: "dim", textContent: reservationStatusMessage(session) }),
           hotel.reachedRoom
             ? el("p", { className: "success", textContent: `You're in — room ${hotel.roomNumber}.` })
-            : null,
+            : hotel.roomKeyActive
+              ? el("p", { className: "success", textContent: "Room key active — take the hallway (or ask Carmen to skip)." })
+              : null,
         ]),
         netLine,
         renderWorldCycleBanner(),
@@ -138,12 +225,25 @@ export function buildHotelRenderers(ctx) {
         el("ul", { className: "menu-list" }, [
           menuBtn("Front Desk — Clerk Carmen", () => pushView("hotel-front-desk")),
           menuBtn("Guest Directory — lobby guest book", () => pushView("hotel-guest-directory")),
-          menuBtn("Find my room (hallway)", () => pushView("hotel-hallway")),
-          menuBtn("Pool Complex — 11-acre expansion pack", () => pushView("pool-complex")),
+          canAccessHotelRoom(session) && !hotel.reachedRoom
+            ? menuBtn("Find my room (hallway)", () => pushView("hotel-hallway"))
+            : null,
+          canAccessHotelRoom(session) && hotel.roomKeyActive && !hotel.reachedRoom
+            ? menuBtn("Use key — go straight to your door", () => {
+                const r = useRoomKeyToDoor(session);
+                showStatus(r.message, r.ok ? "success" : "error");
+                persist();
+                if (r.ok) pushView("hotel-room");
+                else render();
+              })
+            : null,
+          menuBtn("Pool Complex — 11-acre expansion pack", () => openPoolComplex("hub")),
+          menuBtn("Gentleman's Club — The Velvet Ledger", () => pushView("gentlemans-club")),
           menuBtn("Horse Stables — meet the residents", () => pushView("horse-stables")),
           hotel.reachedRoom ? menuBtn("Enter your room", () => pushView("hotel-room")) : null,
-          canAccessHotelRoom(session) && hotel.reachedRoom ? null
-            : el("p", { className: "dim", textContent: reservationStatusMessage(session) }),
+          !canAccessHotelRoom(session) || !hotel.reachedRoom
+            ? el("p", { className: "dim", textContent: reservationStatusMessage(session) })
+            : null,
           menuBtn("Return to Casino Floor", () => { viewToHub(ctx); }),
           menuBtn("Back", goBack, true),
         ].filter(Boolean)),
@@ -153,82 +253,150 @@ export function buildHotelRenderers(ctx) {
 
   function renderHotelFrontDesk() {
     const hotel = ensureHotel(session);
-    recordFrontDeskVisit(session);
     grantRoomKeyIfReservationReady(session);
-    persist();
-    const log = el("div", { className: "log-area" });
+    const log = el("div", { className: "log-area hotel-log carmen-desk-log" });
+    if (!ensureCarmenLog(hotel).length) {
+      recordFrontDeskVisit(session);
+      pushCarmenLines(
+        hotel,
+        `"Welcome back. Carmen at the desk — Conf ${hotel.reservationCode} is on my screen. How can I help?"`,
+        true,
+      );
+      persist();
+    }
+    paintCarmenLog(log, hotel);
     const netPositive = isNetPositive(session);
+    const access = canAccessHotelRoom(session);
+    const req = getReservationRequirement(session);
 
     return el("div", {}, [
       banner("Front Desk — Clerk Carmen"),
       chipLine(),
       el("div", { className: "panel hotel-panel" }, [
         el("p", { className: "subtitle", textContent: "\"Welcome back. Carmen at the desk — how can I comp you today?\"" }),
-        el("p", { className: "dim", textContent: `Conf ${hotel.reservationCode} · ${getRoomType(hotel).label}` }),
+        el("p", { className: "dim", textContent: `Conf ${hotel.reservationCode} · ${getRoomType(hotel).label} · ${req.label}` }),
+        access
+          ? el("p", {
+            className: "success",
+            textContent: hotel.reachedRoom
+              ? `Checked in — Room ${hotel.roomNumber}. Enter when you're ready.`
+              : `Key ready — Room ${hotel.roomNumber}. Find the hallway or skip to the door.`,
+          })
+          : el("p", { className: "warning", textContent: reservationStatusMessage(session) }),
         log,
         el("ul", { className: "menu-list" }, [
           menuBtn("Locate reservation (desk terminal)", () => {
-            const r = findReservationAtDesk(session);
-            grantRoomKeyIfReservationReady(session);
-            log.appendChild(el("div", { className: `line ${r.ok ? "success" : "error"}`, textContent: r.message }));
-            if (r.ok) tracker()?.pushNotification("Desk Check-In", r.message);
-            persist();
-            render();
+            carmenAction(log, () => {
+              const r = findReservationAtDesk(session);
+              grantRoomKeyIfReservationReady(session);
+              if (r.ok) {
+                return {
+                  ok: true,
+                  message: `${r.message}\nYour key is active. Take the hallway — or I can skip you to the door.`,
+                };
+              }
+              return r;
+            }, { notifyTitle: "Desk Check-In" });
           }),
-          canAccessHotelRoom(session) && hotel.reachedRoom
-            ? menuBtn("Enter your room", () => pushView("hotel-room"))
+          access && !hotel.reachedRoom
+            ? menuBtn("Find my room (hallway)", () => {
+                carmenAction(log, () => ({
+                  ok: true,
+                  message: `South? North? Trust the carpet — Room ${hotel.roomNumber} is waiting.`,
+                }), { navigate: () => pushView("hotel-hallway") });
+              })
             : null,
-          canAccessHotelRoom(session) && !hotel.reachedRoom
-            ? menuBtn("Find my room (hallway)", () => pushView("hotel-hallway"))
+          access && hotel.roomKeyActive && !hotel.reachedRoom
+            ? menuBtn("Skip hallway — use key to door", () => {
+                carmenAction(log, () => useRoomKeyToDoor(session), {
+                  navigate: () => pushView("hotel-room"),
+                });
+              })
+            : null,
+          access && hotel.reachedRoom
+            ? menuBtn("Enter your room", () => {
+                carmenAction(log, () => ({
+                  ok: true,
+                  message: `Enjoy Room ${hotel.roomNumber}. Don't tip the minibar.`,
+                }), { navigate: () => pushView("hotel-room") });
+              })
             : null,
           menuBtn("Settle overdue resort charges", () => {
-            appendResult(log, settleHotelOverdue(session));
-            persist();
-            render();
+            carmenAction(log, () => {
+              const r = settleHotelOverdue(session);
+              if (r.ok) {
+                return { ok: true, message: `${r.message}\nBalance clear. The carpet forgives — mostly.` };
+              }
+              return r;
+            });
           }),
           menuBtn("Upgrade to Panorama Suite", () => {
-            appendResult(log, upgradeRoom(session, "suite", tracker()));
-            persist();
-            render();
+            carmenAction(log, () => {
+              const r = upgradeRoom(session, "suite", tracker());
+              if (r.ok) {
+                return {
+                  ok: true,
+                  message: `${r.message}\nSuite keys reprinting… check your phone Room tab, then locate again.`,
+                };
+              }
+              return r;
+            }, { notifyTitle: "Suite Upgrade" });
           }),
           menuBtn("Upgrade to Chairman Penthouse", () => {
-            appendResult(log, upgradeRoom(session, "penthouse", tracker()));
-            persist();
-            render();
+            carmenAction(log, () => {
+              const r = upgradeRoom(session, "penthouse", tracker());
+              if (r.ok) {
+                return {
+                  ok: true,
+                  message: `${r.message}\nPenthouse folio spun. Phone updated — locate again for the new door.`,
+                };
+              }
+              return r;
+            }, { notifyTitle: "Penthouse Upgrade" });
           }),
           menuBtn("Extend stay (+1 night)", () => {
-            appendResult(log, extendStay(session, 1, tracker()));
-            persist();
-            render();
+            carmenAction(log, () => extendStay(session, 1, tracker()));
           }),
           menuBtn("Review folio (checkout preview)", () => {
-            appendResult(log, reviewFolio(session));
-            persist();
+            carmenAction(log, () => {
+              const r = reviewFolio(session);
+              return {
+                ok: r.ok,
+                message: r.ok
+                  ? `${r.message}\nThat's the damage so far — sensors don't lie.`
+                  : (r.message || "Folio printer jammed. Try again."),
+              };
+            });
           }),
           menuBtn("Late checkout (+2 hours)", () => {
-            appendResult(log, lateCheckout(session, tracker()));
-            persist();
+            carmenAction(log, () => lateCheckout(session, tracker()));
           }),
           menuBtn("Express checkout (Pearl+)", () => {
-            appendResult(log, expressCheckout(session));
-            persist();
-            render();
+            carmenAction(log, () => expressCheckout(session));
           }),
           menuBtn("Standard checkout", () => {
-            appendResult(log, checkoutStay(session));
-            persist();
-            render();
+            carmenAction(log, () => checkoutStay(session));
           }),
           hotel.nightsRemaining === 0
             ? el("p", { className: "warning", textContent: "Last night — extend stay or check out before the carpet claims you." })
             : null,
-          menuBtn("Guest Directory — sign the lobby book", () => pushView("hotel-guest-directory")),
-          menuBtn("Resort dining — restaurants & capacity challenge", () => pushView("hotel-dining")),
+          menuBtn("Guest Directory — sign the lobby book", () => {
+            carmenAction(log, () => ({
+              ok: true,
+              message: "Leather book, permanent ink — make it count.",
+            }), { navigate: () => pushView("hotel-guest-directory") });
+          }),
+          menuBtn("Resort dining — restaurants & capacity challenge", () => {
+            carmenAction(log, () => ({
+              ok: true,
+              message: "Three tables worth the reservation. Don't order the wine tower sober.",
+            }), { navigate: () => pushView("hotel-dining") });
+          }),
           netPositive
             ? el("p", { className: "dim", textContent: "Net-positive — paid upgrades available if comps are spent." })
             : el("p", { className: "dim", textContent: "Unlock room comps via MGM Rewards tier play." }),
           menuBtn("Back to hotel lobby", () => navigateTo("hotel-lobby"), true),
-        ]),
+        ].filter(Boolean)),
       ]),
     ]);
   }
@@ -269,6 +437,7 @@ export function buildHotelRenderers(ctx) {
       ]);
     }
 
+    grantRoomKeyIfReservationReady(session);
     const beat = currentHallwayBeat(session);
     const choiceItems = beat
       ? beat.choices(hotel).map((c, i) => menuBtn(c.label, () => {
@@ -287,12 +456,27 @@ export function buildHotelRenderers(ctx) {
       chipLine(),
       el("div", { className: "panel hotel-panel" }, [
         el("p", { className: "subtitle", textContent: beat?.text ?? "You wander." }),
+        el("p", {
+          className: "dim",
+          textContent: hotel.roomKeyActive
+            ? `Key active for Room ${hotel.roomNumber} — wrong turns are free comedy.`
+            : reservationStatusMessage(session),
+        }),
         log,
         el("ul", { className: "menu-list" }, [
           ...choiceItems,
+          hotel.roomKeyActive
+            ? menuBtn("Use key — skip to door", () => {
+                const r = useRoomKeyToDoor(session);
+                showStatus(r.message, r.ok ? "success" : "error");
+                persist();
+                if (r.ok) pushView("hotel-room");
+                else render();
+              })
+            : null,
           menuBtn("Start over (lobby elevator)", () => { resetHallway(session); persist(); render(); }),
           menuBtn("Back", goBack, true),
-        ]),
+        ].filter(Boolean)),
       ]),
     ]);
   }
@@ -581,10 +765,14 @@ export function buildHotelRenderers(ctx) {
     const hotel = ensureHotel(session);
     const log = el("div", { className: "log-area hotel-log" });
     const decisions = filterRoomDecisions(session, hotel);
+    const suiteBalcony = hotel.roomType === "suite" || hotel.roomType === "penthouse";
 
     const decisionButtons = decisions.map((dec) => {
       const priceTag = dec.price ? ` — $${dec.price}` : "";
       return menuBtn(`${dec.label}${priceTag}`, () => {
+        if (dec.id === "balcony_smoke_pov" || (dec.id === "balcony" && suiteBalcony)) {
+          if (openBalconySmokePov({ recordDecision: true })) return;
+        }
         const res = makeRoomDecision(session, dec.id);
         log.replaceChildren();
         renderAmenityLog(log, res);
@@ -601,19 +789,24 @@ export function buildHotelRenderers(ctx) {
       el("div", { className: "panel hotel-panel hotel-room-view" }, [
         el("p", { className: "subtitle", textContent: "Small choices. Large room charges." }),
         hotel.roomType === "penthouse"
-          ? el("p", { className: "dim", textContent: "Penthouse perks: telescope, butler, Foundation access." })
+          ? el("p", { className: "dim", textContent: "Penthouse perks: telescope, butler, Foundation access, Strip POV balcony." })
           : hotel.roomType === "suite"
-            ? el("p", { className: "dim", textContent: "Suite living room and Strip-facing balcony available." })
+            ? el("p", { className: "dim", textContent: "Suite living room and Strip POV balcony smoke break available." })
             : null,
         log,
         el("ul", { className: "menu-list" }, [
           ...decisionButtons,
+          suiteBalcony
+            ? menuBtn("Open Strip POV balcony (smoke break)", () => {
+                openBalconySmokePov({ recordDecision: true });
+              })
+            : null,
           menuBtn("Trigger wake-up call now", () => {
             appendResult(log, triggerWakeUpCall(session));
             persist();
           }),
           menuBtn("Back to room", () => navigateTo("hotel-room"), true),
-        ]),
+        ].filter(Boolean)),
       ]),
     ]);
   }
@@ -717,6 +910,17 @@ export function buildHotelRenderers(ctx) {
     }
     overlay.setSession(session);
     overlay.open(venueId);
+  }
+
+  function openPoolComplex(zoneId = "hub") {
+    const overlay = ctx.poolOverlay;
+    if (!overlay) {
+      showStatus("Pool overlay not ready.", "error");
+      pushView("pool-complex");
+      return;
+    }
+    overlay.setSession(session);
+    overlay.open(zoneId);
   }
 
   return {

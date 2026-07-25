@@ -14,9 +14,11 @@ export const TILE = {
   AQUA: 11,
 };
 
-export const TILE_SIZE = 16;
+export const TILE_SIZE = 32;
 export const MAP_WIDTH = 30;
 export const MAP_HEIGHT = 30;
+/** Logical art grid unit — textures are rendered at TILE_SIZE (2×16px DS cells). */
+export const ART_UNIT = 16;
 
 /** Collision tiles — player cannot walk here. */
 export const COLLISION = new Set([

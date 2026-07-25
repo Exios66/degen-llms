@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { OverworldScene } from "./scenes/GameScenes.js?v=gfx-move-5";
+import { OverworldScene } from "./scenes/GameScenes.js?v=mobile-ds-graphics-1";
 import { TitleScreen, renderHud, renderTrainerCard } from "./scenes/TitleScreen.js";
 import { DialogueManager } from "./systems/DialogueManager.js";
 import { SaveAdapter } from "./systems/SaveAdapter.js";
@@ -197,6 +197,8 @@ async function startOverworld(activeSession) {
     backgroundColor: "#0a0812",
     pixelArt: true,
     input: {
+      activePointers: 2,
+      touch: { capture: true },
       keyboard: {
         capture: [
           "W", "A", "S", "D",

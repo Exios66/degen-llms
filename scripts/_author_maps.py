@@ -381,7 +381,8 @@ MAPS_SPEC: list[dict] = [
         "clear": [rect("CARPET", 14, 1, 3, 3), rect("CARPET", 14, 26, 3, 3)],
         "doors": [
             door(15, 27, "hotel_tower", 15, 4, "Back to the elevators."),
-            door(15, 2, "guest_room", 15, 26, "Your room — key card works."),
+            door(15, 2, "guest_room", 15, 26, "Room 24-118 — key card.",
+                 requiresRoomKey=True),
         ],
     },
     {

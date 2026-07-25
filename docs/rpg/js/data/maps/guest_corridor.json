@@ -70,7 +70,8 @@
       "to": "guest_room",
       "toX": 15,
       "toY": 26,
-      "message": "Your room — key card works."
+      "message": "Room 24-118 — key card.",
+      "requiresRoomKey": true
     }
   ]
 }

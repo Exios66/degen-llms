@@ -304,6 +304,16 @@ body {
   color: var(--magenta);
 }
 
+.hud-alert {
+  color: #ff6b6b;
+  animation: hud-alert-pulse 1.4s steps(2, end) infinite;
+}
+
+@keyframes hud-alert-pulse {
+  0%, 60% { opacity: 1; }
+  61%, 100% { opacity: 0.45; }
+}
+
 .dialogue-box {
   width: min(100%, 600px);
   background: var(--panel);

@@ -7,7 +7,9 @@ import {
 import { getSessionDealer } from "../../../js/dealers.js";
 import { resolveNpc } from "../../../js/staff-manifest.js";
 import { audioManager } from "../systems/AudioManager.js";
-import { getWorldPhase, syncWorldCycle } from "../../../js/world-cycle.js";
+import {
+  canAccessHotelRoom, getWorldCycleState, reservationStatusMessage, syncWorldCycle,
+} from "../../../js/world-cycle.js";
 import { tierForWagered } from "../../../js/rewards.js";
 import { tierIndex } from "../../../js/rewards-perks.js";
 import { recordDex } from "../systems/Dex.js";
@@ -31,6 +33,14 @@ const FOOTSTEP_SFX = {
   [TILE.STAGE]: "foot_vip",
   [TILE.SPA]: "foot_water",
 };
+
+/** Screen wash per world-cycle day phase, indexed by WORLD_PHASES id. */
+const PHASE_WASH = [
+  { bg: "#120e18", tint: 0xffb066, alpha: 0.14 },
+  { bg: "#0a0812", tint: 0x000000, alpha: 0 },
+  { bg: "#0c0818", tint: 0x6a1a70, alpha: 0.22 },
+  { bg: "#080610", tint: 0x1a0a40, alpha: 0.3 },
+];
 
 /** Decor props are drawn from the same tile vocabulary as the ground. */
 const DECOR_KEYS = {
@@ -126,9 +136,11 @@ export class OverworldScene extends Phaser.Scene {
 
     // world-cycle.js is the single clock: the overworld tint and NPC schedules
     // both read its day phase, and rpg.worldTime mirrors it for older saves.
-    syncWorldCycle(this.session);
-    this.dayPhase = getWorldPhase(this.session);
-    const worldTime = spawn.worldTime ?? 720;
+    const cycle = syncWorldCycle(this.session);
+    this.dayPhase = cycle.phase;
+    this._lastPhaseId = cycle.phase.id;
+    this._wasEvicted = Boolean(cycle.roomEvicted);
+    const worldTime = this._mirrorWorldTime(cycle);
     this.npcSprites = new Map();
     this.npcLabels = new Map();
     this.currentNpcs = getNpcsForMap(mapId).map((npc) => {
@@ -268,7 +280,91 @@ export class OverworldScene extends Phaser.Scene {
 
     this.input.keyboard.on("keydown", (ev) => this._trackKonami(ev));
 
+    this._worldClock = this.time.addEvent({
+      delay: 4000,
+      loop: true,
+      callback: () => this._tickWorldCycle(),
+    });
+    this.events.once("shutdown", () => this._worldClock?.remove());
+    this.time.delayedCall(1400, () => this._announceDay(cycle));
+
     window.__rpgReady = true;
+  }
+
+  /**
+   * Keep the legacy footstep clock in step with the real cycle so old saves and
+   * the HUD keep reading a plausible time of day.
+   * @returns {number} minutes past midnight
+   */
+  _mirrorWorldTime(cycle) {
+    const minutes = Math.floor((cycle.dayProgress ?? 0) * 1440);
+    this.saveAdapter.rpg.worldTime = minutes;
+    return minutes;
+  }
+
+  /**
+   * The overworld's heartbeat. One clock drives the tint, NPC schedules, and
+   * the resort's daily pressure — charges, the rotating reservation
+   * requirement, and eviction — so the RPG player feels what the terminal
+   * player feels.
+   */
+  _tickWorldCycle() {
+    if (!this.scene.isActive()) return;
+    const cycle = syncWorldCycle(this.session);
+    this._mirrorWorldTime(cycle);
+
+    if (cycle.advanced) {
+      for (const message of cycle.messages) {
+        this.dialogue?.showSystemMessage?.(message, { speaker: "Front Desk", durationMs: 4200 });
+      }
+      this.audio?.sfx?.("denied");
+      this.saveAdapter.persist();
+      this._announceDay(cycle);
+    }
+
+    if (cycle.roomEvicted && !this._wasEvicted) {
+      this.dialogue?.showSystemMessage?.(
+        "Your key stops working. Settle the folio at the front desk or win it back on the floor.",
+        { speaker: "Front Desk", durationMs: 4200 },
+      );
+    }
+    this._wasEvicted = Boolean(cycle.roomEvicted);
+
+    if (cycle.phase.id !== this._lastPhaseId) {
+      this._lastPhaseId = cycle.phase.id;
+      this.dayPhase = cycle.phase;
+      this._applyDayNightTint(cycle.dayProgress * 1440);
+      this._repositionNpcsForPhase();
+      this.onMapBanner?.(getMapDefinition(this.currentMapId).label ?? this.currentMapId,
+        cycle.phase.label);
+    }
+    this.onHudUpdate?.();
+  }
+
+  /** Tell the player what today asks of them, once per in-game day. */
+  _announceDay(cycle) {
+    const state = cycle ?? getWorldCycleState(this.session);
+    this.dialogue?.showSystemMessage?.(
+      `Day ${state.displayDay} · ${state.phase.label} — ${reservationStatusMessage(this.session)}`,
+      { speaker: "Resort", durationMs: 3600 },
+    );
+  }
+
+  /** Walk NPCs to their positions for the new day phase. */
+  _repositionNpcsForPhase() {
+    const worldTime = this.saveAdapter.rpg.worldTime ?? 720;
+    for (const npc of this.currentNpcs ?? []) {
+      const pos = resolveNpcPosition(npc, worldTime, this.dayPhase?.id);
+      if (pos.x === npc.x && pos.y === npc.y) continue;
+      npc.x = pos.x;
+      npc.y = pos.y;
+      const sprite = this.npcSprites.get(npc.id);
+      const label = this.npcLabels.get(npc.id);
+      const tx = pos.x * TILE_SIZE + TILE_SIZE / 2;
+      const ty = pos.y * TILE_SIZE + TILE_SIZE / 2;
+      if (sprite) this.tweens.add({ targets: sprite, x: tx, y: ty, duration: 600 });
+      if (label) this.tweens.add({ targets: label, x: tx, y: ty - 16, duration: 600 });
+    }
   }
 
   /** First visit to a room counts toward exploration and the trainer card. */
@@ -297,29 +393,27 @@ export class OverworldScene extends Phaser.Scene {
   }
 
   _applyDayNightTint(worldTime) {
-    const phaseId = this.dayPhase?.id;
-    const isNight = phaseId != null ? phaseId >= 2 : (worldTime >= 1200 || worldTime < 360);
-    if (isNight) {
-      this.cameras.main.setBackgroundColor("#080610");
-      this.tweens.add({
-        targets: this.cameras.main,
-        // soft neon night via fade overlay
-        duration: 1,
-      });
-      if (!this._nightOverlay) {
-        this._nightOverlay = this.add.rectangle(
-          MAP_WIDTH * TILE_SIZE / 2,
-          MAP_HEIGHT * TILE_SIZE / 2,
-          MAP_WIDTH * TILE_SIZE,
-          MAP_HEIGHT * TILE_SIZE,
-          0x1a0a40,
-          0.28
-        ).setDepth(50).setScrollFactor(1);
-      }
-    } else if (this._nightOverlay) {
-      this._nightOverlay.destroy();
-      this._nightOverlay = null;
+    const phaseId = this.dayPhase?.id
+      ?? (worldTime >= 1200 || worldTime < 360 ? 3 : 1);
+    const wash = PHASE_WASH[phaseId] ?? PHASE_WASH[1];
+    this.cameras.main.setBackgroundColor(wash.bg);
+    if (wash.alpha === 0) {
+      this._phaseOverlay?.destroy();
+      this._phaseOverlay = null;
+      return;
     }
+    if (!this._phaseOverlay) {
+      this._phaseOverlay = this.add.rectangle(
+        MAP_WIDTH * TILE_SIZE / 2,
+        MAP_HEIGHT * TILE_SIZE / 2,
+        MAP_WIDTH * TILE_SIZE,
+        MAP_HEIGHT * TILE_SIZE,
+        wash.tint,
+        wash.alpha,
+      ).setDepth(50).setScrollFactor(1);
+      return;
+    }
+    this._phaseOverlay.setFillStyle(wash.tint, wash.alpha);
   }
 
   _fitCamera() {
@@ -417,7 +511,6 @@ export class OverworldScene extends Phaser.Scene {
           const ty = Math.floor(this.player.y / TILE_SIZE);
           this.audio?.sfx?.(FOOTSTEP_SFX[this.groundGrid?.[ty]?.[tx]] ?? "foot_carpet");
         }
-        this._advanceWorldTime(1);
       }
     }
 
@@ -438,14 +531,6 @@ export class OverworldScene extends Phaser.Scene {
     }
 
     this._autosavePosition(delta);
-  }
-
-  _advanceWorldTime(minutes) {
-    const rpg = this.saveAdapter.rpg;
-    rpg.worldTime = ((rpg.worldTime ?? 720) + minutes) % 1440;
-    if (minutes >= 1 && Math.random() < 0.02) {
-      this._applyDayNightTint(rpg.worldTime);
-    }
   }
 
   /** True if the player's physics body overlaps any solid tile. */
@@ -672,6 +757,15 @@ export class OverworldScene extends Phaser.Scene {
         return;
       }
     }
+    if (trigger.requiresRoomKey && !canAccessHotelRoom(this.session)) {
+      const wc = getWorldCycleState(this.session);
+      this.dialogue.showSystemMessage(wc.roomEvicted
+        ? "The lock blinks red. Settle the folio at the front desk."
+        : `Key card declined. ${reservationStatusMessage(this.session)}`,
+      { speaker: "Room 24-118", durationMs: 3600 });
+      this.audio?.sfx?.("denied");
+      return;
+    }
     if (trigger.venueGate) {
       // The salon gate can open the stake picker, so hold the player at the
       // rope until the check settles.
@@ -842,7 +936,7 @@ export class OverworldScene extends Phaser.Scene {
     clearWipe();
     this.audio?.unduck?.();
     this.canMove = true;
-    this._advanceWorldTime(5);
+    this._tickWorldCycle();
     this.questManager?.syncDerived?.();
     this.saveAdapter.persist();
     this.onHudUpdate?.();

@@ -10,6 +10,7 @@ import {
   formatSaveSlotPlayTimes,
 } from "../../../js/core.js";
 import { getActiveProfileSummary, getActiveSlotId } from "../../../js/profileCache.js";
+import { getWorldCycleState } from "../../../js/world-cycle.js";
 import { SaveAdapter, initSessionRpg } from "../systems/SaveAdapter.js";
 
 const INTRO_AUTO_MS = 3200;
@@ -376,11 +377,16 @@ export function renderHud(hudRoot, saveAdapter, questManager = null) {
   const badges = questManager?.badges?.()?.length ?? 0;
   const hour = Math.floor((rpg.worldTime ?? 720) / 60);
   const mins = String((rpg.worldTime ?? 720) % 60).padStart(2, "0");
+  const cycle = getWorldCycleState(saveAdapter.session);
+  const evicted = cycle.roomEvicted
+    ? `<span class="hud-alert">Room locked · ${fmtChips(cycle.overdueBalance)} overdue</span>`
+    : "";
   hudRoot.innerHTML = `
     <div class="hud-bar">
       <span class="hud-name">${lines.name}</span>
       <span class="hud-chips">${lines.chips}</span>
-      <span class="hud-time">${hour}:${mins}</span>
+      <span class="hud-time">Day ${cycle.displayDay} · ${hour}:${mins} · ${cycle.phase.label}</span>
+      ${evicted}
       <span class="hud-hint">WASD move · E talk · Esc menu · P phone · Shift run · badges ${badges}</span>
     </div>
   `;

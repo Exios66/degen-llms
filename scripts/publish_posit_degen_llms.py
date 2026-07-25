@@ -123,20 +123,69 @@ def device_auth() -> dict:
             raise SystemExit(f"OAuth error: {code}")
 
 
+def refresh_access(refresh_token: str) -> str | None:
+    """Trade a refresh token for a live access token, or None if it is spent."""
+    try:
+        tok = post_form(
+            f"https://{AUTH_HOST}/oauth/token",
+            {
+                "grant_type": "refresh_token",
+                "refresh_token": refresh_token,
+                "client_id": CLIENT_ID,
+                "scope": SCOPE,
+            },
+        )
+    except urllib.error.HTTPError as e:
+        _log(f"Refresh token rejected ({e.code}); falling back")
+        return None
+    Path("/tmp/posit-tokens.json").write_text(json.dumps(tok, indent=2), encoding="utf-8")
+    return tok.get("access_token")
+
+
+def usable(access: str) -> bool:
+    """Cheap probe — access tokens expire between runs, refresh tokens do not."""
+    req = urllib.request.Request(
+        f"{API}/accounts?has_user_role=true",
+        headers={"Accept": "application/json", "Authorization": f"Bearer {access}"},
+    )
+    try:
+        with urllib.request.urlopen(req):
+            return True
+    except urllib.error.HTTPError:
+        return False
+
+
 def load_tokens() -> str:
-    # Prefer freshly authorized file from a prior device poll in this environment.
     cached = Path("/tmp/posit-tokens.json")
     access = os.environ.get("POSIT_CONNECT_CLOUD_ACCESS_TOKEN")
-    if access:
-        _log("Using POSIT_CONNECT_CLOUD_* environment tokens")
+    if access and usable(access):
+        _log("Using POSIT_CONNECT_CLOUD_ACCESS_TOKEN")
         return access
+    for source, refresh in (
+        ("POSIT_CONNECT_CLOUD_REFRESH_TOKEN", os.environ.get("POSIT_CONNECT_CLOUD_REFRESH_TOKEN")),
+        ("/tmp/posit-tokens.json", _cached_refresh(cached)),
+    ):
+        if not refresh:
+            continue
+        fresh = refresh_access(refresh)
+        if fresh:
+            _log(f"Refreshed access token via {source}")
+            return fresh
     if cached.is_file():
         tok = json.loads(cached.read_text(encoding="utf-8"))
-        if tok.get("access_token"):
+        if tok.get("access_token") and usable(tok["access_token"]):
             _log("Using /tmp/posit-tokens.json")
             return tok["access_token"]
-    tok = device_auth()
-    return tok["access_token"]
+    return device_auth()["access_token"]
+
+
+def _cached_refresh(cached: Path) -> str | None:
+    if not cached.is_file():
+        return None
+    try:
+        return json.loads(cached.read_text(encoding="utf-8")).get("refresh_token")
+    except json.JSONDecodeError:
+        return None
 
 
 def api(
@@ -180,7 +229,9 @@ def read_publish_yml() -> str | None:
         return None
     text = PUBLISH_YML.read_text(encoding="utf-8")
     for line in text.splitlines():
-        line = line.strip()
+        # The writer emits the id as a list item ("- id: …"), so accept both forms;
+        # missing it here silently creates a duplicate content item.
+        line = line.strip().lstrip("-").strip()
         if line.startswith("id:"):
             value = line.split(":", 1)[1].strip().strip('"').strip("'")
             if value:

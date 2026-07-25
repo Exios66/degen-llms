@@ -81,8 +81,19 @@ export class AudioManager {
     }
   }
 
+  /** Drop the music under an encounter overlay, then bring it back. */
+  duck(level = 0.35) {
+    if (!this.gain || this.muted) return;
+    this.gain.gain.setTargetAtTime(0.12 * level, this.ctx.currentTime, 0.08);
+  }
+
+  unduck() {
+    if (!this.gain || this.muted) return;
+    this.gain.gain.setTargetAtTime(0.12, this.ctx.currentTime, 0.15);
+  }
+
   /**
-   * @param {"foot_lobby"|"foot_carpet"|"win"|"secret"|"click"} kind
+   * @param {"foot_lobby"|"foot_carpet"|"foot_felt"|"foot_water"|"foot_vip"|"win"|"secret"|"click"|"denied"} kind
    */
   sfx(kind) {
     if (!this.unlocked || !this.ctx || this.muted) return;
@@ -92,9 +103,13 @@ export class AudioManager {
     const map = {
       foot_lobby: { f: 180, d: 0.05, type: "square" },
       foot_carpet: { f: 120, d: 0.06, type: "triangle" },
+      foot_felt: { f: 96, d: 0.07, type: "triangle" },
+      foot_water: { f: 260, d: 0.09, type: "sine" },
+      foot_vip: { f: 148, d: 0.07, type: "triangle" },
       win: { f: 520, d: 0.25, type: "sine" },
       secret: { f: 880, d: 0.35, type: "sine" },
       click: { f: 400, d: 0.04, type: "square" },
+      denied: { f: 110, d: 0.22, type: "sawtooth" },
     };
     const cfg = map[kind] ?? map.click;
     osc.type = cfg.type;
@@ -108,9 +123,10 @@ export class AudioManager {
   }
 
   bgmForMap(mapId) {
-    if (mapId === "main_resort") return "casino";
-    if (mapId === "foundation_room") return "secret";
-    if (mapId === "house_of_blues") return "encounter";
+    if (mapId === "main_resort" || mapId === "casino_floor_north" || mapId === "casino_floor_south") return "casino";
+    if (mapId === "foundation_room" || mapId === "high_limit_salon" || mapId === "staff_corridor") return "secret";
+    if (mapId === "house_of_blues" || mapId === "hob_green_room" || mapId === "beach_rave") return "encounter";
+    if (mapId === "shark_reef" || mapId === "reef_tunnel" || mapId === "spa") return "title";
     return "lobby";
   }
 }

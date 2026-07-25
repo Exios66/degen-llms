@@ -50,7 +50,8 @@ Lottery Counter → Select ticket type → Quick pick or enter numbers → Draw/
 
 ## Pixel RPG
 
-Visit the lottery counter NPC in the RPG overworld. Tickets launch as a DOM overlay.
+Talk to **Lottery Lena** at the counter in The Shoppes at Mandalay Place. The
+counter is the same screen the terminal shows, mounted in an encounter panel.
 
 ## Implementation
 
@@ -59,4 +60,4 @@ Visit the lottery counter NPC in the RPG overworld. Tickets launch as a DOM over
 | `mandalay_bay/lottery.py` | Python engine |
 | `docs/js/lottery.js` | Browser mirror |
 | `mandalay_bay/activities/lottery.py` | CLI activity |
-| `docs/rpg/js/systems/overlays/LotteryOverlay.js` | RPG overlay |
+| `docs/js/ui/lottery-renderers.js` | Counter screen the RPG mounts too |

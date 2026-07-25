@@ -514,6 +514,16 @@ body {
   color: var(--magenta);
 }
 
+.hud-alert {
+  color: #ff6b6b;
+  animation: hud-alert-pulse 1.4s steps(2, end) infinite;
+}
+
+@keyframes hud-alert-pulse {
+  0%, 60% { opacity: 1; }
+  61%, 100% { opacity: 0.45; }
+}
+
 .dialogue-box {
   width: min(100%, 640px);
   background: linear-gradient(180deg, #1a1528 0%, var(--panel) 100%);
@@ -1105,5 +1115,419 @@ body {
 @media (min-width: 481px) {
   .touch-hint {
     display: none;
+  }
+}
+
+/* ─── Hosted terminal screens ──────────────────────────────────────────────
+   Shared docs/js/ui renderers mounted inside an encounter panel. The terminal
+   stylesheet supplies layout; these rules re-skin it for the pixel cabinet. */
+
+#terminal-overlay,
+#menu-overlay {
+  align-items: center;
+  background: rgba(10, 8, 18, 0.82);
+}
+
+.encounter-panel--terminal {
+  width: min(100%, 720px);
+  max-height: min(92vh, 720px);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  border-color: var(--gold);
+}
+
+.terminal-host-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #0a0812;
+  border-bottom: 3px solid var(--gold);
+  color: var(--gold);
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+}
+
+.terminal-host-exit {
+  background: transparent;
+  border: 2px solid var(--red);
+  color: var(--red);
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.terminal-host-exit:hover {
+  background: var(--red);
+  color: #0a0812;
+}
+
+.terminal-host-mount {
+  overflow: auto;
+  padding: 4px 12px 12px;
+  font-family: var(--font-mono, "JetBrains Mono", monospace);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* Terminal widgets adopt the cabinet palette. */
+.terminal-host-mount .panel,
+.terminal-host-mount .hub-features {
+  background: rgba(20, 16, 31, 0.85);
+  border: 2px solid var(--border);
+  border-radius: 0;
+  margin: 8px 0;
+  padding: 10px;
+}
+
+.terminal-host-mount .banner {
+  border-top: 2px solid var(--gold);
+  border-bottom: 2px solid var(--gold);
+  margin: 8px 0;
+}
+
+.terminal-host-mount .banner h1,
+.terminal-host-mount .banner h2 {
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  color: var(--gold);
+}
+
+.terminal-host-mount .subtitle {
+  color: var(--cyan);
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  letter-spacing: 0.04em;
+}
+
+.terminal-host-mount .menu-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.terminal-host-mount .menu-btn {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 2px solid var(--border);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 12px;
+  padding: 7px 9px;
+  margin: 4px 0;
+  cursor: pointer;
+}
+
+.terminal-host-mount .menu-btn:hover,
+.terminal-host-mount .menu-btn:focus {
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
+
+.terminal-host-mount .menu-btn.back {
+  border-color: #3a3048;
+  color: var(--dim);
+}
+
+.terminal-host-mount .menu-btn .num {
+  color: var(--gold);
+}
+
+.terminal-host-mount .btn {
+  background: var(--panel);
+  border: 2px solid var(--border);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.terminal-host-mount .btn.primary {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.terminal-host-mount .btn.danger {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+.terminal-host-mount .chip-line,
+.terminal-host-mount .hud-chips {
+  color: var(--gold);
+}
+
+.terminal-host-mount .log-area,
+.terminal-host-mount .machine-log {
+  background: #0a0812;
+  border: 2px solid var(--border);
+  max-height: 180px;
+}
+
+.terminal-host-mount .status-banner {
+  border: 2px solid var(--cyan);
+  border-radius: 0;
+}
+
+.terminal-host-mount .settings-bar {
+  display: none;
+}
+
+/* The cabinet is small — keep big terminal art from blowing out the panel. */
+.terminal-host-mount .slot-cabinet,
+.terminal-host-mount .video-machine,
+.terminal-host-mount .race-track-view {
+  transform-origin: top center;
+  max-width: 100%;
+}
+
+/* ── START menu ────────────────────────────────────────────────────────── */
+
+.menu-panel {
+  width: min(100%, 560px);
+  max-height: min(92vh, 680px);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  border-color: var(--cyan);
+}
+
+.menu-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: #0a0812;
+  border-bottom: 3px solid var(--cyan);
+  color: var(--cyan);
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+}
+
+.menu-panel-header .menu-chips {
+  color: var(--gold);
+}
+
+.menu-panel-body {
+  overflow: auto;
+  padding: 10px 12px;
+  font-family: var(--font-mono, "JetBrains Mono", monospace);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.menu-panel-body h3 {
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: var(--gold);
+  margin: 10px 0 6px;
+  letter-spacing: 0.04em;
+}
+
+.menu-panel-body p {
+  margin: 3px 0;
+}
+
+.menu-panel-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.menu-panel-list button {
+  width: 100%;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  text-align: left;
+  background: transparent;
+  border: 2px solid var(--border);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 12px;
+  padding: 6px 9px;
+  margin: 3px 0;
+  cursor: pointer;
+}
+
+.menu-panel-list button .num {
+  color: var(--gold);
+  font-family: var(--font-pixel);
+  font-size: 7px;
+}
+
+.menu-panel-list button .menu-detail {
+  margin-left: auto;
+  color: var(--dim);
+  font-size: 11px;
+}
+
+.menu-panel-list button:hover,
+.menu-panel-list button:focus,
+.menu-panel-list button.selected {
+  border-color: var(--cyan);
+  color: var(--cyan);
+  background: rgba(38, 198, 218, 0.08);
+}
+
+.menu-quest-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.menu-quest-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  border-left: 3px solid var(--border);
+  padding: 5px 8px;
+  margin: 4px 0;
+  background: rgba(20, 16, 31, 0.7);
+}
+
+.menu-quest-list li.quest-complete {
+  border-left-color: var(--green, #7bd88f);
+  opacity: 0.75;
+}
+
+.menu-quest-list li.quest-locked {
+  border-left-style: dashed;
+  opacity: 0.6;
+}
+
+.menu-quest-list .menu-detail {
+  margin-left: auto;
+  color: var(--gold);
+  font-size: 11px;
+}
+
+.menu-quest-list .dim {
+  flex-basis: 100%;
+  color: var(--dim);
+  font-size: 11px;
+}
+
+.menu-dex-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 5px;
+}
+
+.menu-dex-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border: 2px solid var(--border);
+  padding: 5px 7px;
+  font-size: 11px;
+  color: var(--dim);
+}
+
+.menu-dex-entry.found {
+  border-color: var(--gold);
+  color: var(--text);
+}
+
+.menu-dex-entry .dim {
+  font-size: 10px;
+  color: var(--dim);
+}
+
+.menu-status {
+  margin-top: 10px;
+  border-top: 2px solid var(--border);
+  padding-top: 6px;
+  color: var(--cyan);
+  font-size: 11px;
+}
+
+.menu-panel-footer {
+  padding: 8px 12px;
+  border-top: 3px solid var(--cyan);
+  background: #0a0812;
+}
+
+.menu-panel-footer button {
+  background: transparent;
+  border: 2px solid var(--border);
+  color: var(--dim);
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  padding: 5px 9px;
+  cursor: pointer;
+}
+
+.menu-panel-footer button:hover {
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
+
+/* ── Map-name placard ──────────────────────────────────────────────────── */
+
+#map-banner {
+  position: absolute;
+  top: 74px;
+  left: 50%;
+  z-index: 40;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 7px 14px;
+  background: rgba(10, 8, 18, 0.92);
+  border: 3px solid var(--gold);
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.6);
+  opacity: 0;
+  transform: translate(-50%, -14px);
+}
+
+#map-banner strong {
+  text-align: center;
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  color: var(--gold);
+  letter-spacing: 0.06em;
+}
+
+#map-banner span {
+  text-align: center;
+  font-family: var(--font-pixel);
+  font-size: 7px;
+  color: var(--cyan);
+  letter-spacing: 0.04em;
+}
+
+.map-banner--in {
+  animation: map-banner-in 320ms steps(6) forwards;
+}
+
+.map-banner--out {
+  animation: map-banner-out 380ms steps(6) forwards;
+}
+
+@keyframes map-banner-in {
+  from { opacity: 0; transform: translate(-50%, -14px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+@keyframes map-banner-out {
+  from { opacity: 1; transform: translate(-50%, 0); }
+  to { opacity: 0; transform: translate(-50%, -14px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map-banner--in,
+  .map-banner--out {
+    animation-duration: 1ms;
   }
 }

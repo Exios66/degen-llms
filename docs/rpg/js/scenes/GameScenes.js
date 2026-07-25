@@ -703,7 +703,8 @@ export class OverworldScene extends Phaser.Scene {
       if (tx >= t.x && tx < t.x + w && ty >= t.y && ty < t.y + h) {
         if (this._lastTriggerId === t.id) return;
         this._lastTriggerId = t.id;
-        if (t.setFlag) this.saveAdapter.setFlag(t.setFlag);
+        // _findEgg falls back to a plain flag when the id isn't a registered egg.
+        if (t.setFlag) this._findEgg(t.setFlag);
         if (t.type === "zone_message" && t.message) {
           this.dialogue.showSystemMessage(t.message);
         }

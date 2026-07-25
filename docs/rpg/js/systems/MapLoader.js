@@ -66,8 +66,9 @@ export function compileMap(def) {
     });
   }
 
-  // Scatter sprinkles a prop across one floor type on a fixed lattice, which
-  // is deterministic so saved positions never land inside new greenery.
+  // Scatter sprinkles a prop across one floor type. The hash is deterministic
+  // so saved positions never land inside new greenery, and it mixes x and y
+  // unevenly so props don't line up into diagonal walls.
   for (const rule of def.scatter ?? []) {
     const tile = tileId(rule.tile);
     const mod = Math.max(2, rule.mod ?? 9);
@@ -76,7 +77,7 @@ export function compileMap(def) {
     forEachCell(bounds, (x, y) => {
       if (!inBounds(x, y) || decor[y][x] !== 0) return;
       if (on.size && !on.has(ground[y][x])) return;
-      if ((x + y) % mod === 0) decor[y][x] = tile;
+      if ((x * 7 + y * 23 + x * y) % mod === 0) decor[y][x] = tile;
     });
   }
 

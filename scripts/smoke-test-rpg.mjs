@@ -69,13 +69,32 @@ const walkable = (mapId, x, y) => {
   return layer.collision[y][x] === 0;
 };
 
+/** Tiles the player can actually walk to from the map's spawn point. */
+const reachedFrom = new Map();
+for (const mapId of MAP_IDS) {
+  const spawn = getMapDefinition(mapId).spawn;
+  const seen = new Set();
+  const queue = [[spawn.x, spawn.y]];
+  while (queue.length) {
+    const [x, y] = queue.pop();
+    const key = `${x},${y}`;
+    if (seen.has(key) || !walkable(mapId, x, y)) continue;
+    seen.add(key);
+    queue.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
+  }
+  reachedFrom.set(mapId, seen);
+}
+const connected = (mapId, x, y) => reachedFrom.get(mapId)?.has(`${x},${y}`) ?? false;
+/** Standing next to a tile is enough to press E at it. */
+const adjacentToWalk = (mapId, x, y, test) =>
+  test(mapId, x, y) ||
+  [[0, -1], [0, 1], [-1, 0], [1, 0]].some(([dx, dy]) => test(mapId, x + dx, y + dy));
+
 /**
  * NPCs are allowed to occupy props — bar counters, kiosks, the cage window —
  * so what matters is that the player can stand next to them and press E.
  */
-const reachable = (mapId, x, y) =>
-  walkable(mapId, x, y) ||
-  [[0, -1], [0, 1], [-1, 0], [1, 0]].some(([dx, dy]) => walkable(mapId, x + dx, y + dy));
+const reachable = (mapId, x, y) => adjacentToWalk(mapId, x, y, connected);
 
 // ── Maps ──────────────────────────────────────────────────────────────────
 check(knownMap(DEFAULT_MAP_ID), `default map "${DEFAULT_MAP_ID}" is not in the index`);
@@ -102,9 +121,10 @@ for (const door of doors) {
   check(knownMap(door.mapId), `${at}: unknown source map`);
   check(knownMap(door.targetMap), `${at}: unknown target map "${door.targetMap}"`);
   if (!knownMap(door.targetMap)) continue;
-  check(walkable(door.mapId, door.x, door.y), `${at}: door tile is not walkable`);
-  check(walkable(door.targetMap, door.targetX, door.targetY),
-    `${at}: lands on a blocked tile in ${door.targetMap} (${door.targetX},${door.targetY})`);
+  check(connected(door.mapId, door.x, door.y),
+    `${at}: door tile can't be walked to from the spawn point`);
+  check(connected(door.targetMap, door.targetX, door.targetY),
+    `${at}: lands somewhere unwalkable in ${door.targetMap} (${door.targetX},${door.targetY})`);
   if (door.venueGate) {
     check(["high_limit_salon", "foundation_room"].includes(door.venueGate),
       `${at}: unknown venue gate "${door.venueGate}"`);
@@ -134,6 +154,28 @@ for (const t of triggers) {
   } else {
     check(t.type === "zone_message", `trigger ${t.id}: unknown type "${t.type}"`);
     check(Boolean(t.message), `trigger ${t.id}: zone_message with no message`);
+  }
+  // A trigger the player can never stand on never fires.
+  if (t.mapId && knownMap(t.mapId)) {
+    let standable = false;
+    for (let dy = 0; dy < (t.height ?? 1); dy += 1) {
+      for (let dx = 0; dx < (t.width ?? 1); dx += 1) {
+        if (connected(t.mapId, t.x + dx, t.y + dy)) standable = true;
+      }
+    }
+    check(standable, `trigger ${t.id}: every tile in its box is blocked`);
+  }
+}
+
+// Eggs are only findable if something sets their flag: a dialogue node, a zone
+// trigger, or one of the scene's hardcoded discoveries.
+const SCENE_EGGS = ["found_back_room", "konami_mode", "easter_statue_pat"];
+const flagSetters = new Set(SCENE_EGGS);
+for (const t of triggers) if (t.setFlag) flagSetters.add(t.setFlag);
+for (const node of Object.values(dialogues)) {
+  if (node.setFlag) flagSetters.add(node.setFlag);
+  for (const choice of node.choices ?? []) {
+    if (choice.setFlag) flagSetters.add(choice.setFlag);
   }
 }
 
@@ -258,7 +300,10 @@ for (const [id, egg] of Object.entries(eggs)) {
   const flag = egg.flag ?? id;
   check(!eggFlags.has(flag), `${at}: flag "${flag}" is claimed by another egg`);
   eggFlags.add(flag);
+  check(flagSetters.has(flag), `${at}: nothing in the world sets flag "${flag}"`);
 }
+check(eggFlags.size >= quests.egg_hunt.target,
+  `egg_hunt wants ${quests.egg_hunt.target} eggs but only ${eggFlags.size} exist`);
 
 // ── Dex ───────────────────────────────────────────────────────────────────
 for (const [collection, entries] of Object.entries(DEX_REGISTRY)) {

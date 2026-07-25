@@ -162,7 +162,7 @@ docs/rpg/
     ├── data/                # The world as data
     │   ├── maps/*.json      # 28 room records + index.json
     │   ├── npcs.json        # Rosters, sight cones, schedules
-    │   ├── dialogues.json   # 254 dialogue nodes
+    │   ├── dialogues.json   # 255 dialogue nodes
     │   ├── quests.json      # Quest board
     │   ├── easter_eggs.json # Secrets registry
     │   └── triggers.json    # Zone messages and warps

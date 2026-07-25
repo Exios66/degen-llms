@@ -287,8 +287,9 @@ Exit the casino floor to the **hotel lobby** (web: hub menu or RPG HUD link; dee
 ### Hotel flow
 
 1. **MGM Rewards (P)** → Reservation — locate your tower and floor
-2. **Hallway mini-game** — three beats of directional choices (wrong turns are comedic)
-3. **Your room** — TV, minibar, phone, decisions, unlockable Vegas vignettes
+2. **Front desk** — confirm at the desk on the days that require it; your key activates the moment the day's requirement is met, from either the phone or the desk
+3. **Hallway mini-game** — three beats of directional choices (wrong turns are comedic)
+4. **Your room** — TV, minibar, phone, decisions, unlockable Vegas vignettes
 
 ### In-room amenities
 

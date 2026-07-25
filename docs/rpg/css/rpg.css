@@ -7,7 +7,7 @@
   --red: #f07178;
   --magenta: #c678dd;
   --text: #e6e1cf;
-  --dim: #7a8494;
+  --dim: #9fabbd;
   --border: #2a2438;
   --felt: #1a5c3a;
   --font-pixel: "Press Start 2P", monospace;
@@ -59,7 +59,7 @@ body {
 #game-shell.arcade-cabinet::before {
   content: "THE MANDALAY BAY";
   position: absolute;
-  top: 6px;
+  top: 3px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 30;
@@ -67,7 +67,7 @@ body {
   color: var(--gold);
   letter-spacing: 0.12em;
   pointer-events: none;
-  opacity: 0.85;
+  opacity: 0.7;
 }
 
 #game-shell.konami-mode {
@@ -90,7 +90,7 @@ body {
 
 #hud {
   position: absolute;
-  top: 0;
+  top: 14px;
   left: 50%;
   transform: translateX(-50%);
   width: min(100%, 640px);
@@ -144,8 +144,19 @@ body {
 }
 
 .hud-hint {
-  color: var(--dim);
-  font-size: 8px;
+  margin: 4px 0 0;
+  padding: 4px 8px;
+  background: rgba(10, 8, 18, 0.88);
+  border: 2px solid var(--border);
+  color: #c3ccda;
+  font-size: 9px;
+  line-height: 1.4;
+  text-align: center;
+  white-space: normal;
+}
+
+.hud-badges {
+  color: var(--green);
 }
 
 #dialogue-overlay {
@@ -383,6 +394,32 @@ body {
   overflow: auto;
 }
 
+/* The same creator is reused inside the START menu, where the standalone
+   title-panel chrome would be a second frame around an already framed panel. */
+.menu-panel-body .character-creator {
+  width: 100%;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  background: none;
+  border: 0;
+  box-shadow: none;
+  animation: none;
+}
+
+.menu-panel-body .character-creator h1 {
+  font-size: 10px;
+  margin: 0 0 8px;
+}
+
+.menu-portrait {
+  float: right;
+  margin: 0 0 8px 10px;
+  image-rendering: pixelated;
+  background: #0a0812;
+  border: 3px solid var(--gold);
+}
+
 .character-creator__layout {
   display: grid;
   grid-template-columns: 160px 1fr;
@@ -554,8 +591,8 @@ body {
   padding: 8px 14px;
   background: rgba(20, 16, 31, 0.88);
   border: 2px solid var(--border);
-  color: var(--dim);
-  font-size: 7px;
+  color: #c3ccda;
+  font-size: 8px;
   letter-spacing: 0.04em;
   white-space: nowrap;
 }
@@ -1041,11 +1078,12 @@ body {
     padding-bottom: env(safe-area-inset-top);
   }
   .hud-hint {
-    display: none;
+    font-size: 8px;
+    padding: 3px 6px;
   }
   .touch-hint {
     display: block;
-    font-size: 6px;
+    font-size: 8px;
   }
   #dialogue-overlay {
     padding: 12px;
@@ -1075,7 +1113,7 @@ body {
     order: -1;
   }
   .dialogue-choices button {
-    font-size: 7px;
+    font-size: 9px;
     padding: 14px 10px;
   }
   .hud-name,
@@ -1479,7 +1517,7 @@ body .rewards-phone-root {
 .menu-panel-list button .num {
   color: var(--gold);
   font-family: var(--font-pixel);
-  font-size: 7px;
+  font-size: 8px;
 }
 
 .menu-panel-list button .menu-detail {
@@ -1594,9 +1632,11 @@ body .rewards-phone-root {
 
 #map-banner {
   position: absolute;
-  top: 74px;
+  top: 88px;
   left: 50%;
-  z-index: 40;
+  /* Below the panels (20) and the trainer card (25): a room placard should
+     never land on top of a menu the player just opened. */
+  z-index: 15;
   pointer-events: none;
   display: flex;
   flex-direction: column;
@@ -1620,7 +1660,7 @@ body .rewards-phone-root {
 #map-banner span {
   text-align: center;
   font-family: var(--font-pixel);
-  font-size: 7px;
+  font-size: 8px;
   color: var(--cyan);
   letter-spacing: 0.04em;
 }

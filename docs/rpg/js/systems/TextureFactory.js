@@ -117,13 +117,12 @@ function makeTex(scene, key, draw, w = TILE_SIZE, h = TILE_SIZE) {
 
 function drawLobbyTile(g) {
   const w = makeWriter(g);
+  // Polished marble. The gold inlay that used to sit in every tile turned
+  // concourses into polka dots, so it moved to an occasional variant.
   marbleVeins(w, 0xe8e0d0, 0xc8b8a0, 0xd8c8b0);
   groutGrid(w, 0xb8a890, 8);
   w.px(0xfff8f0, 3, 3, 3, 2);
   w.px(0xfff8f0, 10, 10, 3, 2);
-  w.px(0xf0e8d8, 6, 6, 4, 4);
-  w.px(0xe8c878, 7, 7, 2, 2);
-  w.px(0xffe890, 7, 7, 1, 1);
   w.px(0xd0c0a8, 0, 0, 16, 1);
   w.px(0xd0c0a8, 0, 0, 1, 16);
 }
@@ -382,23 +381,18 @@ function drawVoidTile(g) {
 
 function drawRoadTile(g) {
   const w = makeWriter(g);
-  // Porte-cochère asphalt: coarse aggregate, oil sheen, worn lane paint.
+  // Porte-cochère asphalt: coarse aggregate and an oil sheen, nothing more.
+  // A lane stripe used to run across every tile, which turned the whole
+  // boulevard into horizontal banding at 32px intervals.
   w.px(0x22212a, 0, 0, 16, 16);
   ditherWeave(w, 0, 0, 16, 16, 0x2a2933, 0x24232d);
-  w.px(0x33323d, 1, 1, 6, 3);
-  w.px(0x2e2d38, 9, 5, 6, 4);
-  w.px(0x1a1922, 3, 6, 4, 1);
-  w.px(0x1a1922, 9, 11, 5, 1);
-  w.px(0x15141c, 4, 13, 3, 1);
-  w.px(0x3d3c48, 12, 2, 2, 1);
-  w.px(0x3d3c48, 2, 10, 2, 1);
-  // Lane stripe, sun-bleached and chipped
-  w.px(0x8a8770, 0, 7, 16, 2);
-  w.px(0xa8a58c, 0, 7, 16, 1);
-  w.px(0x6a6752, 5, 7, 2, 2);
-  w.px(0x6a6752, 12, 8, 3, 1);
-  w.px(0x2a2933, 8, 7, 1, 2);
-  w.px(0x4a4956, 0, 15, 16, 1);
+  w.px(0x2e2d38, 1, 1, 6, 3);
+  w.px(0x2b2a34, 9, 5, 6, 4);
+  w.px(0x1e1d26, 3, 6, 4, 1);
+  w.px(0x1e1d26, 9, 11, 5, 1);
+  w.px(0x1a1922, 4, 13, 3, 1);
+  w.px(0x35343f, 12, 2, 2, 1);
+  w.px(0x35343f, 2, 10, 2, 1);
 }
 
 function drawSandTile(g) {
@@ -558,10 +552,57 @@ function scuff(g, variant) {
   }
 }
 
+/**
+ * One landmark per floor type, painted onto a single extra variant.
+ *
+ * These are the details that read as craft close up and as wallpaper when they
+ * repeat every 32px, so they get their own texture and appear roughly one tile
+ * in five rather than everywhere.
+ */
+const FLOOR_ACCENTS = {
+  // Gold inlay medallion set into the marble.
+  [TILE.LOBBY]: (w) => {
+    w.px(0xf0e8d8, 6, 6, 4, 4);
+    w.px(0xe8c878, 7, 7, 2, 2);
+    w.px(0xffe890, 7, 7, 1, 1);
+  },
+  // A chipped length of lane paint and the drain it runs past.
+  [TILE.ROAD]: (w) => {
+    w.px(0x8a8770, 4, 7, 8, 2);
+    w.px(0xa8a58c, 4, 7, 8, 1);
+    w.px(0x6a6752, 9, 8, 2, 1);
+    w.px(0x1a1922, 12, 12, 3, 3);
+    w.px(0x35343f, 13, 13, 1, 1);
+  },
+  // Damp patch around a spa drain.
+  [TILE.SPA]: (w) => {
+    w.px(0xffffff, 5, 5, 6, 6, 0.06);
+    w.px(0x000000, 7, 7, 2, 2, 0.12);
+  },
+  // Footprints crossing the sand.
+  [TILE.SAND]: (w) => {
+    w.px(0x000000, 4, 4, 2, 3, 0.1);
+    w.px(0x000000, 9, 9, 2, 3, 0.1);
+  },
+};
+
+const variantCount = (tile) => SCUFFS.length + (FLOOR_ACCENTS[tile] ? 1 : 0);
+
+/** Every ground texture key createGameTextures() will register. */
+export function groundTextureKeys() {
+  const keys = [];
+  for (const id of Object.keys(TILE_DRAWERS)) {
+    keys.push(`tile_${id}`);
+    if (!SCUFFED_FLOORS.has(Number(id))) continue;
+    for (let v = 0; v < variantCount(Number(id)); v += 1) keys.push(`tile_${id}_s${v}`);
+  }
+  return keys;
+}
+
 /** Texture key for a ground tile at a map position, spreading the variants. */
 export function groundTileKey(tile, x, y) {
   if (!SCUFFED_FLOORS.has(tile)) return `tile_${tile}`;
-  const variant = (x * 5 + y * 3 + ((x * y) % 7)) % (SCUFFS.length + 1);
+  const variant = (x * 5 + y * 3 + ((x * y) % 7)) % (variantCount(tile) + 1);
   return variant === 0 ? `tile_${tile}` : `tile_${tile}_s${variant - 1}`;
 }
 
@@ -1040,13 +1081,21 @@ export function drawArtToCanvas(canvas, key) {
 export function createGameTextures(scene) {
   for (const [id, drawer] of Object.entries(TILE_DRAWERS)) {
     makeTex(scene, `tile_${id}`, drawer);
-    if (!SCUFFED_FLOORS.has(Number(id))) continue;
+    const tile = Number(id);
+    if (!SCUFFED_FLOORS.has(tile)) continue;
     SCUFFS.forEach((_, variant) => {
       makeTex(scene, `tile_${id}_s${variant}`, (g) => {
         drawer(g);
         scuff(g, variant);
       });
     });
+    const accent = FLOOR_ACCENTS[tile];
+    if (accent) {
+      makeTex(scene, `tile_${id}_s${SCUFFS.length}`, (g) => {
+        drawer(g);
+        accent(makeWriter(g));
+      });
+    }
   }
 
   const npcs = [

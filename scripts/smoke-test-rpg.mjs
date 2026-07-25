@@ -25,7 +25,10 @@ const { RPG_ITEMS } = await import(join(rpgRoot, "js/systems/Inventory.js"));
 const { DEX_REGISTRY } = await import(join(rpgRoot, "js/systems/Dex.js"));
 const { ART_UNIT } = await import(join(rpgRoot, "js/systems/MapTiles.js"));
 const { findPath, nearestReachable } = await import(join(rpgRoot, "js/systems/Pathfinder.js"));
-const { artKeys, characterGrids, drawArtToCanvas, drawCharacterToCanvas } = await import(
+const {
+  artKeys, characterGrids, drawArtToCanvas, drawCharacterToCanvas,
+  groundTextureKeys, groundTileKey,
+} = await import(
   join(rpgRoot, "js/systems/TextureFactory.js"));
 const {
   HAIR_COLORS, OUTFIT_COLORS, SKIN_TONES, SPEAKER_PORTRAITS,
@@ -542,6 +545,22 @@ for (const mapId of MAP_IDS) {
       `art ${key}: ${ART_UNIT * ART_UNIT - covered.size} of ${ART_UNIT * ART_UNIT} pixels ` +
       "are transparent — ground tiles must be fully opaque");
   }
+
+  // Floors pick a scuffed or accented variant from their map position. A key
+  // with no matching texture renders as a green box, so walk every tile of
+  // every map and confirm the variant it asks for is one we actually make.
+  const registered = new Set(groundTextureKeys());
+  const missing = new Set();
+  for (const mapId of MAP_IDS) {
+    const { ground } = layers.get(mapId);
+    for (let y = 0; y < ground.length; y += 1) {
+      for (let x = 0; x < ground[y].length; x += 1) {
+        const key = groundTileKey(ground[y][x], x, y);
+        if (!registered.has(key)) missing.add(`${key} (${mapId} ${x},${y})`);
+      }
+    }
+  }
+  check(missing.size === 0, `ground variants with no texture: ${[...missing].join(", ")}`);
 }
 
 if (failures.length) {

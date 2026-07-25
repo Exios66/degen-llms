@@ -376,9 +376,21 @@ export function renderHud(hudRoot, saveAdapter, questManager = null) {
       <span class="hud-chips">${lines.chips}</span>
       <span class="hud-time">Day ${cycle.displayDay} · ${hour}:${mins} · ${cycle.phase.label}</span>
       ${evicted}
-      <span class="hud-hint">Tap to move · WASD · E talk · Esc menu · P phone · T trainer · Shift run · badges ${badges}</span>
+      <span class="hud-badges">${badges} ${badges === 1 ? "badge" : "badges"}</span>
     </div>
+    <p class="hud-hint">${controlHint()}</p>
   `;
+}
+
+/**
+ * Naming keys a phone player cannot press only costs them a line they have to
+ * read past, so each input method gets its own crib sheet.
+ */
+function controlHint() {
+  const touch = window.matchMedia?.("(pointer: coarse)")?.matches;
+  return touch
+    ? "Tap a tile to walk · tap someone to talk · MENU for the start menu"
+    : "WASD move · Shift run · E talk · Esc menu · T trainer · P phone";
 }
 
 export function renderTrainerCard(root, saveAdapter, questManager, hooks = {}) {

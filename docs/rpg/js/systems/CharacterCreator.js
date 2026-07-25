@@ -12,7 +12,17 @@ import { drawCharacterToCanvas } from "./TextureFactory.js";
 /**
  * Character creator / wardrobe UI with live sprite preview.
  */
-export function renderCharacterCreator(root, { session, onComplete, onBack, title = "Customize Your Guest" }) {
+export function renderCharacterCreator(root, {
+  session,
+  onComplete,
+  onBack,
+  title = "Customize Your Guest",
+  confirmLabel = "Save & enter resort \u2192",
+  // Picking a guest type at creation should pull in that type's whole look.
+  // Re-picking one from the in-game wardrobe should not throw away colours the
+  // player has already chosen.
+  resetColorsOnArchetype = true,
+} = {}) {
   root.innerHTML = "";
   const rpg = session.ensureRpgState();
   const state = {
@@ -59,8 +69,7 @@ export function renderCharacterCreator(root, { session, onComplete, onBack, titl
     btn.innerHTML = `<strong>${a.name}</strong><br><span class="dim">${a.perk}</span>`;
     btn.onclick = () => {
       state.archetype = a.id;
-      const defaults = defaultAppearance(a.id);
-      state.appearance = { ...defaults };
+      if (resetColorsOnArchetype) state.appearance = { ...defaultAppearance(a.id) };
       refresh();
     };
     archetypeRow.appendChild(btn);
@@ -91,7 +100,7 @@ export function renderCharacterCreator(root, { session, onComplete, onBack, titl
   const confirmBtn = document.createElement("button");
   confirmBtn.type = "button";
   confirmBtn.className = "character-creator__confirm";
-  confirmBtn.textContent = "Save & enter resort →";
+  confirmBtn.textContent = confirmLabel;
   confirmBtn.onclick = () => {
     rpg.archetype = state.archetype;
     rpg.playerSprite = state.archetype;
@@ -99,11 +108,16 @@ export function renderCharacterCreator(root, { session, onComplete, onBack, titl
     if (state.archetype === "local") rpg.flags.hint_north_wall = true;
     onComplete?.(session);
   };
-  const backBtn = document.createElement("button");
-  backBtn.type = "button";
-  backBtn.textContent = "Back";
-  backBtn.onclick = () => onBack?.();
-  actions.append(confirmBtn, backBtn);
+  actions.append(confirmBtn);
+  // Embedded in the START menu the panel already has its own Back, and two of
+  // them stacked reads as a mistake.
+  if (onBack) {
+    const backBtn = document.createElement("button");
+    backBtn.type = "button";
+    backBtn.textContent = "Back";
+    backBtn.onclick = () => onBack();
+    actions.append(backBtn);
+  }
   panel.appendChild(actions);
   root.appendChild(panel);
 

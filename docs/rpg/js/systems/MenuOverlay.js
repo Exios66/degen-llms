@@ -4,6 +4,9 @@ import { getWorldCycleSummary } from "../../../js/world-cycle.js";
 import { DEX_COLLECTIONS, dexEntries, dexProgress } from "./Dex.js";
 import { bagContents, equipItem } from "./Inventory.js";
 import { EGG_REGISTRY, foundEggs } from "./EasterEggs.js";
+import { normalizeAppearance, resolvePalette } from "./CharacterAppearance.js";
+import { renderCharacterCreator } from "./CharacterCreator.js";
+import { drawCharacterToCanvas } from "./TextureFactory.js";
 
 const DEX_LABELS = {
   reef: "Shark Reef species",
@@ -152,6 +155,7 @@ export class MenuOverlay {
     const renderers = {
       root: () => this._renderRoot(body),
       trainer: () => this._renderTrainer(body),
+      wardrobe: () => this._renderWardrobe(body),
       quests: () => this._renderQuests(body),
       dex: () => this._renderDex(body),
       bag: () => this._renderBag(body),
@@ -217,6 +221,7 @@ export class MenuOverlay {
 
     this._list(body, [
       { label: "Trainer Card", detail: `${quests.filter((q) => q.complete).length} badges`, onSelect: () => this._go("trainer") },
+      { label: "Wardrobe", detail: "Restyle your guest", onSelect: () => this._go("wardrobe") },
       { label: "Quests", detail: `${openQuests} open`, onSelect: () => this._go("quests") },
       { label: "Dex", detail: `${dex} found`, onSelect: () => this._go("dex") },
       { label: "Bag", detail: `${bagContents(this.session).length} items`, onSelect: () => this._go("bag") },
@@ -247,6 +252,37 @@ export class MenuOverlay {
       <p>Resort completion: ${completion.percent}% — ${completion.tagline}</p>
       <p class="dim">${cycle?.phaseLabel ?? ""} ${cycle?.dayLabel ?? ""}</p>
     `;
+    const portrait = document.createElement("canvas");
+    portrait.className = "menu-portrait";
+    portrait.width = 64;
+    portrait.height = 96;
+    portrait.setAttribute("aria-hidden", "true");
+    drawCharacterToCanvas(portrait, resolvePalette(normalizeAppearance(rpg)), "down", 0, 4);
+    body.prepend(portrait);
+    this._list(body, [
+      { label: "Change outfit", onSelect: () => this._go("wardrobe") },
+    ]);
+  }
+
+  /**
+   * Wardrobe, in the menu rather than behind a title-screen-only flow.
+   *
+   * Confirming re-skins the sprite that is standing in the overworld right now
+   * and writes the look back to the save slot, so it survives a reload.
+   */
+  _renderWardrobe(body) {
+    renderCharacterCreator(body, {
+      session: this.session,
+      title: "Wardrobe",
+      confirmLabel: "Save look",
+      resetColorsOnArchetype: false,
+      onComplete: () => {
+        this.deps.onAppearanceChange?.();
+        this.deps.onPersist?.();
+        this._status = "Look saved to your slot.";
+        this._go("trainer");
+      },
+    });
   }
 
   _renderQuests(body) {

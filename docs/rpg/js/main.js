@@ -212,6 +212,9 @@ async function startOverworld(activeSession) {
     rewardsPhone,
     audio: audioManager,
     onPersist: () => persistAll(),
+    onAppearanceChange: () => {
+      game?.scene?.getScene("OverworldScene")?.refreshPlayerAppearance?.();
+    },
     onClose: () => {
       renderHud(hudRoot, saveAdapter, questManager);
       game?.scene?.getScene("OverworldScene")?.resumeFromMenu?.();

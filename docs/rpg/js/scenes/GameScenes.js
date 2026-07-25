@@ -717,9 +717,12 @@ export class OverworldScene extends Phaser.Scene {
 
   refreshPlayerAppearance() {
     const rpg = this.saveAdapter.rpg;
+    this.playerArchetype = rpg.archetype || rpg.playerSprite || this.playerArchetype;
     this.playerAppearance = normalizeAppearance(rpg);
     ensurePlayerTextures(this, this.playerAppearance);
     this.player.anims?.stop();
+    // A standing player has no animation to restart, so set the still frame too.
+    this.player.setTexture(playerTextureKey({ appearance: this.playerAppearance }, this.facing));
     this._applyPlayerAnim(this._moving);
   }
 

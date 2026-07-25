@@ -6,7 +6,7 @@ import {
   getActivityTiming, getTierExperience, RESORT_OFFERS, tierIndex,
 } from "./rewards-perks.js";
 import { ensureHotel, findReservation, reservationHint, getRoomType } from "./hotel.js";
-import { getReservationRequirement, reservationStatusMessage } from "./world-cycle.js";
+import { getReservationRequirement, reservationStatusMessage, grantRoomKeyIfReservationReady } from "./world-cycle.js";
 import {
   advanceDialogue,
   dialWrongNumber,
@@ -586,8 +586,9 @@ export class RewardsPhone {
     body.appendChild(this._line(`Conf ${hotel.reservationCode}`, "dim"));
     body.appendChild(this._line(reservationStatusMessage(this.session), "dim"));
     if (hotel.foundReservation && (!req.needsDesk || hotel.reservationConfirmedDesk)) {
+      grantRoomKeyIfReservationReady(this.session);
       body.appendChild(this._line(reservationHint(hotel), "dim"));
-      body.appendChild(this._line("Head to hotel hallways from the lobby.", "dim"));
+      body.appendChild(this._line("Your room key is active — open hotel services for TV, minibar, and more.", "dim"));
     } else if (req.needsPhone && !hotel.foundReservation) {
       body.appendChild(this._line("Tap locate to reveal your tower.", "dim"));
       const btn = document.createElement("button");
@@ -595,6 +596,7 @@ export class RewardsPhone {
       btn.textContent = "Locate reservation";
       btn.onclick = () => {
         const r = findReservation(this.session);
+        if (r.ok) grantRoomKeyIfReservationReady(this.session);
         this.tracker.pushNotification(r.ok ? "Reservation Found" : "Reservation", r.message);
         this.onPersist?.();
         this._renderScreen();

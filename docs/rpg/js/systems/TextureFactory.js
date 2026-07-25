@@ -1,9 +1,14 @@
 import { ART_UNIT, TILE, TILE_SIZE } from "./MapTiles.js";
+import {
+  createEnvironmentTextures,
+} from "./EnvironmentTextures.js";
 
 /**
- * Production-grade procedural pixel textures — 16px art grid, 2× upscale.
- * Multi-variant floors, top-left lighting, casino-material palettes.
+ * Game textures: vendored online tiles for ground/decor, procedural FX/UI.
+ * Character sheets load via CharacterSprites; environment via EnvironmentTextures.
  */
+
+export { tileTextureKey, preloadEnvironmentAssets } from "./EnvironmentTextures.js";
 
 const SCALE = TILE_SIZE / ART_UNIT;
 const OUTLINE = 0x181828;
@@ -128,13 +133,7 @@ function makeTex(scene, key, draw, w = TILE_SIZE, h = TILE_SIZE) {
   g.destroy();
 }
 
-/** Stable texture key for a ground tile with positional variant. */
-export function tileTextureKey(tileId, x = 0, y = 0) {
-  const v = (x * 3 + y * 5 + tileId * 7) % TILE_VARIANTS;
-  return v === 0 ? `tile_${tileId}` : `tile_${tileId}_v${v}`;
-}
-
-// ─── Ground tiles ──────────────────────────────────────────────────────────
+// ─── Legacy procedural drawers (kept for FX helpers / fallback reference) ──
 
 function drawLobbyTile(g, variant = 0) {
   const w = makeWriter(g);
@@ -713,25 +712,38 @@ function drawScreenDecor(g) {
 }
 
 export function createGameTextures(scene) {
+  // Ground + decor come from preloaded PNGs (EnvironmentTextures).
+  createEnvironmentTextures(scene);
+
+  // Fallback: if a tile key failed to load, generate procedural stand-in.
   for (const [id, drawer] of Object.entries(TILE_DRAWERS)) {
     const tileId = Number(id);
     for (let v = 0; v < TILE_VARIANTS; v++) {
       const key = v === 0 ? `tile_${tileId}` : `tile_${tileId}_v${v}`;
-      makeTex(scene, key, (g) => drawer(g, v));
+      if (!scene.textures.exists(key)) {
+        makeTex(scene, key, (g) => drawer(g, v));
+      }
     }
   }
-
-  // Animated water frames (used by GameScenes for pool/water tiles)
   for (let frame = 0; frame < 3; frame++) {
-    makeTex(scene, `tile_water_f${frame}`, (g) => drawWaterTile(g, 0, frame));
+    const key = `tile_water_f${frame}`;
+    if (!scene.textures.exists(key)) {
+      makeTex(scene, key, (g) => drawWaterTile(g, 0, frame));
+    }
+  }
+  const decorFallbacks = {
+    decor_bar: drawBarDecor,
+    decor_plant: drawPlantDecor,
+    decor_slot: drawSlotDecor,
+    decor_screen: drawScreenDecor,
+    decor_glass: drawGlassTile,
+    decor_rope: drawRopeTile,
+  };
+  for (const [key, draw] of Object.entries(decorFallbacks)) {
+    if (!scene.textures.exists(key)) makeTex(scene, key, draw);
   }
 
-  makeTex(scene, "decor_bar", drawBarDecor);
-  makeTex(scene, "decor_plant", drawPlantDecor);
-  makeTex(scene, "decor_slot", drawSlotDecor);
-  makeTex(scene, "decor_screen", drawScreenDecor);
-  makeTex(scene, "decor_glass", drawGlassTile);
-  makeTex(scene, "decor_rope", drawRopeTile);
+  // FX / UI remain procedural (small, theme-consistent).
   makeTex(scene, "sign_plaque", drawSignPlaque);
   makeTex(scene, "glow_gold", (g) => drawSoftGlow(g, 0xe8c547));
   makeTex(scene, "glow_cyan", (g) => drawSoftGlow(g, 0x39c5cf));

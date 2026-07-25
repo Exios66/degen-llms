@@ -357,13 +357,15 @@ erases pixel progress.
 | **SFX** | Footsteps by tile type, blackjack natural 21 shake, slot reel stops |
 | **Cabinet bezel** | CSS arcade frame around `#game-shell` |
 | **Konami code** | Secret room Easter egg |
-| **Procedural textures** | `TextureFactory.js` generates pixel art at runtime |
+| **Vendored tiles** | Online pixel tilesets under `assets/tiles/` (LPC floors, Jephed casino props, Kenney outdoor) loaded by `EnvironmentTextures.js` |
+| **Character sheets** | Fry hero + Jephed unique dealer/staff sheets under `assets/characters/` |
 
-### Art pipeline (future)
+### Art pipeline
 
-Layouts are already data (`js/data/maps/*.json`); the art is not. The remaining
-step is swapping `TextureFactory`'s runtime-generated tiles for an Aseprite
-tileset, which `MapLoader` can consume without changing a single map record.
+Layouts are data (`js/data/maps/*.json`). Ground and decor textures are vendored
+PNGs mapped to the existing `TILE` enum — map JSON did not need to change.
+FX icons (glows, interact marker) remain small procedural textures in
+`TextureFactory.js`.
 
 ---
 

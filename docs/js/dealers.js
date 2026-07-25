@@ -27,7 +27,7 @@ export const DEALER_ROSTER = [
     id: "steve_harvey",
     name: "Steve Harvey",
     games: ["roulette", "horse_racing", "craps"],
-    sprite: "npc_gold",
+    sprite: "dealer_steve",
     tagline: "Survey says… bet responsibly!",
     quips: {
       greeting: [
@@ -82,7 +82,7 @@ export const DEALER_ROSTER = [
     id: "meryl_screech",
     name: "Dealer Meryl Screech",
     games: ["blackjack"],
-    sprite: "npc_green",
+    sprite: "dealer_meryl",
     tagline: "And the Oscar for Most Aggressive Double goes to… you.",
     quips: {
       greeting: [
@@ -116,7 +116,7 @@ export const DEALER_ROSTER = [
     id: "judi_bench",
     name: "Croupier Judi Bench",
     games: ["holdem"],
-    sprite: "npc_teal",
+    sprite: "dealer_judi",
     tagline: "Bond. James Bond. Blinds.",
     quips: {
       greeting: [
@@ -150,7 +150,7 @@ export const DEALER_ROSTER = [
     id: "jennifer_lawless",
     name: "Jennifer Lawless",
     games: ["blackjack", "holdem"],
-    sprite: "npc_pink",
+    sprite: "dealer_jennifer",
     tagline: "I tripped on the felt once. The shoe didn't even notice.",
     quips: {
       greeting: [
@@ -184,7 +184,7 @@ export const DEALER_ROSTER = [
     id: "sofia_volume",
     name: "Sofia Volume",
     games: ["roulette"],
-    sprite: "npc_red",
+    sprite: "dealer_sofia",
     tagline: "Dale, amigo — the wheel is feeling generous tonight!",
     quips: {
       greeting: [
@@ -218,7 +218,7 @@ export const DEALER_ROSTER = [
     id: "octavia_spectacular",
     name: "Octavia Spectacular",
     games: ["holdem", "blackjack"],
-    sprite: "npc_orange",
+    sprite: "dealer_octavia",
     tagline: "Honey, the house always wins — but you look good losing.",
     quips: {
       greeting: [
@@ -252,7 +252,7 @@ export const DEALER_ROSTER = [
     id: "nicole_widechart",
     name: "Nicole Widechart",
     games: ["blackjack", "roulette"],
-    sprite: "npc_silver",
+    sprite: "dealer_nicole",
     tagline: "The chips are whispering. I'm listening.",
     quips: {
       greeting: [

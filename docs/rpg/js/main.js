@@ -1,6 +1,6 @@
 import Phaser from "phaser";
-import { OverworldScene } from "./scenes/GameScenes.js?v=title-boot-1";
-import { TitleScreen, renderHud, renderTrainerCard } from "./scenes/TitleScreen.js?v=title-boot-1";
+import { OverworldScene } from "./scenes/GameScenes.js?v=env-sprites-1";
+import { TitleScreen, renderHud, renderTrainerCard } from "./scenes/TitleScreen.js?v=env-sprites-1";
 import { DialogueManager } from "./systems/DialogueManager.js";
 import { SaveAdapter } from "./systems/SaveAdapter.js";
 import { defaultAppearance } from "./systems/CharacterAppearance.js";

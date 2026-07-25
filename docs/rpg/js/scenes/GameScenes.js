@@ -6,11 +6,12 @@ import {
   playerAnimKey,
   tileTextureKey,
   preloadCharacterAssets,
+  preloadEnvironmentAssets,
   cachePortraitImages,
   setupNpcSprite,
   applySpriteAppearance,
   resolvePlayerSprite,
-} from "../systems/TextureFactory.js?v=title-boot-1";
+} from "../systems/TextureFactory.js?v=env-sprites-1";
 import { normalizeAppearance } from "../systems/CharacterAppearance.js";
 import {
   TILE_SIZE, MAP_WIDTH, MAP_HEIGHT, buildMapLayersForId, getNpcsForMap,
@@ -93,6 +94,7 @@ export class OverworldScene extends Phaser.Scene {
   }
 
   preload() {
+    preloadEnvironmentAssets(this);
     preloadCharacterAssets(this);
   }
 
@@ -214,7 +216,8 @@ export class OverworldScene extends Phaser.Scene {
         "char_hero",
         0
       );
-      setupNpcSprite(this, sprite, npc.sprite);
+      const facing = npc.direction || "down";
+      setupNpcSprite(this, sprite, npc.sprite, facing);
       sprite.setDepth(10);
       sprite.setData("npc", npc);
       this.npcSprites.set(npc.id, sprite);
@@ -225,7 +228,7 @@ export class OverworldScene extends Phaser.Scene {
 
       if (npc.zone) {
         const dealer = this._dealerForZone(npc.zone);
-        setupNpcSprite(this, sprite, dealer.sprite);
+        setupNpcSprite(this, sprite, dealer.sprite, facing);
       }
     }
 
@@ -298,6 +301,8 @@ export class OverworldScene extends Phaser.Scene {
     this.cameras.main.setRoundPixels(true);
 
     this.facing = "down";
+    this._lastAnimFacing = null;
+    this._lastAnimMoving = null;
     this.canMove = true;
     this.nearbyNpc = null;
     this._lastDoorTile = null;
@@ -632,7 +637,13 @@ export class OverworldScene extends Phaser.Scene {
     const appearance = { appearance: this.playerAppearance };
     this.player.setFlipX(this.facing === "left");
     const key = playerAnimKey(appearance, this.facing, moving);
-    if (this.player.anims?.currentAnim?.key === key) return;
+    const facingChanged = this._lastAnimFacing !== this.facing;
+    const movingChanged = this._lastAnimMoving !== moving;
+    if (!facingChanged && !movingChanged && this.player.anims?.currentAnim?.key === key) {
+      return;
+    }
+    this._lastAnimFacing = this.facing;
+    this._lastAnimMoving = moving;
     if (this.anims.exists(key)) {
       this.player.anims.play(key, true);
     } else {

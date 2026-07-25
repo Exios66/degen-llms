@@ -83,7 +83,7 @@ This deployment is a **new** JackJBurleson Posit Connect Cloud content item for 
 | **Hotel** | Clerk Carmen, hallway mini-game, in-room amenities, guest directory |
 | **Pool complex** | Wave pool, cabanas, Shark Reef collection, beach club |
 | **MGM Rewards** | Sapphire → Chairman tiers, comps, phone (press **P** on web) |
-| **Pixel RPG** | 28 walkable rooms, 59 NPCs, quests, and a dex — see [Pixel RPG](rpg.qmd) |
+| **Pixel RPG** | 28 walkable rooms, 61 NPCs, quests, and a dex — see [Pixel RPG](rpg.qmd) |
 :::
 
 ```{python}

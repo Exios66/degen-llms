@@ -240,6 +240,12 @@ actually stand, every NPC is reachable in all four day phases, every
 `dialogueId` / `encounter` / `giveItem` / `requiresQuestStage` resolves, every
 egg flag is set by something in the world, and a v7 save migrates cleanly.
 
+It also walks the other direction: every routable encounter must be *offered* by
+an NPC or a dialogue branch. That rule is what catches the failure mode this
+architecture invites — the terminal grows a screen, the RPG dutifully hosts it,
+and nobody in the world ever hands it to the player. Only `stats` and
+`staff_manifest` are exempt, because they are pages of the START menu.
+
 `smoke-test-web.py` opens every terminal view, every RPG encounter, every menu
 page, and then runs one continuous journey: boot a save slot, walk, get spotted
 by a challenger, open the START menu, check into the hotel, reload, and confirm
@@ -256,7 +262,7 @@ position and chips came back.
 | A dialogue branch | Edit `js/data/dialogues.json`; gates are `requiresFlag`, `unlessFlag`, `requiresQuestStage` with `elseNext` |
 | A quest | Add to `js/data/quests.json`, derive its progress in `QuestManager.syncDerived()`, and offer it from a dialogue node with `startQuest` |
 | An easter egg | Add to `js/data/easter_eggs.json` and set its flag from a dialogue choice or a zone trigger. Cosmetic only |
-| A casino screen | Build it in `docs/js/ui/` as `buildXRenderers(ctx)`, then add an entry to `HostedEncounters.js`. Do not write it twice |
+| A casino screen | Build it in `docs/js/ui/` as `buildXRenderers(ctx)`, add an entry to `HostedEncounters.js`, then give somebody in the world a line that opens it. Do not write it twice |
 | A tile type | Add to `MapTiles.js`, draw it in `TextureFactory.js`, and decide whether it belongs in `COLLISION` |
 
 ### Controls

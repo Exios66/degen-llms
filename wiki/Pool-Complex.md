@@ -36,6 +36,6 @@ Quest: photograph 5 shark species across the aquarium map. Progress tracked in `
 | `mandalay_bay/pool_complex.py` | Zone definitions & events |
 | `mandalay_bay/pool_experience.py` | CLI flows |
 | `docs/js/pool-complex.js` / `docs/js/pool-complex-ui.js` | Browser mirror |
-| `docs/rpg/js/systems/overlays/PoolOverlay.js` | RPG overlay |
+| `docs/js/pool-complex-ui.js` → `buildPoolRenderers(ctx)` | Screens the RPG mounts too |
 
 See [[Resort-Hotel]] for vignette chains and [[Pixel-RPG-Simulator]] for map access.

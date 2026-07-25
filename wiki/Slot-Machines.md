@@ -93,4 +93,4 @@ Talk to **Spinster Sal** in the slot aisle. Multiple machine encounters availabl
 |------|------|
 | `mandalay_bay/activities/slots.py` | Machine catalog, progressives |
 | `docs/js/slots.js` / `docs/js/slots-ui.js` | Browser mirror |
-| `docs/rpg/js/systems/overlays/SlotsOverlay.js` | RPG overlay |
+| `docs/js/ui/slots-renderers.js` | Category menu, machine picker, and spin loop the RPG mounts too |

@@ -95,6 +95,6 @@ Press **P** in the web app for:
 | `mandalay_bay/hotel_experience.py` | CLI flows |
 | `mandalay_bay/room_amenities.py` | TV, minibar, phone, events |
 | `docs/js/hotel.js` / `docs/js/hotel-ui.js` | Browser mirror |
-| `docs/rpg/js/systems/overlays/HotelOverlay.js` | RPG overlay |
+| `docs/js/hotel-ui.js` → `buildHotelRenderers(ctx)` | Screens the RPG mounts too |
 
 See also [[Save-Slots#hotel-save-schema]].

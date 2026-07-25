@@ -45,5 +45,4 @@ Racing and equestrian encounters launch from pavilion and arena NPCs as DOM over
 | `mandalay_bay/activities/horse_racing.py` | Thoroughbred activity |
 | `mandalay_bay/activities/equestrian.py` | Dressage & jumper |
 | `docs/js/horse_racing.js` / `docs/js/equestrian.js` | Browser mirrors |
-| `docs/rpg/js/systems/overlays/HorseRacingOverlay.js` | RPG overlays |
-| `docs/rpg/js/systems/overlays/EquestrianOverlay.js` | RPG overlays |
+| `docs/js/ui/racing-renderers.js` | Race card, track view, stables, equestrian — mounted by both surfaces |

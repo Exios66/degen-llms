@@ -82,7 +82,8 @@ Category filter chips let you browse Sports Pulse, Headlines, Vegas, History, Ea
 
 ## Pixel RPG
 
-Talk to **Bookie Blake** on the west carpet. Sports and prediction markets launch as a tabbed DOM overlay.
+Talk to **Bookie Blake** in the Race & Sports Book. He opens the board on the
+sports tab, or straight onto the prediction markets if you ask what's on it.
 
 ## Implementation
 
@@ -94,4 +95,4 @@ Talk to **Bookie Blake** on the west carpet. Sports and prediction markets launc
 | `docs/js/sportSimulator.js` | Browser sim |
 | `docs/js/predictionMarkets.js` | Browser markets |
 | `docs/js/sportsbook.js` | Board UI |
-| `docs/rpg/js/systems/overlays/SportsbookOverlay.js` | RPG overlay |
+| `docs/js/ui/sportsbook-renderers.js` | Board, wager types, and market screens the RPG mounts too |

@@ -101,8 +101,8 @@ minigame. They still take their bet limits from the shared stake-tier picker.
 |-----------|----------------|--------------|
 | `blackjack`, `holdem`, `roulette` | Bespoke pixel overlays | Casino floor pits |
 | `rhythm` | Bespoke pixel overlay | House of Blues stage |
-| `craps`, `lottery` | Hosted from `docs/js/ui/` | Casino floor, lottery counter |
-| `slots`, `sportsbook`, `predictions` | Hosted | Slot aisle, race & sports book |
+| `craps`, `lottery` | Hosted from `docs/js/ui/` | Stickman Stan's rail, Lottery Lena's counter |
+| `slots`, `sportsbook`, `predictions` | Hosted | Slot aisle, Bookie Blake's board |
 | `horse_racing`, `dressage`, `jumper`, `horse_stables` | Hosted | Racing pavilion |
 | `hotel*`, `pool*`, `shops`, `bar` | Hosted | Tower, pool deck, the Shoppes |
 | `cashier`, `bank`, `stats`, `staff_manifest` | Hosted | Cage, back of house, START menu |
@@ -156,7 +156,7 @@ docs/rpg/
     ├── data/                # The world as data
     │   ├── maps/*.json      # 28 room records + index.json
     │   ├── npcs.json        # Rosters, sight cones, schedules
-    │   ├── dialogues.json   # 242 dialogue nodes
+    │   ├── dialogues.json   # 254 dialogue nodes
     │   ├── quests.json      # Quest board
     │   ├── easter_eggs.json # Secrets registry
     │   └── triggers.json    # Zone messages and warps
@@ -186,7 +186,7 @@ Shared game logic and screens live in `docs/js/`.
 
 ## NPC roster
 
-Fifty-nine NPCs live in `js/data/npcs.json`, keyed by map id. Eleven of them have
+Sixty-one NPCs live in `js/data/npcs.json`, keyed by map id. Twelve of them have
 a `sight` cone and challenge you on sight; nine move between positions as the
 resort clock turns.
 
@@ -195,12 +195,12 @@ resort clock turns.
 | Arrival | Las Vegas Blvd | Doorman Dante, Cab Line Carl |
 | Arrival | Valet & Parking | Valet Vic |
 | Arrival | Registration Lobby | Chip Chandler, Golden Statue, Tourist Tina, Bell Desk Bruno |
-| Casino | Casino Floor North | Blackjack Pit, Hold'em Pit, Roulette Pit, Spinster Sal, Cashier Carmen, Security Sam, High Limit Host, Shop Clerk |
+| Casino | Casino Floor North | Blackjack Pit, Hold'em Pit, Roulette Pit, Stickman Stan, Spinster Sal, Cashier Carmen, Security Sam, High Limit Host, Shop Clerk |
 | Casino | Casino Floor South | Pavilion Paula, Arena Alex, Slot Tech Tessa, Cocktail Cora |
 | Casino | Race & Sports Book | Bookie Blake, Stable Hand Stu |
 | Casino | High Limit Salon | Salon Pit Boss, Salon Dealer, Salon Cage |
 | Casino | Foundation Room | Whale Whitney, Whale Warren, Host Alexandra |
-| Retail | The Shoppes at Mandalay Place | Boutique Bianca, Bag Check Bev |
+| Retail | The Shoppes at Mandalay Place | Boutique Bianca, Bag Check Bev, Lottery Lena |
 | Retail | Sky Bridge | Busker Bo |
 | Retail | Convention Center | Badge Barry, Vendor Val |
 | Bars | Betty's Bar | Barkeep Betty, Regular Reggie |
@@ -371,7 +371,7 @@ To add to the RPG:
 | An NPC | Add to the `NPCS` table plus a `*_greet` node in `dialogues.json` |
 | A quest | Add to `quests.json` and derive its progress in `QuestManager.syncDerived()` |
 | An easter egg | Add to `easter_eggs.json` and set its flag from a dialogue choice or zone trigger — cosmetic only |
-| A casino screen | Build it in `docs/js/ui/` as `buildXRenderers(ctx)` and route it from `HostedEncounters.js`. Never write it twice |
+| A casino screen | Build it in `docs/js/ui/` as `buildXRenderers(ctx)`, route it from `HostedEncounters.js`, and give an NPC a line that opens it. Never write it twice |
 
 Then run the checks:
 

@@ -12,6 +12,7 @@ GAME_SLOT_OFFSET: dict[str, int] = {
     "holdem": 1,
     "roulette": 2,
     "horse_racing": 3,
+    "craps": 4,
 }
 
 
@@ -128,9 +129,36 @@ DEALER_ROSTER: tuple[DealerProfile, ...] = (
         },
     ),
     DealerProfile(
+        id="dice_delgado",
+        name="Dice Delgado",
+        games=("craps",),
+        tagline="Bones are hot. Hands are hotter. Don't seven-out on me.",
+        quips={
+            "greeting": (
+                "Shooter's up! Pass Line's open — let's make a point.",
+                "Welcome to the dice pit. Blow on 'em if you want; the house still collects.",
+            ),
+            "deal": (
+                "Dice out!",
+                "Coming out!",
+                "Point working — keep the seven away!",
+            ),
+            "win": (
+                "That's a winner! Pay the Pass!",
+                "Point hit! Look at you — sticky fingers on a sticky night.",
+            ),
+            "lose": (
+                "Seven-out. Scoop the line.",
+                "Craps. The table sighs with you.",
+            ),
+            "push": ("Push on the twelve — Don't Pass walks away even.",),
+            "idle": ("Watch a roll. Learn the rhythm. Then shoot.",),
+        },
+    ),
+    DealerProfile(
         id="sofia_volume",
         name="Sofia Volume",
-        games=("roulette",),
+        games=("roulette", "craps"),
         tagline="Dale, amigo — the wheel is feeling generous tonight!",
         quips={
             "greeting": (

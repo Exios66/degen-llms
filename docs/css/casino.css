@@ -3445,3 +3445,162 @@ body {
     text-align: left;
   }
 }
+
+
+/* ── Craps machine ── */
+
+.video-machine--craps {
+  --machine-accent: #f0a060;
+}
+
+.video-machine--craps .machine-game-tab--active {
+  background: rgba(240, 160, 96, 0.12);
+}
+
+.craps-dice {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin: 0.75rem 0;
+  min-height: 4rem;
+}
+
+.craps-dice--idle {
+  opacity: 0.45;
+  font-size: 2rem;
+}
+
+.craps-die {
+  width: 3rem;
+  height: 3rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #f7f2e8;
+  color: #1a1a1a;
+  border-radius: 0.45rem;
+  font-weight: 800;
+  font-size: 1.35rem;
+  border: 2px solid rgba(0, 0, 0, 0.35);
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.25);
+}
+
+.craps-total {
+  color: var(--gold);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.craps-point-lamp {
+  text-align: center;
+  margin-bottom: 0.5rem;
+  color: rgba(255, 255, 255, 0.75);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.78rem;
+}
+
+.craps-sides {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.35rem;
+}
+
+/* ── Lottery counter ── */
+
+.lottery-panel .lottery-ticket-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.55rem;
+  margin: 0.75rem 0 1rem;
+}
+
+.lottery-ticket-card {
+  text-align: left;
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 215, 0, 0.25);
+  border-radius: 4px;
+  padding: 0.65rem 0.75rem;
+  color: inherit;
+  cursor: pointer;
+}
+
+.lottery-ticket-card--active {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 1px rgba(255, 215, 0, 0.35);
+}
+
+.lottery-ticket-name {
+  font-weight: 700;
+  color: #fff;
+}
+
+.lottery-ticket-price {
+  color: var(--gold);
+  font-size: 0.85rem;
+  margin: 0.15rem 0 0.35rem;
+}
+
+.lottery-result {
+  margin: 0.75rem 0;
+  min-height: 2.5rem;
+}
+
+.lottery-draw {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.08em;
+}
+
+/* ── Prediction market board ── */
+
+.prediction-filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0.5rem 0 0.75rem;
+}
+
+.prediction-chip {
+  font-family: inherit;
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.28rem 0.55rem;
+  border-radius: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(0, 0, 0, 0.28);
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+}
+
+.prediction-chip--active {
+  border-color: var(--gold);
+  color: #111;
+  background: var(--gold);
+  font-weight: 700;
+}
+
+.prediction-card {
+  border-left: 3px solid rgba(255, 215, 0, 0.35);
+}
+
+.prediction-card--history {
+  border-left-color: #6ec6ff;
+}
+
+.prediction-card--easter-eggs {
+  border-left-color: #ff7eb6;
+}
+
+.prediction-blurb {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 0.2rem 0;
+}
+
+@media (max-width: 720px) {
+  .craps-sides {
+    grid-template-columns: 1fr;
+  }
+}

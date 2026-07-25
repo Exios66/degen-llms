@@ -17,6 +17,8 @@ import {
   AmenitiesOverlay,
   CashierOverlay,
   RhythmOverlay,
+  CrapsOverlay,
+  LotteryOverlay,
 } from "./systems/EncounterBridge.js";
 import { QuestManager } from "./systems/QuestManager.js";
 import { audioManager } from "./systems/AudioManager.js";
@@ -145,6 +147,8 @@ async function startOverworld(activeSession) {
     }),
     roulette: new RouletteOverlay(document.getElementById("roulette-overlay"), session, hooks),
     holdem: new HoldemOverlay(document.getElementById("holdem-overlay"), session, hooks),
+    craps: new CrapsOverlay(document.getElementById("craps-overlay"), session, hooks),
+    lottery: new LotteryOverlay(document.getElementById("lottery-overlay"), session, hooks),
     slots: new SlotsOverlay(document.getElementById("slots-overlay"), session, {
       ...hooks,
       onBigWin: shake,

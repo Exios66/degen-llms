@@ -6,8 +6,10 @@ from typing import Any
 from blackjack.rng import SECURE_RANDOM
 from mandalay_bay.activities.base import Activity, ActivityInfo
 from mandalay_bay.prediction_markets import (
+    MARKET_CATEGORIES,
     PredictionMarketsState,
     category_label,
+    filter_markets,
     generate_markets,
     prediction_payout,
     refresh_market_prices,
@@ -35,7 +37,7 @@ class SportsbookActivity(Activity):
         id="sportsbook",
         name="Mandalay Sports Book",
         floor="Sports Book",
-        description="Sports wagering and prediction markets — moneyline, spread, totals, props, and YES/NO contracts.",
+        description="Sports wagering and prediction markets — history desk, headlines, and easter-egg YES/NO contracts.",
         min_bet=10,
     )
 
@@ -142,24 +144,36 @@ class SportsbookActivity(Activity):
         count = 0
         while True:
             ui.print("\n--- Prediction Markets ---")
-            ui.dim("High-volatility YES/NO contracts. Prices in cents.")
-            for i, market in enumerate(self._predictions.markets, start=1):
+            ui.dim("YES/NO contracts — History Desk settles to recorded truth; Easter Eggs are longshots.")
+            visible = filter_markets(self._predictions.markets, self._predictions.category_filter)
+            if not visible:
+                visible = self._predictions.markets
+            for i, market in enumerate(visible, start=1):
+                blurb = f"\n     {market['blurb']}" if market.get("blurb") else ""
+                desk = " · History Desk" if market.get("fixedResolution") else ""
                 ui.print(
-                    f"  {i}) [{category_label(market['category'])}] {market['question']}\n"
-                    f"     YES {market['yesPrice']}¢ | NO {market['noPrice']}¢ | Vol {market['volume']:,}"
+                    f"  {i}) [{category_label(market['category'])}] {market['question']}{desk}\n"
+                    f"     YES {market['yesPrice']}¢ | NO {market['noPrice']}¢ | Vol {market['volume']:,}{blurb}"
                 )
 
             choice = ui.menu_choice(
-                ["Buy YES/NO contract", "Refresh prices", "Back"],
+                ["Buy YES/NO contract", "Filter category", "Refresh prices", "Back"],
                 title="Predictions:",
             )
-            if choice == 0 or choice == 3:
+            if choice == 0 or choice == 4:
                 break
             if choice == 1:
-                placed = self._place_prediction(session, ui, wager_min, wager_max)
+                placed = self._place_prediction(session, ui, wager_min, wager_max, visible)
                 if placed:
                     count += 1
             elif choice == 2:
+                cat_labels = ["All categories", *[c["label"] for c in MARKET_CATEGORIES]]
+                cat_choice = ui.menu_choice(cat_labels, title="Board filter:")
+                if cat_choice == 1:
+                    self._predictions.category_filter = "all"
+                elif cat_choice > 1:
+                    self._predictions.category_filter = MARKET_CATEGORIES[cat_choice - 2]["id"]
+            elif choice == 3:
                 self._predictions.markets = refresh_market_prices(self._predictions.markets)
                 ui.success("Market prices updated.")
         return net, count
@@ -286,9 +300,14 @@ class SportsbookActivity(Activity):
         ui,
         wager_min: int,
         wager_max: int,
+        markets: list[dict[str, Any]] | None = None,
     ) -> bool:
-        idx = ui.prompt_int("Market number", 1, len(self._predictions.markets), default=1) - 1
-        market = self._predictions.markets[idx]
+        board = markets or self._predictions.markets
+        if not board:
+            ui.error("No markets on the board.")
+            return False
+        idx = ui.prompt_int("Market number", 1, len(board), default=1) - 1
+        market = board[idx]
         side_choice = ui.menu_choice(["YES", "NO"], title="Buy side:")
         if side_choice == 0:
             return False

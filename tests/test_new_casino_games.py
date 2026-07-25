@@ -11,11 +11,16 @@ from mandalay_bay.activities.roulette import (
 def test_new_games_registered() -> None:
     assert "holdem" in ACTIVITIES_BY_ID
     assert "roulette" in ACTIVITIES_BY_ID
+    assert "craps" in ACTIVITIES_BY_ID
+    assert "lottery" in ACTIVITIES_BY_ID
     assert "horse_racing" in ACTIVITIES_BY_ID
     assert "dressage" in ACTIVITIES_BY_ID
     assert "jumper" in ACTIVITIES_BY_ID
+    assert "Lottery Counter" in FLOOR_ORDER
     assert "Racing Pavilion" in FLOOR_ORDER
     assert "Equestrian Arena" in FLOOR_ORDER
+    assert ACTIVITIES_BY_ID["craps"].info.floor == "Table Games"
+    assert ACTIVITIES_BY_ID["lottery"].info.floor == "Lottery Counter"
 
 
 def test_roulette_red_wins() -> None:

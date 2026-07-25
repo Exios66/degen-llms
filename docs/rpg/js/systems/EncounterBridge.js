@@ -10,6 +10,8 @@ import { EquestrianOverlay } from "./overlays/EquestrianOverlay.js";
 import { PoolOverlay } from "./overlays/PoolOverlay.js";
 import { HotelOverlay } from "./overlays/HotelOverlay.js";
 import { AmenitiesOverlay, CashierOverlay, RhythmOverlay } from "./overlays/AmenitiesOverlay.js";
+import { CrapsOverlay } from "./overlays/CrapsOverlay.js";
+import { LotteryOverlay } from "./overlays/LotteryOverlay.js";
 
 /**
  * DOM overlay that wraps the shared BlackjackGame engine for RPG encounters.
@@ -327,10 +329,13 @@ export class EncounterBridge {
       blackjack: "blackjack",
       holdem: "holdem",
       roulette: "roulette",
+      craps: "craps",
+      lottery: "lottery",
       slots_fortune: "slots",
       slots_high_roller: "slots",
       slots: "slots",
       sportsbook: "sportsbook",
+      predictions: "sportsbook",
       horse_racing: "horse_racing",
       dressage: "dressage",
       jumper: "jumper",
@@ -387,4 +392,6 @@ export {
   AmenitiesOverlay,
   CashierOverlay,
   RhythmOverlay,
+  CrapsOverlay,
+  LotteryOverlay,
 };

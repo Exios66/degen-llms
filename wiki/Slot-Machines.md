@@ -2,6 +2,8 @@
 
 Three-reel and video slot machines on the **Slot Machines** floor — modeled after games found at MGM Mandalay Bay, from penny slots to linked progressives.
 
+![Slot Machines floor in the web terminal](images/slot-machines.png)
+
 ## Stake tiers
 
 Choose a tier before playing any machine:

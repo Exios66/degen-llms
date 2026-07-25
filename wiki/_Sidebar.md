@@ -1,6 +1,13 @@
-**[[Home]]**
+<p align="center">
+  <strong>♠ THE MANDALAY BAY ♥</strong><br>
+  <sub>Resort &amp; Casino Wiki</sub>
+</p>
 
-### About
+---
+
+**[[Home]]** · [[Screenshots-Gallery|📸 Gallery]]
+
+### 🏨 Resort
 - [[About-The-Mandalay-Bay]]
 - [[Access-Points]]
 - [[Casino-Offerings]]
@@ -8,13 +15,13 @@
 - [[Resort-Hotel]]
 - [[Pool-Complex]]
 
-### Players
+### 🎮 Players
 - [[Getting-Started]]
 - [[Player-Guide]]
 - [[Chip-Economy]]
 - [[Save-Slots]]
 
-### Games
+### 🎰 Casino Floor
 - [[Blackjack]]
 - [[Table-Games]]
 - [[Slot-Machines]]
@@ -22,10 +29,16 @@
 - [[Sports-Book-and-Prediction-Markets]]
 - [[Racing-and-Equestrian]]
 
-### Pixel RPG
+### 🕹️ Pixel RPG
 - [[Pixel-RPG-Simulator]]
 
-### Developers
+### 🛠️ Developers
 - [[Architecture]]
 - [[Developer-Guide]]
 - [[RNG-and-Fairness]]
+
+---
+
+<p align="center">
+  <a href="https://exios66.github.io/degen-llms/">▶ Play Now</a>
+</p>

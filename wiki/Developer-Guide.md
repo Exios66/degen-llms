@@ -169,7 +169,7 @@ See `CONTRIBUTING-POSIT.md` in the repository. **Never overwrite** PSYCH 755 con
 
 ## Wiki maintenance
 
-Wiki pages live in `wiki/` (reviewed in PRs). Publish to GitHub manually — **no Actions automation**:
+Wiki pages live in `wiki/` (reviewed in PRs). Themed navigation uses `_Sidebar.md`, footer uses `_Footer.md`, and screenshots live in `wiki/images/`. Publish to GitHub manually — **no Actions automation**:
 
 ```bash
 bash scripts/sync-github-wiki.sh

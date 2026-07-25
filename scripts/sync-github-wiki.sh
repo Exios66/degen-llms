@@ -39,9 +39,13 @@ fi
 
 cd "${WIKI_DIR}"
 
-# Replace tracked wiki pages (authoritative mirror from repo).
+# Replace tracked wiki pages and images (authoritative mirror from repo).
 find . -maxdepth 1 -type f -name '*.md' -delete
+rm -rf images
 cp "${WIKI_SRC}"/*.md .
+if [[ -d "${WIKI_SRC}/images" ]]; then
+  cp -r "${WIKI_SRC}/images" ./images
+fi
 
 git config user.name "${GIT_NAME}"
 git config user.email "${GIT_EMAIL}"

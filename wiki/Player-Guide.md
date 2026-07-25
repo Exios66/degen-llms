@@ -2,6 +2,8 @@
 
 Complete navigation reference for **The Mandalay Bay** across CLI and web surfaces.
 
+![Casino floor hub — navigation starting point](images/casino-floor.png)
+
 ## Navigation model
 
 The casino uses a **hub-and-spoke** pattern:

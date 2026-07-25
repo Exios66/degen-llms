@@ -1,6 +1,9 @@
 /**
- * JSON-driven branching dialogue overlay (Pokémon / Epic Furious style).
+ * JSON-driven branching dialogue overlay (Pokémon / DS style).
  */
+import { resolveSpeakerPortrait } from "./CharacterAppearance.js";
+import { drawCharacterToCanvas } from "./TextureFactory.js";
+
 export class DialogueManager {
   /**
    * @param {HTMLElement} root
@@ -31,6 +34,46 @@ export class DialogueManager {
     return this._active;
   }
 
+  _buildBox({ speaker, isSystem = false }) {
+    const box = document.createElement("div");
+    box.className = `dialogue-box dialogue-box--tappable${isSystem ? " dialogue-box--system" : ""}`;
+
+    const inner = document.createElement("div");
+    inner.className = "dialogue-box__inner";
+
+    const portraitWrap = document.createElement("div");
+    portraitWrap.className = "dialogue-portrait-wrap";
+    const portrait = document.createElement("canvas");
+    portrait.className = "dialogue-portrait";
+    portrait.width = 56;
+    portrait.height = 77;
+    portrait.setAttribute("aria-hidden", "true");
+    const palette = resolveSpeakerPortrait(speaker ?? "Resort");
+    drawCharacterToCanvas(portrait, palette, "down", 0, 3);
+    portraitWrap.appendChild(portrait);
+
+    const content = document.createElement("div");
+    content.className = "dialogue-box__content";
+
+    const speakerEl = document.createElement("div");
+    speakerEl.className = "dialogue-speaker";
+    speakerEl.textContent = speaker ?? "";
+    content.appendChild(speakerEl);
+
+    const textEl = document.createElement("div");
+    textEl.className = "dialogue-text";
+    content.appendChild(textEl);
+
+    const advanceHint = document.createElement("div");
+    advanceHint.className = "dialogue-advance";
+    advanceHint.textContent = "▼ Tap or press Enter / Space / E";
+    content.appendChild(advanceHint);
+
+    inner.append(portraitWrap, content);
+    box.appendChild(inner);
+    return { box, textEl, advanceHint, content };
+  }
+
   /**
    * Brief non-branching toast used for map transitions and system copy.
    * @param {string} text
@@ -39,7 +82,6 @@ export class DialogueManager {
   showSystemMessage(text, opts = {}) {
     if (!text) return;
     if (this._active) {
-      // Don't interrupt an active dialogue tree — queue a one-shot after close.
       const prevClose = this.hooks.onClose;
       this.hooks.onClose = () => {
         this.hooks.onClose = prevClose;
@@ -53,19 +95,8 @@ export class DialogueManager {
     this.root.hidden = false;
     this.root.innerHTML = "";
 
-    const box = document.createElement("div");
-    box.className = "dialogue-box dialogue-box--system dialogue-box--tappable";
-
-    const speaker = document.createElement("div");
-    speaker.className = "dialogue-speaker";
-    speaker.textContent = opts.speaker ?? "Resort";
-    box.appendChild(speaker);
-
-    const textEl = document.createElement("div");
-    textEl.className = "dialogue-text";
+    const { box, textEl } = this._buildBox({ speaker: opts.speaker ?? "Resort", isSystem: true });
     textEl.textContent = text;
-    box.appendChild(textEl);
-
     this.root.appendChild(box);
 
     const dismiss = () => {
@@ -121,23 +152,9 @@ export class DialogueManager {
   _renderNode(node) {
     this.root.innerHTML = "";
 
-    const box = document.createElement("div");
-    box.className = "dialogue-box dialogue-box--tappable";
-
-    const speaker = document.createElement("div");
-    speaker.className = "dialogue-speaker";
-    speaker.textContent = node.speaker ?? "";
-    box.appendChild(speaker);
-
-    const textEl = document.createElement("div");
-    textEl.className = "dialogue-text";
-    box.appendChild(textEl);
-
-    const advanceHint = document.createElement("div");
-    advanceHint.className = "dialogue-advance";
-    advanceHint.textContent = "▼ Tap or press Enter / Space / E";
-    box.appendChild(advanceHint);
-
+    const { box, textEl, advanceHint, content } = this._buildBox({
+      speaker: node.speaker ?? "",
+    });
     this.root.appendChild(box);
 
     const fullText = node.text ?? "";
@@ -149,10 +166,10 @@ export class DialogueManager {
         textEl.textContent = fullText.slice(0, idx);
         idx += 1;
         if (idx <= fullText.length) {
-          setTimeout(typeTick, 18);
+          setTimeout(typeTick, 16);
         } else {
           typing = false;
-          this._afterText(node, box, advanceHint);
+          this._afterText(node, box, advanceHint, content);
         }
       }
     };
@@ -161,7 +178,7 @@ export class DialogueManager {
       if (typing) {
         typing = false;
         textEl.textContent = fullText;
-        this._afterText(node, box, advanceHint);
+        this._afterText(node, box, advanceHint, content);
       }
     };
 
@@ -199,7 +216,7 @@ export class DialogueManager {
     return true;
   }
 
-  _afterText(node, box, advanceHint) {
+  _afterText(node, box, advanceHint, content) {
     if (node.choices?.length) {
       advanceHint.hidden = true;
       const ul = document.createElement("ul");
@@ -208,12 +225,16 @@ export class DialogueManager {
         if (!this._choiceVisible(choice)) continue;
         const li = document.createElement("li");
         const btn = document.createElement("button");
+        btn.type = "button";
         btn.textContent = choice.label;
-        btn.onclick = () => this._pickChoice(choice);
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          this._pickChoice(choice);
+        };
         li.appendChild(btn);
         ul.appendChild(li);
       }
-      box.appendChild(ul);
+      content.appendChild(ul);
     }
   }
 

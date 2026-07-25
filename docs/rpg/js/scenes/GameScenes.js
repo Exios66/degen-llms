@@ -1,5 +1,6 @@
 import Phaser from "phaser";
-import { createGameTextures, playerTextureKey, playerAnimKey } from "../systems/TextureFactory.js";
+import { createGameTextures, ensurePlayerTextures, playerTextureKey, playerAnimKey } from "../systems/TextureFactory.js";
+import { normalizeAppearance } from "../systems/CharacterAppearance.js";
 import {
   TILE_SIZE, MAP_WIDTH, MAP_HEIGHT, buildMapLayersForId, getNpcsForMap,
   DOOR_TRIGGERS, getMapDefinition, SPAWN_DEFAULT, TILE, resolveNpcPosition,
@@ -77,7 +78,9 @@ export class OverworldScene extends Phaser.Scene {
     const py = spawn.y ?? mapDef.spawn.y ?? SPAWN_DEFAULT.y;
 
     this.playerArchetype = spawn.archetype || spawn.playerSprite || "weekend_warrior";
-    const pKey = playerTextureKey(this.playerArchetype, "down");
+    this.playerAppearance = normalizeAppearance(spawn);
+    ensurePlayerTextures(this, this.playerAppearance);
+    const pKey = playerTextureKey({ appearance: this.playerAppearance }, "down");
     this.player = this.physics.add.sprite(px * TILE_SIZE + TILE_SIZE / 2, py * TILE_SIZE + TILE_SIZE / 2, pKey);
     this.player.setCollideWorldBounds(true);
     this.player.setDepth(10);
@@ -185,6 +188,7 @@ export class OverworldScene extends Phaser.Scene {
 
     this.cameras.main.setBounds(0, 0, MAP_WIDTH * TILE_SIZE, MAP_HEIGHT * TILE_SIZE);
     this.cameras.main.startFollow(this.player, true, 0.14, 0.14);
+    this.cameras.main.setFollowOffset(0, TILE_SIZE * 0.45);
     this.cameras.main.setZoom(1);
     this.cameras.main.setRoundPixels(true);
 
@@ -259,7 +263,7 @@ export class OverworldScene extends Phaser.Scene {
     const scaleX = this.scale.width / w;
     const scaleY = this.scale.height / h;
     const fit = Math.min(scaleX, scaleY);
-    const zoom = Phaser.Math.Clamp(fit * 1.05, 0.75, 1.4);
+    const zoom = Phaser.Math.Clamp(fit * 1.55, 1.15, 2.35);
     this.cameras.main.setZoom(zoom);
   }
 
@@ -327,13 +331,22 @@ export class OverworldScene extends Phaser.Scene {
   }
 
   _applyPlayerAnim(moving) {
-    const key = playerAnimKey(this.playerArchetype, this.facing, moving);
+    const appearance = { appearance: this.playerAppearance };
+    const key = playerAnimKey(appearance, this.facing, moving);
     if (this.player.anims?.currentAnim?.key === key) return;
     if (this.anims.exists(key)) {
       this.player.anims.play(key, true);
     } else {
-      this.player.setTexture(playerTextureKey(this.playerArchetype, this.facing));
+      this.player.setTexture(playerTextureKey(appearance, this.facing));
     }
+  }
+
+  refreshPlayerAppearance() {
+    const rpg = this.saveAdapter.rpg;
+    this.playerAppearance = normalizeAppearance(rpg);
+    ensurePlayerTextures(this, this.playerAppearance);
+    this.player.anims?.stop();
+    this._applyPlayerAnim(this._moving);
   }
 
   update(_time, delta) {

@@ -61,6 +61,16 @@ SEED_SLOT = """async ([slotId, chips]) => {
   core.saveSlot(session);
 }"""
 
+VISIBLE_OVERLAY_TEXT = """() => {
+  const roots = ['terminal-overlay', 'blackjack-overlay', 'roulette-overlay',
+                 'holdem-overlay', 'rhythm-overlay'];
+  for (const id of roots) {
+    const el = document.getElementById(id);
+    if (el && !el.hidden) return el.innerText;
+  }
+  return '';
+}"""
+
 PLAYER_TILE = """() => {
   const s = window.__rpg.scene;
   return [Math.floor(s.player.x / 16), Math.floor(s.player.y / 16)];
@@ -230,19 +240,19 @@ def main() -> int:
                     encounter,
                 )
                 page.wait_for_timeout(250)
-                text = page.evaluate(
-                    """() => {
-                        const roots = ['terminal-overlay', 'blackjack-overlay', 'roulette-overlay',
-                                       'holdem-overlay', 'rhythm-overlay'];
-                        for (const id of roots) {
-                          const el = document.getElementById(id);
-                          if (el && !el.hidden) return el.innerText;
-                        }
-                        return '';
-                    }"""
-                )
+                text = page.evaluate(VISIBLE_OVERLAY_TEXT)
+                # Gambling encounters open on the shared stake picker. Taking a
+                # tier is what proves the screen behind the gate renders too.
+                if "Stake Tier" in text:
+                    page.click("#terminal-overlay .menu-list li:nth-child(1) .menu-btn")
+                    page.wait_for_timeout(400)
+                    text = page.evaluate(VISIBLE_OVERLAY_TEXT)
+                    if "Stake Tier" in text:
+                        failures.append(f"rpg encounter {encounter}: stuck on the stake picker")
                 if len(text.strip()) < 10:
                     failures.append(f"rpg encounter {encounter}: nothing rendered")
+                if encounter == "predictions" and "Prediction Markets" not in text:
+                    failures.append("rpg encounter predictions: did not open on the prediction tab")
                 page.evaluate(
                     """() => {
                         window.__rpg.terminalHost?.isActive() && window.__rpg.terminalHost.close();

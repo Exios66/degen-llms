@@ -263,6 +263,37 @@ for (const [id, node] of Object.entries(dialogues)) {
   }
 }
 
+// ── Encounter reachability ────────────────────────────────────────────────
+// A routable encounter that no NPC or dialogue branch leads to is dead content:
+// the terminal grows a screen, the RPG hosts it, and nobody in the world ever
+// offers it. These two are deliberate — they are pages of the START menu.
+const MENU_ONLY_ENCOUNTERS = new Set(["stats", "staff_manifest"]);
+{
+  const offered = new Set();
+  const walkDialogue = (nodeId, seen) => {
+    const node = dialogues[nodeId];
+    if (!node || seen.has(nodeId)) return;
+    seen.add(nodeId);
+    if (node.encounter) offered.add(node.encounter);
+    for (const key of ["next", "elseNext"]) if (node[key]) walkDialogue(node[key], seen);
+    for (const choice of node.choices ?? []) {
+      if (choice.encounter) offered.add(choice.encounter);
+      if (choice.next) walkDialogue(choice.next, seen);
+    }
+  };
+  for (const mapId of MAP_IDS) {
+    for (const npc of getNpcsForMap(mapId)) {
+      if (npc.encounter) offered.add(npc.encounter);
+      walkDialogue(npc.dialogueId, new Set());
+      if (npc.challengeDialogueId) walkDialogue(npc.challengeDialogueId, new Set());
+    }
+  }
+  for (const id of ENCOUNTER_IDS) {
+    check(offered.has(id) || MENU_ONLY_ENCOUNTERS.has(id),
+      `encounter "${id}": routable but no NPC or dialogue branch opens it`);
+  }
+}
+
 // ── Quests ────────────────────────────────────────────────────────────────
 for (const [id, def] of Object.entries(quests)) {
   const at = `quest ${id}`;

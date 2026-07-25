@@ -721,6 +721,9 @@ NPCS: dict[str, list[dict]] = {
         {"id": "pit_roulette", "name": "Roulette Pit", "x": 19, "y": 14, "sprite": "npc_red",
          "dialogueId": "pit_roulette_greet", "zone": "roulette", "encounter": "roulette",
          "direction": "down"},
+        {"id": "stickman_stan", "name": "Stickman Stan", "x": 11, "y": 10, "sprite": "npc_green",
+         "dialogueId": "stickman_stan_greet", "challengeDialogueId": "stickman_stan_challenge",
+         "encounter": "craps", "direction": "left", "sight": {"dir": "left", "range": 4}},
         {"id": "spinster_sal", "name": "Spinster Sal", "x": 24, "y": 14, "sprite": "npc_pink",
          "dialogueId": "spinster_sal_greet", "challengeDialogueId": "spinster_sal_challenge",
          "encounter": "slots_fortune", "direction": "left",
@@ -783,6 +786,8 @@ NPCS: dict[str, list[dict]] = {
          "dialogueId": "boutique_bianca_greet", "encounter": "shops", "direction": "right"},
         {"id": "bag_check_bev", "name": "Bag Check Bev", "x": 21, "y": 19, "sprite": "npc_silver",
          "dialogueId": "bag_check_bev_greet", "encounter": "mall_bag", "direction": "left"},
+        {"id": "lottery_lena", "name": "Lottery Lena", "x": 8, "y": 19, "sprite": "npc_orange",
+         "dialogueId": "lottery_lena_greet", "encounter": "lottery", "direction": "right"},
     ],
     "sky_bridge": [
         {"id": "busker_bo", "name": "Busker Bo", "x": 15, "y": 14, "sprite": "npc_orange",
@@ -790,8 +795,8 @@ NPCS: dict[str, list[dict]] = {
          "sight": {"dir": "down", "range": 4}, "challengeDialogueId": "busker_bo_challenge"},
     ],
     "convention_center": [
-        {"id": "badge_barry", "name": "Badge Barry", "x": 15, "y": 12, "sprite": "npc_convention"
-         if False else "npc_teal", "dialogueId": "badge_barry_greet", "direction": "down"},
+        {"id": "badge_barry", "name": "Badge Barry", "x": 15, "y": 12, "sprite": "npc_teal",
+         "dialogueId": "badge_barry_greet", "direction": "down"},
         {"id": "vendor_val", "name": "Vendor Val", "x": 9, "y": 18, "sprite": "npc_orange",
          "dialogueId": "vendor_val_greet", "encounter": "shops", "direction": "down"},
     ],

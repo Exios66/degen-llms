@@ -198,11 +198,64 @@ NODES: dict[str, dict] = {
         "speaker": "Stable Hand Stu",
         "text": "Post time's whenever the screen says. It's always about to be post time.",
     },
+    # Blake predates Phase 4; re-authored here so the predictions board has a
+    # door in the overworld and not just a deep link.
+    "bookie_blake_greet": {
+        "speaker": "Bookie Blake",
+        "text": "Lines are live. Moneyline, settle when you're brave. No juice jokes — the juice is the point.",
+        "choices": [
+            {"label": "Open sports book", "encounter": "sportsbook", "setFlag": "played_sportsbook"},
+            {"label": "What's on the prediction board?", "encounter": "predictions",
+             "setFlag": "played_predictions"},
+            {"label": "Any lock tonight?", "next": "bookie_blake_lock"},
+            {"label": "Pass", "next": "bookie_blake_bye"},
+        ],
+    },
+    # ── Craps pit ─────────────────────────────────────────────────────────
+    "stickman_stan_greet": {
+        "speaker": "Stickman Stan",
+        "text": "Dice are out. Hit the back wall, keep one hand on the rail, and do not say the word — you know the word. The one that rhymes with 'heaven'.",
+        "choices": [
+            {"label": "Get me on the pass line.", "encounter": "craps", "setFlag": "played_craps"},
+            {"label": "Which bets are the good ones?", "next": "stickman_stan_odds"},
+            {"label": "Why can't I say it?", "next": "stickman_stan_superstition"},
+            {"label": "I'll just watch the rail.", "next": "stickman_stan_bye"},
+        ],
+    },
+    "stickman_stan_odds": {
+        "speaker": "Stickman Stan",
+        "text": "Pass line with odds behind it is the least rude bet in the building. Everything painted in the middle of my layout is there because it's pretty, not because it's fair.",
+        "setFlag": "hint_craps_odds",
+        "next": "stickman_stan_bye",
+    },
+    "stickman_stan_superstition": {
+        "speaker": "Stickman Stan",
+        "text": "Because a table is a group project and the group has decided. Say it and eight strangers will look at you like you turned the lights off.",
+        "next": "stickman_stan_bye",
+    },
+    "stickman_stan_bye": {
+        "speaker": "Stickman Stan",
+        "text": "Dice are coming out. Watch your fingers and your bankroll, in that order.",
+    },
+    "stickman_stan_challenge": {
+        "speaker": "Stickman Stan",
+        "text": "You! Yeah — you walked past my table twice and the shooter's been cold both times. That's not a coincidence, that's a job opening. Grab the rail.",
+        "choices": [
+            {"label": "Give me the dice.", "encounter": "craps", "setFlag": "played_craps",
+             "reputation": {"staff": 1}},
+            {"label": "I'm not the lucky type.", "next": "stickman_stan_challenge_decline"},
+        ],
+    },
+    "stickman_stan_challenge_decline": {
+        "speaker": "Stickman Stan",
+        "text": "Nobody is until the dice say so. Table's here all night, and so is the cold streak.",
+    },
     # ── Foundation Room ───────────────────────────────────────────────────
     "host_alexandra_greet": {
         "speaker": "Host Alexandra",
         "text": "Alexandra. I run the list. If you're standing here, someone decided you were interesting — that was probably me, and I can change my mind.",
         "choices": [
+            {"label": "Seat me in the lounge.", "encounter": "foundation_room_lounge"},
             {"label": "What gets me comped?", "next": "host_alexandra_comps"},
             {"label": "Who else is up here?", "next": "host_alexandra_room"},
             {"label": "Just enjoying the view.", "next": "host_alexandra_bye"},
@@ -259,6 +312,31 @@ NODES: dict[str, dict] = {
     "bag_check_bev_bye": {
         "speaker": "Bag Check Bev",
         "text": "Tag's good all night. So am I.",
+    },
+    "lottery_lena_greet": {
+        "speaker": "Lottery Lena",
+        "text": "Pick 3, Pick 4, Mandalay Mega, and two scratchers that were printed by somebody having a bad week. The counter is open, the odds are not.",
+        "choices": [
+            {"label": "Buy a ticket.", "encounter": "lottery", "setFlag": "played_lottery"},
+            {"label": "Nevada doesn't have a lottery.", "next": "lottery_lena_legal"},
+            {"label": "Any strategy?", "next": "lottery_lena_strategy"},
+            {"label": "Maybe later.", "next": "lottery_lena_bye"},
+        ],
+    },
+    "lottery_lena_legal": {
+        "speaker": "Lottery Lena",
+        "text": "Correct. That's why this is a resort amusement paid in chips, and why the sign behind me has more disclaimer than name. Enjoy your resort amusement.",
+        "setFlag": "hint_lottery_legal",
+        "next": "lottery_lena_bye",
+    },
+    "lottery_lena_strategy": {
+        "speaker": "Lottery Lena",
+        "text": "Quick Pick if you're honest, birthdays if you're sentimental, and the same four numbers every day if you'd like a hobby that hurts.",
+        "next": "lottery_lena_bye",
+    },
+    "lottery_lena_bye": {
+        "speaker": "Lottery Lena",
+        "text": "Tickets don't expire until the draw. Neither does hope, technically.",
     },
     # ── Sky bridge ────────────────────────────────────────────────────────
     "busker_bo_greet": {
@@ -512,6 +590,49 @@ NODES: dict[str, dict] = {
     "spa_attendant_ash_bye": {
         "speaker": "Attendant Ash",
         "text": "Robes are on the hook. Take a cold one on the way out.",
+    },
+    # ── Mandalay Beach ────────────────────────────────────────────────────
+    # Lou predates Phase 4; re-authored here so the pool complex hub and the
+    # day's event board have overworld doors instead of only deep links.
+    "lifeguard_lou_greet": {
+        "speaker": "Lifeguard Lou",
+        "text": "Eleven acres of chlorinated ambition. Wave pool's center stage — timing matters.",
+        "choices": [
+            {"label": "Play wave / ring toss", "encounter": "pool_wave",
+             "setFlag": "pool_wave_pool"},
+            {"label": "Walk me through the whole complex.", "encounter": "pool"},
+            {"label": "What's on today?", "encounter": "pool_events"},
+            {"label": "What happens out on the acres?", "next": "lifeguard_lou_quest",
+             "unlessFlag": "quest_pool_vignettes_started",
+             "setFlag": "quest_pool_vignettes_started"},
+            {"label": "How am I doing on that thing?", "next": "lifeguard_lou_quest_done",
+             "requiresFlag": "quest_pool_vignettes_started"},
+            {"label": "Thanks", "next": "lifeguard_lou_bye"},
+        ],
+    },
+    "shark_reef_guide_greet": {
+        "speaker": "Reef Guide",
+        "text": "Sand tiger sharks circle the acrylic and a hammerhead runs the far loop. Tunnel's through the doors — photograph five species and the desk stops calling you a tourist.",
+        "setFlag": "pool_shark_reef",
+        "choices": [
+            {"label": "How do the photos work?", "next": "shark_reef_guide_photos"},
+            {"label": "Which one is hardest to catch?", "next": "shark_reef_guide_hard"},
+            {"label": "Thanks", "next": "shark_reef_guide_bye"},
+        ],
+    },
+    "shark_reef_guide_photos": {
+        "speaker": "Reef Guide",
+        "text": "Kiosk in the tunnel does the work. One species per shot, and the dex in your menu keeps score so you don't photograph the same nurse shark six times. People do.",
+        "next": "shark_reef_guide_bye",
+    },
+    "shark_reef_guide_hard": {
+        "speaker": "Reef Guide",
+        "text": "Golden crocodile. Two of them, both beige, both convinced they're furniture. Half the guests walk past and photograph a rock.",
+        "next": "shark_reef_guide_bye",
+    },
+    "shark_reef_guide_bye": {
+        "speaker": "Reef Guide",
+        "text": "Doors are that way. Don't tap the glass — they remember.",
     },
     # ── Cabana row ────────────────────────────────────────────────────────
     "cabana_curtis_greet": {

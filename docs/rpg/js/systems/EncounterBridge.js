@@ -407,6 +407,7 @@ export class EncounterBridge {
       view: spec.view,
       data: { ...(spec.data ?? {}), ...(context.data ?? {}) },
       activityId: spec.activityId ?? null,
+      tab: spec.tab ?? null,
       title: spec.title,
     });
   }

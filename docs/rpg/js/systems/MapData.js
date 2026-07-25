@@ -84,6 +84,18 @@ export const NPCS = [
     direction: "down",
   },
   {
+    id: "stickman_stan",
+    name: "Stickman Stan",
+    x: 15,
+    y: 13,
+    sprite: "npc_green",
+    dialogueId: "stickman_stan_greet",
+    challengeDialogueId: "stickman_stan_challenge",
+    encounter: "craps",
+    direction: "down",
+    sight: { dir: "down", range: 4 },
+  },
+  {
     id: "barkeep_betty",
     name: "Barkeep Betty",
     x: 5,

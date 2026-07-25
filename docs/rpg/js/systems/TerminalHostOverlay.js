@@ -139,7 +139,7 @@ export class TerminalHostOverlay {
   }
 
   /**
-   * @param {{ view?: string, data?: object, activityId?: string, title?: string }} options
+   * @param {{ view?: string, data?: object, activityId?: string, tab?: string, title?: string }} options
    * @returns {Promise<{ net: number }>}
    */
   open(options = {}) {
@@ -159,6 +159,7 @@ export class TerminalHostOverlay {
     }
     ensureHotel(this.session);
     this.runtime.sportsbook = SportsbookState.fromJSON(this.session.sportsbookData);
+    if (options.tab) this.runtime.sportsbook.activeTab = options.tab;
     this.views.reset([{ name: EXIT_VIEW, data: {} }, { name: view, data: options.data ?? {} }]);
     this.root.hidden = false;
     this.root.classList.add("encounter-overlay--active", "terminal-host");

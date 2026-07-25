@@ -25,6 +25,8 @@ export const RESORT_STAFF_DEX = [
   { id: "arena_alex", name: "Arena Alex", role: "Equestrian arena" },
   { id: "janitor_joe", name: "Janitor Joe", role: "Back of house" },
   { id: "high_limit_host", name: "High Limit Host", role: "Salon" },
+  { id: "stickman_stan", name: "Stickman Stan", role: "Craps pit" },
+  { id: "lottery_lena", name: "Lottery Lena", role: "Lottery counter" },
   { id: "beach_dj", name: "Beach DJ", role: "Beach club" },
 ];
 

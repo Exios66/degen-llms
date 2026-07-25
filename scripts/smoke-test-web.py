@@ -149,6 +149,27 @@ def rpg_journey(page, base, failures: list[str], errors: list[str]) -> None:
     }""")
     step("hotel_checkin", checked_in, "room access still denied after check-in")
 
+    # A checked-in guest must be able to reach the room from the hosted desk,
+    # then leave it: "return to casino floor" closes the panel in the overworld.
+    page.evaluate("() => { window.__rpg.encounters.start('hotel_front_desk', {}); }")
+    page.wait_for_timeout(300)
+    room_btn = page.query_selector(
+        "#terminal-overlay .menu-btn:text-matches('Enter your room|Find my room')")
+    if room_btn:
+        room_btn.click()
+        page.wait_for_timeout(300)
+    desk_text = page.evaluate(VISIBLE_OVERLAY_TEXT)
+    step("hotel_room_access", bool(room_btn) and "Front Desk" not in desk_text,
+         "front desk never offered the room to a checked-in guest")
+
+    page.evaluate("""() => {
+      const btns = [...document.querySelectorAll('#terminal-overlay .menu-btn')];
+      btns.find((b) => /return to casino floor/i.test(b.textContent))?.click();
+    }""")
+    page.wait_for_timeout(300)
+    step("hotel_exit", page.evaluate("() => !window.__rpg.terminalHost.isActive()"),
+         "leaving the hotel did not close the overworld panel")
+
     # Reload: position, map, and chips must all come back off the save slot.
     before = page.evaluate("""() => {
       const s = window.__rpg.scene;

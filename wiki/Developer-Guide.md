@@ -169,11 +169,14 @@ See `CONTRIBUTING-POSIT.md` in the repository. **Never overwrite** PSYCH 755 con
 
 ## Wiki maintenance
 
-Wiki source lives in `wiki/` in the repository. Sync to GitHub:
+Wiki pages live in `wiki/` (reviewed in PRs). Publish to GitHub manually — **no Actions automation**:
 
 ```bash
-./scripts/sync-github-wiki.sh
+bash scripts/sync-github-wiki.sh
+# or invoke the Cursor skill: /sync-github-wiki
 ```
+
+Requires push access to `Exios66/degen-llms.wiki.git`. See `.cursor/skills/sync-github-wiki/SKILL.md`.
 
 ## Project structure
 

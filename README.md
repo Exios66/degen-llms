@@ -152,7 +152,7 @@ Python is the authoritative game logic; the web app mirrors it in vanilla ES mod
 
 ## Documentation
 
-Full docs in [`docs/`](docs/README.md) and on the **[GitHub Wiki](https://github.com/Exios66/degen-llms/wiki)** (synced from [`wiki/`](wiki/)):
+Full docs in [`docs/`](docs/README.md) and on the **[GitHub Wiki](https://github.com/Exios66/degen-llms/wiki)** (source in [`wiki/`](wiki/); publish with `/sync-github-wiki` or `bash scripts/sync-github-wiki.sh`):
 
 | Guide | Description |
 |-------|-------------|

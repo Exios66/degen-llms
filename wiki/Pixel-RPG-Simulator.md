@@ -59,66 +59,80 @@ Choose on the title screen:
 
 ---
 
-## Maps (Phases 1–4)
+## The property
 
-Eight explorable maps:
+Twenty-eight rooms across eight wings, authored as declarative JSON in
+`docs/rpg/js/data/maps/` and compiled into tile layers at boot by `MapLoader`.
+Each room has its own spawn point, and doors sit on the outer walkable ring so
+the warp fires as you step onto one.
 
-| Map ID | Zone | Highlights |
-|--------|------|------------|
-| `main_resort` | Casino lobby & carpet | Blackjack, hold'em, roulette, craps pits; slot aisle; sports book |
-| `hotel_tower` | Hotel | Clerk Carmen, hallway, room encounter |
-| `mandalay_beach` | Pool complex | Wave pool, cabanas, beach rave |
-| `shark_reef` | Aquarium | Shark photo collection quest |
-| `house_of_blues` | Music venue | Rhythm stage encounter |
-| `ultra_arena` | Boxing/events | Scheduled event cutscenes |
-| `foundation_room` | VIP lounge | Chip- and tier-gated whale NPCs |
-| `staff_corridor` | Back of house | Staff-only tiles, Easter eggs |
+| Wing | Rooms |
+|------|-------|
+| Arrival | Las Vegas Blvd, Valet & Parking, Registration Lobby |
+| Casino | Casino Floor North, Casino Floor South, Race & Sports Book, High Limit Salon, Foundation Room |
+| Retail | The Shoppes at Mandalay Place, Sky Bridge, Convention Center |
+| Bars | Betty's Bar, Skyfall Lounge |
+| Hotel | Tower Elevator Lobby, Guest Floor Corridor, Your Room, Delano Wing, Bathhouse Spa |
+| Pool | Mandalay Beach, Cabanas & Hot Tubs, Moorea Beach Club, Moonlight Rave Stage |
+| Attractions | Shark Reef Tunnel, Shark Reef Exhibit Hall, House of Blues, HOB Green Room, ULTRA Arena Concourse |
+| Back of house | Back of House |
 
-### Navigation from main resort
-
-| Direction | Destination |
-|-----------|-------------|
-| East lobby | Hotel Tower |
-| West lobby | Mandalay Beach → Shark Reef warp |
-| East carpet | Slot aisle (Spinster Sal) |
-| West carpet | Sports book (Bookie Blake) |
-| North | High Limit / Foundation Room (chip gate) |
-| Far west / east doors | House of Blues / ULTRA Arena |
+Three doors are gated: the High Limit Salon checks chips and stake tier through
+`docs/js/venues.js`, the Foundation Room wants Noir standing, and your own room
+door stops working while the folio is unpaid.
 
 ---
 
 ## Activity encounters
 
-Every major casino/resort activity launches as an in-RPG **DOM overlay** — no terminal redirect.
+**The RPG does not reimplement game screens.** Hotel, pool, shops, bars, slots,
+sportsbook, prediction markets, craps, the lottery counter, racing, equestrian,
+cashier, bank, and every meta screen are written once in `docs/js/ui/` as
+`buildXRenderers(ctx)` factories. The web terminal spreads those factories into
+its renderer table; the RPG's `TerminalHostOverlay` builds the same context and
+mounts the identical functions inside an encounter panel. A feature shipped to
+the terminal appears in the RPG with no RPG-side work.
 
-| Encounter | Engine | NPC / trigger |
-|-----------|--------|---------------|
-| `blackjack` | `docs/js/blackjack/` | Dealer Dana, pit NPCs |
-| `holdem` | `docs/js/holdem/` | Hold'em pit |
-| `roulette` | `docs/js/roulette.js` | Roulette wheel zone |
-| `craps` | `docs/js/craps.js` | Craps table |
-| `slots_fortune` / `slots_high_roller` | `docs/js/slots.js` | Spinster Sal |
-| `sportsbook` | `docs/js/sportsbook.js` | Bookie Blake |
-| `lottery` | `docs/js/lottery.js` | Lottery counter |
-| `horse_racing` | `docs/js/horse_racing.js` | Racing pavilion |
-| `dressage` / `jumper` | `docs/js/equestrian.js` | Equestrian arena |
-| `hotel` | `docs/js/hotel.js` | Clerk Carmen |
-| `pool` | `docs/js/pool-complex.js` | Beach NPCs |
-| `amenities` | `docs/js/casino-amenities.js` | Shops & bars |
-| Cashier | Buy-in UI only | Lobby desk |
+The four exceptions are the bespoke pixel "battle screens" that read better
+in-world — blackjack, hold'em, roulette, and the House of Blues rhythm
+minigame. They still take their bet limits from the shared stake-tier picker.
+
+| Encounter | Where it lives | Reached from |
+|-----------|----------------|--------------|
+| `blackjack`, `holdem`, `roulette` | Bespoke pixel overlays | Casino floor pits |
+| `rhythm` | Bespoke pixel overlay | House of Blues stage |
+| `craps`, `lottery` | Hosted from `docs/js/ui/` | Casino floor, lottery counter |
+| `slots`, `sportsbook`, `predictions` | Hosted | Slot aisle, race & sports book |
+| `horse_racing`, `dressage`, `jumper`, `horse_stables` | Hosted | Racing pavilion |
+| `hotel*`, `pool*`, `shops`, `bar` | Hosted | Tower, pool deck, the Shoppes |
+| `cashier`, `bank`, `stats`, `staff_manifest` | Hosted | Cage, back of house, START menu |
 
 ### Encounter flow
 
 ```
 OverworldScene._tryInteract()
   → DialogueManager.start(dialogueId)
-  → choice with "encounter": "blackjack"
-  → EncounterBridge.start("blackjack")
-  → BlackjackOverlay.open()  [DOM]
-  → session.wallet synced via engine callbacks
+  → choice with "encounter": "craps"
+  → EncounterBridge.start("craps")
+  → TerminalHostOverlay mounts the shared renderer  [DOM]
+  → session.wallet updated by the shared logic
   → SaveAdapter.persist()
   → OverworldScene resumes
 ```
+
+---
+
+## Pokémon-style systems
+
+| System | Detail |
+|--------|--------|
+| **START menu** | Esc or X — Trainer Card, Quests, Dex, Bag, Secrets, Phone, Bank, Stats, Staff, Guest Book, Completion, Options, Save |
+| **Challengers** | NPCs with a `sight` cone spot you, walk over, and open with their encounter — once each |
+| **Quests** | Ten in `js/data/quests.json`, progress derived from shared session state so it can never disagree |
+| **Dex** | Shark Reef species, slot machines played, staff met |
+| **Bag** | Quest items, mall purchases, minibar tabs |
+| **Secrets** | Twelve easter eggs, cosmetic only — an egg never pays chips |
+| **Schedules** | NPCs move between positions as the world clock turns |
 
 ---
 
@@ -126,64 +140,95 @@ OverworldScene._tryInteract()
 
 ### Hybrid Phaser + DOM
 
-- **Phaser** renders the overworld (tiles, sprites, camera, day/night tint)
-- **DOM overlays** handle dialogue and game UIs — reuses proven engine classes without rewriting card/slot UI in Phaser
-- New activities follow the same pattern: add `XOverlay` in `js/systems/overlays/`, route in `EncounterBridge.js`
+- **Phaser** renders the overworld (tiles, sprites, camera, day/night wash)
+- **DOM overlays** carry dialogue and every game screen, which is what lets the
+  RPG mount the terminal's own renderers rather than redrawing them in Phaser
 
 ### File layout
 
 ```
 docs/rpg/
 ├── index.html               # RPG entry point
-├── css/rpg.css
-├── GDD.md                   # Full design document (repo)
+├── css/rpg.css              # Pixel skin, including for mounted terminal screens
+├── GDD.md                   # Full design document
 └── js/
     ├── main.js              # Bootstrap: title → Phaser → overlays
-    ├── data/
-    │   └── dialogues.json   # All NPC dialogue trees
+    ├── data/                # The world as data
+    │   ├── maps/*.json      # 28 room records + index.json
+    │   ├── npcs.json        # Rosters, sight cones, schedules
+    │   ├── dialogues.json   # 242 dialogue nodes
+    │   ├── quests.json      # Quest board
+    │   ├── easter_eggs.json # Secrets registry
+    │   └── triggers.json    # Zone messages and warps
     ├── scenes/
     │   ├── GameScenes.js    # OverworldScene (Phaser)
     │   └── TitleScreen.js   # DOM save picker + HUD
     └── systems/
-        ├── MapData.js       # Tile maps + NPC defs
-        ├── TextureFactory.js # Procedural pixel textures
+        ├── MapTiles.js      # Tile vocabulary
+        ├── MapLoader.js     # JSON → tile layers
+        ├── MapData.js       # Accessors + procedural fallback
+        ├── TextureFactory.js
         ├── DialogueManager.js
         ├── SaveAdapter.js
-        ├── EncounterBridge.js
-        └── overlays/        # Per-activity DOM UIs
-            ├── BlackjackOverlay.js
+        ├── EncounterBridge.js / HostedEncounters.js
+        ├── TerminalHostOverlay.js   # Mounts docs/js/ui/ screens
+        ├── MenuOverlay.js           # START menu
+        ├── QuestManager.js / Dex.js / Inventory.js / EasterEggs.js
+        └── overlays/                # Bespoke battle screens only
             ├── HoldemOverlay.js
             ├── RouletteOverlay.js
-            ├── CrapsOverlay.js
-            ├── SlotsOverlay.js
-            ├── SportsbookOverlay.js
-            ├── LotteryOverlay.js
-            ├── HorseRacingOverlay.js
-            ├── EquestrianOverlay.js
-            ├── HotelOverlay.js
-            ├── PoolOverlay.js
-            └── AmenitiesOverlay.js
+            └── RhythmOverlay.js
 ```
 
-Shared casino engine lives in `docs/js/` (imported by overlays).
+Shared game logic and screens live in `docs/js/`.
 
 ---
 
 ## NPC roster
 
-| NPC | Zone | Encounter / role |
-|-----|------|------------------|
-| Chip Chandler | Lobby | Tutorial dialogue |
-| Dealer Dana | Casino carpet | Blackjack |
-| Tourist Tina | Lobby | Flavor / tips |
-| Spinster Sal | Slot aisle | Slots |
-| Bookie Blake | Sports book | Sports + predictions |
-| Cashier Carmen | Lobby desk | Buy-in |
-| Clerk Carmen | Hotel tower | Hotel encounter |
-| Security Sam | Roaming | Comedic escort from staff-only tiles |
-| Pit dealers | Casino carpet | Hold'em, roulette, craps |
+Fifty-nine NPCs live in `js/data/npcs.json`, keyed by map id. Eleven of them have
+a `sight` cone and challenge you on sight; nine move between positions as the
+resort clock turns.
 
-Dealer roster rotates via `docs/js/dealers.js` (mirrors `mandalay_bay/dealers.py`).
+| Wing | Room | Who you'll meet |
+|------|------|-----------------|
+| Arrival | Las Vegas Blvd | Doorman Dante, Cab Line Carl |
+| Arrival | Valet & Parking | Valet Vic |
+| Arrival | Registration Lobby | Chip Chandler, Golden Statue, Tourist Tina, Bell Desk Bruno |
+| Casino | Casino Floor North | Blackjack Pit, Hold'em Pit, Roulette Pit, Spinster Sal, Cashier Carmen, Security Sam, High Limit Host, Shop Clerk |
+| Casino | Casino Floor South | Pavilion Paula, Arena Alex, Slot Tech Tessa, Cocktail Cora |
+| Casino | Race & Sports Book | Bookie Blake, Stable Hand Stu |
+| Casino | High Limit Salon | Salon Pit Boss, Salon Dealer, Salon Cage |
+| Casino | Foundation Room | Whale Whitney, Whale Warren, Host Alexandra |
+| Retail | The Shoppes at Mandalay Place | Boutique Bianca, Bag Check Bev |
+| Retail | Sky Bridge | Busker Bo |
+| Retail | Convention Center | Badge Barry, Vendor Val |
+| Bars | Betty's Bar | Barkeep Betty, Regular Reggie |
+| Bars | Skyfall Lounge | Sommelier Sy |
+| Hotel | Tower Elevator Lobby | Clerk Carmen, Concierge Cleo |
+| Hotel | Guest Floor Corridor | Housekeeper Hana, Room 24-118 |
+| Hotel | Your Room | Room Console, Minibar |
+| Hotel | Delano Wing | Delano Dana |
+| Hotel | Bathhouse Spa | Attendant Ash |
+| Pool | Mandalay Beach | Lifeguard Lou, Reef Guide |
+| Pool | Cabanas & Hot Tubs | Cabana Curtis, Hot Tub Hal |
+| Pool | Moorea Beach Club | Beach DJ |
+| Pool | Moonlight Rave Stage | Moonlight DJ |
+| Attractions | Shark Reef Tunnel | Photo Kiosk |
+| Attractions | Shark Reef Exhibit Hall | Reef Docent, Reef DJ |
+| Attractions | House of Blues | Stage Manager, HOB Bouncer |
+| Attractions | HOB Green Room | The Headliner |
+| Attractions | ULTRA Arena Concourse | Arena Usher, Merch Marge |
+| Back of house | Back of House | Janitor Joe, Count Room Cal |
+
+Not every NPC is a person: room consoles, the minibar, the lobby statue, and the
+photo kiosk are interactables wearing the same record shape, which is how a
+`dialogueId` can lead straight into a terminal screen.
+
+The seven blackjack, hold'em, and roulette dealers you actually sit down with
+rotate through `docs/js/dealers.js` (a mirror of `mandalay_bay/dealers.py`), so
+the pit NPCs above are doors into that roster rather than fixed characters —
+meeting them fills the staff page of the Dex.
 
 ---
 
@@ -225,7 +270,7 @@ Dialogue trees live in `js/data/dialogues.json`.
 
 ## Quest system
 
-Quests stored in `rpg.quests`:
+Quests live in `js/data/quests.json` and are tracked in `rpg.quests`:
 
 ```json
 {
@@ -234,48 +279,61 @@ Quests stored in `rpg.quests`:
 }
 ```
 
-View progress on the **Trainer Card** (press **T**):
+Progress is *derived*, not incremented. `QuestManager.syncDerived()` reads reef
+photos, bar orders, dex counts, purchases, unlocked vignettes, egg count, and
+resort completion from shared session state, so a quest can never disagree with
+the system that produced it — and work done before you accept a quest is banked
+and applied the moment you take the job.
 
-- Shark photo collection
-- Faction reputation (whales, staff, tourists)
-- Play time and world time
+The **Trainer Card** (press **T**) shows quests, faction reputation, play time,
+and the resort clock; the START menu's quest page also lists the jobs you have
+*not* accepted, with the name of whoever hands each one out.
 
 ---
 
-## Day / night cycle
+## The resort clock
 
-- `rpg.worldTime` — minutes 0–1439
-- Warm day lobby tint, neon night casino tint
-- Synced with resort world cycle (2 hours real time = 1 in-game day)
+`docs/js/world-cycle.js` is the single clock for all three surfaces: two real
+hours make one resort day, split into four phases. In the overworld that clock
+washes the screen per phase, walks NPCs to their scheduled positions, announces
+the day's rotating reservation requirement, posts daily resort charges to your
+wallet, and evicts you from your room if the folio goes unpaid. `rpg.worldTime`
+is still written so older readers keep working.
 
 ---
 
 ## Save schema (RPG fields)
 
+`SAVE_VERSION` is **8**.
+
 ```json
 {
-  "version": 2,
+  "version": 8,
   "playerName": "Guest",
   "wallet": { "balance": 1000, "transactions": [] },
-  "activityStats": {},
   "rpg": {
-    "mapId": "main_resort",
+    "mapId": "strip_sidewalk",
     "x": 15,
     "y": 26,
-    "playerSprite": "weekend_warrior",
     "archetype": "weekend_warrior",
+    "playerSprite": "weekend_warrior",
+    "flags": { "tutorial_complete": true },
     "quests": {},
-    "flags": {
-      "met_chip_chandler": true,
-      "tutorial_complete": true,
-      "played_blackjack": true
-    },
-    "playTimeMinutes": 0,
-    "worldTime": 720,
-    "reputation": { "whales": 0, "staff": 0, "tourists": 0 }
+    "inventory": [],
+    "dex": { "reef": [], "slots": [], "staff": [] },
+    "eggs": {},
+    "mapVisits": {},
+    "options": { "muted": false, "textSpeed": "normal", "footsteps": true },
+    "reputation": { "whales": 0, "staff": 0, "tourists": 0 },
+    "worldTime": 720
   }
 }
 ```
+
+A v7 save migrates forward without a key rename and keeps the map it was saved
+on. On the Python side, `mandalay_bay/saves.py` carries the web-only keys
+through a CLI load/save round trip untouched, so playing in the terminal never
+erases pixel progress.
 
 **Rules for save changes:**
 
@@ -297,29 +355,30 @@ View progress on the **Trainer Card** (press **T**):
 
 ### Art pipeline (future)
 
-Migration target: Aseprite tilesets + Tiled JSON maps replacing code-generated `buildMapLayers()`.
-
----
-
-## Phase roadmap
-
-| Phase | Status | Deliverables |
-|-------|--------|--------------|
-| **1** | ✅ Complete | Overworld, 3 NPCs, blackjack encounter, saves |
-| **2** | ✅ Complete | Slot aisle, sports book, expanded NPCs, all table games |
-| **3** | ✅ Complete | Hotel, pool, Shark Reef, quests, day/night |
-| **4** | ✅ Complete | House of Blues, ULTRA Arena, Foundation Room, audio, polish |
+Layouts are already data (`js/data/maps/*.json`); the art is not. The remaining
+step is swapping `TextureFactory`'s runtime-generated tiles for an Aseprite
+tileset, which `MapLoader` can consume without changing a single map record.
 
 ---
 
 ## Developer notes
 
-To add a new RPG encounter:
+To add to the RPG:
 
-1. Create `XOverlay.js` under `js/systems/overlays/` (copy blackjack pattern)
-2. Add routing in `EncounterBridge.js`
-3. Add NPC dialogue branch with `"encounter": "your_id"`
-4. Reuse engine from `docs/js/` — do not duplicate game logic in Phaser scenes
-5. Call `session.recordVisit()` / `session.recordResult()` and `SaveAdapter.persist()`
+| To add… | Do this |
+|---------|---------|
+| A room | Add a record to `scripts/_author_maps.py`, regenerate, wire doors both ways |
+| An NPC | Add to the `NPCS` table plus a `*_greet` node in `dialogues.json` |
+| A quest | Add to `quests.json` and derive its progress in `QuestManager.syncDerived()` |
+| An easter egg | Add to `easter_eggs.json` and set its flag from a dialogue choice or zone trigger — cosmetic only |
+| A casino screen | Build it in `docs/js/ui/` as `buildXRenderers(ctx)` and route it from `HostedEncounters.js`. Never write it twice |
+
+Then run the checks:
+
+```bash
+node scripts/smoke-test-rpg.mjs     # world-data referential integrity
+python3 scripts/smoke-test-web.py   # browser walk + end-to-end journey
+python3 -m pytest                   # Python rules
+```
 
 See [[Developer-Guide]] and the full GDD at `docs/rpg/GDD.md` in the repository.

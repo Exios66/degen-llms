@@ -16,6 +16,17 @@ export const RPG_ITEMS = {
   staff_lanyard: { label: "Back-of-house lanyard", note: "Nobody asks questions when you wear this.", wearable: true },
   velvet_token: { label: "Foundation Room token", note: "Heavier than a chip. Opens exactly one rope." },
   golden_chip: { label: "Golden statue chip", note: "The statue winked. You kept the evidence.", wearable: true },
+
+  // Quest rewards. Cosmetic by design — see docs/rpg/GDD.md.
+  reef_badge: { label: "Reef Photographer badge", note: "Five species, one disposable camera, zero regrets.", wearable: true },
+  betty_coaster: { label: "Betty's coaster", note: "Three bars, one night. Betty signed the back." },
+  pit_lanyard: { label: "Pit regular lanyard", note: "Seven dealers know your name. Two of them like you." },
+  loose_slot_map: { label: "Loose-slot map", note: "Sal's aisle map, drawn from memory. Mostly accurate." },
+  dnd_hanger: { label: "Do-not-disturb hanger", note: "The room told you five stories. This is the receipt." },
+  wave_wristband: { label: "Wave pool wristband", note: "Eleven acres, four vignettes, one sunburn.", wearable: true },
+  mandalay_tote: { label: "Mandalay Place tote", note: "Holds six bags of things you did not need.", wearable: true },
+  statue_wink: { label: "Golden statue wink", note: "The lion blinked once. Nobody else saw it." },
+  keyring: { label: "Back-of-house key ring", note: "Joe's spare set. Opens nothing you haven't already found." },
 };
 
 function inventoryState(session) {

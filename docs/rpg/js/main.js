@@ -143,8 +143,12 @@ async function startOverworld(activeSession) {
       renderHud(hudRoot, saveAdapter, questManager);
     },
     onComplete: (id, def) => {
-      audioManager.sfx("secret");
-      dialogue.showSystemMessage?.(`Quest complete — ${def?.label ?? id}${def?.reward ? ` · ${def.reward}` : ""}`);
+      audioManager.sfx("win");
+      if (def?.rewardItem) giveItem(session, def.rewardItem);
+      dialogue.showSystemMessage?.(
+        `Quest complete — ${def?.label ?? id}${def?.reward ? ` · ${def.reward}` : ""}`,
+        { speaker: "Trainer Card", durationMs: 3200 },
+      );
     },
   });
   questManager.loadRegistry(questDefs);

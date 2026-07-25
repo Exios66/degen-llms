@@ -232,6 +232,7 @@ export class DialogueManager {
       this.hooks.onFlag?.(choice.setFlag);
     }
     if (choice.giveItem) this.hooks.onItem?.(choice.giveItem);
+    if (choice.startQuest) this.questManager?.start(choice.startQuest);
     const reputation = choice.reputation ?? null;
     if (choice.encounter) {
       this._cleanupKeys?.();
@@ -278,6 +279,7 @@ export class DialogueManager {
       this.hooks.onFlag?.(node.setFlag);
     }
     if (node.giveItem) this.hooks.onItem?.(node.giveItem);
+    if (node.startQuest) this.questManager?.start(node.startQuest);
     const reputation = node.reputation ?? this._pendingReputation ?? null;
     this._pendingReputation = null;
     this._cleanupKeys?.();

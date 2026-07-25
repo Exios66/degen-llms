@@ -42,7 +42,18 @@
   "chip_chandler_dealers": {
     "speaker": "Chip Chandler",
     "text": "Meryl Screech, Judi Bench, Jennifer Lawless — the whole charismatic crew shuffles between blackjack, poker, and roulette. Check the pit labels when you walk up. Steve Harvey handles roulette and the Pavilion when he's not hosting imaginary game shows.",
-    "next": "chip_chandler_bye"
+    "choices": [
+      {
+        "label": "I'll try to meet all of them.",
+        "next": "chip_chandler_dealer_quest",
+        "unlessFlag": "quest_dealer_meet_and_greet_started",
+        "setFlag": "quest_dealer_meet_and_greet_started"
+      },
+      {
+        "label": "Good to know.",
+        "next": "chip_chandler_bye"
+      }
+    ]
   },
   "chip_chandler_bye": {
     "speaker": "Chip Chandler",
@@ -353,6 +364,17 @@
         "encounter": "bar"
       },
       {
+        "label": "Sign me up for the bar crawl.",
+        "next": "barkeep_betty_quest",
+        "unlessFlag": "quest_bar_crawl_started",
+        "setFlag": "quest_bar_crawl_started"
+      },
+      {
+        "label": "How am I doing on that thing?",
+        "next": "barkeep_betty_quest_done",
+        "requiresFlag": "quest_bar_crawl_started"
+      },
+      {
         "label": "Redeem welcome cocktail (MGM Rewards)",
         "next": "barkeep_betty_redeem_drink",
         "requiresFlag": "has_welcome_drink_comp",
@@ -519,6 +541,17 @@
         "setFlag": "hotel_tower_visit"
       },
       {
+        "label": "What's worth doing in the room?",
+        "next": "clerk_carmen_quest",
+        "unlessFlag": "quest_room_vignettes_started",
+        "setFlag": "quest_room_vignettes_started"
+      },
+      {
+        "label": "How am I doing on that thing?",
+        "next": "clerk_carmen_quest_done",
+        "requiresFlag": "quest_room_vignettes_started"
+      },
+      {
         "label": "Where's my room?",
         "next": "clerk_carmen_room"
       },
@@ -566,6 +599,17 @@
         "label": "Play wave / ring toss",
         "encounter": "pool_wave",
         "setFlag": "pool_wave_pool"
+      },
+      {
+        "label": "What happens out on the acres?",
+        "next": "lifeguard_lou_quest",
+        "unlessFlag": "quest_pool_vignettes_started",
+        "setFlag": "quest_pool_vignettes_started"
+      },
+      {
+        "label": "How am I doing on that thing?",
+        "next": "lifeguard_lou_quest_done",
+        "requiresFlag": "quest_pool_vignettes_started"
       },
       {
         "label": "Thanks",
@@ -626,6 +670,17 @@
         "label": "Spin Fortune",
         "encounter": "slots_fortune",
         "setFlag": "played_slots"
+      },
+      {
+        "label": "What's the jackpot hunt?",
+        "next": "spinster_sal_quest",
+        "unlessFlag": "quest_jackpot_hunt_started",
+        "setFlag": "quest_jackpot_hunt_started"
+      },
+      {
+        "label": "How am I doing on that thing?",
+        "next": "spinster_sal_quest_done",
+        "requiresFlag": "quest_jackpot_hunt_started"
       },
       {
         "label": "High Roller machine?",
@@ -760,6 +815,17 @@
         "encounter": "amenities"
       },
       {
+        "label": "Anything worth hauling home?",
+        "next": "shop_clerk_quest",
+        "unlessFlag": "quest_sky_bridge_haul_started",
+        "setFlag": "quest_sky_bridge_haul_started"
+      },
+      {
+        "label": "How am I doing on that thing?",
+        "next": "shop_clerk_quest_done",
+        "requiresFlag": "quest_sky_bridge_haul_started"
+      },
+      {
         "label": "No thanks",
         "next": "shop_clerk_bye"
       }
@@ -778,6 +844,17 @@
       {
         "label": "Pat the statue",
         "next": "lobby_statue_pat"
+      },
+      {
+        "label": "Study the plaque.",
+        "next": "lobby_statue_quest",
+        "unlessFlag": "quest_resort_completion_started",
+        "setFlag": "quest_resort_completion_started"
+      },
+      {
+        "label": "How am I doing on that thing?",
+        "next": "lobby_statue_quest_done",
+        "requiresFlag": "quest_resort_completion_started"
       },
       {
         "label": "Walk away",
@@ -802,6 +879,17 @@
       {
         "label": "Photograph species",
         "encounter": "pool_reef"
+      },
+      {
+        "label": "Take the camera assignment.",
+        "next": "reef_docent_quest",
+        "unlessFlag": "quest_shark_photos_started",
+        "setFlag": "quest_shark_photos_started"
+      },
+      {
+        "label": "How am I doing on that thing?",
+        "next": "reef_docent_quest_done",
+        "requiresFlag": "quest_shark_photos_started"
       },
       {
         "label": "Just looking",
@@ -928,6 +1016,17 @@
       {
         "label": "Any secrets?",
         "next": "janitor_joe_secret"
+      },
+      {
+        "label": "The building keeps secrets, doesn't it?",
+        "next": "janitor_joe_quest",
+        "unlessFlag": "quest_egg_hunt_started",
+        "setFlag": "quest_egg_hunt_started"
+      },
+      {
+        "label": "How am I doing on that thing?",
+        "next": "janitor_joe_quest_done",
+        "requiresFlag": "quest_egg_hunt_started"
       },
       {
         "label": "I'll go",
@@ -1122,5 +1221,183 @@
     "speaker": "Salon Cage",
     "text": "Understood. The window doesn't close — that's sort of the whole business model.",
     "setFlag": "met_salon_cage"
+  },
+  "reef_docent_quest": {
+    "speaker": "Reef Docent",
+    "text": "Five species: sandtiger, sawfish, hammerhead, the golden crocodile that is technically not a fish, and the one nobody photographs on the first pass. Camera's yours.",
+    "giveItem": "reef_camera",
+    "startQuest": "shark_photos",
+    "next": "reef_docent_bye"
+  },
+  "reef_docent_quest_progress": {
+    "speaker": "Reef Docent",
+    "text": "Still hunting species? The sawfish hides behind the acrylic seam. That's all you get from me.",
+    "next": "reef_docent_bye"
+  },
+  "reef_docent_quest_done": {
+    "speaker": "Reef Docent",
+    "text": "Nothing left on that one. You did the whole thing. Most people quit at the interesting part.",
+    "next": "reef_docent_bye",
+    "requiresQuestStage": {
+      "id": "shark_photos",
+      "complete": true
+    },
+    "elseNext": "reef_docent_quest_progress"
+  },
+  "barkeep_betty_quest": {
+    "speaker": "Barkeep Betty",
+    "text": "Three bars: mine, the one by the pool that overcharges, and the one upstairs that pretends it isn't a bar. Drink at all three and I'll admit you know the property.",
+    "startQuest": "bar_crawl",
+    "next": "barkeep_betty_bye"
+  },
+  "barkeep_betty_quest_progress": {
+    "speaker": "Barkeep Betty",
+    "text": "How's the crawl? Pace yourself — the upstairs bar pours like it's trying to end the evening.",
+    "next": "barkeep_betty_bye"
+  },
+  "barkeep_betty_quest_done": {
+    "speaker": "Barkeep Betty",
+    "text": "Nothing left on that one. You did the whole thing. Most people quit at the interesting part.",
+    "next": "barkeep_betty_bye",
+    "requiresQuestStage": {
+      "id": "bar_crawl",
+      "complete": true
+    },
+    "elseNext": "barkeep_betty_quest_progress"
+  },
+  "spinster_sal_quest": {
+    "speaker": "Spinster Sal",
+    "text": "Eight machines. Different eight than you'd guess. I've mapped the loose ones for thirty years and the map is in my head, so you'll have to do the walking.",
+    "startQuest": "jackpot_hunt",
+    "next": "spinster_sal_bye"
+  },
+  "spinster_sal_quest_progress": {
+    "speaker": "Spinster Sal",
+    "text": "Machines don't remember you, but I do. Keep walking the aisle.",
+    "next": "spinster_sal_bye"
+  },
+  "spinster_sal_quest_done": {
+    "speaker": "Spinster Sal",
+    "text": "Nothing left on that one. You did the whole thing. Most people quit at the interesting part.",
+    "next": "spinster_sal_bye",
+    "requiresQuestStage": {
+      "id": "jackpot_hunt",
+      "complete": true
+    },
+    "elseNext": "spinster_sal_quest_progress"
+  },
+  "shop_clerk_quest": {
+    "speaker": "Shop Clerk",
+    "text": "Six bags across the sky bridge and you've officially shopped Mandalay Place. Seven and you've got a problem. We sell luggage for exactly that reason.",
+    "startQuest": "sky_bridge_haul",
+    "next": "shop_clerk_bye"
+  },
+  "shop_clerk_quest_progress": {
+    "speaker": "Shop Clerk",
+    "text": "Bags accumulate faster than regret. Keep going.",
+    "next": "shop_clerk_bye"
+  },
+  "shop_clerk_quest_done": {
+    "speaker": "Shop Clerk",
+    "text": "Nothing left on that one. You did the whole thing. Most people quit at the interesting part.",
+    "next": "shop_clerk_bye",
+    "requiresQuestStage": {
+      "id": "sky_bridge_haul",
+      "complete": true
+    },
+    "elseNext": "shop_clerk_quest_progress"
+  },
+  "clerk_carmen_quest": {
+    "speaker": "Clerk Carmen",
+    "text": "The TV, the minibar, the phone, the balcony, and the bed all have opinions. Five of them will surprise you. Sixteen if you stay long enough, but nobody stays that long.",
+    "giveItem": "room_key",
+    "startQuest": "room_vignettes",
+    "next": "clerk_carmen_bye"
+  },
+  "clerk_carmen_quest_progress": {
+    "speaker": "Clerk Carmen",
+    "text": "The room's still got things to tell you. Most guests never pick up the phone.",
+    "next": "clerk_carmen_bye"
+  },
+  "clerk_carmen_quest_done": {
+    "speaker": "Clerk Carmen",
+    "text": "Nothing left on that one. You did the whole thing. Most people quit at the interesting part.",
+    "next": "clerk_carmen_bye",
+    "requiresQuestStage": {
+      "id": "room_vignettes",
+      "complete": true
+    },
+    "elseNext": "clerk_carmen_quest_progress"
+  },
+  "lifeguard_lou_quest": {
+    "speaker": "Lifeguard Lou",
+    "text": "Four things worth witnessing: the wave that gets everyone, the hot tub conversation, the cabana bottle nobody ordered, and whatever the rave becomes after midnight.",
+    "startQuest": "pool_vignettes",
+    "next": "lifeguard_lou_bye"
+  },
+  "lifeguard_lou_quest_progress": {
+    "speaker": "Lifeguard Lou",
+    "text": "Acres left to witness. The rave doesn't start until it's too late to leave.",
+    "next": "lifeguard_lou_bye"
+  },
+  "lifeguard_lou_quest_done": {
+    "speaker": "Lifeguard Lou",
+    "text": "Nothing left on that one. You did the whole thing. Most people quit at the interesting part.",
+    "next": "lifeguard_lou_bye",
+    "requiresQuestStage": {
+      "id": "pool_vignettes",
+      "complete": true
+    },
+    "elseNext": "lifeguard_lou_quest_progress"
+  },
+  "janitor_joe_quest": {
+    "speaker": "Janitor Joe",
+    "text": "Ten of them, near as I can count, and I've had thirty years to count. None of them pay. That's how you know they're real.",
+    "giveItem": "staff_lanyard",
+    "startQuest": "egg_hunt",
+    "next": "janitor_joe_bye"
+  },
+  "janitor_joe_quest_progress": {
+    "speaker": "Janitor Joe",
+    "text": "Still looking? Good. The ones you find on purpose don't count as much.",
+    "next": "janitor_joe_bye"
+  },
+  "janitor_joe_quest_done": {
+    "speaker": "Janitor Joe",
+    "text": "Nothing left on that one. You did the whole thing. Most people quit at the interesting part.",
+    "next": "janitor_joe_bye",
+    "requiresQuestStage": {
+      "id": "egg_hunt",
+      "complete": true
+    },
+    "elseNext": "janitor_joe_quest_progress"
+  },
+  "lobby_statue_quest": {
+    "speaker": "Golden Statue",
+    "text": "The plaque lists everything the resort thinks you should experience. It is a long list. The lion looks smug about it.",
+    "startQuest": "resort_completion",
+    "next": "lobby_statue_bye"
+  },
+  "lobby_statue_quest_progress": {
+    "speaker": "Golden Statue",
+    "text": "The lion has not blinked. The list has not shortened.",
+    "next": "lobby_statue_bye"
+  },
+  "lobby_statue_quest_done": {
+    "speaker": "Golden Statue",
+    "text": "Nothing left on that one. You did the whole thing. Most people quit at the interesting part.",
+    "next": "lobby_statue_bye",
+    "requiresQuestStage": {
+      "id": "resort_completion",
+      "complete": true
+    },
+    "elseNext": "lobby_statue_quest_progress"
+  },
+  "chip_chandler_dealer_quest": {
+    "speaker": "Chip Chandler",
+    "text": "Seven dealers rotate the pits on any given night. Shake every hand and the pit crew starts calling you by name, which is either an honor or a warning.",
+    "giveItem": "players_card",
+    "startQuest": "dealer_meet_and_greet",
+    "next": "chip_chandler_bye"
   }
 }

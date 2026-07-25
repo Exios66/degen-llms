@@ -6,7 +6,8 @@
     "giver": "reef_docent",
     "category": "collection",
     "autoStart": true,
-    "reward": "Reef Photographer badge (cosmetic)"
+    "reward": "Reef Photographer badge (cosmetic)",
+    "rewardItem": "reef_badge"
   },
   "dana_lucky_hand": {
     "label": "Dana's Lucky Hand",
@@ -23,7 +24,8 @@
     "target": 3,
     "giver": "barkeep_betty",
     "category": "amenities",
-    "reward": "Betty's coaster (cosmetic)"
+    "reward": "Betty's coaster (cosmetic)",
+    "rewardItem": "betty_coaster"
   },
   "dealer_meet_and_greet": {
     "label": "Meet the Pit",
@@ -31,7 +33,8 @@
     "target": 7,
     "giver": "pit_holdem",
     "category": "collection",
-    "reward": "Pit regular lanyard (cosmetic)"
+    "reward": "Pit regular lanyard (cosmetic)",
+    "rewardItem": "pit_lanyard"
   },
   "jackpot_hunt": {
     "label": "Jackpot Hunt",
@@ -39,7 +42,8 @@
     "target": 8,
     "giver": "spinster_sal",
     "category": "slots",
-    "reward": "Loose-slot map (cosmetic)"
+    "reward": "Loose-slot map (cosmetic)",
+    "rewardItem": "loose_slot_map"
   },
   "room_vignettes": {
     "label": "Suite Stories",
@@ -47,7 +51,8 @@
     "target": 5,
     "giver": "clerk_carmen",
     "category": "hotel",
-    "reward": "Do-not-disturb hanger (cosmetic)"
+    "reward": "Do-not-disturb hanger (cosmetic)",
+    "rewardItem": "dnd_hanger"
   },
   "pool_vignettes": {
     "label": "Eleven Acres",
@@ -55,7 +60,8 @@
     "target": 4,
     "giver": "lifeguard_lou",
     "category": "pool",
-    "reward": "Wave pool wristband (cosmetic)"
+    "reward": "Wave pool wristband (cosmetic)",
+    "rewardItem": "wave_wristband"
   },
   "sky_bridge_haul": {
     "label": "Sky Bridge Haul",
@@ -63,7 +69,8 @@
     "target": 6,
     "giver": "shop_clerk",
     "category": "amenities",
-    "reward": "Mandalay Place tote (cosmetic)"
+    "reward": "Mandalay Place tote (cosmetic)",
+    "rewardItem": "mandalay_tote"
   },
   "resort_completion": {
     "label": "Resort Completionist",
@@ -71,7 +78,8 @@
     "target": 100,
     "giver": "lobby_statue",
     "category": "meta",
-    "reward": "Golden statue wink (cosmetic)"
+    "reward": "Golden statue wink (cosmetic)",
+    "rewardItem": "statue_wink"
   },
   "egg_hunt": {
     "label": "The Bay Remembers",
@@ -79,6 +87,7 @@
     "target": 10,
     "giver": "janitor_joe",
     "category": "secrets",
-    "reward": "Back-of-house key ring (cosmetic)"
+    "reward": "Back-of-house key ring (cosmetic)",
+    "rewardItem": "keyring"
   }
 }

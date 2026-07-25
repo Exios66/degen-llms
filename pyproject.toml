@@ -1,10 +1,13 @@
 [project]
-name = "mandalay-bay"
+name = "degen-llms"
 version = "1.0.0"
-description = "The Mandalay Bay — digital casino CLI with blackjack, slots, and sports book"
+description = "The Mandalay Bay monorepo — digital casino CLI, web terminal, and pixel RPG"
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
+
+# Publishable Mandalay Bay CLI package: mandalay-bay.toml
+#   bash scripts/build_mandalay_bay_package.sh
 
 [project.scripts]
 mandalay-bay = "mandalay_bay.main:main"

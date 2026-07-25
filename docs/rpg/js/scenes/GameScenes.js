@@ -81,10 +81,10 @@ export class OverworldScene extends Phaser.Scene {
     this.player = this.physics.add.sprite(px * TILE_SIZE + TILE_SIZE / 2, py * TILE_SIZE + TILE_SIZE / 2, pKey);
     this.player.setCollideWorldBounds(true);
     this.player.setDepth(10);
-    this.player.body.setSize(10, 8);
-    this.player.body.setOffset(3, 12);
+    this.player.body.setSize(TILE_SIZE * 0.625, TILE_SIZE * 0.5);
+    this.player.body.setOffset(TILE_SIZE * 0.1875, TILE_SIZE * 0.75);
 
-    this.playerShadow = this.add.image(this.player.x, this.player.y + 8, "shadow");
+    this.playerShadow = this.add.image(this.player.x, this.player.y + TILE_SIZE * 0.28, "shadow");
     this.playerShadow.setDepth(9);
     this.playerShadow.setAlpha(0.35);
 
@@ -108,12 +108,12 @@ export class OverworldScene extends Phaser.Scene {
       this.npcSprites.set(npc.id, sprite);
 
       const displayName = this._resolveNpcDisplayName(npc);
-      const label = this.add.text(sprite.x, sprite.y - 16, displayName.split(" ")[0], {
+      const label = this.add.text(sprite.x, sprite.y - TILE_SIZE * 0.5, displayName.split(" ")[0], {
         fontFamily: "Press Start 2P",
-        fontSize: "6px",
+        fontSize: `${Math.max(8, Math.round(TILE_SIZE * 0.3125))}px`,
         color: "#e8c547",
         stroke: "#0a0812",
-        strokeThickness: 2,
+        strokeThickness: 3,
       }).setOrigin(0.5).setDepth(11);
       this.npcLabels.set(npc.id, label);
 
@@ -198,6 +198,9 @@ export class OverworldScene extends Phaser.Scene {
     this._moving = false;
     this._prevX = this.player.x;
     this._prevY = this.player.y;
+    this.moveTarget = null;
+    this._touchInteractRadius = TILE_SIZE * 1.75;
+    this._setupTouchInput();
     this.events.on("postupdate", this._resolveCollision, this);
     this.events.once("shutdown", () => {
       this.events.off("postupdate", this._resolveCollision, this);
@@ -255,10 +258,54 @@ export class OverworldScene extends Phaser.Scene {
     const h = MAP_HEIGHT * TILE_SIZE;
     const scaleX = this.scale.width / w;
     const scaleY = this.scale.height / h;
-    // Fit world, then nudge zoom so 16px sprites read clearly without cropping too hard
     const fit = Math.min(scaleX, scaleY);
-    const zoom = Phaser.Math.Clamp(fit * 2.1, 1.5, 2.6);
+    const zoom = Phaser.Math.Clamp(fit * 1.05, 0.75, 1.4);
     this.cameras.main.setZoom(zoom);
+  }
+
+  _setupTouchInput() {
+    this.input.addPointer(2);
+    this.input.on("pointerdown", (pointer) => {
+      if (!pointer.wasTouch && pointer.button !== 0) return;
+      if (!this.canMove || this.dialogue.isActive() || this.encounters.isAnyActive?.()) return;
+
+      const world = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
+
+      if (this.nearbyNpc && this.interactIcon.visible) {
+        const ix = this.interactIcon.x;
+        const iy = this.interactIcon.y;
+        if (Phaser.Math.Distance.Between(world.x, world.y, ix, iy) < TILE_SIZE * 0.9) {
+          this._tryInteract();
+          return;
+        }
+      }
+
+      for (const npc of this.currentNpcs ?? []) {
+        const nx = npc.x * TILE_SIZE + TILE_SIZE / 2;
+        const ny = npc.y * TILE_SIZE + TILE_SIZE / 2;
+        const dist = Phaser.Math.Distance.Between(world.x, world.y, nx, ny);
+        if (dist < TILE_SIZE * 1.25) {
+          this._faceToward(nx, ny);
+          if (dist < this._touchInteractRadius && this._isFacingNpc(npc)) {
+            this.nearbyNpc = npc;
+            this._tryInteract();
+            return;
+          }
+          this.moveTarget = { x: nx, y: ny - TILE_SIZE * 0.35 };
+          return;
+        }
+      }
+
+      this.moveTarget = { x: world.x, y: world.y };
+    });
+  }
+
+  _faceToward(wx, wy) {
+    const dx = wx - this.player.x;
+    const dy = wy - this.player.y;
+    if (Math.abs(dx) > Math.abs(dy)) this.facing = dx < 0 ? "left" : "right";
+    else this.facing = dy < 0 ? "up" : "down";
+    this._applyPlayerAnim(false);
   }
 
   _isKeyDown(key) {
@@ -296,7 +343,7 @@ export class OverworldScene extends Phaser.Scene {
     this._prevY = this.player.y;
 
     if (this.playerShadow) {
-      this.playerShadow.setPosition(this.player.x, this.player.y + 9);
+      this.playerShadow.setPosition(this.player.x, this.player.y + TILE_SIZE * 0.28);
     }
 
     if (!this.canMove || this.dialogue.isActive() || this.encounters.isAnyActive?.() || this.encounters.blackjack?.isActive()) {
@@ -313,8 +360,24 @@ export class OverworldScene extends Phaser.Scene {
     }
 
     const run = this.moveKeys?.run || this._isKeyDown(this.keys.shift);
-    const speed = run ? 130 : 88;
-    const { x: mx, y: my } = this._readMoveVector();
+    const speed = run ? TILE_SIZE * 8.125 : TILE_SIZE * 5.5;
+    let { x: mx, y: my } = this._readMoveVector();
+
+    if (mx === 0 && my === 0 && this.moveTarget) {
+      const dx = this.moveTarget.x - this.player.x;
+      const dy = this.moveTarget.y - this.player.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < TILE_SIZE * 0.2) {
+        this.moveTarget = null;
+      } else {
+        mx = dx / dist;
+        my = dy / dist;
+        if (Math.abs(mx) > Math.abs(my)) this.facing = mx < 0 ? "left" : "right";
+        else this.facing = my < 0 ? "up" : "down";
+      }
+    } else if (mx !== 0 || my !== 0) {
+      this.moveTarget = null;
+    }
 
     let vx = mx * speed;
     let vy = my * speed;
@@ -430,7 +493,7 @@ export class OverworldScene extends Phaser.Scene {
       const dx = this.player.x - (npc.x * TILE_SIZE + TILE_SIZE / 2);
       const dy = this.player.y - (npc.y * TILE_SIZE + TILE_SIZE / 2);
       const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist < 28 && this._isFacingNpc(npc)) {
+      if (dist < this._touchInteractRadius && this._isFacingNpc(npc)) {
         if (dist < closestDist) {
           closestDist = dist;
           closest = npc;
@@ -443,7 +506,7 @@ export class OverworldScene extends Phaser.Scene {
       this.interactIcon.setVisible(true);
       this.interactIcon.setPosition(
         closest.x * TILE_SIZE + TILE_SIZE / 2,
-        closest.y * TILE_SIZE - 18
+        closest.y * TILE_SIZE - TILE_SIZE * 0.55
       );
     } else {
       this.interactIcon.setVisible(false);
@@ -458,10 +521,10 @@ export class OverworldScene extends Phaser.Scene {
     const dx = nx - px;
     const dy = ny - py;
     switch (this.facing) {
-      case "up": return dy < -4 && Math.abs(dx) < 20;
-      case "down": return dy > 4 && Math.abs(dx) < 20;
-      case "left": return dx < -4 && Math.abs(dy) < 20;
-      case "right": return dx > 4 && Math.abs(dy) < 20;
+      case "up": return dy < -TILE_SIZE * 0.125 && Math.abs(dx) < TILE_SIZE * 0.625;
+      case "down": return dy > TILE_SIZE * 0.125 && Math.abs(dx) < TILE_SIZE * 0.625;
+      case "left": return dx < -TILE_SIZE * 0.125 && Math.abs(dy) < TILE_SIZE * 0.625;
+      case "right": return dx > TILE_SIZE * 0.125 && Math.abs(dy) < TILE_SIZE * 0.625;
       default: return false;
     }
   }

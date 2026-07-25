@@ -54,7 +54,7 @@ export class DialogueManager {
     this.root.innerHTML = "";
 
     const box = document.createElement("div");
-    box.className = "dialogue-box dialogue-box--system";
+    box.className = "dialogue-box dialogue-box--system dialogue-box--tappable";
 
     const speaker = document.createElement("div");
     speaker.className = "dialogue-speaker";
@@ -68,13 +68,23 @@ export class DialogueManager {
 
     this.root.appendChild(box);
 
-    const duration = opts.durationMs ?? 2200;
-    this._systemTimer = setTimeout(() => {
-      this._systemTimer = null;
+    const dismiss = () => {
+      if (this._systemTimer) {
+        clearTimeout(this._systemTimer);
+        this._systemTimer = null;
+      }
       this.root.hidden = true;
       this.root.innerHTML = "";
       this._active = false;
-    }, duration);
+    };
+
+    box.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      dismiss();
+    });
+
+    const duration = opts.durationMs ?? 2200;
+    this._systemTimer = setTimeout(dismiss, duration);
   }
 
   /**
@@ -112,7 +122,7 @@ export class DialogueManager {
     this.root.innerHTML = "";
 
     const box = document.createElement("div");
-    box.className = "dialogue-box";
+    box.className = "dialogue-box dialogue-box--tappable";
 
     const speaker = document.createElement("div");
     speaker.className = "dialogue-speaker";
@@ -125,7 +135,7 @@ export class DialogueManager {
 
     const advanceHint = document.createElement("div");
     advanceHint.className = "dialogue-advance";
-    advanceHint.textContent = "▼ Press Enter / Space / E";
+    advanceHint.textContent = "▼ Tap or press Enter / Space / E";
     box.appendChild(advanceHint);
 
     this.root.appendChild(box);
@@ -165,7 +175,18 @@ export class DialogueManager {
     };
     window.addEventListener("keydown", this._keyHandler);
 
-    this._cleanupKeys = () => window.removeEventListener("keydown", this._keyHandler);
+    const onPointer = (e) => {
+      if (!this._active) return;
+      e.preventDefault();
+      if (typing) skipType();
+      else if (!node.choices?.length) this._advance(node);
+    };
+    box.addEventListener("pointerdown", onPointer);
+
+    this._cleanupKeys = () => {
+      window.removeEventListener("keydown", this._keyHandler);
+      box.removeEventListener("pointerdown", onPointer);
+    };
     typeTick();
   }
 

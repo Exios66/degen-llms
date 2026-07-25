@@ -21,6 +21,7 @@ import {
   installWorld, DEFAULT_MAP_ID,
 } from "./systems/MapData.js";
 import { loadWorld } from "./systems/MapLoader.js";
+import { TouchControls, prefersTouchControls } from "./systems/TouchControls.js";
 import { RewardsPhone } from "../../js/RewardsPhone.js";
 import { syncRewardsFlags } from "../../js/rewards.js";
 import { enterZone, ensurePoolComplex } from "../../js/pool-complex.js";
@@ -36,6 +37,7 @@ let questManager = null;
 let encounters = null;
 let terminalHost = null;
 let menu = null;
+let touchPad = null;
 
 const hudRoot = document.getElementById("hud");
 const rewardsRoot = document.getElementById("rewards-phone");
@@ -275,6 +277,8 @@ async function startOverworld(activeSession) {
     get menu() { return menu; },
   };
 
+  touchPad = mountTouchControls();
+
   game.scene.start("OverworldScene", {
     session,
     saveAdapter,
@@ -284,6 +288,7 @@ async function startOverworld(activeSession) {
     triggers,
     questManager,
     audio: audioManager,
+    touchPad,
     onOpenMenu: (page) => menu?.open(page),
     isMenuOpen: () => Boolean(menu?.isActive()),
     onMapBanner: (label, phaseLabel) => showMapBanner(label, phaseLabel),
@@ -306,6 +311,22 @@ async function startOverworld(activeSession) {
         });
       }
     },
+  });
+}
+
+/**
+ * Give phones a d-pad, a talk button and a menu button. Desktop players have
+ * the keyboard, so the pad never appears for them.
+ */
+function mountTouchControls() {
+  const root = document.getElementById("touch-pad");
+  if (!root || !prefersTouchControls()) return null;
+  if (touchPad) touchPad.destroy();
+  root.hidden = false;
+  document.body.classList.add("has-touch-pad");
+  return new TouchControls(root, {
+    onInteract: () => game?.scene?.getScene("OverworldScene")?.touchInteract?.(),
+    onMenu: () => menu?.open(),
   });
 }
 

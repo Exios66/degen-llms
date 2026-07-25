@@ -105,20 +105,22 @@ export class DialogueManager {
     textEl.textContent = text;
     this.root.appendChild(box);
 
+    const onPointer = (e) => {
+      e.preventDefault();
+      dismiss();
+    };
     const dismiss = () => {
       if (this._systemTimer) {
         clearTimeout(this._systemTimer);
         this._systemTimer = null;
       }
+      this.root.removeEventListener("pointerdown", onPointer);
       this.root.hidden = true;
       this.root.innerHTML = "";
       this._active = false;
     };
-
-    box.addEventListener("pointerdown", (e) => {
-      e.preventDefault();
-      dismiss();
-    });
+    // Anywhere on the screen dismisses it, same as advancing a line.
+    this.root.addEventListener("pointerdown", onPointer);
 
     const duration = opts.durationMs ?? 2200;
     this._systemTimer = setTimeout(dismiss, duration);
@@ -222,17 +224,20 @@ export class DialogueManager {
     };
     window.addEventListener("keydown", this._keyHandler);
 
+    // The overlay covers the screen, so a tap anywhere reads the next line —
+    // a thumb should not have to find the box.
     const onPointer = (e) => {
       if (!this._active) return;
+      if (e.target.closest("button")) return;
       e.preventDefault();
       if (typing) skipType();
       else if (!node.choices?.length) this._advance(node);
     };
-    box.addEventListener("pointerdown", onPointer);
+    this.root.addEventListener("pointerdown", onPointer);
 
     this._cleanupKeys = () => {
       window.removeEventListener("keydown", this._keyHandler);
-      box.removeEventListener("pointerdown", onPointer);
+      this.root.removeEventListener("pointerdown", onPointer);
     };
     typeTick();
   }

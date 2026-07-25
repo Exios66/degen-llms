@@ -84,6 +84,14 @@ export class OverworldScene extends Phaser.Scene {
     this.isMenuOpen = data.isMenuOpen ?? (() => false);
     this.onMapBanner = data.onMapBanner ?? null;
     this.onEgg = data.onEgg ?? null;
+    this.touchPad = data.touchPad ?? null;
+  }
+
+  /** The pad's A button: talk to whoever is in front of you, or open the menu. */
+  touchInteract() {
+    if (!this.canMove || this.dialogue?.isActive()) return;
+    this._clearMovePath();
+    this._tryInteract();
   }
 
   create() {
@@ -672,6 +680,10 @@ export class OverworldScene extends Phaser.Scene {
     if (right) x += 1;
     if (up) y -= 1;
     if (down) y += 1;
+    if (x === 0 && y === 0) {
+      const pad = this.touchPad?.vector();
+      if (pad) return { x: pad.x, y: pad.y };
+    }
     return { x, y };
   }
 
@@ -712,8 +724,10 @@ export class OverworldScene extends Phaser.Scene {
     if (!this.canMove || this.isMenuOpen?.() || this.dialogue.isActive()
         || this.encounters.isAnyActive?.() || this.encounters.blackjack?.isActive()) {
       this.player.body.setVelocity(0, 0);
-      // Whatever just interrupted us outranks a tapped route.
+      // Whatever just interrupted us outranks a tapped route, and owns the
+      // screen the thumb controls would otherwise sit on.
       if (this.moveTarget) this._clearMovePath();
+      this.touchPad?.setActive(false);
       if (this._moving) {
         this._moving = false;
         this._applyPlayerAnim(false);
@@ -730,7 +744,10 @@ export class OverworldScene extends Phaser.Scene {
       return;
     }
 
-    const run = this.moveKeys?.run || this._isKeyDown(this.keys.shift);
+    this.touchPad?.setActive(true);
+
+    const run = this.moveKeys?.run || this._isKeyDown(this.keys.shift)
+      || Boolean(this.touchPad?.vector().run);
     const speed = run ? (this.runSpeed ?? TILE_SIZE * 8.125) : (this.walkSpeed ?? TILE_SIZE * 5.5);
     let { x: mx, y: my } = this._readMoveVector();
 
@@ -1110,6 +1127,7 @@ export class OverworldScene extends Phaser.Scene {
         isMenuOpen: this.isMenuOpen,
         onMapBanner: this.onMapBanner,
         onEgg: this.onEgg,
+        touchPad: this.touchPad,
       });
     });
   }

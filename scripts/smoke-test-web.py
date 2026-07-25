@@ -191,6 +191,123 @@ def rpg_journey(page, base, failures: list[str], errors: list[str]) -> None:
     step("reload", after == before, f"{before} restored as {after}")
 
 
+def rpg_phone(browser, base, failures: list[str]) -> None:
+    """The same overworld on a phone: thumb pad, tap-to-walk, tap-to-talk.
+
+    Runs in its own touch context because touch support and viewport size are
+    fixed when the context is created.
+    """
+    context = browser.new_context(
+        viewport={"width": 390, "height": 844},
+        device_scale_factor=3,
+        is_mobile=True,
+        has_touch=True,
+    )
+    page = context.new_page()
+    errors: list[str] = []
+    page.on("console", lambda m: errors.append(f"console.{m.type}: {m.text}")
+            if m.type == "error" and not any(i in m.text for i in IGNORED) else None)
+    page.on("pageerror", lambda e: errors.append(f"pageerror: {e}"))
+
+    def step(name: str, ok: bool, detail: str = "") -> None:
+        if not ok:
+            failures.append(f"phone/{name}: {detail or 'failed'}")
+        for err in errors:
+            failures.append(f"phone/{name}: {err}")
+        print(f"  phone/{name:<27} {'FAIL' if not ok or errors else 'ok'}")
+        errors.clear()
+
+    page.goto(f"{base}/rpg/index.html?guest=1&chips=250000&archetype=high_roller",
+              wait_until="load")
+    page.wait_for_function("window.__rpgReady === true", timeout=20000)
+
+    # The canvas should own the screen, not sit in a letterbox.
+    fill = page.evaluate("""() => {
+      const canvas = document.querySelector('#phaser-root canvas');
+      const r = canvas.getBoundingClientRect();
+      return { w: r.width / window.innerWidth, h: r.height / window.innerHeight,
+               tilesAcross: r.width / (window.__rpg.scene.tileSize
+                 * window.__rpg.scene.cameras.main.zoom) };
+    }""")
+    step("fills_screen", fill["w"] > 0.9 and fill["h"] > 0.9,
+         f"canvas covers {fill['w']:.0%}x{fill['h']:.0%} of the viewport")
+    step("handheld_framing", 6 <= fill["tilesAcross"] <= 20,
+         f"{fill['tilesAcross']:.1f} tiles across is not a handheld view")
+
+    step("pad_mounted", page.is_visible("#touch-pad")
+         and len(page.query_selector_all(".touch-btn")) == 7,
+         "thumb controls did not mount on a touch device")
+
+    # Every control has to be big enough to hit — 44px is the usual floor.
+    small = page.eval_on_selector_all(
+        ".touch-btn",
+        """els => els.filter(e => { const r = e.getBoundingClientRect();
+             return r.width < 40 || r.height < 40; }).map(e => e.ariaLabel)""")
+    step("pad_tap_targets", not small, f"too small to hit: {small}")
+
+    # Let the arrival message clear, then walk with the d-pad.
+    page.wait_for_timeout(6500)
+    page.evaluate("() => { const d = window.__rpg.dialogue; if (d.isActive()) d.close(); }")
+    start = page.evaluate(PLAYER_TILE)
+    pad = page.locator(".touch-btn--up").bounding_box()
+    page.mouse.move(pad["x"] + pad["width"] / 2, pad["y"] + pad["height"] / 2)
+    page.mouse.down()
+    page.wait_for_timeout(700)
+    page.mouse.up()
+    page.wait_for_timeout(200)
+    step("pad_walks", page.evaluate(PLAYER_TILE) != start, "d-pad did not move the player")
+
+    # Tap a tile a few steps away: the route has to end where it was asked to.
+    # Short hops keep the walk clear of the doors and zone triggers that would
+    # legitimately interrupt it.
+    target = page.evaluate("""() => {
+      const s = window.__rpg.scene;
+      const here = s.playerTile();
+      for (let r = 2; r <= 4; r++) {
+        for (const [dx, dy] of [[0, -r], [r, 0], [0, r], [-r, 0]]) {
+          const t = { x: here.x + dx, y: here.y + dy };
+          if (s.collisionGrid[t.y]?.[t.x] === 0 && s.walkTo(t.x, t.y)) return t;
+        }
+      }
+      return null;
+    }""")
+    arrived = None
+    if target:
+        for _ in range(20):
+            page.wait_for_timeout(250)
+            if page.evaluate("() => window.__rpg.scene.movePath.length === 0"):
+                break
+        arrived = page.evaluate(
+            "() => ({ ...window.__rpg.scene.playerTile(), map: window.__rpg.scene.currentMapId })")
+    step("tap_walks", bool(arrived) and (arrived["x"], arrived["y"]) == (target["x"], target["y"]),
+         f"tapping {target} ended at {arrived}")
+
+    # Tap a guest: walk over, then talk. Then tap anywhere to read on.
+    page.evaluate("""() => {
+      const s = window.__rpg.scene;
+      const npc = s.currentNpcs[0];
+      s.player.setPosition((npc.x + 1) * s.tileSize + s.tileSize / 2, npc.y * s.tileSize);
+      s.walkTo(npc.x, npc.y);
+    }""")
+    page.wait_for_timeout(1500)
+    step("tap_talks", page.evaluate("() => window.__rpg.dialogue.isActive()"),
+         "tapping a guest did not start a conversation")
+    step("pad_yields", page.evaluate(
+        "() => document.getElementById('touch-pad').classList.contains('touch-pad--hidden')"),
+        "thumb controls stayed on screen under the dialogue box")
+
+    before = page.inner_text("#dialogue-overlay")
+    page.touchscreen.tap(195, 260)
+    page.wait_for_timeout(400)
+    page.touchscreen.tap(195, 260)
+    page.wait_for_timeout(400)
+    step("tap_advances", page.inner_text("#dialogue-overlay") != before
+         or not page.evaluate("() => window.__rpg.dialogue.isActive()"),
+         "tapping the screen did not move the conversation on")
+
+    context.close()
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--terminal-only", action="store_true")
@@ -303,6 +420,7 @@ def main() -> int:
             page.evaluate("() => window.__rpg.menu.close()")
 
             rpg_journey(page, base, failures, errors)
+            rpg_phone(browser, base, failures)
 
         browser.close()
     httpd.shutdown()

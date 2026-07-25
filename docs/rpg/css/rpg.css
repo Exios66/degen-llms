@@ -1098,6 +1098,127 @@ body {
   }
 }
 
+/* ─── Thumb controls ───────────────────────────────────────────────────────
+   Only mounted on touch devices. Sits under the panels (z-index 20) and hides
+   itself whenever one of them takes the screen. */
+
+.touch-pad {
+  position: absolute;
+  inset: auto 0 0 0;
+  z-index: 14;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 0 max(14px, env(safe-area-inset-left))
+    max(18px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-right));
+  pointer-events: none;
+  opacity: 0.9;
+  transition: opacity 120ms ease-out;
+}
+
+.touch-pad--hidden {
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.touch-pad__dpad {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 46px);
+  grid-template-rows: repeat(3, 46px);
+}
+
+.touch-pad__actions {
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  align-items: end;
+  justify-items: center;
+  gap: 10px;
+}
+
+.touch-btn {
+  pointer-events: auto;
+  touch-action: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-pixel);
+  font-size: 12px;
+  color: var(--text);
+  background: rgba(20, 16, 31, 0.82);
+  border: 3px solid var(--border);
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.55);
+}
+
+.touch-btn.is-pressed {
+  background: rgba(232, 197, 71, 0.28);
+  border-color: var(--gold);
+  transform: translateY(2px);
+  box-shadow: none;
+}
+
+.touch-btn--up { grid-area: 1 / 2; }
+.touch-btn--left { grid-area: 2 / 1; }
+.touch-btn--right { grid-area: 2 / 3; }
+.touch-btn--down { grid-area: 3 / 2; }
+
+.touch-btn--talk,
+.touch-btn--run {
+  border-radius: 50%;
+  font-size: 14px;
+}
+
+.touch-btn--talk {
+  grid-column: 2;
+  width: 74px;
+  height: 74px;
+  color: #0a0812;
+  background: rgba(232, 197, 71, 0.88);
+  border-color: #c4a030;
+}
+
+.touch-btn--run {
+  grid-column: 1;
+  width: 56px;
+  height: 56px;
+  color: var(--cyan);
+  border-color: #2a6a70;
+}
+
+.touch-btn--menu {
+  grid-column: 1 / span 2;
+  width: 100%;
+  min-height: 40px;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+}
+
+/* With a pad on screen, the bottom-right corner belongs to the A button: move
+   the hint and the rewards phone out from under the player's thumb. */
+body.has-touch-pad .touch-hint {
+  top: max(62px, calc(env(safe-area-inset-top) + 62px));
+  bottom: auto;
+}
+
+body.has-touch-pad .rewards-phone-root {
+  top: max(62px, calc(env(safe-area-inset-top) + 62px));
+  right: max(10px, env(safe-area-inset-right));
+  bottom: auto;
+}
+
+/* Landscape phones have no room for a tall stack. */
+@media (orientation: landscape) and (max-height: 480px) {
+  .touch-pad__dpad {
+    grid-template-columns: repeat(3, 38px);
+    grid-template-rows: repeat(3, 38px);
+  }
+  .touch-btn--talk { width: 60px; height: 60px; }
+  .touch-btn--run { width: 46px; height: 46px; }
+}
+
 /* ─── Hosted terminal screens ──────────────────────────────────────────────
    Shared docs/js/ui renderers mounted inside an encounter panel. The terminal
    stylesheet supplies layout; these rules re-skin it for the pixel cabinet. */

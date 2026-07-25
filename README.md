@@ -30,7 +30,7 @@ Optional editable install and tests:
 
 ```bash
 pip install -e ".[dev]"
-python3 -m pytest -v                     # 180+ tests
+python3 -m pytest -v                     # 200+ tests
 ```
 
 ## What you can do
@@ -152,7 +152,7 @@ Python is the authoritative game logic; the web app mirrors it in vanilla ES mod
 
 ## Documentation
 
-Full docs in [`docs/`](docs/README.md):
+Full docs in [`docs/`](docs/README.md) and on the **[GitHub Wiki](https://github.com/Exios66/degen-llms/wiki)** (synced from [`wiki/`](wiki/)):
 
 | Guide | Description |
 |-------|-------------|

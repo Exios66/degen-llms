@@ -1,0 +1,87 @@
+{
+  "id": "reef_tunnel",
+  "label": "Shark Reef Tunnel",
+  "wing": "Attractions",
+  "bgm": "title",
+  "spawn": {
+    "x": 26,
+    "y": 15
+  },
+  "base": "WALL",
+  "rects": [
+    {
+      "tile": "AQUA",
+      "x": 2,
+      "y": 11,
+      "w": 26,
+      "h": 8
+    },
+    {
+      "tile": "WATER",
+      "x": 4,
+      "y": 11,
+      "w": 22,
+      "h": 2
+    },
+    {
+      "tile": "WATER",
+      "x": 4,
+      "y": 17,
+      "w": 22,
+      "h": 2
+    }
+  ],
+  "decor": [
+    {
+      "tile": "PLANT",
+      "points": [
+        [
+          6,
+          14
+        ],
+        [
+          14,
+          14
+        ],
+        [
+          22,
+          14
+        ]
+      ]
+    }
+  ],
+  "clear": [
+    {
+      "tile": "AQUA",
+      "x": 25,
+      "y": 14,
+      "w": 3,
+      "h": 3
+    },
+    {
+      "tile": "AQUA",
+      "x": 2,
+      "y": 14,
+      "w": 3,
+      "h": 3
+    }
+  ],
+  "doors": [
+    {
+      "x": 27,
+      "y": 15,
+      "to": "mandalay_beach",
+      "toX": 3,
+      "toY": 15,
+      "message": "Back to the pool deck."
+    },
+    {
+      "x": 2,
+      "y": 15,
+      "to": "shark_reef",
+      "toX": 26,
+      "toY": 15,
+      "message": "Into the exhibit hall."
+    }
+  ]
+}

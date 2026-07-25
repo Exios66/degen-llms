@@ -10,6 +10,7 @@ import {
   settleHotelOverdue,
   getWorldCycleSummary,
   canAccessHotelRoom,
+  grantRoomKeyIfReservationReady,
 } from "./world-cycle.js";
 
 function resolveRewards(session, rewardsTracker) {
@@ -202,7 +203,7 @@ export function findReservationAtDesk(session) {
   return confirmReservationAtDesk(session);
 }
 
-export { getWorldCycleSummary, settleHotelOverdue, reservationStatusMessage, canAccessHotelRoom };
+export { getWorldCycleSummary, settleHotelOverdue, reservationStatusMessage, canAccessHotelRoom, grantRoomKeyIfReservationReady };
 
 /**
  * @returns {{ success: boolean, quip?: string, done?: boolean }}

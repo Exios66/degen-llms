@@ -5,9 +5,8 @@ import {
   OUTFIT_COLORS,
   defaultAppearance,
   normalizeAppearance,
-  resolvePalette,
 } from "./CharacterAppearance.js";
-import { drawCharacterToCanvas } from "./TextureFactory.js";
+import { resolvePlayerSprite, drawCharacterToCanvas } from "./CharacterSprites.js";
 
 /**
  * Character creator / wardrobe UI with live sprite preview.
@@ -108,8 +107,8 @@ export function renderCharacterCreator(root, { session, onComplete, onBack, titl
   root.appendChild(panel);
 
   function refresh() {
-    const palette = resolvePalette(state.appearance);
-    drawCharacterToCanvas(previewCanvas, palette, "down", 0, 4);
+    const spec = resolvePlayerSprite(state.appearance);
+    drawCharacterToCanvas(previewCanvas, spec, "down", 0, 4);
     for (const btn of archetypeRow.querySelectorAll(".character-creator__archetype")) {
       btn.classList.toggle("character-creator__archetype--active", btn.dataset.archetype === state.archetype);
     }

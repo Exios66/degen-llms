@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { OverworldScene } from "./scenes/GameScenes.js?v=casino-floor-legibility-1";
+import { OverworldScene } from "./scenes/GameScenes.js?v=character-sprites-2";
 import { TitleScreen, renderHud, renderTrainerCard } from "./scenes/TitleScreen.js";
 import { DialogueManager } from "./systems/DialogueManager.js";
 import { SaveAdapter } from "./systems/SaveAdapter.js";
@@ -9,21 +9,18 @@ import {
   EncounterBridge,
   RouletteOverlay,
   HoldemOverlay,
-  SlotsOverlay,
-  SportsbookOverlay,
-  HorseRacingOverlay,
-  EquestrianOverlay,
-  PoolOverlay,
-  HotelOverlay,
-  AmenitiesOverlay,
-  CashierOverlay,
   RhythmOverlay,
-  CrapsOverlay,
-  LotteryOverlay,
 } from "./systems/EncounterBridge.js";
+import { TerminalHostOverlay } from "./systems/TerminalHostOverlay.js";
 import { QuestManager } from "./systems/QuestManager.js";
+import { MenuOverlay } from "./systems/MenuOverlay.js";
+import { loadEggRegistry, syncEggsFromFlags, discoverEgg, eggForFlag } from "./systems/EasterEggs.js";
+import { RPG_ITEMS, giveItem } from "./systems/Inventory.js";
 import { audioManager } from "./systems/AudioManager.js";
-import { TILE_SIZE, MAP_WIDTH, MAP_HEIGHT } from "./systems/MapData.js";
+import {
+  TILE_SIZE, MAP_WIDTH, MAP_HEIGHT, installWorld, DEFAULT_MAP_ID,
+} from "./systems/MapData.js";
+import { loadWorld } from "./systems/MapLoader.js";
 import { RewardsPhone } from "../../js/RewardsPhone.js";
 import { syncRewardsFlags } from "../../js/rewards.js";
 import { enterZone, ensurePoolComplex } from "../../js/pool-complex.js";
@@ -40,6 +37,8 @@ let saveAdapter = null;
 let rewardsPhone = null;
 let questManager = null;
 let encounters = null;
+let terminalHost = null;
+let menu = null;
 
 const hudRoot = document.getElementById("hud");
 const rewardsRoot = document.getElementById("rewards-phone");
@@ -54,8 +53,22 @@ const POOL_FLAG_ZONES = {
 };
 
 const dialogue = new DialogueManager(dialogueRoot, {
+  onItem: (itemId) => {
+    if (!session || !giveItem(session, itemId)) return;
+    audioManager.sfx("secret");
+    dialogue.showSystemMessage(`Got ${RPG_ITEMS[itemId]?.label ?? itemId}. Check your Bag (Esc).`);
+    persistAll();
+  },
   onFlag: (flag) => {
     saveAdapter?.setFlag(flag);
+    if (session) {
+      const egg = eggForFlag(flag);
+      const found = egg ? discoverEgg(session, egg.id) : null;
+      if (found) {
+        audioManager.sfx("secret");
+        dialogue.showSystemMessage(`Secret found — ${found.label}`);
+      }
+    }
     if (POOL_FLAG_ZONES[flag] && session) {
       ensurePoolComplex(session);
       enterZone(session, POOL_FLAG_ZONES[flag]);
@@ -97,13 +110,13 @@ async function loadDialogues() {
   return res.json();
 }
 
-async function loadTriggers() {
+async function loadJson(path, fallback) {
   try {
-    const res = await fetch("js/data/triggers.json");
-    if (!res.ok) return [];
-    return res.json();
+    const res = await fetch(path);
+    if (!res.ok) return fallback;
+    return await res.json();
   } catch {
-    return [];
+    return fallback;
   }
 }
 
@@ -120,14 +133,38 @@ async function startOverworld(activeSession) {
   syncContactIntros(session);
   dialogue.setFlags(rpg.flags ?? {});
 
+  const [dialogues, triggers, questDefs, eggDefs, world] = await Promise.all([
+    loadDialogues(),
+    loadJson("js/data/triggers.json", []),
+    loadJson("js/data/quests.json", null),
+    loadJson("js/data/easter_eggs.json", null),
+    loadWorld(),
+  ]);
+  const knownMaps = new Set(installWorld(world));
+  // A save can point at a map id that a later world revision dropped.
+  if (!knownMaps.has(rpg.mapId)) {
+    rpg.mapId = DEFAULT_MAP_ID;
+    rpg.x = null;
+    rpg.y = null;
+  }
+  loadEggRegistry(eggDefs);
+  syncEggsFromFlags(session);
+
   questManager = new QuestManager(session, {
     onUpdate: () => {
       persistAll();
       renderHud(hudRoot, saveAdapter, questManager);
     },
+    onComplete: (id, def) => {
+      audioManager.sfx("win");
+      if (def?.rewardItem) giveItem(session, def.rewardItem);
+      dialogue.showSystemMessage?.(
+        `Quest complete — ${def?.label ?? id}${def?.reward ? ` · ${def.reward}` : ""}`,
+        { speaker: "Trainer Card", durationMs: 3200 },
+      );
+    },
   });
-  questManager.start("shark_photos", 5);
-  questManager.start("dana_lucky_hand", 1);
+  questManager.loadRegistry(questDefs);
   dialogue.setQuestManager?.(questManager);
 
   rewardsPhone = new RewardsPhone(rewardsRoot, session, {
@@ -149,41 +186,47 @@ async function startOverworld(activeSession) {
     }),
     roulette: new RouletteOverlay(document.getElementById("roulette-overlay"), session, hooks),
     holdem: new HoldemOverlay(document.getElementById("holdem-overlay"), session, hooks),
-    craps: new CrapsOverlay(document.getElementById("craps-overlay"), session, hooks),
-    lottery: new LotteryOverlay(document.getElementById("lottery-overlay"), session, hooks),
-    slots: new SlotsOverlay(document.getElementById("slots-overlay"), session, {
-      ...hooks,
-      onBigWin: shake,
-    }),
-    sportsbook: new SportsbookOverlay(document.getElementById("sportsbook-overlay"), session, hooks),
-    horse_racing: new HorseRacingOverlay(document.getElementById("racing-overlay"), session, hooks),
-    dressage: new EquestrianOverlay(document.getElementById("dressage-overlay"), session, hooks, "dressage"),
-    jumper: new EquestrianOverlay(document.getElementById("jumper-overlay"), session, hooks, "jumper"),
-    hotel: new HotelOverlay(document.getElementById("hotel-overlay"), session, hooks),
-    pool: new PoolOverlay(document.getElementById("pool-overlay"), session, {
-      ...hooks,
-      onSharkPhoto: (speciesId) => {
-        questManager.advance("shark_photos");
-        if (questManager.isComplete("shark_photos")) {
-          audioManager.sfx("secret");
-        }
-      },
-    }),
-    amenities: new AmenitiesOverlay(document.getElementById("amenities-overlay"), session, hooks),
-    cashier: new CashierOverlay(document.getElementById("cashier-overlay"), session, hooks),
     rhythm: new RhythmOverlay(document.getElementById("rhythm-overlay"), session, hooks),
   };
+
+  terminalHost = new TerminalHostOverlay(document.getElementById("terminal-overlay"), session, {
+    ...hooks,
+    onPersist: () => persistAll(),
+    rewardsPhone,
+  });
 
   encounters = new EncounterBridge({
     session,
     overlays,
+    terminalHost,
     onPersist: () => persistAll(),
     questManager,
+    onEncounterEnd: (encounterId, result) => {
+      if (result?.net >= 500) shake();
+    },
   });
 
-  renderHud(hudRoot, saveAdapter, questManager);
+  menu = new MenuOverlay(document.getElementById("menu-overlay"), session, {
+    saveAdapter,
+    questManager,
+    terminalHost,
+    rewardsPhone,
+    audio: audioManager,
+    onPersist: () => persistAll(),
+    onClose: () => {
+      renderHud(hudRoot, saveAdapter, questManager);
+      game?.scene?.getScene("OverworldScene")?.resumeFromMenu?.();
+    },
+    onTextSpeed: (speed) => dialogue.setTextSpeed?.(speed),
+    onExit: () => {
+      const url = session.slotId != null ? `../index.html?slot=${session.slotId}` : "../index.html?guest=1";
+      window.location.href = url;
+    },
+  });
+  audioManager.setMuted?.(Boolean(saveAdapter.rpg.options?.muted));
+  dialogue.setTextSpeed?.(saveAdapter.rpg.options?.textSpeed ?? "normal");
 
-  const [dialogues, triggers] = await Promise.all([loadDialogues(), loadTriggers()]);
+  renderHud(hudRoot, saveAdapter, questManager);
   dialogue.load(dialogues);
 
   if (game) {
@@ -219,8 +262,18 @@ async function startOverworld(activeSession) {
     },
     scene: [OverworldScene],
   });
-  // Debug/test hook for movement verification
+  // Debug/test hook for movement and encounter verification
   window.__rpgGame = game;
+  window.__rpg = {
+    get scene() { return game?.scene?.getScene("OverworldScene") ?? null; },
+    session,
+    saveAdapter,
+    encounters,
+    terminalHost,
+    questManager,
+    dialogue,
+    get menu() { return menu; },
+  };
 
   game.scene.start("OverworldScene", {
     session,
@@ -231,6 +284,16 @@ async function startOverworld(activeSession) {
     triggers,
     questManager,
     audio: audioManager,
+    onOpenMenu: (page) => menu?.open(page),
+    isMenuOpen: () => Boolean(menu?.isActive()),
+    onMapBanner: (label, phaseLabel) => showMapBanner(label, phaseLabel),
+    onEgg: (eggId) => {
+      if (!discoverEgg(session, eggId)) return;
+      audioManager.sfx("secret");
+      persistAll();
+      renderHud(hudRoot, saveAdapter, questManager);
+      questManager?.syncDerived?.();
+    },
     onHudUpdate: (opts) => {
       renderHud(hudRoot, saveAdapter, questManager);
       rewardsPhone?.sync();
@@ -244,6 +307,26 @@ async function startOverworld(activeSession) {
       }
     },
   });
+}
+
+let mapBannerTimer = null;
+
+/** Pokémon-style room placard on every map transition. */
+function showMapBanner(label, phaseLabel) {
+  const root = document.getElementById("map-banner");
+  if (!root) return;
+  root.innerHTML = `<strong>${label}</strong>${phaseLabel ? `<span>${phaseLabel}</span>` : ""}`;
+  root.hidden = false;
+  root.classList.remove("map-banner--out");
+  // Restart the CSS animation on back-to-back transitions.
+  void root.offsetWidth;
+  root.classList.add("map-banner--in");
+  clearTimeout(mapBannerTimer);
+  mapBannerTimer = setTimeout(() => {
+    root.classList.remove("map-banner--in");
+    root.classList.add("map-banner--out");
+    mapBannerTimer = setTimeout(() => { root.hidden = true; }, 400);
+  }, 2200);
 }
 
 const title = new TitleScreen(titleRoot, (s) => {
@@ -260,9 +343,13 @@ function parseRpgLaunchParams() {
   const params = new URLSearchParams(window.location.search);
   const slotRaw = params.get("slot");
   const slotId = slotRaw ? parseInt(slotRaw, 10) : null;
+  const chipsRaw = params.get("chips");
   return {
     launchSlotId: slotId >= 1 && slotId <= 5 ? slotId : null,
     launchGuest: params.get("guest") === "1",
+    launchArchetype: params.get("archetype"),
+    launchChips: chipsRaw ? Math.max(0, parseInt(chipsRaw, 10)) : null,
+    skipIntro: params.get("skipIntro") === "1" || Boolean(params.get("archetype")),
   };
 }
 

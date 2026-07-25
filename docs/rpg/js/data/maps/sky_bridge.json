@@ -1,0 +1,83 @@
+{
+  "id": "sky_bridge",
+  "label": "Sky Bridge",
+  "wing": "Retail",
+  "bgm": "lobby",
+  "spawn": {
+    "x": 15,
+    "y": 26
+  },
+  "base": "WALL",
+  "rects": [
+    {
+      "tile": "LOBBY",
+      "x": 11,
+      "y": 2,
+      "w": 8,
+      "h": 26
+    }
+  ],
+  "decor": [
+    {
+      "tile": "GLASS",
+      "x": 11,
+      "y": 4,
+      "w": 1,
+      "h": 20
+    },
+    {
+      "tile": "GLASS",
+      "x": 18,
+      "y": 4,
+      "w": 1,
+      "h": 20
+    },
+    {
+      "tile": "PLANT",
+      "points": [
+        [
+          12,
+          14
+        ],
+        [
+          17,
+          14
+        ]
+      ]
+    }
+  ],
+  "clear": [
+    {
+      "tile": "LOBBY",
+      "x": 14,
+      "y": 1,
+      "w": 3,
+      "h": 3
+    },
+    {
+      "tile": "LOBBY",
+      "x": 14,
+      "y": 26,
+      "w": 3,
+      "h": 3
+    }
+  ],
+  "doors": [
+    {
+      "x": 15,
+      "y": 27,
+      "to": "mandalay_place",
+      "toX": 15,
+      "toY": 3,
+      "message": "Back down to the Shoppes."
+    },
+    {
+      "x": 15,
+      "y": 2,
+      "to": "convention_center",
+      "toX": 15,
+      "toY": 26,
+      "message": "Convention center concourse."
+    }
+  ]
+}

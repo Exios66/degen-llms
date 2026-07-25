@@ -1,18 +1,79 @@
 import Phaser from "phaser";
-import { createGameTextures, ensurePlayerTextures, playerTextureKey, playerAnimKey } from "../systems/TextureFactory.js";
+import {
+  createGameTextures,
+  ensurePlayerTextures,
+  playerTextureKey,
+  playerAnimKey,
+  tileTextureKey,
+  preloadCharacterAssets,
+  cachePortraitImages,
+  setupNpcSprite,
+  applySpriteAppearance,
+  resolvePlayerSprite,
+} from "../systems/TextureFactory.js?v=character-sprites-2";
 import { normalizeAppearance } from "../systems/CharacterAppearance.js";
 import {
   TILE_SIZE, MAP_WIDTH, MAP_HEIGHT, buildMapLayersForId, getNpcsForMap,
-  DOOR_TRIGGERS, getMapDefinition, SPAWN_DEFAULT, TILE, resolveNpcPosition,
+  doorAt, getMapDefinition, SPAWN_DEFAULT, TILE, resolveNpcPosition,
   MAP_ZONE_SIGNS,
 } from "../systems/MapData.js";
 import { getSessionDealer } from "../../../js/dealers.js";
 import { resolveNpc } from "../../../js/staff-manifest.js";
 import { audioManager } from "../systems/AudioManager.js";
+import {
+  canAccessHotelRoom, getWorldCycleState, reservationStatusMessage, syncWorldCycle,
+} from "../../../js/world-cycle.js";
+import { tierForWagered } from "../../../js/rewards.js";
+import { tierIndex } from "../../../js/rewards-perks.js";
+import { recordDex } from "../systems/Dex.js";
+import { EGG_REGISTRY, discoverEgg, eggForFlag } from "../systems/EasterEggs.js";
+
+/** Extra walk speed per MGM Rewards tier, plus the comped cart bonus. */
+const SPEED_PER_TIER = 12;
+const GOLF_CART_BONUS = 68;
+const GOLF_CART_TIER_IDX = 3;
+
+/** Per-surface footstep sound. */
+const FOOTSTEP_SFX = {
+  [TILE.LOBBY]: "foot_lobby",
+  [TILE.CARPET]: "foot_carpet",
+  [TILE.FELT]: "foot_felt",
+  [TILE.VIP]: "foot_vip",
+  [TILE.AQUA]: "foot_water",
+  [TILE.WATER]: "foot_water",
+  [TILE.SAND]: "foot_lobby",
+  [TILE.ROAD]: "foot_lobby",
+  [TILE.STAGE]: "foot_vip",
+  [TILE.SPA]: "foot_water",
+};
+
+/** Screen wash per world-cycle day phase, indexed by WORLD_PHASES id. */
+const PHASE_WASH = [
+  { bg: "#120e18", tint: 0xffb066, alpha: 0.14 },
+  { bg: "#0a0812", tint: 0x000000, alpha: 0 },
+  { bg: "#0c0818", tint: 0x6a1a70, alpha: 0.22 },
+  { bg: "#080610", tint: 0x1a0a40, alpha: 0.3 },
+];
+
+/** Decor props are drawn from the same tile vocabulary as the ground. */
+const DECOR_KEYS = {
+  [TILE.BAR]: "decor_bar",
+  [TILE.PLANT]: "decor_plant",
+  [TILE.SLOT]: "decor_slot",
+  [TILE.SCREEN]: "decor_screen",
+  [TILE.GLASS]: "decor_glass",
+  [TILE.ROPE]: "decor_rope",
+};
+
+/** Sub-line under the room placard: which wing you are in, and when. */
+const placardSub = (mapDef, phaseLabel) =>
+  [mapDef?.wing, phaseLabel].filter(Boolean).join(" · ");
 
 export class OverworldScene extends Phaser.Scene {
   constructor() {
     super({ key: "OverworldScene" });
+    /** World pixels per tile — read by anything converting between the two. */
+    this.tileSize = TILE_SIZE;
   }
 
   init(data) {
@@ -25,9 +86,18 @@ export class OverworldScene extends Phaser.Scene {
     this.triggers = data.triggers ?? [];
     this.questManager = data.questManager ?? null;
     this.audio = data.audio ?? audioManager;
+    this.onOpenMenu = data.onOpenMenu ?? null;
+    this.isMenuOpen = data.isMenuOpen ?? (() => false);
+    this.onMapBanner = data.onMapBanner ?? null;
+    this.onEgg = data.onEgg ?? null;
+  }
+
+  preload() {
+    preloadCharacterAssets(this);
   }
 
   create() {
+    cachePortraitImages(this);
     createGameTextures(this);
     if (this.dialogues && this.dialogue) {
       this.dialogue.load(this.dialogues);
@@ -53,34 +123,47 @@ export class OverworldScene extends Phaser.Scene {
     }
 
     this.groundLayer = this.add.group();
+    this.waterTiles = [];
+    this.ambientGlows = [];
     for (let y = 0; y < MAP_HEIGHT; y++) {
       for (let x = 0; x < MAP_WIDTH; x++) {
         const tile = ground[y][x];
         if (tile === 0) continue;
-        const groundImg = this.add.image(
-          x * TILE_SIZE + TILE_SIZE / 2,
-          y * TILE_SIZE + TILE_SIZE / 2,
-          `tile_${tile}`
-        );
+        const cx = x * TILE_SIZE + TILE_SIZE / 2;
+        const cy = y * TILE_SIZE + TILE_SIZE / 2;
+        const texKey = tile === TILE.WATER || tile === TILE.AQUA
+          ? (tile === TILE.WATER ? "tile_water_f0" : tileTextureKey(tile, x, y))
+          : tileTextureKey(tile, x, y);
+        const groundImg = this.add.image(cx, cy, texKey);
         groundImg.setDepth(0);
         this.groundLayer.add(groundImg);
+        if (tile === TILE.WATER) {
+          this.waterTiles.push(groundImg);
+        }
         if (decor[y][x]) {
           const d = decor[y][x];
-          let decorKey = "decor_plant";
-          if (d === TILE.BAR) decorKey = "decor_bar";
-          else if (d === TILE.SLOT) decorKey = "decor_slot";
-          else if (d === TILE.SCREEN) decorKey = "decor_screen";
-          const decorImg = this.add.image(
-            x * TILE_SIZE + TILE_SIZE / 2,
-            y * TILE_SIZE + TILE_SIZE / 2,
-            decorKey
-          );
+          const decorKey = DECOR_KEYS[d] ?? "decor_plant";
+          let glowKey = null;
+          if (d === TILE.BAR) glowKey = "glow_red";
+          else if (d === TILE.SLOT) glowKey = "glow_gold";
+          else if (d === TILE.SCREEN) glowKey = "glow_cyan";
+          else if (d === TILE.GLASS) glowKey = "glow_cyan";
+          if (glowKey) {
+            const glow = this.add.image(cx, cy, glowKey);
+            glow.setDepth(1);
+            glow.setAlpha(0.45);
+            glow.setScale(1.85);
+            this.groundLayer.add(glow);
+            this.ambientGlows.push(glow);
+          }
+          const decorImg = this.add.image(cx, cy, decorKey);
           decorImg.setDepth(2);
           this.groundLayer.add(decorImg);
         }
       }
     }
     this._createZoneSigns(mapId);
+    this._startAtmosphereFx();
 
     const spawn = this.saveAdapter.rpg;
     const mapDef = getMapDefinition(mapId);
@@ -90,12 +173,20 @@ export class OverworldScene extends Phaser.Scene {
     this.playerArchetype = spawn.archetype || spawn.playerSprite || "weekend_warrior";
     this.playerAppearance = normalizeAppearance(spawn);
     ensurePlayerTextures(this, this.playerAppearance);
-    const pKey = playerTextureKey({ appearance: this.playerAppearance }, "down");
-    this.player = this.physics.add.sprite(px * TILE_SIZE + TILE_SIZE / 2, py * TILE_SIZE + TILE_SIZE / 2, pKey);
+    const playerSpec = resolvePlayerSprite(this.playerAppearance);
+    const pTex = playerTextureKey({ appearance: this.playerAppearance }, "down");
+    this.player = this.physics.add.sprite(
+      px * TILE_SIZE + TILE_SIZE / 2,
+      py * TILE_SIZE + TILE_SIZE / 2,
+      pTex.key,
+      pTex.frame
+    );
+    applySpriteAppearance(this.player, playerSpec);
+    this.player.setFlipX(pTex.flipX);
     this.player.setCollideWorldBounds(true);
     this.player.setDepth(10);
-    this.player.body.setSize(TILE_SIZE * 0.625, TILE_SIZE * 0.5);
-    this.player.body.setOffset(TILE_SIZE * 0.1875, TILE_SIZE * 0.75);
+    this.player.body.setSize(TILE_SIZE * 0.45, TILE_SIZE * 0.3);
+    this.player.body.setOffset(TILE_SIZE * 0.275, TILE_SIZE * 0.58);
 
     this.playerShadow = this.add.image(this.player.x, this.player.y + TILE_SIZE * 0.28, "shadow");
     this.playerShadow.setDepth(9);
@@ -103,30 +194,38 @@ export class OverworldScene extends Phaser.Scene {
 
     this.physics.world.setBounds(0, 0, MAP_WIDTH * TILE_SIZE, MAP_HEIGHT * TILE_SIZE);
 
-    const worldTime = spawn.worldTime ?? 720;
+    // world-cycle.js is the single clock: the overworld tint and NPC schedules
+    // both read its day phase, and rpg.worldTime mirrors it for older saves.
+    const cycle = syncWorldCycle(this.session);
+    this.dayPhase = cycle.phase;
+    this._lastPhaseId = cycle.phase.id;
+    this._wasEvicted = Boolean(cycle.roomEvicted);
+    const worldTime = this._mirrorWorldTime(cycle);
     this.npcSprites = new Map();
     this.npcLabels = new Map();
     this.currentNpcs = getNpcsForMap(mapId).map((npc) => {
-      const pos = resolveNpcPosition(npc, worldTime);
+      const pos = resolveNpcPosition(npc, worldTime, this.dayPhase?.id);
       return { ...npc, x: pos.x, y: pos.y };
     });
     for (const npc of this.currentNpcs) {
       const sprite = this.add.sprite(
         npc.x * TILE_SIZE + TILE_SIZE / 2,
         npc.y * TILE_SIZE + TILE_SIZE / 2,
-        npc.sprite
+        "char_hero",
+        0
       );
+      setupNpcSprite(this, sprite, npc.sprite);
       sprite.setDepth(10);
       sprite.setData("npc", npc);
       this.npcSprites.set(npc.id, sprite);
 
       const displayName = this._resolveNpcDisplayName(npc);
-      const label = this._createNpcLabel(sprite.x, sprite.y - TILE_SIZE * 0.62, displayName, npc.zone);
+      const label = this._createNpcLabel(sprite.x, sprite.y - TILE_SIZE * 0.72, displayName, npc.zone);
       this.npcLabels.set(npc.id, label);
 
       if (npc.zone) {
         const dealer = this._dealerForZone(npc.zone);
-        sprite.setTexture(dealer.sprite);
+        setupNpcSprite(this, sprite, dealer.sprite);
       }
     }
 
@@ -188,6 +287,8 @@ export class OverworldScene extends Phaser.Scene {
       space: Phaser.Input.Keyboard.KeyCodes.SPACE,
       shift: Phaser.Input.Keyboard.KeyCodes.SHIFT,
       t: Phaser.Input.Keyboard.KeyCodes.T,
+      esc: Phaser.Input.Keyboard.KeyCodes.ESC,
+      x: Phaser.Input.Keyboard.KeyCodes.X,
     });
 
     this.cameras.main.setBounds(0, 0, MAP_WIDTH * TILE_SIZE, MAP_HEIGHT * TILE_SIZE);
@@ -216,7 +317,11 @@ export class OverworldScene extends Phaser.Scene {
     this._applyPlayerAnim(false);
 
     this._applyDayNightTint(worldTime);
-    this.audio?.playBgm?.(this.audio.bgmForMap(mapId));
+    this.audio?.playBgm?.(mapDef.bgm ?? this.audio.bgmForMap(mapId));
+
+    this._recordMapVisit(mapId);
+    this._applyWalkSpeed();
+    this.onMapBanner?.(mapDef.label ?? mapId, placardSub(mapDef, this.dayPhase?.label));
 
     this.onHudUpdate?.();
     this.scale.on("resize", this._fitCamera, this);
@@ -224,7 +329,8 @@ export class OverworldScene extends Phaser.Scene {
 
     this.cameras.main.fadeIn(300, 0, 0, 0);
 
-    if (!this.saveAdapter.hasFlag("tutorial_complete")) {
+    const hasGreeter = this.currentNpcs.some((n) => n.id === "chip_chandler");
+    if (hasGreeter && !this.saveAdapter.hasFlag("tutorial_complete")) {
       this.time.delayedCall(600, () => {
         this.canMove = false;
         this.dialogue.start("chip_chandler_intro").then(() => {
@@ -234,19 +340,137 @@ export class OverworldScene extends Phaser.Scene {
     }
 
     this.input.keyboard.on("keydown", (ev) => this._trackKonami(ev));
+
+    this._worldClock = this.time.addEvent({
+      delay: 4000,
+      loop: true,
+      callback: () => this._tickWorldCycle(),
+    });
+    this.events.once("shutdown", () => this._worldClock?.remove());
+    this.time.delayedCall(1400, () => this._announceDay(cycle));
+
+    window.__rpgReady = true;
+  }
+
+  /**
+   * Keep the legacy footstep clock in step with the real cycle so old saves and
+   * the HUD keep reading a plausible time of day.
+   * @returns {number} minutes past midnight
+   */
+  _mirrorWorldTime(cycle) {
+    const minutes = Math.floor((cycle.dayProgress ?? 0) * 1440);
+    this.saveAdapter.rpg.worldTime = minutes;
+    return minutes;
+  }
+
+  /**
+   * The overworld's heartbeat. One clock drives the tint, NPC schedules, and
+   * the resort's daily pressure — charges, the rotating reservation
+   * requirement, and eviction — so the RPG player feels what the terminal
+   * player feels.
+   */
+  _tickWorldCycle() {
+    if (!this.scene.isActive()) return;
+    const cycle = syncWorldCycle(this.session);
+    this._mirrorWorldTime(cycle);
+
+    if (cycle.advanced) {
+      for (const message of cycle.messages) {
+        this.dialogue?.showSystemMessage?.(message, { speaker: "Front Desk", durationMs: 4200 });
+      }
+      this.audio?.sfx?.("denied");
+      this.saveAdapter.persist();
+      this._announceDay(cycle);
+    }
+
+    if (cycle.roomEvicted && !this._wasEvicted) {
+      this.dialogue?.showSystemMessage?.(
+        "Your key stops working. Settle the folio at the front desk or win it back on the floor.",
+        { speaker: "Front Desk", durationMs: 4200 },
+      );
+    }
+    this._wasEvicted = Boolean(cycle.roomEvicted);
+
+    if (cycle.phase.id !== this._lastPhaseId) {
+      this._lastPhaseId = cycle.phase.id;
+      this.dayPhase = cycle.phase;
+      this._applyDayNightTint(cycle.dayProgress * 1440);
+      this._repositionNpcsForPhase();
+      const mapDef = getMapDefinition(this.currentMapId);
+      this.onMapBanner?.(mapDef.label ?? this.currentMapId, placardSub(mapDef, cycle.phase.label));
+    }
+    this.onHudUpdate?.();
+  }
+
+  /** Tell the player what today asks of them, once per in-game day. */
+  _announceDay(cycle) {
+    const state = cycle ?? getWorldCycleState(this.session);
+    this.dialogue?.showSystemMessage?.(
+      `Day ${state.displayDay} · ${state.phase.label} — ${reservationStatusMessage(this.session)}`,
+      { speaker: "Resort", durationMs: 3600 },
+    );
+  }
+
+  /** Walk NPCs to their positions for the new day phase. */
+  _repositionNpcsForPhase() {
+    const worldTime = this.saveAdapter.rpg.worldTime ?? 720;
+    for (const npc of this.currentNpcs ?? []) {
+      const pos = resolveNpcPosition(npc, worldTime, this.dayPhase?.id);
+      if (pos.x === npc.x && pos.y === npc.y) continue;
+      npc.x = pos.x;
+      npc.y = pos.y;
+      const sprite = this.npcSprites.get(npc.id);
+      const label = this.npcLabels.get(npc.id);
+      const tx = pos.x * TILE_SIZE + TILE_SIZE / 2;
+      const ty = pos.y * TILE_SIZE + TILE_SIZE / 2;
+      if (sprite) this.tweens.add({ targets: sprite, x: tx, y: ty, duration: 600 });
+      if (label) this.tweens.add({ targets: label, x: tx, y: ty - 16, duration: 600 });
+    }
+  }
+
+  /** First visit to a room counts toward exploration and the trainer card. */
+  _recordMapVisit(mapId) {
+    const rpg = this.saveAdapter.rpg;
+    if (!rpg.mapVisits || typeof rpg.mapVisits !== "object") rpg.mapVisits = {};
+    const first = !rpg.mapVisits[mapId];
+    rpg.mapVisits[mapId] = (rpg.mapVisits[mapId] ?? 0) + 1;
+    if (first) this.saveAdapter.persist();
+  }
+
+  /**
+   * Walk speed scales with MGM Rewards tier; Platinum+ guests get the comped
+   * golf cart, which is the RPG's bicycle.
+   */
+  _applyWalkSpeed() {
+    const rpg = this.saveAdapter.rpg;
+    const idx = tierIndex(tierForWagered(this.session.rewards?.lifetimeWagered ?? 0).id);
+    if (idx >= GOLF_CART_TIER_IDX && !rpg.flags.comped_golf_cart) {
+      rpg.flags.comped_golf_cart = true;
+      this.dialogue?.showSystemMessage?.("A host tosses you the keys to a comped golf cart. Hold Shift.");
+    }
+    const cart = rpg.flags.comped_golf_cart ? GOLF_CART_BONUS : 0;
+    this.walkSpeed = TILE_SIZE * 5.5 + idx * SPEED_PER_TIER;
+    this.runSpeed = TILE_SIZE * 8.125 + idx * SPEED_PER_TIER * 2 + cart;
   }
 
   _createZoneSigns(mapId) {
-    const signs = MAP_ZONE_SIGNS[mapId];
+    // Authored rooms carry their own signage; MAP_ZONE_SIGNS only covers the
+    // procedural fallback floor.
+    const signs = getMapDefinition(mapId).signs ?? MAP_ZONE_SIGNS[mapId];
     if (!signs?.length) return;
     this.zoneSigns = [];
     const fontSize = Math.max(7, Math.round(TILE_SIZE * 0.28));
     for (const sign of signs) {
       const x = sign.x * TILE_SIZE + TILE_SIZE / 2;
       const y = sign.y * TILE_SIZE + TILE_SIZE / 2;
-      const bg = this.add.rectangle(x, y, sign.text.length * fontSize * 0.72 + 10, fontSize + 8, 0x0a0812, 0.82);
-      bg.setStrokeStyle(2, sign.stroke ?? "#e8c547");
-      bg.setDepth(3);
+      const padW = sign.text.length * fontSize * 0.72 + 18;
+      const padH = fontSize + 14;
+      const glow = this.add.rectangle(x, y, padW + 6, padH + 6, 0xe8c547, 0.1);
+      glow.setDepth(2);
+      const plaque = this.add.image(x, y, "sign_plaque");
+      plaque.setDisplaySize(padW, padH);
+      plaque.setDepth(3);
+      plaque.setAlpha(0.96);
       const text = this.add.text(x, y, sign.text, {
         fontFamily: "Press Start 2P",
         fontSize: `${fontSize}px`,
@@ -254,7 +478,35 @@ export class OverworldScene extends Phaser.Scene {
         stroke: sign.stroke ?? "#684810",
         strokeThickness: 2,
       }).setOrigin(0.5).setDepth(4);
-      this.zoneSigns.push(bg, text);
+      this.zoneSigns.push(glow, plaque, text);
+    }
+  }
+
+  _startAtmosphereFx() {
+    // Soft neon pulse on ambient glows
+    for (const glow of this.ambientGlows) {
+      this.tweens.add({
+        targets: glow,
+        alpha: { from: 0.32, to: 0.58 },
+        scale: { from: 1.7, to: 2.05 },
+        duration: 1400 + Math.floor(Math.random() * 600),
+        yoyo: true,
+        repeat: -1,
+        ease: "Sine.easeInOut",
+      });
+    }
+    // Cycle water caustic frames
+    if (this.waterTiles.length) {
+      this._waterFrame = 0;
+      this.time.addEvent({
+        delay: 380,
+        loop: true,
+        callback: () => {
+          this._waterFrame = (this._waterFrame + 1) % 3;
+          const key = `tile_water_f${this._waterFrame}`;
+          for (const img of this.waterTiles) img.setTexture(key);
+        },
+      });
     }
   }
 
@@ -280,28 +532,27 @@ export class OverworldScene extends Phaser.Scene {
   }
 
   _applyDayNightTint(worldTime) {
-    const isNight = worldTime >= 1200 || worldTime < 360;
-    if (isNight) {
-      this.cameras.main.setBackgroundColor("#080610");
-      this.tweens.add({
-        targets: this.cameras.main,
-        // soft neon night via fade overlay
-        duration: 1,
-      });
-      if (!this._nightOverlay) {
-        this._nightOverlay = this.add.rectangle(
-          MAP_WIDTH * TILE_SIZE / 2,
-          MAP_HEIGHT * TILE_SIZE / 2,
-          MAP_WIDTH * TILE_SIZE,
-          MAP_HEIGHT * TILE_SIZE,
-          0x1a0a40,
-          0.18
-        ).setDepth(50).setScrollFactor(1);
-      }
-    } else if (this._nightOverlay) {
-      this._nightOverlay.destroy();
-      this._nightOverlay = null;
+    const phaseId = this.dayPhase?.id
+      ?? (worldTime >= 1200 || worldTime < 360 ? 3 : 1);
+    const wash = PHASE_WASH[phaseId] ?? PHASE_WASH[1];
+    this.cameras.main.setBackgroundColor(wash.bg);
+    if (wash.alpha === 0) {
+      this._phaseOverlay?.destroy();
+      this._phaseOverlay = null;
+      return;
     }
+    if (!this._phaseOverlay) {
+      this._phaseOverlay = this.add.rectangle(
+        MAP_WIDTH * TILE_SIZE / 2,
+        MAP_HEIGHT * TILE_SIZE / 2,
+        MAP_WIDTH * TILE_SIZE,
+        MAP_HEIGHT * TILE_SIZE,
+        wash.tint,
+        wash.alpha,
+      ).setDepth(50).setScrollFactor(1);
+      return;
+    }
+    this._phaseOverlay.setFillStyle(wash.tint, wash.alpha);
   }
 
   _fitCamera() {
@@ -379,12 +630,15 @@ export class OverworldScene extends Phaser.Scene {
 
   _applyPlayerAnim(moving) {
     const appearance = { appearance: this.playerAppearance };
+    this.player.setFlipX(this.facing === "left");
     const key = playerAnimKey(appearance, this.facing, moving);
     if (this.player.anims?.currentAnim?.key === key) return;
     if (this.anims.exists(key)) {
       this.player.anims.play(key, true);
     } else {
-      this.player.setTexture(playerTextureKey(appearance, this.facing));
+      const tex = playerTextureKey(appearance, this.facing);
+      this.player.setTexture(tex.key, tex.frame);
+      this.player.setFlipX(tex.flipX);
     }
   }
 
@@ -392,6 +646,7 @@ export class OverworldScene extends Phaser.Scene {
     const rpg = this.saveAdapter.rpg;
     this.playerAppearance = normalizeAppearance(rpg);
     ensurePlayerTextures(this, this.playerAppearance);
+    applySpriteAppearance(this.player, resolvePlayerSprite(this.playerAppearance));
     this.player.anims?.stop();
     this._applyPlayerAnim(this._moving);
   }
@@ -406,7 +661,8 @@ export class OverworldScene extends Phaser.Scene {
       this.playerShadow.setPosition(this.player.x, this.player.y + TILE_SIZE * 0.28);
     }
 
-    if (!this.canMove || this.dialogue.isActive() || this.encounters.isAnyActive?.() || this.encounters.blackjack?.isActive()) {
+    if (!this.canMove || this.isMenuOpen?.() || this.dialogue.isActive()
+        || this.encounters.isAnyActive?.() || this.encounters.blackjack?.isActive()) {
       this.player.body.setVelocity(0, 0);
       if (this._moving) {
         this._moving = false;
@@ -415,12 +671,17 @@ export class OverworldScene extends Phaser.Scene {
       return;
     }
 
+    if (Phaser.Input.Keyboard.JustDown(this.keys.esc) || Phaser.Input.Keyboard.JustDown(this.keys.x)) {
+      this.onOpenMenu?.();
+      return;
+    }
     if (Phaser.Input.Keyboard.JustDown(this.keys.t)) {
-      this.onHudUpdate?.({ trainerCard: true });
+      this.onOpenMenu?.("trainer");
+      return;
     }
 
     const run = this.moveKeys?.run || this._isKeyDown(this.keys.shift);
-    const speed = run ? TILE_SIZE * 8.125 : TILE_SIZE * 5.5;
+    const speed = run ? (this.runSpeed ?? TILE_SIZE * 8.125) : (this.walkSpeed ?? TILE_SIZE * 5.5);
     let { x: mx, y: my } = this._readMoveVector();
 
     if (mx === 0 && my === 0 && this.moveTarget) {
@@ -457,11 +718,11 @@ export class OverworldScene extends Phaser.Scene {
       this._footTimer += delta;
       if (this._footTimer > 200) {
         this._footTimer = 0;
-        const tx = Math.floor(this.player.x / TILE_SIZE);
-        const ty = Math.floor(this.player.y / TILE_SIZE);
-        const tile = this.groundGrid?.[ty]?.[tx];
-        this.audio?.sfx?.(tile === TILE.LOBBY ? "foot_lobby" : "foot_carpet");
-        this._advanceWorldTime(1);
+        if (this.saveAdapter.rpg.options?.footsteps !== false) {
+          const tx = Math.floor(this.player.x / TILE_SIZE);
+          const ty = Math.floor(this.player.y / TILE_SIZE);
+          this.audio?.sfx?.(FOOTSTEP_SFX[this.groundGrid?.[ty]?.[tx]] ?? "foot_carpet");
+        }
       }
     }
 
@@ -471,6 +732,7 @@ export class OverworldScene extends Phaser.Scene {
     }
 
     this._updateNearbyNpc();
+    this._checkChallengers();
     this._checkDoorTriggers();
     this._checkZoneTriggers();
 
@@ -481,14 +743,6 @@ export class OverworldScene extends Phaser.Scene {
     }
 
     this._autosavePosition(delta);
-  }
-
-  _advanceWorldTime(minutes) {
-    const rpg = this.saveAdapter.rpg;
-    rpg.worldTime = ((rpg.worldTime ?? 720) + minutes) % 1440;
-    if (minutes >= 1 && Math.random() < 0.02) {
-      this._applyDayNightTint(rpg.worldTime);
-    }
   }
 
   /** True if the player's physics body overlaps any solid tile. */
@@ -573,6 +827,90 @@ export class OverworldScene extends Phaser.Scene {
     }
   }
 
+  /**
+   * Trainer-battle logic: an NPC with a `sight` cone notices the player
+   * walking through it, marches over, and starts its dialogue/encounter.
+   * Each challenger fires once per save.
+   */
+  _checkChallengers() {
+    if (this._challengeRunning) return;
+    const px = Math.floor(this.player.x / TILE_SIZE);
+    const py = Math.floor(this.player.y / TILE_SIZE);
+    for (const npc of this.currentNpcs ?? []) {
+      if (!npc.sight) continue;
+      if (this.saveAdapter.hasFlag(`challenged_${npc.id}`)) continue;
+      if (!this._inSightCone(npc, px, py)) continue;
+      this._runChallenge(npc);
+      return;
+    }
+  }
+
+  _inSightCone(npc, px, py) {
+    const { dir = npc.direction ?? "down", range = 4 } = npc.sight;
+    const dx = px - npc.x;
+    const dy = py - npc.y;
+    const axis = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] }[dir] ?? [0, 1];
+    const along = dx * axis[0] + dy * axis[1];
+    const across = axis[0] === 0 ? dx : dy;
+    if (along < 1 || along > range || across !== 0) return false;
+    // Walls break line of sight.
+    for (let step = 1; step < along; step += 1) {
+      if (this._isBlocked(npc.x + axis[0] * step, npc.y + axis[1] * step)) return false;
+    }
+    return true;
+  }
+
+  async _runChallenge(npc) {
+    this._challengeRunning = true;
+    this.saveAdapter.setFlag(`challenged_${npc.id}`);
+    this.canMove = false;
+    this.player.body.setVelocity(0, 0);
+
+    const sprite = this.npcSprites.get(npc.id);
+    this.audio?.sfx?.("secret");
+    const bang = this.add.text(
+      npc.x * TILE_SIZE + TILE_SIZE / 2,
+      npc.y * TILE_SIZE - 14,
+      "!",
+      { fontFamily: "Press Start 2P", fontSize: "10px", color: "#f07178", stroke: "#0a0812", strokeThickness: 3 }
+    ).setOrigin(0.5).setDepth(120);
+
+    if (sprite) {
+      await new Promise((resolve) => {
+        this.tweens.add({
+          targets: sprite,
+          x: this.player.x,
+          y: this.player.y + TILE_SIZE,
+          duration: 420,
+          ease: "Linear",
+          onComplete: resolve,
+        });
+      });
+    }
+    bang.destroy();
+
+    const dealer = npc.zone ? this._dealerForZone(npc.zone) : null;
+    const dialogueId = [npc.challengeDialogueId, dealer && `${dealer.id}_challenge`,
+      dealer && `${dealer.id}_greet`, npc.dialogueId]
+      .find((id) => id && this.dialogues[id]) ?? npc.dialogueId;
+
+    const result = await this.dialogue.start(dialogueId);
+    const encounterId = result.encounter || npc.encounter;
+    if (encounterId) {
+      await this._runEncounter(encounterId, npc, dealer);
+    }
+    this._challengeRunning = false;
+    this.canMove = true;
+    this.onHudUpdate?.();
+  }
+
+  /** Called by main.js when the START menu closes. */
+  resumeFromMenu() {
+    this.canMove = true;
+    this._applyWalkSpeed();
+    this.onHudUpdate?.();
+  }
+
   _isFacingNpc(npc) {
     const px = this.player.x;
     const py = this.player.y;
@@ -607,14 +945,14 @@ export class OverworldScene extends Phaser.Scene {
     return this.dialogues[greetId] ? greetId : greetId;
   }
 
-  _checkDoorTriggers() {
+  async _checkDoorTriggers() {
+    if (this._gateBusy) return;
     const tx = Math.floor(this.player.x / TILE_SIZE);
     const ty = Math.floor(this.player.y / TILE_SIZE);
     const key = `${tx},${ty}`;
     if (this._lastDoorTile === key) return;
     this._lastDoorTile = key;
-    const trigger = DOOR_TRIGGERS.find((d) =>
-      d.mapId === this.currentMapId && d.x === tx && d.y === ty);
+    const trigger = doorAt(this.currentMapId, tx, ty);
     if (!trigger) return;
 
     if (trigger.requiresFlag && !this.saveAdapter.hasFlag(trigger.requiresFlag)) {
@@ -631,6 +969,33 @@ export class OverworldScene extends Phaser.Scene {
         return;
       }
     }
+    if (trigger.requiresRoomKey && !canAccessHotelRoom(this.session)) {
+      const wc = getWorldCycleState(this.session);
+      this.dialogue.showSystemMessage(wc.roomEvicted
+        ? "The lock blinks red. Settle the folio at the front desk."
+        : `Key card declined. ${reservationStatusMessage(this.session)}`,
+      { speaker: "Room 24-118", durationMs: 3600 });
+      this.audio?.sfx?.("denied");
+      return;
+    }
+    if (trigger.venueGate) {
+      // The salon gate can open the stake picker, so hold the player at the
+      // rope until the check settles.
+      this._gateBusy = true;
+      this.canMove = false;
+      this.player.body.setVelocity(0, 0);
+      let gate = { ok: true };
+      try {
+        gate = (await this.encounters?.checkVenue?.(trigger.venueGate)) ?? { ok: true };
+      } finally {
+        this._gateBusy = false;
+        this.canMove = true;
+      }
+      if (!gate.ok) {
+        this.dialogue.showSystemMessage(gate.reason ?? "The velvet rope stays closed.");
+        return;
+      }
+    }
     this._transitionMap(trigger.targetMap, trigger.targetX, trigger.targetY, trigger.message);
   }
 
@@ -644,7 +1009,8 @@ export class OverworldScene extends Phaser.Scene {
       if (tx >= t.x && tx < t.x + w && ty >= t.y && ty < t.y + h) {
         if (this._lastTriggerId === t.id) return;
         this._lastTriggerId = t.id;
-        if (t.setFlag) this.saveAdapter.setFlag(t.setFlag);
+        // _findEgg falls back to a plain flag when the id isn't a registered egg.
+        if (t.setFlag) this._findEgg(t.setFlag);
         if (t.type === "zone_message" && t.message) {
           this.dialogue.showSystemMessage(t.message);
         }
@@ -675,12 +1041,20 @@ export class OverworldScene extends Phaser.Scene {
         questManager: this.questManager,
         audio: this.audio,
         onHudUpdate: this.onHudUpdate,
+        onOpenMenu: this.onOpenMenu,
+        isMenuOpen: this.isMenuOpen,
+        onMapBanner: this.onMapBanner,
+        onEgg: this.onEgg,
       });
     });
   }
 
   async _tryInteract() {
-    if (!this.nearbyNpc) return;
+    if (!this.nearbyNpc) {
+      // Nothing to talk to — the confirm key doubles as START, Pokémon-style.
+      this.onOpenMenu?.();
+      return;
+    }
     const npc = this.nearbyNpc;
     let dialogueId = npc.dialogueId;
     let activeDealer = null;
@@ -715,25 +1089,67 @@ export class OverworldScene extends Phaser.Scene {
 
     // Security Sam escort comedy
     if (npc.id === "security_sam" && this.saveAdapter.hasFlag("hint_north_wall")) {
-      this.saveAdapter.setFlag("found_back_room");
+      this._findEgg("found_back_room");
     }
+
+    if (npc.id) recordDex(this.session, "staff", npc.id);
 
     this.canMove = true;
     this.onHudUpdate?.();
   }
 
+  /** Pokémon-style pixel wipe into an encounter, with the BGM ducked. */
+  _encounterWipe() {
+    const cam = this.cameras.main;
+    const cell = 24;
+    const cols = Math.ceil((MAP_WIDTH * TILE_SIZE) / cell);
+    const rows = Math.ceil((MAP_HEIGHT * TILE_SIZE) / cell);
+    const squares = [];
+    for (let row = 0; row < rows; row += 1) {
+      for (let col = 0; col < cols; col += 1) {
+        const rect = this.add.rectangle(
+          col * cell + cell / 2, row * cell + cell / 2, cell, cell, 0x0a0812, 1
+        ).setDepth(150).setAlpha(0);
+        squares.push({ rect, delay: (col + row) * 6 });
+      }
+    }
+    cam.flash(120, 232, 197, 71);
+    for (const { rect, delay } of squares) {
+      this.tweens.add({ targets: rect, alpha: 1, duration: 90, delay });
+    }
+    return () => {
+      for (const { rect, delay } of squares) {
+        this.tweens.add({
+          targets: rect,
+          alpha: 0,
+          duration: 110,
+          delay: delay / 2,
+          onComplete: () => rect.destroy(),
+        });
+      }
+    };
+  }
+
   async _runEncounter(encounterId, npc, dealerProfile = null) {
-    this.scene.pause();
+    const clearWipe = this._encounterWipe();
     this.canMove = false;
-    this.cameras.main.flash(120, 20, 10, 40);
     this.audio?.sfx?.("click");
+    this.audio?.duck?.();
+    if (dealerProfile?.id) recordDex(this.session, "staff", dealerProfile.id);
+    if (npc?.id) recordDex(this.session, "staff", npc.id);
+
+    // The scene keeps ticking (update() no-ops while an encounter is active)
+    // so the wipe tweens can play out behind the overlay.
     await this.encounters.start(encounterId, {
-      dealerName: npc.name,
+      dealerName: npc?.name,
       dealerProfile: dealerProfile ?? null,
     });
-    this.scene.resume();
+
+    clearWipe();
+    this.audio?.unduck?.();
     this.canMove = true;
-    this._advanceWorldTime(5);
+    this._tickWorldCycle();
+    this.questManager?.syncDerived?.();
     this.saveAdapter.persist();
     this.onHudUpdate?.();
   }
@@ -743,12 +1159,30 @@ export class OverworldScene extends Phaser.Scene {
     this._konami.push(ev.key);
     if (this._konami.length > code.length) this._konami.shift();
     if (this._konami.join(",") === code.join(",")) {
-      this.saveAdapter.setFlag("konami_mode");
-      this.audio?.sfx?.("secret");
+      this._findEgg("konami_mode");
       this.dialogue.showSystemMessage("Retro palette unlocked. The statue winks.");
       document.getElementById("game-shell")?.classList.add("konami-mode");
       this._konami = [];
     }
+  }
+
+  /**
+   * Record an easter egg by registry id (or by legacy flag name), so the
+   * Secrets page and the overworld agree on what has been found.
+   */
+  _findEgg(idOrFlag) {
+    const egg = EGG_REGISTRY[idOrFlag] ? { id: idOrFlag } : eggForFlag(idOrFlag);
+    if (!egg) {
+      this.saveAdapter.setFlag(idOrFlag);
+      return null;
+    }
+    const found = discoverEgg(this.session, egg.id);
+    this.saveAdapter.setFlag(EGG_REGISTRY[egg.id]?.flag ?? egg.id);
+    if (found) {
+      this.audio?.sfx?.("secret");
+      this.onEgg?.(egg.id);
+    }
+    return found;
   }
 
   _saveTimer = 0;

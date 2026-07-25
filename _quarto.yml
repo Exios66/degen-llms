@@ -4,6 +4,7 @@ project:
   render:
     - index.qmd
     - play.qmd
+    - rpg.qmd
     - docs/getting-started.md
     - docs/player-guide.md
     - docs/chip-economy.md
@@ -33,6 +34,8 @@ website:
         text: Overview
       - href: play.qmd
         text: Play
+      - href: rpg.qmd
+        text: Pixel RPG
       - text: Player Guides
         menu:
           - href: docs/getting-started.md
@@ -89,6 +92,7 @@ website:
         contents:
           - index.qmd
           - play.qmd
+          - rpg.qmd
       - section: "Player Guides"
         contents:
           - docs/getting-started.md

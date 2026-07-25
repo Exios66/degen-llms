@@ -21,8 +21,9 @@ MGM Rewards tier comps can cover upgrades and room nights. See [[MGM-Rewards]].
 ## Hotel flow
 
 1. **Front desk (Clerk Carmen)** — locate reservation, settle overdue charges, upgrade rooms, review folios, checkout
-2. **Hallway mini-game** — three beats of directional choices to reach your door (wrong turns are comedic)
-3. **Your room** — TV, minibar, phone, balcony decisions, unlockable Vegas vignettes
+2. **Room key** — activates as soon as the day's check-in requirement is satisfied, whether the phone or the desk finished it; the desk then offers your hallway or your door directly
+3. **Hallway mini-game** — three beats of directional choices to reach your door (wrong turns are comedic)
+4. **Your room** — TV, minibar, phone, balcony decisions, unlockable Vegas vignettes
 
 ## In-room amenities
 
@@ -95,6 +96,6 @@ Press **P** in the web app for:
 | `mandalay_bay/hotel_experience.py` | CLI flows |
 | `mandalay_bay/room_amenities.py` | TV, minibar, phone, events |
 | `docs/js/hotel.js` / `docs/js/hotel-ui.js` | Browser mirror |
-| `docs/rpg/js/systems/overlays/HotelOverlay.js` | RPG overlay |
+| `docs/js/hotel-ui.js` → `buildHotelRenderers(ctx)` | Screens the RPG mounts too |
 
 See also [[Save-Slots#hotel-save-schema]].

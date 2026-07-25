@@ -10,6 +10,7 @@ import {
   formatSaveSlotPlayTimes,
 } from "../../../js/core.js";
 import { getActiveProfileSummary, getActiveSlotId } from "../../../js/profileCache.js";
+import { getWorldCycleState } from "../../../js/world-cycle.js";
 import { SaveAdapter, initSessionRpg } from "../systems/SaveAdapter.js";
 import { renderCharacterCreator } from "../systems/CharacterCreator.js";
 import { archetypeLabel, normalizeAppearance } from "../systems/CharacterAppearance.js";
@@ -32,6 +33,9 @@ export class TitleScreen {
     this.onStart = onStart;
     this.launchSlotId = options.launchSlotId ?? null;
     this.launchGuest = options.launchGuest ?? false;
+    this.launchArchetype = options.launchArchetype ?? null;
+    this.launchChips = options.launchChips ?? null;
+    this.skipIntro = options.skipIntro ?? false;
     this._introTimer = null;
     this._introDone = false;
     this._skipHandler = null;
@@ -45,6 +49,7 @@ export class TitleScreen {
     this.root.classList.add("title-overlay--intro");
     this._renderIntro();
     this._armAttract();
+    if (this.skipIntro) this._finishIntro();
   }
 
   hide() {
@@ -149,7 +154,15 @@ export class TitleScreen {
 
     setTimeout(() => {
       if (this.launchGuest) {
-        this._promptArchetype(initSessionRpg(createGuestSession()));
+        const guest = initSessionRpg(createGuestSession(
+          this.launchChips != null ? { chips: this.launchChips } : {}
+        ));
+        if (this.launchArchetype) {
+          this._applyArchetype(guest, this.launchArchetype);
+          this._start(guest);
+          return;
+        }
+        this._promptArchetype(guest);
         return;
       }
       if (this.launchSlotId != null) {
@@ -175,7 +188,7 @@ export class TitleScreen {
 
     const sub = document.createElement("p");
     sub.className = "subtitle";
-    sub.textContent = "Pixel RPG — Phases 2–4";
+    sub.textContent = "Pixel RPG — 28 rooms of Mandalay Bay";
     panel.appendChild(sub);
 
     const active = getActiveProfileSummary(listSlots);
@@ -318,6 +331,13 @@ export class TitleScreen {
     });
   }
 
+  _applyArchetype(session, archetypeId) {
+    const rpg = session.ensureRpgState();
+    rpg.archetype = archetypeId;
+    rpg.playerSprite = archetypeId;
+    if (archetypeId === "local") rpg.flags.hint_north_wall = true;
+  }
+
   _loadAndStart(slotId) {
     const session = loadSlot(slotId);
     if (!session) return;
@@ -342,12 +362,17 @@ export function renderHud(hudRoot, saveAdapter, questManager = null) {
   const badges = questManager?.badges?.()?.length ?? 0;
   const hour = Math.floor((rpg.worldTime ?? 720) / 60);
   const mins = String((rpg.worldTime ?? 720) % 60).padStart(2, "0");
+  const cycle = getWorldCycleState(saveAdapter.session);
+  const evicted = cycle.roomEvicted
+    ? `<span class="hud-alert">Room locked · ${fmtChips(cycle.overdueBalance)} overdue</span>`
+    : "";
   hudRoot.innerHTML = `
     <div class="hud-bar">
       <span class="hud-name">${lines.name}</span>
       <span class="hud-chips">${lines.chips}</span>
-      <span class="hud-time">${hour}:${mins}</span>
-      <span class="hud-hint">Tap to move · Tap dialogue to advance · WASD · E talk · P phone · T trainer · badges ${badges}</span>
+      <span class="hud-time">Day ${cycle.displayDay} · ${hour}:${mins} · ${cycle.phase.label}</span>
+      ${evicted}
+      <span class="hud-hint">Tap to move · WASD · E talk · Esc menu · P phone · T trainer · Shift run · badges ${badges}</span>
     </div>
   `;
 }

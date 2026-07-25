@@ -9,10 +9,22 @@
     "text": "Your chip balance carries everywhere on the floor. Press P for your MGM Rewards phone — comps ping in as you play. Talk to NPCs with E or Enter. Betty runs the lobby bar west side; Paula handles the Racing Pavilion northeast. Good luck — the house is patient.",
     "setFlag": "met_chip_chandler",
     "choices": [
-      { "label": "Where's my room?", "next": "chip_chandler_room" },
-      { "label": "Any secrets?", "next": "chip_chandler_secret" },
-      { "label": "Who's dealing tonight?", "next": "chip_chandler_dealers" },
-      { "label": "Thanks!", "next": "chip_chandler_bye" }
+      {
+        "label": "Where's my room?",
+        "next": "chip_chandler_room"
+      },
+      {
+        "label": "Any secrets?",
+        "next": "chip_chandler_secret"
+      },
+      {
+        "label": "Who's dealing tonight?",
+        "next": "chip_chandler_dealers"
+      },
+      {
+        "label": "Thanks!",
+        "next": "chip_chandler_bye"
+      }
     ]
   },
   "chip_chandler_room": {
@@ -30,32 +42,67 @@
   "chip_chandler_dealers": {
     "speaker": "Chip Chandler",
     "text": "Meryl Screech, Judi Bench, Jennifer Lawless — the whole charismatic crew shuffles between blackjack, poker, and roulette. Check the pit labels when you walk up. Steve Harvey handles roulette and the Pavilion when he's not hosting imaginary game shows.",
-    "next": "chip_chandler_bye"
+    "choices": [
+      {
+        "label": "I'll try to meet all of them.",
+        "next": "chip_chandler_dealer_quest",
+        "unlessFlag": "quest_dealer_meet_and_greet_started",
+        "setFlag": "quest_dealer_meet_and_greet_started"
+      },
+      {
+        "label": "Good to know.",
+        "next": "chip_chandler_bye"
+      }
+    ]
   },
   "chip_chandler_bye": {
     "speaker": "Chip Chandler",
     "text": "Enjoy your stay. Press E anytime you see the golden arrow!",
     "setFlag": "tutorial_complete"
   },
-
   "steve_harvey_greet": {
     "speaker": "Steve Harvey",
     "text": "Welcome to Table 9! I'm Steve Harvey — yes, THAT Steve Harvey — and this wheel does not play. Minimum ten chips. Survey says… that's a bargain.",
     "choices": [
-      { "label": "Spin the wheel!", "encounter": "roulette", "setFlag": "played_roulette" },
-      { "label": "Just watching for now.", "next": "steve_harvey_watch" },
-      { "label": "Where's the Pavilion?", "next": "steve_harvey_pavilion" },
-      { "label": "Any advice from your comedy days?", "next": "steve_harvey_comedy" }
+      {
+        "label": "Spin the wheel!",
+        "encounter": "roulette",
+        "setFlag": "played_roulette"
+      },
+      {
+        "label": "Just watching for now.",
+        "next": "steve_harvey_watch"
+      },
+      {
+        "label": "Where's the Pavilion?",
+        "next": "steve_harvey_pavilion"
+      },
+      {
+        "label": "Any advice from your comedy days?",
+        "next": "steve_harvey_comedy"
+      }
     ]
   },
   "steve_harvey_return": {
     "speaker": "Steve Harvey",
     "text": "Back again? Survey says… the wheel missed you. Paula at the Pavilion has race cards if you want action without the spin.",
     "choices": [
-      { "label": "Spin again!", "encounter": "roulette" },
-      { "label": "Tell me about the Pavilion.", "next": "steve_harvey_pavilion" },
-      { "label": "Game show wisdom?", "next": "steve_harvey_feud" },
-      { "label": "I'll wander.", "next": "steve_harvey_watch" }
+      {
+        "label": "Spin again!",
+        "encounter": "roulette"
+      },
+      {
+        "label": "Tell me about the Pavilion.",
+        "next": "steve_harvey_pavilion"
+      },
+      {
+        "label": "Game show wisdom?",
+        "next": "steve_harvey_feud"
+      },
+      {
+        "label": "I'll wander.",
+        "next": "steve_harvey_watch"
+      }
     ]
   },
   "steve_harvey_watch": {
@@ -78,21 +125,33 @@
     "text": "Name something you shout when you win big. Survey says… 'OH NO!' because half of Vegas wins loud and loses quiet. Top answer: 'I CAN'T BELIEVE IT!' Second answer: 'I CAN BELIEVE IT — I NEED A DRINK.'",
     "next": "steve_harvey_watch"
   },
-
   "meryl_screech_greet": {
     "speaker": "Dealer Meryl Screech",
     "text": "Evening. Table 7 is open — six decks, H17, 3:2 blackjack. Minimum ten chips. The felt remembers every hand.",
     "choices": [
-      { "label": "Deal me in!", "encounter": "blackjack", "setFlag": "played_blackjack" },
-      { "label": "Just watching for now.", "next": "meryl_screech_watch" }
+      {
+        "label": "Deal me in!",
+        "encounter": "blackjack",
+        "setFlag": "played_blackjack"
+      },
+      {
+        "label": "Just watching for now.",
+        "next": "meryl_screech_watch"
+      }
     ]
   },
   "meryl_screech_return": {
     "speaker": "Dealer Meryl Screech",
     "text": "Back for another round? The shoe doesn't judge. Neither do I — theatrically.",
     "choices": [
-      { "label": "Let's play.", "encounter": "blackjack" },
-      { "label": "Not yet.", "next": "meryl_screech_watch" }
+      {
+        "label": "Let's play.",
+        "encounter": "blackjack"
+      },
+      {
+        "label": "Not yet.",
+        "next": "meryl_screech_watch"
+      }
     ]
   },
   "meryl_screech_watch": {
@@ -100,23 +159,41 @@
     "text": "Smart. The felt remembers every hand. Come back when you're ready — I'll be here.",
     "setFlag": "meryl_screech_seen"
   },
-
   "judi_bench_greet": {
     "speaker": "Croupier Judi Bench",
     "text": "Good evening. Texas Hold'em — full streets, AI opponents, minimum buy-in ten chips. Bond. James Bond. Blinds.",
     "choices": [
-      { "label": "Deal me in!", "encounter": "holdem", "setFlag": "played_holdem" },
-      { "label": "Any tips?", "next": "judi_bench_tips" },
-      { "label": "Just watching.", "next": "judi_bench_watch" }
+      {
+        "label": "Deal me in!",
+        "encounter": "holdem",
+        "setFlag": "played_holdem"
+      },
+      {
+        "label": "Any tips?",
+        "next": "judi_bench_tips"
+      },
+      {
+        "label": "Just watching.",
+        "next": "judi_bench_watch"
+      }
     ]
   },
   "judi_bench_return": {
     "speaker": "Croupier Judi Bench",
     "text": "Welcome back. The river awaits.",
     "choices": [
-      { "label": "Sit down.", "encounter": "holdem" },
-      { "label": "Tips?", "next": "judi_bench_tips" },
-      { "label": "Thanks.", "next": "judi_bench_watch" }
+      {
+        "label": "Sit down.",
+        "encounter": "holdem"
+      },
+      {
+        "label": "Tips?",
+        "next": "judi_bench_tips"
+      },
+      {
+        "label": "Thanks.",
+        "next": "judi_bench_watch"
+      }
     ]
   },
   "judi_bench_tips": {
@@ -129,21 +206,33 @@
     "text": "Observe the table. Knowledge is the best tell.",
     "setFlag": "judi_bench_seen"
   },
-
   "jennifer_lawless_greet": {
     "speaker": "Jennifer Lawless",
     "text": "Hey! Table's open — blackjack or Hold'em depending on the night. I promise I won't trip over your chips. Probably.",
     "choices": [
-      { "label": "Blackjack!", "encounter": "blackjack", "setFlag": "played_blackjack" },
-      { "label": "Just watching.", "next": "jennifer_lawless_watch" }
+      {
+        "label": "Blackjack!",
+        "encounter": "blackjack",
+        "setFlag": "played_blackjack"
+      },
+      {
+        "label": "Just watching.",
+        "next": "jennifer_lawless_watch"
+      }
     ]
   },
   "jennifer_lawless_return": {
     "speaker": "Jennifer Lawless",
     "text": "Back for more? I didn't trip once since you left. Personal best.",
     "choices": [
-      { "label": "Deal me in!", "encounter": "blackjack" },
-      { "label": "Not yet.", "next": "jennifer_lawless_watch" }
+      {
+        "label": "Deal me in!",
+        "encounter": "blackjack"
+      },
+      {
+        "label": "Not yet.",
+        "next": "jennifer_lawless_watch"
+      }
     ]
   },
   "jennifer_lawless_watch": {
@@ -151,23 +240,41 @@
     "text": "No rush. I tripped once standing still. Take your time.",
     "setFlag": "jennifer_lawless_seen"
   },
-
   "sofia_volume_greet": {
     "speaker": "Sofia Volume",
     "text": "Dale, amigo! The wheel is HOT tonight! European single-zero, minimum five chips. Place your bets, cariño!",
     "choices": [
-      { "label": "Spin!", "encounter": "roulette", "setFlag": "played_roulette" },
-      { "label": "What's your favorite bet?", "next": "sofia_volume_tips" },
-      { "label": "Just watching.", "next": "sofia_volume_watch" }
+      {
+        "label": "Spin!",
+        "encounter": "roulette",
+        "setFlag": "played_roulette"
+      },
+      {
+        "label": "What's your favorite bet?",
+        "next": "sofia_volume_tips"
+      },
+      {
+        "label": "Just watching.",
+        "next": "sofia_volume_watch"
+      }
     ]
   },
   "sofia_volume_return": {
     "speaker": "Sofia Volume",
     "text": "You're back! The wheel missed you! Dale!",
     "choices": [
-      { "label": "Spin again!", "encounter": "roulette" },
-      { "label": "Favorite bet?", "next": "sofia_volume_tips" },
-      { "label": "Gracias!", "next": "sofia_volume_watch" }
+      {
+        "label": "Spin again!",
+        "encounter": "roulette"
+      },
+      {
+        "label": "Favorite bet?",
+        "next": "sofia_volume_tips"
+      },
+      {
+        "label": "Gracias!",
+        "next": "sofia_volume_watch"
+      }
     ]
   },
   "sofia_volume_tips": {
@@ -180,21 +287,33 @@
     "text": "Watch the wheel, feel the energy! It's electric!",
     "setFlag": "sofia_volume_seen"
   },
-
   "octavia_spectacular_greet": {
     "speaker": "Octavia Spectacular",
     "text": "Evening, honey. Pull up a chair — blackjack's my stage tonight. Minimum ten chips, maximum hospitality.",
     "choices": [
-      { "label": "Deal me in!", "encounter": "blackjack", "setFlag": "played_blackjack" },
-      { "label": "Just watching, sugar.", "next": "octavia_spectacular_watch" }
+      {
+        "label": "Deal me in!",
+        "encounter": "blackjack",
+        "setFlag": "played_blackjack"
+      },
+      {
+        "label": "Just watching, sugar.",
+        "next": "octavia_spectacular_watch"
+      }
     ]
   },
   "octavia_spectacular_return": {
     "speaker": "Octavia Spectacular",
     "text": "Welcome back, sugar. The cards missed you. Honey, the house always wins — but you look good trying.",
     "choices": [
-      { "label": "Let's play.", "encounter": "blackjack" },
-      { "label": "Not yet.", "next": "octavia_spectacular_watch" }
+      {
+        "label": "Let's play.",
+        "encounter": "blackjack"
+      },
+      {
+        "label": "Not yet.",
+        "next": "octavia_spectacular_watch"
+      }
     ]
   },
   "octavia_spectacular_watch": {
@@ -202,21 +321,33 @@
     "text": "Smart to watch first, sugar. I respect that.",
     "setFlag": "octavia_spectacular_seen"
   },
-
   "nicole_widechart_greet": {
     "speaker": "Nicole Widechart",
     "text": "Evening. The table is set. High-limit energy, standard minimums. The chips are whispering. I'm listening.",
     "choices": [
-      { "label": "Blackjack, please.", "encounter": "blackjack", "setFlag": "played_blackjack" },
-      { "label": "I'll observe.", "next": "nicole_widechart_watch" }
+      {
+        "label": "Blackjack, please.",
+        "encounter": "blackjack",
+        "setFlag": "played_blackjack"
+      },
+      {
+        "label": "I'll observe.",
+        "next": "nicole_widechart_watch"
+      }
     ]
   },
   "nicole_widechart_return": {
     "speaker": "Nicole Widechart",
     "text": "You've returned. Composure suits you. The table awaits.",
     "choices": [
-      { "label": "Let's play.", "encounter": "blackjack" },
-      { "label": "Not yet.", "next": "nicole_widechart_watch" }
+      {
+        "label": "Let's play.",
+        "encounter": "blackjack"
+      },
+      {
+        "label": "Not yet.",
+        "next": "nicole_widechart_watch"
+      }
     ]
   },
   "nicole_widechart_watch": {
@@ -224,16 +355,43 @@
     "text": "Observation precedes action. Always.",
     "setFlag": "nicole_widechart_seen"
   },
-
   "barkeep_betty_greet": {
     "speaker": "Barkeep Betty",
     "text": "What'll it be? Betty's Bar — west lobby, best carpet views on the floor. Cash drinks or MGM Rewards comps.",
     "choices": [
-      { "label": "Open the bar menu", "encounter": "bar" },
-      { "label": "Redeem welcome cocktail (MGM Rewards)", "next": "barkeep_betty_redeem_drink", "requiresFlag": "has_welcome_drink_comp", "unlessFlag": "redeemed_welcome_drink" },
-      { "label": "Who's dealing tonight?", "next": "barkeep_betty_dealers" },
-      { "label": "Any floor gossip?", "next": "barkeep_betty_gossip" },
-      { "label": "Just passing through.", "next": "barkeep_betty_bye" }
+      {
+        "label": "Open the bar menu",
+        "encounter": "bar"
+      },
+      {
+        "label": "Sign me up for the bar crawl.",
+        "next": "barkeep_betty_quest",
+        "unlessFlag": "quest_bar_crawl_started",
+        "setFlag": "quest_bar_crawl_started"
+      },
+      {
+        "label": "How am I doing on that thing?",
+        "next": "barkeep_betty_quest_done",
+        "requiresFlag": "quest_bar_crawl_started"
+      },
+      {
+        "label": "Redeem welcome cocktail (MGM Rewards)",
+        "next": "barkeep_betty_redeem_drink",
+        "requiresFlag": "has_welcome_drink_comp",
+        "unlessFlag": "redeemed_welcome_drink"
+      },
+      {
+        "label": "Who's dealing tonight?",
+        "next": "barkeep_betty_dealers"
+      },
+      {
+        "label": "Any floor gossip?",
+        "next": "barkeep_betty_gossip"
+      },
+      {
+        "label": "Just passing through.",
+        "next": "barkeep_betty_bye"
+      }
     ]
   },
   "barkeep_betty_redeem_drink": {
@@ -258,15 +416,27 @@
     "text": "Come back when you need a break from the felt. Betty's always open.",
     "setFlag": "met_betty"
   },
-
   "pavilion_paula_greet": {
     "speaker": "Pavilion Paula",
     "text": "Welcome to the Racing Pavilion! Win, place, show — thoroughbred action on simulated Mandalay tracks.",
     "choices": [
-      { "label": "Place a race bet!", "encounter": "horse_racing", "setFlag": "played_horse_racing" },
-      { "label": "Is Steve Harvey here?", "next": "pavilion_paula_steve" },
-      { "label": "Any tips for the ponies?", "next": "pavilion_paula_tips" },
-      { "label": "Thanks!", "next": "pavilion_paula_bye" }
+      {
+        "label": "Place a race bet!",
+        "encounter": "horse_racing",
+        "setFlag": "played_horse_racing"
+      },
+      {
+        "label": "Is Steve Harvey here?",
+        "next": "pavilion_paula_steve"
+      },
+      {
+        "label": "Any tips for the ponies?",
+        "next": "pavilion_paula_tips"
+      },
+      {
+        "label": "Thanks!",
+        "next": "pavilion_paula_bye"
+      }
     ]
   },
   "pavilion_paula_steve": {
@@ -284,16 +454,32 @@
     "text": "Good luck at the window!",
     "setFlag": "met_paula"
   },
-
   "arena_alex_greet": {
     "speaker": "Arena Alex",
     "text": "Welcome to the Equestrian Arena — Dressage and Show Jumping. No flat racing here.",
     "choices": [
-      { "label": "Dressage card", "encounter": "dressage", "setFlag": "played_dressage" },
-      { "label": "Show Jumping card", "encounter": "jumper", "setFlag": "played_jumper" },
-      { "label": "What's the difference?", "next": "arena_alex_explain" },
-      { "label": "Any tips for betting?", "next": "arena_alex_tips" },
-      { "label": "Thanks!", "next": "arena_alex_bye" }
+      {
+        "label": "Dressage card",
+        "encounter": "dressage",
+        "setFlag": "played_dressage"
+      },
+      {
+        "label": "Show Jumping card",
+        "encounter": "jumper",
+        "setFlag": "played_jumper"
+      },
+      {
+        "label": "What's the difference?",
+        "next": "arena_alex_explain"
+      },
+      {
+        "label": "Any tips for betting?",
+        "next": "arena_alex_tips"
+      },
+      {
+        "label": "Thanks!",
+        "next": "arena_alex_bye"
+      }
     ]
   },
   "arena_alex_explain": {
@@ -311,14 +497,22 @@
     "text": "Racing Pavilion is northeast — flat racing stays there. Good luck in the ring!",
     "setFlag": "met_arena_alex"
   },
-
   "tourist_tina": {
     "speaker": "Tourist Tina",
     "text": "I came for the wave pool but ended up at the blackjack pit. Vegas, right? Betty's bar has better stories than the slots.",
     "choices": [
-      { "label": "First time here?", "next": "tourist_tina_first" },
-      { "label": "Who's dealing?", "next": "tourist_tina_dealers" },
-      { "label": "Good luck!", "next": "tourist_tina_bye" }
+      {
+        "label": "First time here?",
+        "next": "tourist_tina_first"
+      },
+      {
+        "label": "Who's dealing?",
+        "next": "tourist_tina_dealers"
+      },
+      {
+        "label": "Good luck!",
+        "next": "tourist_tina_bye"
+      }
     ]
   },
   "tourist_tina_first": {
@@ -337,15 +531,38 @@
     "text": "If you find the shark aquarium, tell me — I got lost twice already!",
     "setFlag": "met_tina"
   },
-
   "clerk_carmen_greet": {
     "speaker": "Clerk Carmen",
     "text": "Welcome to the hotel tower. I can locate your reservation, open front desk services, or point you to your room.",
     "choices": [
-      { "label": "Front desk services", "encounter": "hotel", "setFlag": "hotel_tower_visit" },
-      { "label": "Locate my reservation", "next": "clerk_carmen_locate" },
-      { "label": "Where's my room?", "next": "clerk_carmen_room" },
-      { "label": "Thanks", "next": "clerk_carmen_bye" }
+      {
+        "label": "Front desk services",
+        "encounter": "hotel_front_desk",
+        "setFlag": "hotel_tower_visit"
+      },
+      {
+        "label": "Locate my reservation",
+        "next": "clerk_carmen_locate"
+      },
+      {
+        "label": "What's worth doing in the room?",
+        "next": "clerk_carmen_quest",
+        "unlessFlag": "quest_room_vignettes_started",
+        "setFlag": "quest_room_vignettes_started"
+      },
+      {
+        "label": "How am I doing on that thing?",
+        "next": "clerk_carmen_quest_done",
+        "requiresFlag": "quest_room_vignettes_started"
+      },
+      {
+        "label": "Where's my room?",
+        "next": "clerk_carmen_room"
+      },
+      {
+        "label": "Thanks",
+        "next": "clerk_carmen_bye"
+      }
     ]
   },
   "clerk_carmen_locate": {
@@ -371,27 +588,57 @@
     "text": "Elevator down returns you to the casino lobby.",
     "setFlag": "met_carmen"
   },
-
   "hotel_room_door": {
     "speaker": "Room Door",
     "text": "Room key works on the third try. Want the full stay menu?",
     "setFlag": "found_hotel_room",
     "choices": [
-      { "label": "Open hotel services", "encounter": "hotel" },
-      { "label": "Maybe later", "next": "hotel_room_door_bye" }
+      {
+        "label": "Open hotel services",
+        "encounter": "hotel"
+      },
+      {
+        "label": "Maybe later",
+        "next": "hotel_room_door_bye"
+      }
     ]
   },
   "hotel_room_door_bye": {
     "speaker": "Room Door",
     "text": "The bay glitters below. Bad decisions await inside."
   },
-
   "lifeguard_lou_greet": {
     "speaker": "Lifeguard Lou",
     "text": "Eleven acres of chlorinated ambition. Wave pool's center stage — timing matters.",
     "choices": [
-      { "label": "Play wave / ring toss", "encounter": "pool_wave", "setFlag": "pool_wave_pool" },
-      { "label": "Thanks", "next": "lifeguard_lou_bye" }
+      {
+        "label": "Play wave / ring toss",
+        "encounter": "pool_wave",
+        "setFlag": "pool_wave_pool"
+      },
+      {
+        "label": "Walk me through the whole complex.",
+        "encounter": "pool"
+      },
+      {
+        "label": "What's on today?",
+        "encounter": "pool_events"
+      },
+      {
+        "label": "What happens out on the acres?",
+        "next": "lifeguard_lou_quest",
+        "unlessFlag": "quest_pool_vignettes_started",
+        "setFlag": "quest_pool_vignettes_started"
+      },
+      {
+        "label": "How am I doing on that thing?",
+        "next": "lifeguard_lou_quest_done",
+        "requiresFlag": "quest_pool_vignettes_started"
+      },
+      {
+        "label": "Thanks",
+        "next": "lifeguard_lou_bye"
+      }
     ]
   },
   "lifeguard_lou_bye": {
@@ -399,29 +646,42 @@
     "text": "Shark Reef is northwest — photograph five species for the Trainer Card. Walk south when you're pruned.",
     "setFlag": "met_lifeguard_lou"
   },
-
   "shark_reef_guide_greet": {
     "speaker": "Reef Guide",
-    "text": "Sand tiger sharks circle the acrylic. Step through to Shark Reef and photograph five species.",
+    "text": "Sand tiger sharks circle the acrylic and a hammerhead runs the far loop. Tunnel's through the doors — photograph five species and the desk stops calling you a tourist.",
     "setFlag": "pool_shark_reef",
     "choices": [
-      { "label": "Enter aquarium map tip", "next": "shark_reef_guide_bye" },
-      { "label": "Thanks", "next": "shark_reef_guide_bye" }
+      {
+        "label": "How do the photos work?",
+        "next": "shark_reef_guide_photos"
+      },
+      {
+        "label": "Which one is hardest to catch?",
+        "next": "shark_reef_guide_hard"
+      },
+      {
+        "label": "Thanks",
+        "next": "shark_reef_guide_bye"
+      }
     ]
   },
   "shark_reef_guide_bye": {
     "speaker": "Reef Guide",
-    "text": "Warp tile northwest of me. The shark has seen worse nights than yours.",
-    "setFlag": "met_shark_guide"
+    "text": "Doors are that way. Don't tap the glass — they remember."
   },
-
   "beach_dj_greet": {
     "speaker": "Beach DJ",
     "text": "Neon after dark — glow sticks, bass drops, wave pool lit like a fever dream.",
     "setFlag": "pool_beach_rave",
     "choices": [
-      { "label": "Hit the dance floor", "encounter": "pool_rave" },
-      { "label": "Maybe later", "next": "beach_dj_bye" }
+      {
+        "label": "Hit the dance floor",
+        "encounter": "pool_rave"
+      },
+      {
+        "label": "Maybe later",
+        "next": "beach_dj_bye"
+      }
     ]
   },
   "beach_dj_bye": {
@@ -429,14 +689,34 @@
     "text": "Rave til dawn. Survey says… dance.",
     "setFlag": "met_beach_dj"
   },
-
   "spinster_sal_greet": {
     "speaker": "Spinster Sal",
     "text": "Mandalay Fortune — three reels, classic cherries, progressive whispers. Don't tell my niece I'm still here.",
     "choices": [
-      { "label": "Spin Fortune", "encounter": "slots_fortune", "setFlag": "played_slots" },
-      { "label": "High Roller machine?", "next": "spinster_sal_high" },
-      { "label": "Not today", "next": "spinster_sal_bye" }
+      {
+        "label": "Spin Fortune",
+        "encounter": "slots_fortune",
+        "setFlag": "played_slots"
+      },
+      {
+        "label": "What's the jackpot hunt?",
+        "next": "spinster_sal_quest",
+        "unlessFlag": "quest_jackpot_hunt_started",
+        "setFlag": "quest_jackpot_hunt_started"
+      },
+      {
+        "label": "How am I doing on that thing?",
+        "next": "spinster_sal_quest_done",
+        "requiresFlag": "quest_jackpot_hunt_started"
+      },
+      {
+        "label": "High Roller machine?",
+        "next": "spinster_sal_high"
+      },
+      {
+        "label": "Not today",
+        "next": "spinster_sal_bye"
+      }
     ]
   },
   "spinster_sal_high": {
@@ -449,14 +729,28 @@
     "text": "The reels remember kindness. And quarters.",
     "setFlag": "met_spinster_sal"
   },
-
   "bookie_blake_greet": {
     "speaker": "Bookie Blake",
     "text": "Lines are live. Moneyline, settle when you're brave. No juice jokes — the juice is the point.",
     "choices": [
-      { "label": "Open sports book", "encounter": "sportsbook", "setFlag": "played_sportsbook" },
-      { "label": "Any lock tonight?", "next": "bookie_blake_lock" },
-      { "label": "Pass", "next": "bookie_blake_bye" }
+      {
+        "label": "Open sports book",
+        "encounter": "sportsbook",
+        "setFlag": "played_sportsbook"
+      },
+      {
+        "label": "What's on the prediction board?",
+        "encounter": "predictions",
+        "setFlag": "played_predictions"
+      },
+      {
+        "label": "Any lock tonight?",
+        "next": "bookie_blake_lock"
+      },
+      {
+        "label": "Pass",
+        "next": "bookie_blake_bye"
+      }
     ]
   },
   "bookie_blake_lock": {
@@ -470,13 +764,18 @@
     "text": "Screens don't blink. You will.",
     "setFlag": "met_bookie_blake"
   },
-
   "cashier_carmen_greet": {
     "speaker": "Cashier Carmen",
     "text": "Chip window. Buy-in only — play money, real vibes. Convention guests get a little extra.",
     "choices": [
-      { "label": "Buy chips", "encounter": "cashier" },
-      { "label": "Just browsing", "next": "cashier_carmen_bye" }
+      {
+        "label": "Buy chips",
+        "encounter": "cashier"
+      },
+      {
+        "label": "Just browsing",
+        "next": "cashier_carmen_bye"
+      }
     ]
   },
   "cashier_carmen_bye": {
@@ -484,14 +783,29 @@
     "text": "Come back when the wallet feels light.",
     "setFlag": "met_cashier_carmen"
   },
-
   "security_sam_greet": {
     "speaker": "Security Sam",
     "text": "STAFF ONLY means staff only. Unless Chip whispered about the north wall. Then… I saw nothing.",
     "choices": [
-      { "label": "I heard about a back room", "next": "security_sam_escort", "requiresFlag": "hint_north_wall" },
-      { "label": "Sorry, officer", "next": "security_sam_bye", "reputation": { "staff": 1 } },
-      { "label": "Whatever", "next": "security_sam_bye", "reputation": { "staff": -1 } }
+      {
+        "label": "I heard about a back room",
+        "next": "security_sam_escort",
+        "requiresFlag": "hint_north_wall"
+      },
+      {
+        "label": "Sorry, officer",
+        "next": "security_sam_bye",
+        "reputation": {
+          "staff": 1
+        }
+      },
+      {
+        "label": "Whatever",
+        "next": "security_sam_bye",
+        "reputation": {
+          "staff": -1
+        }
+      }
     ]
   },
   "security_sam_escort": {
@@ -505,13 +819,18 @@
     "text": "Keep your hands visible. And your chips.",
     "setFlag": "met_security_sam"
   },
-
   "high_limit_host_greet": {
     "speaker": "High Limit Host",
     "text": "Salon seating. High Roller machines. Stack required — or High Roller archetype at five grand.",
     "choices": [
-      { "label": "Play High Roller slots", "encounter": "slots_high_roller" },
-      { "label": "Maybe later", "next": "high_limit_host_bye" }
+      {
+        "label": "Play High Roller slots",
+        "encounter": "slots_high_roller"
+      },
+      {
+        "label": "Maybe later",
+        "next": "high_limit_host_bye"
+      }
     ]
   },
   "high_limit_host_bye": {
@@ -519,13 +838,29 @@
     "text": "Foundation Room is further north when your balance sings.",
     "setFlag": "met_high_limit_host"
   },
-
   "shop_clerk_greet": {
     "speaker": "Shop Clerk",
     "text": "The Shoppes at Mandalay Place — flagship row opens onto the carpet.",
     "choices": [
-      { "label": "Browse shops", "encounter": "amenities" },
-      { "label": "No thanks", "next": "shop_clerk_bye" }
+      {
+        "label": "Browse shops",
+        "encounter": "amenities"
+      },
+      {
+        "label": "Anything worth hauling home?",
+        "next": "shop_clerk_quest",
+        "unlessFlag": "quest_sky_bridge_haul_started",
+        "setFlag": "quest_sky_bridge_haul_started"
+      },
+      {
+        "label": "How am I doing on that thing?",
+        "next": "shop_clerk_quest_done",
+        "requiresFlag": "quest_sky_bridge_haul_started"
+      },
+      {
+        "label": "No thanks",
+        "next": "shop_clerk_bye"
+      }
     ]
   },
   "shop_clerk_bye": {
@@ -533,14 +868,30 @@
     "text": "Bags are free. Regret is not.",
     "setFlag": "met_shop_clerk"
   },
-
   "lobby_statue": {
     "speaker": "Golden Statue",
     "text": "A polished lion. Its eyes track the carpet. Rumor: Up Up Down Down Left Right Left Right B A.",
     "setFlag": "easter_statue_seen",
     "choices": [
-      { "label": "Pat the statue", "next": "lobby_statue_pat" },
-      { "label": "Walk away", "next": "lobby_statue_bye" }
+      {
+        "label": "Pat the statue",
+        "next": "lobby_statue_pat"
+      },
+      {
+        "label": "Study the plaque.",
+        "next": "lobby_statue_quest",
+        "unlessFlag": "quest_resort_completion_started",
+        "setFlag": "quest_resort_completion_started"
+      },
+      {
+        "label": "How am I doing on that thing?",
+        "next": "lobby_statue_quest_done",
+        "requiresFlag": "quest_resort_completion_started"
+      },
+      {
+        "label": "Walk away",
+        "next": "lobby_statue_bye"
+      }
     ]
   },
   "lobby_statue_pat": {
@@ -553,13 +904,29 @@
     "speaker": "Golden Statue",
     "text": "…"
   },
-
   "reef_docent_greet": {
     "speaker": "Reef Docent",
     "text": "Five species. One camera. Trainer Card waits.",
     "choices": [
-      { "label": "Photograph species", "encounter": "pool_reef" },
-      { "label": "Just looking", "next": "reef_docent_bye" }
+      {
+        "label": "Photograph species",
+        "encounter": "pool_reef"
+      },
+      {
+        "label": "Take the camera assignment.",
+        "next": "reef_docent_quest",
+        "unlessFlag": "quest_shark_photos_started",
+        "setFlag": "quest_shark_photos_started"
+      },
+      {
+        "label": "How am I doing on that thing?",
+        "next": "reef_docent_quest_done",
+        "requiresFlag": "quest_shark_photos_started"
+      },
+      {
+        "label": "Just looking",
+        "next": "reef_docent_bye"
+      }
     ]
   },
   "reef_docent_bye": {
@@ -567,26 +934,36 @@
     "text": "Don't tap the glass. The sawfish remembers.",
     "setFlag": "met_reef_docent"
   },
-
   "photo_kiosk": {
     "speaker": "Photo Kiosk",
     "text": "Insert courage. Capture fins.",
     "choices": [
-      { "label": "Use camera", "encounter": "pool_reef" },
-      { "label": "Leave", "next": "photo_kiosk_bye" }
+      {
+        "label": "Use camera",
+        "encounter": "pool_reef"
+      },
+      {
+        "label": "Leave",
+        "next": "photo_kiosk_bye"
+      }
     ]
   },
   "photo_kiosk_bye": {
     "speaker": "Photo Kiosk",
     "text": "Flash disabled. Drama enabled."
   },
-
   "hob_stage_greet": {
     "speaker": "Stage Manager",
     "text": "House of Blues — match the beat. Kick, snare, hat. Encore pays chips.",
     "choices": [
-      { "label": "Take the stage", "encounter": "house_of_blues" },
-      { "label": "Stage fright", "next": "hob_stage_bye" }
+      {
+        "label": "Take the stage",
+        "encounter": "house_of_blues"
+      },
+      {
+        "label": "Stage fright",
+        "next": "hob_stage_bye"
+      }
     ]
   },
   "hob_stage_bye": {
@@ -594,13 +971,18 @@
     "text": "The mic will wait. Barely.",
     "setFlag": "met_hob_stage"
   },
-
   "arena_usher_greet": {
     "speaker": "Arena Usher",
     "text": "Michelob ULTRA Arena. Tonight's card: imaginary headliners, real applause tracks.",
     "choices": [
-      { "label": "Watch the show", "next": "arena_usher_show" },
-      { "label": "Leave", "next": "arena_usher_bye" }
+      {
+        "label": "Watch the show",
+        "next": "arena_usher_show"
+      },
+      {
+        "label": "Leave",
+        "next": "arena_usher_bye"
+      }
     ]
   },
   "arena_usher_show": {
@@ -614,13 +996,24 @@
     "text": "Exit south to the casino.",
     "setFlag": "met_arena_usher"
   },
-
   "whale_whitney_greet": {
     "speaker": "Whale Whitney",
     "text": "Foundation Room. We don't chase comps. Comps chase us.",
     "choices": [
-      { "label": "Respect.", "next": "whale_whitney_bye", "reputation": { "whales": 2 } },
-      { "label": "I'm just looking", "next": "whale_whitney_bye", "reputation": { "whales": 0 } }
+      {
+        "label": "Respect.",
+        "next": "whale_whitney_bye",
+        "reputation": {
+          "whales": 2
+        }
+      },
+      {
+        "label": "I'm just looking",
+        "next": "whale_whitney_bye",
+        "reputation": {
+          "whales": 0
+        }
+      }
     ]
   },
   "whale_whitney_bye": {
@@ -628,13 +1021,18 @@
     "text": "Warren has the High Roller cabinet if your stack still breathes.",
     "setFlag": "met_whale_whitney"
   },
-
   "whale_warren_greet": {
     "speaker": "Whale Warren",
     "text": "High Roller cabinet. Same reels. Louder bets.",
     "choices": [
-      { "label": "Spin High Roller", "encounter": "slots_high_roller" },
-      { "label": "Maybe later", "next": "whale_warren_bye" }
+      {
+        "label": "Spin High Roller",
+        "encounter": "slots_high_roller"
+      },
+      {
+        "label": "Maybe later",
+        "next": "whale_warren_bye"
+      }
     ]
   },
   "whale_warren_bye": {
@@ -642,14 +1040,30 @@
     "text": "Whales don't hurry. The house does.",
     "setFlag": "met_whale_warren"
   },
-
   "janitor_joe_greet": {
     "speaker": "Janitor Joe",
     "text": "You found the STAFF ONLY corridor. Congrats. There's a mop and a rumor about cherry reels.",
     "setFlag": "found_back_room",
     "choices": [
-      { "label": "Any secrets?", "next": "janitor_joe_secret" },
-      { "label": "I'll go", "next": "janitor_joe_bye" }
+      {
+        "label": "Any secrets?",
+        "next": "janitor_joe_secret"
+      },
+      {
+        "label": "The building keeps secrets, doesn't it?",
+        "next": "janitor_joe_quest",
+        "unlessFlag": "quest_egg_hunt_started",
+        "setFlag": "quest_egg_hunt_started"
+      },
+      {
+        "label": "How am I doing on that thing?",
+        "next": "janitor_joe_quest_done",
+        "requiresFlag": "quest_egg_hunt_started"
+      },
+      {
+        "label": "I'll go",
+        "next": "janitor_joe_bye"
+      }
     ]
   },
   "janitor_joe_secret": {
@@ -662,5 +1076,1398 @@
     "speaker": "Janitor Joe",
     "text": "South door dumps you back on the floor. Wipe your feet.",
     "setFlag": "met_janitor_joe"
+  },
+  "bookie_blake_challenge": {
+    "speaker": "Bookie Blake",
+    "text": "Hey! HEY. You walked right through my sightline, which in this book counts as a handshake. Blake, oddsmaker. Every screen behind me is a decision you have not made yet.",
+    "choices": [
+      {
+        "label": "Show me the board.",
+        "encounter": "sportsbook",
+        "reputation": {
+          "tourists": 1
+        }
+      },
+      {
+        "label": "I was just passing through.",
+        "next": "bookie_blake_challenge_decline"
+      }
+    ]
+  },
+  "bookie_blake_challenge_decline": {
+    "speaker": "Bookie Blake",
+    "text": "Nobody passes through a sports book. They pass through and then they come back. I'll keep the lock of the week warm.",
+    "setFlag": "met_bookie_blake"
+  },
+  "spinster_sal_challenge": {
+    "speaker": "Spinster Sal",
+    "text": "You felt that, right? That was Fortune Reels calling your name through my peripheral vision. Fourteen machines on this floor and only one of them is yours. Probably.",
+    "choices": [
+      {
+        "label": "Point me at it.",
+        "encounter": "slots_fortune",
+        "reputation": {
+          "tourists": 1
+        }
+      },
+      {
+        "label": "My name's not on anything today.",
+        "next": "spinster_sal_challenge_decline"
+      }
+    ]
+  },
+  "spinster_sal_challenge_decline": {
+    "speaker": "Spinster Sal",
+    "text": "That's what everyone says four minutes before the bell. The aisle isn't going anywhere.",
+    "setFlag": "met_spinster_sal"
+  },
+  "lifeguard_lou_challenge": {
+    "speaker": "Lifeguard Lou",
+    "text": "WHISTLE. Sorry — reflex. You crossed the deck line, which means you're either swimming or you're loitering, and loitering is my whole job. Wave pool cycles in ninety seconds.",
+    "choices": [
+      {
+        "label": "Put me in the wave pool.",
+        "encounter": "pool_wave",
+        "reputation": {
+          "tourists": 1
+        }
+      },
+      {
+        "label": "Just admiring the lazy river.",
+        "next": "lifeguard_lou_challenge_decline"
+      }
+    ]
+  },
+  "lifeguard_lou_challenge_decline": {
+    "speaker": "Lifeguard Lou",
+    "text": "It's not lazy, it's patient. Like the house. Here — wristband's yours either way.",
+    "setFlag": "met_lifeguard_lou",
+    "giveItem": "pool_wristband"
+  },
+  "whale_warren_challenge": {
+    "speaker": "Whale Warren",
+    "text": "Ah. Someone new in the Noir lounge. I make it a rule to notice. Warren. I have lost more in this room than most people earn, and I have never once been bored.",
+    "choices": [
+      {
+        "label": "Show me what a whale plays.",
+        "encounter": "slots_high_roller",
+        "reputation": {
+          "whales": 2
+        }
+      },
+      {
+        "label": "I'm just here for the view.",
+        "next": "whale_warren_challenge_decline"
+      }
+    ]
+  },
+  "whale_warren_challenge_decline": {
+    "speaker": "Whale Warren",
+    "text": "The view is the point. Everything below us is arithmetic. Take a token — the rope remembers who carries one.",
+    "setFlag": "met_whale_warren",
+    "giveItem": "velvet_token"
+  },
+  "salon_pit_boss_greet": {
+    "speaker": "Salon Pit Boss",
+    "text": "Welcome to the salon. Different air in here — filtered, allegedly. Limits start where the main floor stops and end wherever your nerve does.",
+    "choices": [
+      {
+        "label": "Walk me through the salon.",
+        "encounter": "high_limit_salon"
+      },
+      {
+        "label": "What does the rope actually check?",
+        "next": "salon_pit_boss_rope"
+      },
+      {
+        "label": "Just getting my bearings.",
+        "next": "salon_pit_boss_bye"
+      }
+    ]
+  },
+  "salon_pit_boss_rope": {
+    "speaker": "Salon Pit Boss",
+    "text": "Ten thousand on the floor and a stake tier that means it. We don't check your name, we check your posture. The Foundation Room door north of here checks considerably more.",
+    "setFlag": "hint_foundation_room",
+    "next": "salon_pit_boss_bye"
+  },
+  "salon_pit_boss_bye": {
+    "speaker": "Salon Pit Boss",
+    "text": "Take your time. The salon is the only room in this building that isn't in a hurry.",
+    "setFlag": "met_salon_pit_boss"
+  },
+  "salon_dealer_challenge": {
+    "speaker": "Salon Dealer",
+    "text": "Seat's open and the shoe is fresh. Salon limits — the shuffle is the same, the arithmetic just gets louder.",
+    "choices": [
+      {
+        "label": "Deal me in.",
+        "encounter": "blackjack",
+        "reputation": {
+          "whales": 1
+        }
+      },
+      {
+        "label": "I'll watch a shoe first.",
+        "next": "salon_dealer_watch"
+      }
+    ]
+  },
+  "salon_dealer_greet": {
+    "speaker": "Salon Dealer",
+    "text": "Salon blackjack. Same fifty-two cards you've been losing to all night, better upholstery.",
+    "choices": [
+      {
+        "label": "Deal me in.",
+        "encounter": "blackjack",
+        "reputation": {
+          "whales": 1
+        }
+      },
+      {
+        "label": "Watching for now.",
+        "next": "salon_dealer_watch"
+      }
+    ]
+  },
+  "salon_dealer_watch": {
+    "speaker": "Salon Dealer",
+    "text": "Watch all you like. Counting is legal; being obvious about it is not.",
+    "setFlag": "met_salon_dealer"
+  },
+  "salon_cage_greet": {
+    "speaker": "Salon Cage",
+    "text": "Private cage. Same rates as the main floor, shorter line, better pen. Buying in or coloring up?",
+    "choices": [
+      {
+        "label": "Open the cage.",
+        "encounter": "cashier"
+      },
+      {
+        "label": "Neither, thanks.",
+        "next": "salon_cage_bye"
+      }
+    ]
+  },
+  "salon_cage_bye": {
+    "speaker": "Salon Cage",
+    "text": "Understood. The window doesn't close — that's sort of the whole business model.",
+    "setFlag": "met_salon_cage"
+  },
+  "reef_docent_quest": {
+    "speaker": "Reef Docent",
+    "text": "Five species: sandtiger, sawfish, hammerhead, the golden crocodile that is technically not a fish, and the one nobody photographs on the first pass. Camera's yours.",
+    "giveItem": "reef_camera",
+    "startQuest": "shark_photos",
+    "next": "reef_docent_bye"
+  },
+  "reef_docent_quest_progress": {
+    "speaker": "Reef Docent",
+    "text": "Still hunting species? The sawfish hides behind the acrylic seam. That's all you get from me.",
+    "next": "reef_docent_bye"
+  },
+  "reef_docent_quest_done": {
+    "speaker": "Reef Docent",
+    "text": "Nothing left on that one. You did the whole thing. Most people quit at the interesting part.",
+    "next": "reef_docent_bye",
+    "requiresQuestStage": {
+      "id": "shark_photos",
+      "complete": true
+    },
+    "elseNext": "reef_docent_quest_progress"
+  },
+  "barkeep_betty_quest": {
+    "speaker": "Barkeep Betty",
+    "text": "Three bars: mine, the one by the pool that overcharges, and the one upstairs that pretends it isn't a bar. Drink at all three and I'll admit you know the property.",
+    "startQuest": "bar_crawl",
+    "next": "barkeep_betty_bye"
+  },
+  "barkeep_betty_quest_progress": {
+    "speaker": "Barkeep Betty",
+    "text": "How's the crawl? Pace yourself — the upstairs bar pours like it's trying to end the evening.",
+    "next": "barkeep_betty_bye"
+  },
+  "barkeep_betty_quest_done": {
+    "speaker": "Barkeep Betty",
+    "text": "Nothing left on that one. You did the whole thing. Most people quit at the interesting part.",
+    "next": "barkeep_betty_bye",
+    "requiresQuestStage": {
+      "id": "bar_crawl",
+      "complete": true
+    },
+    "elseNext": "barkeep_betty_quest_progress"
+  },
+  "spinster_sal_quest": {
+    "speaker": "Spinster Sal",
+    "text": "Eight machines. Different eight than you'd guess. I've mapped the loose ones for thirty years and the map is in my head, so you'll have to do the walking.",
+    "startQuest": "jackpot_hunt",
+    "next": "spinster_sal_bye"
+  },
+  "spinster_sal_quest_progress": {
+    "speaker": "Spinster Sal",
+    "text": "Machines don't remember you, but I do. Keep walking the aisle.",
+    "next": "spinster_sal_bye"
+  },
+  "spinster_sal_quest_done": {
+    "speaker": "Spinster Sal",
+    "text": "Nothing left on that one. You did the whole thing. Most people quit at the interesting part.",
+    "next": "spinster_sal_bye",
+    "requiresQuestStage": {
+      "id": "jackpot_hunt",
+      "complete": true
+    },
+    "elseNext": "spinster_sal_quest_progress"
+  },
+  "shop_clerk_quest": {
+    "speaker": "Shop Clerk",
+    "text": "Six bags across the sky bridge and you've officially shopped Mandalay Place. Seven and you've got a problem. We sell luggage for exactly that reason.",
+    "startQuest": "sky_bridge_haul",
+    "next": "shop_clerk_bye"
+  },
+  "shop_clerk_quest_progress": {
+    "speaker": "Shop Clerk",
+    "text": "Bags accumulate faster than regret. Keep going.",
+    "next": "shop_clerk_bye"
+  },
+  "shop_clerk_quest_done": {
+    "speaker": "Shop Clerk",
+    "text": "Nothing left on that one. You did the whole thing. Most people quit at the interesting part.",
+    "next": "shop_clerk_bye",
+    "requiresQuestStage": {
+      "id": "sky_bridge_haul",
+      "complete": true
+    },
+    "elseNext": "shop_clerk_quest_progress"
+  },
+  "clerk_carmen_quest": {
+    "speaker": "Clerk Carmen",
+    "text": "The TV, the minibar, the phone, the balcony, and the bed all have opinions. Five of them will surprise you. Sixteen if you stay long enough, but nobody stays that long.",
+    "giveItem": "room_key",
+    "startQuest": "room_vignettes",
+    "next": "clerk_carmen_bye"
+  },
+  "clerk_carmen_quest_progress": {
+    "speaker": "Clerk Carmen",
+    "text": "The room's still got things to tell you. Most guests never pick up the phone.",
+    "next": "clerk_carmen_bye"
+  },
+  "clerk_carmen_quest_done": {
+    "speaker": "Clerk Carmen",
+    "text": "Nothing left on that one. You did the whole thing. Most people quit at the interesting part.",
+    "next": "clerk_carmen_bye",
+    "requiresQuestStage": {
+      "id": "room_vignettes",
+      "complete": true
+    },
+    "elseNext": "clerk_carmen_quest_progress"
+  },
+  "lifeguard_lou_quest": {
+    "speaker": "Lifeguard Lou",
+    "text": "Four things worth witnessing: the wave that gets everyone, the hot tub conversation, the cabana bottle nobody ordered, and whatever the rave becomes after midnight.",
+    "startQuest": "pool_vignettes",
+    "next": "lifeguard_lou_bye"
+  },
+  "lifeguard_lou_quest_progress": {
+    "speaker": "Lifeguard Lou",
+    "text": "Acres left to witness. The rave doesn't start until it's too late to leave.",
+    "next": "lifeguard_lou_bye"
+  },
+  "lifeguard_lou_quest_done": {
+    "speaker": "Lifeguard Lou",
+    "text": "Nothing left on that one. You did the whole thing. Most people quit at the interesting part.",
+    "next": "lifeguard_lou_bye",
+    "requiresQuestStage": {
+      "id": "pool_vignettes",
+      "complete": true
+    },
+    "elseNext": "lifeguard_lou_quest_progress"
+  },
+  "janitor_joe_quest": {
+    "speaker": "Janitor Joe",
+    "text": "Ten of them, near as I can count, and I've had thirty years to count. None of them pay. That's how you know they're real.",
+    "giveItem": "staff_lanyard",
+    "startQuest": "egg_hunt",
+    "next": "janitor_joe_bye"
+  },
+  "janitor_joe_quest_progress": {
+    "speaker": "Janitor Joe",
+    "text": "Still looking? Good. The ones you find on purpose don't count as much.",
+    "next": "janitor_joe_bye"
+  },
+  "janitor_joe_quest_done": {
+    "speaker": "Janitor Joe",
+    "text": "Nothing left on that one. You did the whole thing. Most people quit at the interesting part.",
+    "next": "janitor_joe_bye",
+    "requiresQuestStage": {
+      "id": "egg_hunt",
+      "complete": true
+    },
+    "elseNext": "janitor_joe_quest_progress"
+  },
+  "lobby_statue_quest": {
+    "speaker": "Golden Statue",
+    "text": "The plaque lists everything the resort thinks you should experience. It is a long list. The lion looks smug about it.",
+    "startQuest": "resort_completion",
+    "next": "lobby_statue_bye"
+  },
+  "lobby_statue_quest_progress": {
+    "speaker": "Golden Statue",
+    "text": "The lion has not blinked. The list has not shortened.",
+    "next": "lobby_statue_bye"
+  },
+  "lobby_statue_quest_done": {
+    "speaker": "Golden Statue",
+    "text": "Nothing left on that one. You did the whole thing. Most people quit at the interesting part.",
+    "next": "lobby_statue_bye",
+    "requiresQuestStage": {
+      "id": "resort_completion",
+      "complete": true
+    },
+    "elseNext": "lobby_statue_quest_progress"
+  },
+  "chip_chandler_dealer_quest": {
+    "speaker": "Chip Chandler",
+    "text": "Seven dealers rotate the pits on any given night. Shake every hand and the pit crew starts calling you by name, which is either an honor or a warning.",
+    "giveItem": "players_card",
+    "startQuest": "dealer_meet_and_greet",
+    "next": "chip_chandler_bye"
+  },
+  "doorman_dante_greet": {
+    "speaker": "Doorman Dante",
+    "text": "Evening. Doors are gold, the air is cold, and the carpet is designed to make you forget which way is out. Welcome to Mandalay Bay.",
+    "choices": [
+      {
+        "label": "What's inside?",
+        "next": "doorman_dante_tour"
+      },
+      {
+        "label": "Anywhere I shouldn't go?",
+        "next": "doorman_dante_warn"
+      },
+      {
+        "label": "Just getting my bearings.",
+        "next": "doorman_dante_bye"
+      }
+    ]
+  },
+  "doorman_dante_tour": {
+    "speaker": "Doorman Dante",
+    "text": "Straight through registration for the casino floor. Slots and the pit up north, race book west, the Shoppes and the sky bridge east. Eleven acres of pool out back and a shark tank under it all.",
+    "setFlag": "met_doorman_dante",
+    "next": "doorman_dante_bye"
+  },
+  "doorman_dante_warn": {
+    "speaker": "Doorman Dante",
+    "text": "High Limit Salon needs chips in your hand before the rope moves. Foundation Room needs a name I don't have. And back-of-house doors are for people wearing name tags.",
+    "setFlag": "hint_venues",
+    "next": "doorman_dante_bye"
+  },
+  "doorman_dante_bye": {
+    "speaker": "Doorman Dante",
+    "text": "Doors open all night. So does everything behind them."
+  },
+  "cab_line_carl_greet": {
+    "speaker": "Cab Line Carl",
+    "text": "Forty minutes for a cab. Fifty if it rains, which it won't. I've been in this line since the buffet closed.",
+    "choices": [
+      {
+        "label": "Why not just walk?",
+        "next": "cab_line_carl_walk"
+      },
+      {
+        "label": "You got a card for that?",
+        "next": "cab_line_carl_card"
+      },
+      {
+        "label": "Good luck out here.",
+        "next": "cab_line_carl_bye"
+      }
+    ]
+  },
+  "cab_line_carl_walk": {
+    "speaker": "Cab Line Carl",
+    "text": "Walk? On the Strip? Friend, the next hotel is a mile of sidewalk and two escalators away. The line is shorter than the walk. Barely.",
+    "next": "cab_line_carl_bye"
+  },
+  "cab_line_carl_card": {
+    "speaker": "Cab Line Carl",
+    "text": "Take this. Guy handed it to me — 555-0199, no name, no company. Dial it sometime. It rings. Somebody picks up. That's all I'll say.",
+    "setFlag": "egg_wrong_number",
+    "next": "cab_line_carl_bye"
+  },
+  "cab_line_carl_bye": {
+    "speaker": "Cab Line Carl",
+    "text": "If a cab pulls up and nobody's looking, I never saw you."
+  },
+  "valet_vic_greet": {
+    "speaker": "Valet Vic",
+    "text": "Level P1. Keys on the hook, cars on the ramp, and one very tired golf cart in the corner.",
+    "choices": [
+      {
+        "label": "Can I get the comped cart?",
+        "next": "valet_vic_cart"
+      },
+      {
+        "label": "Anything worth seeing down here?",
+        "next": "valet_vic_garage"
+      },
+      {
+        "label": "I'll walk.",
+        "next": "valet_vic_bye"
+      }
+    ]
+  },
+  "valet_vic_cart": {
+    "speaker": "Valet Vic",
+    "text": "Cart's comped at Platinum and up. Get your play in and it unlocks itself — you'll feel it in your feet before you see it on the card.",
+    "setFlag": "hint_golf_cart",
+    "next": "valet_vic_bye"
+  },
+  "valet_vic_garage": {
+    "speaker": "Valet Vic",
+    "text": "Row F has a car that's been here since the Fourth of July. Nobody's asked about it. I water the dust.",
+    "next": "valet_vic_bye"
+  },
+  "valet_vic_bye": {
+    "speaker": "Valet Vic",
+    "text": "Elevator's east. Try not to come back down heavier than you went up."
+  },
+  "valet_vic_challenge": {
+    "speaker": "Valet Vic",
+    "text": "Hey — HEY. You're the one going upstairs with real money, aren't you. Take the cart line seriously and I'll take you seriously.",
+    "reputation": {
+      "staff": 1
+    },
+    "next": "valet_vic_greet"
+  },
+  "bell_desk_bruno_greet": {
+    "speaker": "Bell Desk Bruno",
+    "text": "Bell desk. I move luggage, shopping bags, and the occasional regret. What are we carrying?",
+    "choices": [
+      {
+        "label": "Can you hold shopping bags?",
+        "next": "bell_desk_bruno_bags"
+      },
+      {
+        "label": "How's the sky bridge haul?",
+        "next": "bell_desk_bruno_bridge"
+      },
+      {
+        "label": "Nothing yet.",
+        "next": "bell_desk_bruno_bye"
+      }
+    ]
+  },
+  "bell_desk_bruno_bags": {
+    "speaker": "Bell Desk Bruno",
+    "text": "Buy it at the Shoppes, tell Bev at bag check, and it lands in your room before you do. Your Bag menu keeps the receipt either way.",
+    "setFlag": "hint_mall_bag",
+    "next": "bell_desk_bruno_bye"
+  },
+  "bell_desk_bruno_bridge": {
+    "speaker": "Bell Desk Bruno",
+    "text": "Six bags is the record for one crossing. Guy from Reno, 2011. He dropped one at the halfway point and we do not speak of it.",
+    "next": "bell_desk_bruno_bye"
+  },
+  "bell_desk_bruno_bye": {
+    "speaker": "Bell Desk Bruno",
+    "text": "Trolley's over there if you change your mind."
+  },
+  "slot_tech_tessa_greet": {
+    "speaker": "Slot Tech Tessa",
+    "text": "Don't ask me which one is due. Nothing is due. That said, I do have a service ladder and opinions.",
+    "choices": [
+      {
+        "label": "Which machine is loose?",
+        "next": "slot_tech_tessa_loose"
+      },
+      {
+        "label": "What's that brass bell up there?",
+        "next": "slot_tech_tessa_bell"
+      },
+      {
+        "label": "Any fruit machines left?",
+        "next": "slot_tech_tessa_cherry"
+      },
+      {
+        "label": "I'll figure it out.",
+        "next": "slot_tech_tessa_bye"
+      }
+    ]
+  },
+  "slot_tech_tessa_loose": {
+    "speaker": "Slot Tech Tessa",
+    "text": "Play eight different machines and you'll learn more than I can tell you. The floor keeps count even when you don't.",
+    "startQuest": "jackpot_hunt",
+    "encounter": "slots"
+  },
+  "slot_tech_tessa_bell": {
+    "speaker": "Slot Tech Tessa",
+    "text": "That's the old handpay bell. Hasn't rung since 1999 — we page a phone now. I still polish it. Somebody should hear it again.",
+    "setFlag": "egg_jackpot_bell",
+    "next": "slot_tech_tessa_bye"
+  },
+  "slot_tech_tessa_cherry": {
+    "speaker": "Slot Tech Tessa",
+    "text": "One. End of the aisle, mechanical reels, pays in fruit like it's still got a coin hopper. It is not on any report I file.",
+    "setFlag": "easter_cherry",
+    "next": "slot_tech_tessa_bye"
+  },
+  "slot_tech_tessa_bye": {
+    "speaker": "Slot Tech Tessa",
+    "text": "If a screen freezes, wave. Don't hit it. Everyone hits it."
+  },
+  "slot_tech_tessa_challenge": {
+    "speaker": "Slot Tech Tessa",
+    "text": "You've got the walk of somebody who thinks they've spotted a pattern. Sit down. Let's test the theory on my aisle.",
+    "reputation": {
+      "staff": 1
+    },
+    "encounter": "slots"
+  },
+  "cocktail_cora_greet": {
+    "speaker": "Cocktail Cora",
+    "text": "Drinks are free while you're playing, and 'playing' is a generous word around here. What'll it be?",
+    "choices": [
+      {
+        "label": "Something on the house.",
+        "encounter": "bar"
+      },
+      {
+        "label": "How's the bar crawl going?",
+        "next": "cocktail_cora_crawl"
+      },
+      {
+        "label": "Later.",
+        "next": "cocktail_cora_bye"
+      }
+    ]
+  },
+  "cocktail_cora_crawl": {
+    "speaker": "Cocktail Cora",
+    "text": "Three bars on property worth the walk: Betty's in the west lobby, the Skyfall up top, and whatever they're calling the beach bar this season. Do all three and Betty gives you a coaster she stole from herself.",
+    "setFlag": "hint_bar_crawl",
+    "next": "cocktail_cora_bye"
+  },
+  "cocktail_cora_bye": {
+    "speaker": "Cocktail Cora",
+    "text": "Flag me down. I circle every eleven minutes, like weather."
+  },
+  "stable_hand_stu_greet": {
+    "speaker": "Stable Hand Stu",
+    "text": "Simulcast on the screens, stables on the board. I know every horse by the way it breathes, which has never once helped me pick one.",
+    "choices": [
+      {
+        "label": "Show me the stables.",
+        "encounter": "horse_stables"
+      },
+      {
+        "label": "Any advice?",
+        "next": "stable_hand_stu_tip"
+      },
+      {
+        "label": "Just watching.",
+        "next": "stable_hand_stu_bye"
+      }
+    ]
+  },
+  "stable_hand_stu_tip": {
+    "speaker": "Stable Hand Stu",
+    "text": "Never bet the grey in the rain and never bet the favorite because it's the favorite. It doesn't rain here, so that's half my system already useless.",
+    "next": "stable_hand_stu_bye"
+  },
+  "stable_hand_stu_bye": {
+    "speaker": "Stable Hand Stu",
+    "text": "Post time's whenever the screen says. It's always about to be post time."
+  },
+  "host_alexandra_greet": {
+    "speaker": "Host Alexandra",
+    "text": "Alexandra. I run the list. If you're standing here, someone decided you were interesting — that was probably me, and I can change my mind.",
+    "choices": [
+      {
+        "label": "Seat me in the lounge.",
+        "encounter": "foundation_room_lounge"
+      },
+      {
+        "label": "What gets me comped?",
+        "next": "host_alexandra_comps"
+      },
+      {
+        "label": "Who else is up here?",
+        "next": "host_alexandra_room"
+      },
+      {
+        "label": "Just enjoying the view.",
+        "next": "host_alexandra_bye"
+      }
+    ]
+  },
+  "host_alexandra_comps": {
+    "speaker": "Host Alexandra",
+    "text": "Theatre of play, not size of win. Sit long, tip well, lose gracefully. Your phone tracks it — check the rewards tier before you ask me for anything.",
+    "setFlag": "met_host_alexandra",
+    "next": "host_alexandra_bye"
+  },
+  "host_alexandra_room": {
+    "speaker": "Host Alexandra",
+    "text": "Whitney and Warren. Whitney counts cards for fun and never plays. Warren plays everything and counts nothing. They've been married to that dynamic for years.",
+    "next": "host_alexandra_bye"
+  },
+  "host_alexandra_bye": {
+    "speaker": "Host Alexandra",
+    "text": "The city looks better from here because you can't hear it."
+  },
+  "boutique_bianca_greet": {
+    "speaker": "Boutique Bianca",
+    "text": "Designer wing. Everything is a little too expensive on purpose — it's a service we provide.",
+    "choices": [
+      {
+        "label": "Show me the stores.",
+        "encounter": "shops"
+      },
+      {
+        "label": "What sells at 3am?",
+        "next": "boutique_bianca_late"
+      },
+      {
+        "label": "Only browsing.",
+        "next": "boutique_bianca_bye"
+      }
+    ]
+  },
+  "boutique_bianca_late": {
+    "speaker": "Boutique Bianca",
+    "text": "Sunglasses and apology jewelry, in that order. The register can tell what kind of night you had.",
+    "next": "boutique_bianca_bye"
+  },
+  "boutique_bianca_bye": {
+    "speaker": "Boutique Bianca",
+    "text": "The sky bridge is that way. Mind the bags."
+  },
+  "bag_check_bev_greet": {
+    "speaker": "Bag Check Bev",
+    "text": "Hand it over and it goes to your room. Carry it yourself and it goes wherever you drop it, which is usually the pool.",
+    "choices": [
+      {
+        "label": "Check my bag.",
+        "encounter": "mall_bag"
+      },
+      {
+        "label": "What's the record?",
+        "next": "bag_check_bev_record"
+      },
+      {
+        "label": "I'll hold on to it.",
+        "next": "bag_check_bev_bye"
+      }
+    ]
+  },
+  "bag_check_bev_record": {
+    "speaker": "Bag Check Bev",
+    "text": "Six bags across the bridge in one trip. Bruno tells it better than I do, and he tells it wrong.",
+    "next": "bag_check_bev_bye"
+  },
+  "bag_check_bev_bye": {
+    "speaker": "Bag Check Bev",
+    "text": "Tag's good all night. So am I."
+  },
+  "busker_bo_greet": {
+    "speaker": "Busker Bo",
+    "text": "Best acoustics on property. Two casinos, one hallway, and nobody's in a hurry because they're already lost.",
+    "choices": [
+      {
+        "label": "Play something.",
+        "encounter": "rhythm"
+      },
+      {
+        "label": "How's the crowd?",
+        "next": "busker_bo_crowd"
+      },
+      {
+        "label": "Keep it up.",
+        "next": "busker_bo_bye"
+      }
+    ]
+  },
+  "busker_bo_crowd": {
+    "speaker": "Busker Bo",
+    "text": "Winners tip loud. Losers tip more. I've learned not to ask which one is walking toward me.",
+    "next": "busker_bo_bye"
+  },
+  "busker_bo_bye": {
+    "speaker": "Busker Bo",
+    "text": "Same spot all night. The bridge doesn't close."
+  },
+  "busker_bo_challenge": {
+    "speaker": "Busker Bo",
+    "text": "You walk in time. Most people don't. Let's find out if that's rhythm or just a good pair of shoes.",
+    "reputation": {
+      "tourists": 1
+    },
+    "encounter": "rhythm"
+  },
+  "badge_barry_greet": {
+    "speaker": "Badge Barry",
+    "text": "Registration for the expo. No badge, no floor. Badge, still no floor if the keynote's running.",
+    "choices": [
+      {
+        "label": "What's the expo?",
+        "next": "badge_barry_expo"
+      },
+      {
+        "label": "Can I get a badge?",
+        "next": "badge_barry_badge"
+      },
+      {
+        "label": "Wrong hallway.",
+        "next": "badge_barry_bye"
+      }
+    ]
+  },
+  "badge_barry_expo": {
+    "speaker": "Badge Barry",
+    "text": "This week it's industrial refrigeration. Last week it was hypnotists. The hypnotists tipped better and left the chairs facing the wrong way.",
+    "next": "badge_barry_bye"
+  },
+  "badge_barry_badge": {
+    "speaker": "Badge Barry",
+    "text": "Here. Guest badge, lanyard's the cheap kind. Don't wear it to the pool — you'd be amazed how often I have to say that.",
+    "setFlag": "met_badge_barry",
+    "next": "badge_barry_bye"
+  },
+  "badge_barry_bye": {
+    "speaker": "Badge Barry",
+    "text": "Casino's back through the double doors. Follow the carpet that hurts to look at."
+  },
+  "vendor_val_greet": {
+    "speaker": "Vendor Val",
+    "text": "Booth 114. I've handed out four thousand pens and made zero sales, and my company calls that a successful activation.",
+    "choices": [
+      {
+        "label": "What are you selling?",
+        "encounter": "shops"
+      },
+      {
+        "label": "Rough week?",
+        "next": "vendor_val_week"
+      },
+      {
+        "label": "Good luck.",
+        "next": "vendor_val_bye"
+      }
+    ]
+  },
+  "vendor_val_week": {
+    "speaker": "Vendor Val",
+    "text": "Nine hours on carpet over concrete. The pool is two hundred feet that way and I have seen it exactly once, from a window, while carrying a box.",
+    "next": "vendor_val_bye"
+  },
+  "vendor_val_bye": {
+    "speaker": "Vendor Val",
+    "text": "Take a pen. Take two. Please."
+  },
+  "regular_reggie_greet": {
+    "speaker": "Regular Reggie",
+    "text": "Third stool from the end. Twelve years. Betty pours before I sit, which is either friendship or a diagnosis.",
+    "choices": [
+      {
+        "label": "Best bar on property?",
+        "next": "regular_reggie_bars"
+      },
+      {
+        "label": "Seen anything strange?",
+        "next": "regular_reggie_strange"
+      },
+      {
+        "label": "Enjoy it.",
+        "next": "regular_reggie_bye"
+      }
+    ]
+  },
+  "regular_reggie_bars": {
+    "speaker": "Regular Reggie",
+    "text": "Here for the pour, Skyfall for the view, the beach bar for the mistake. Do all three in a night and Betty stops charging you. She also stops respecting you.",
+    "setFlag": "hint_bar_crawl",
+    "next": "regular_reggie_bye"
+  },
+  "regular_reggie_strange": {
+    "speaker": "Regular Reggie",
+    "text": "The elevator skips a floor. Everyone notices, nobody says it. Ask Cleo upstairs — she'll tell you it's mechanical. It's not mechanical.",
+    "setFlag": "hint_phantom_floor",
+    "next": "regular_reggie_bye"
+  },
+  "regular_reggie_bye": {
+    "speaker": "Regular Reggie",
+    "text": "Tell Betty the ice is fine. She worries about the ice."
+  },
+  "sommelier_sy_greet": {
+    "speaker": "Sommelier Sy",
+    "text": "Sixty-fourth floor. The list is long, the pours are honest, and the view does most of the selling.",
+    "choices": [
+      {
+        "label": "Pour me something.",
+        "encounter": "bar"
+      },
+      {
+        "label": "What's the view worth?",
+        "next": "sommelier_sy_view"
+      },
+      {
+        "label": "Just looking out.",
+        "next": "sommelier_sy_bye"
+      }
+    ]
+  },
+  "sommelier_sy_view": {
+    "speaker": "Sommelier Sy",
+    "text": "About eleven dollars a glass, priced in. From up here the Strip looks like a circuit board somebody left plugged in.",
+    "next": "sommelier_sy_bye"
+  },
+  "sommelier_sy_bye": {
+    "speaker": "Sommelier Sy",
+    "text": "Last call is a suggestion we make politely and repeatedly."
+  },
+  "concierge_cleo_greet": {
+    "speaker": "Concierge Cleo",
+    "text": "Concierge. Reservations, directions, and the occasional impossible request I quietly enjoy.",
+    "choices": [
+      {
+        "label": "Who else is staying here?",
+        "encounter": "guest_directory"
+      },
+      {
+        "label": "Why does the elevator skip a floor?",
+        "next": "concierge_cleo_floor"
+      },
+      {
+        "label": "Nothing right now.",
+        "next": "concierge_cleo_bye"
+      }
+    ]
+  },
+  "concierge_cleo_floor": {
+    "speaker": "Concierge Cleo",
+    "text": "Officially there's no button because there's no floor. Unofficially, press where the button isn't and hold. The tower hums back. I've never explained it and I'm not starting now.",
+    "setFlag": "egg_phantom_floor",
+    "next": "concierge_cleo_bye"
+  },
+  "concierge_cleo_bye": {
+    "speaker": "Concierge Cleo",
+    "text": "Dial 0 from the room. Someone answers. Usually me."
+  },
+  "housekeeper_hana_greet": {
+    "speaker": "Housekeeper Hana",
+    "text": "Twenty-fourth floor, east side. I know which rooms slept and which ones just paid.",
+    "choices": [
+      {
+        "label": "Any rooms with a story?",
+        "next": "housekeeper_hana_stories"
+      },
+      {
+        "label": "What's the Delano wing like?",
+        "next": "housekeeper_hana_delano"
+      },
+      {
+        "label": "Sorry — I'll get out of your way.",
+        "next": "housekeeper_hana_bye"
+      }
+    ]
+  },
+  "housekeeper_hana_stories": {
+    "speaker": "Housekeeper Hana",
+    "text": "Every room has one, and you only get yours by staying in it. Turn the TV on, open the minibar, answer the phone. The suite will tell you the rest.",
+    "setFlag": "hint_room_vignettes",
+    "next": "housekeeper_hana_bye"
+  },
+  "housekeeper_hana_delano": {
+    "speaker": "Housekeeper Hana",
+    "text": "Quieter. Cleaner. The carpet pattern over there never repeats, and I've walked it more than anyone alive. Go look, then tell me I'm wrong.",
+    "setFlag": "hint_delano_ghost",
+    "next": "housekeeper_hana_bye"
+  },
+  "housekeeper_hana_bye": {
+    "speaker": "Housekeeper Hana",
+    "text": "Hanger goes on the outside handle. Inside means nothing to anybody."
+  },
+  "housekeeper_hana_challenge": {
+    "speaker": "Housekeeper Hana",
+    "text": "You've walked this corridor three times without opening a door. Either you're lost or you're looking for something. Both are my business up here.",
+    "reputation": {
+      "staff": 1
+    },
+    "next": "housekeeper_hana_greet"
+  },
+  "room_console_greet": {
+    "speaker": "Room Console",
+    "text": "Drapes, lights, temperature, TV, and a phone that reaches the whole property. The room does more than you do.",
+    "choices": [
+      {
+        "label": "Use the room.",
+        "encounter": "hotel_room"
+      },
+      {
+        "label": "Try the odd button sequence.",
+        "next": "room_console_konami"
+      },
+      {
+        "label": "Leave it alone.",
+        "next": "room_console_bye"
+      }
+    ]
+  },
+  "room_console_konami": {
+    "speaker": "Room Console",
+    "text": "Up, up, down, down… the drapes open on a view that isn't outside your window, hold for a beat, and close. The console reports no fault.",
+    "setFlag": "konami_mode",
+    "next": "room_console_bye"
+  },
+  "room_console_bye": {
+    "speaker": "Room Console",
+    "text": "Standby. The room waits better than you do."
+  },
+  "minibar_greet": {
+    "speaker": "Minibar",
+    "text": "Sensors under every bottle. Lift one and think better of it — too late, it's already on the folio.",
+    "choices": [
+      {
+        "label": "Open it anyway.",
+        "encounter": "hotel_dining"
+      },
+      {
+        "label": "Read the price card.",
+        "next": "minibar_prices"
+      },
+      {
+        "label": "Close the door.",
+        "next": "minibar_bye"
+      }
+    ]
+  },
+  "minibar_prices": {
+    "speaker": "Minibar",
+    "text": "Water: more than the flight here. Nuts: the price of a paperback. Somebody laminated this and felt fine.",
+    "next": "minibar_bye"
+  },
+  "minibar_bye": {
+    "speaker": "Minibar",
+    "text": "The door closes with a click that sounds like a receipt."
+  },
+  "delano_dana_greet": {
+    "speaker": "Delano Dana",
+    "text": "All-suite tower. No casino noise, no bell sounds, no reason to hurry. Guests come here when the other side stops being fun.",
+    "choices": [
+      {
+        "label": "Look at the carpet.",
+        "next": "delano_dana_ghost"
+      },
+      {
+        "label": "Why so quiet?",
+        "next": "delano_dana_quiet"
+      },
+      {
+        "label": "Nice up here.",
+        "next": "delano_dana_bye"
+      }
+    ]
+  },
+  "delano_dana_ghost": {
+    "speaker": "Delano Dana",
+    "text": "You noticed. Follow the pattern with your eyes and it never comes back around. The installers swore it tiles. It does not tile.",
+    "setFlag": "egg_delano_ghost",
+    "next": "delano_dana_bye"
+  },
+  "delano_dana_quiet": {
+    "speaker": "Delano Dana",
+    "text": "Separate entrance, separate air, separate everything. Some guests never once see a slot machine. I envy them and I don't understand them.",
+    "next": "delano_dana_bye"
+  },
+  "delano_dana_bye": {
+    "speaker": "Delano Dana",
+    "text": "Take the connector back when you're ready. It's the only loud thing over here."
+  },
+  "spa_attendant_ash_greet": {
+    "speaker": "Attendant Ash",
+    "text": "Bathhouse. Steam, cold plunge, quiet room. The quiet room has a two-drink history and a one-nap future.",
+    "choices": [
+      {
+        "label": "Who comes here?",
+        "next": "spa_attendant_ash_guests"
+      },
+      {
+        "label": "Does it help?",
+        "next": "spa_attendant_ash_help"
+      },
+      {
+        "label": "Maybe later.",
+        "next": "spa_attendant_ash_bye"
+      }
+    ]
+  },
+  "spa_attendant_ash_guests": {
+    "speaker": "Attendant Ash",
+    "text": "Winners at ten in the morning. Losers at four in the afternoon. Both of them fall asleep in the same chair.",
+    "next": "spa_attendant_ash_bye"
+  },
+  "spa_attendant_ash_help": {
+    "speaker": "Attendant Ash",
+    "text": "The steam helps. The plunge helps more. Nothing here fixes a bad run at the tables, but it does make you slower about starting the next one.",
+    "setFlag": "visited_spa",
+    "next": "spa_attendant_ash_bye"
+  },
+  "spa_attendant_ash_bye": {
+    "speaker": "Attendant Ash",
+    "text": "Robes are on the hook. Take a cold one on the way out."
+  },
+  "cabana_curtis_greet": {
+    "speaker": "Cabana Curtis",
+    "text": "Cabana row. Shade, a fridge, a TV nobody watches, and a bottle list that starts optimistic and ends expensive.",
+    "choices": [
+      {
+        "label": "Book a cabana.",
+        "encounter": "pool_cabanas"
+      },
+      {
+        "label": "Worth the money?",
+        "next": "cabana_curtis_worth"
+      },
+      {
+        "label": "I'll take a lounger.",
+        "next": "cabana_curtis_bye"
+      }
+    ]
+  },
+  "cabana_curtis_worth": {
+    "speaker": "Cabana Curtis",
+    "text": "Worth it if you're staying six hours. Not worth it if you're staying two. Everyone tells me two and stays six.",
+    "next": "cabana_curtis_bye"
+  },
+  "cabana_curtis_bye": {
+    "speaker": "Cabana Curtis",
+    "text": "Hal's in the hot tub if you want conversation you can't escape."
+  },
+  "hot_tub_hal_greet": {
+    "speaker": "Hot Tub Hal",
+    "text": "Ninety-nine degrees, all day, every day. I have been in this water long enough to have opinions about the filter.",
+    "choices": [
+      {
+        "label": "Get in.",
+        "encounter": "pool_hot_tubs"
+      },
+      {
+        "label": "How long have you been here?",
+        "next": "hot_tub_hal_long"
+      },
+      {
+        "label": "Too hot for me.",
+        "next": "hot_tub_hal_bye"
+      }
+    ]
+  },
+  "hot_tub_hal_long": {
+    "speaker": "Hot Tub Hal",
+    "text": "Checked in Thursday. It's Thursday somewhere. I've eaten two meals in this tub and both of them were nachos.",
+    "next": "hot_tub_hal_bye"
+  },
+  "hot_tub_hal_bye": {
+    "speaker": "Hot Tub Hal",
+    "text": "Wave pool's north if you want weather with your water."
+  },
+  "rave_dj_greet": {
+    "speaker": "Moonlight DJ",
+    "text": "Moonlight set. Sand's still warm, the wave machine's on a timer, and nobody out here knows what day it is.",
+    "choices": [
+      {
+        "label": "Get on the sand.",
+        "encounter": "pool_rave"
+      },
+      {
+        "label": "What's the timer?",
+        "next": "rave_dj_timer"
+      },
+      {
+        "label": "Just listening.",
+        "next": "rave_dj_bye"
+      }
+    ]
+  },
+  "rave_dj_timer": {
+    "speaker": "Moonlight DJ",
+    "text": "Waves every four minutes. I drop on the third. Everybody thinks it's luck — it's a maintenance schedule with a beat over it.",
+    "setFlag": "hint_wave_timing",
+    "next": "rave_dj_bye"
+  },
+  "rave_dj_bye": {
+    "speaker": "Moonlight DJ",
+    "text": "Set goes till the lifeguards get tired. They never get tired."
+  },
+  "rave_dj_challenge": {
+    "speaker": "Moonlight DJ",
+    "text": "You've been standing in the same spot nodding on the two and the four. That's not nothing. Get on the sand.",
+    "reputation": {
+      "tourists": 1
+    },
+    "encounter": "pool_rave"
+  },
+  "reef_dj_greet": {
+    "speaker": "Reef DJ",
+    "text": "Yes, there's a DJ at the aquarium. No, the sharks don't mind — I've asked, at length, out loud, to a shark.",
+    "choices": [
+      {
+        "label": "What do you play?",
+        "next": "reef_dj_set"
+      },
+      {
+        "label": "Do the fish react?",
+        "next": "reef_dj_fish"
+      },
+      {
+        "label": "Only in Vegas.",
+        "next": "reef_dj_bye"
+      }
+    ]
+  },
+  "reef_dj_set": {
+    "speaker": "Reef DJ",
+    "text": "Ambient until nine, then whatever keeps a family of four from noticing they've been in a tunnel for forty minutes.",
+    "next": "reef_dj_bye"
+  },
+  "reef_dj_fish": {
+    "speaker": "Reef DJ",
+    "text": "The sand tiger swims a lap on every bass drop. Coincidence, says the biologist. She's said it four hundred times and she's stopped sounding sure.",
+    "setFlag": "hint_reef_glass",
+    "next": "reef_dj_bye"
+  },
+  "reef_dj_bye": {
+    "speaker": "Reef DJ",
+    "text": "Tunnel's that way. Mind the glass. Everyone taps the glass."
+  },
+  "hob_bouncer_greet": {
+    "speaker": "HOB Bouncer",
+    "text": "Stage door. List only, and the list is short tonight because the headliner is in a mood.",
+    "choices": [
+      {
+        "label": "What's on the rider?",
+        "next": "hob_bouncer_list"
+      },
+      {
+        "label": "Who's playing?",
+        "next": "hob_bouncer_who"
+      },
+      {
+        "label": "I'll watch from the floor.",
+        "next": "hob_bouncer_bye"
+      }
+    ]
+  },
+  "hob_bouncer_list": {
+    "speaker": "HOB Bouncer",
+    "text": "One bowl of M&Ms. Green only. It's in the contract, it's been honored every night for nine years, and nobody has ever eaten one.",
+    "setFlag": "egg_green_room",
+    "next": "hob_bouncer_bye"
+  },
+  "hob_bouncer_who": {
+    "speaker": "HOB Bouncer",
+    "text": "Somebody big enough to fill the room and small enough to still take the stage door. That's the sweet spot and it doesn't last.",
+    "next": "hob_bouncer_bye"
+  },
+  "hob_bouncer_bye": {
+    "speaker": "HOB Bouncer",
+    "text": "Doors in twenty. Bar's open now, which is the real answer."
+  },
+  "hob_headliner_greet": {
+    "speaker": "The Headliner",
+    "text": "You got past Marcus? Nobody gets past Marcus. Sit down, don't take a picture, and I'll tell you the room's a good one.",
+    "choices": [
+      {
+        "label": "How's the crowd tonight?",
+        "next": "hob_headliner_crowd"
+      },
+      {
+        "label": "Nine years of green M&Ms?",
+        "next": "hob_headliner_mms"
+      },
+      {
+        "label": "Break a leg.",
+        "next": "hob_headliner_bye"
+      }
+    ]
+  },
+  "hob_headliner_crowd": {
+    "speaker": "The Headliner",
+    "text": "Casino crowds are honest. They've already lost money, so nobody's pretending. Best listeners on the circuit.",
+    "next": "hob_headliner_bye"
+  },
+  "hob_headliner_mms": {
+    "speaker": "The Headliner",
+    "text": "That clause has been in the rider since before I could fill a bar. It's not a demand anymore, it's a check — if the bowl's right, the load-in was right.",
+    "setFlag": "egg_green_room",
+    "next": "hob_headliner_bye"
+  },
+  "hob_headliner_bye": {
+    "speaker": "The Headliner",
+    "text": "Go find a spot by the rail. It's the only place the mix is honest."
+  },
+  "merch_marge_greet": {
+    "speaker": "Merch Marge",
+    "text": "Shirts, hats, one poster nobody buys until the encore. I've sold merch at this arena for every sport that has a ball and several that don't.",
+    "choices": [
+      {
+        "label": "Show me the table.",
+        "encounter": "shops"
+      },
+      {
+        "label": "What sells best?",
+        "next": "merch_marge_best"
+      },
+      {
+        "label": "Just passing through.",
+        "next": "merch_marge_bye"
+      }
+    ]
+  },
+  "merch_marge_best": {
+    "speaker": "Merch Marge",
+    "text": "Whatever the winner is wearing, ninety seconds after they win. I've learned to keep both boxes open and pick one fast.",
+    "next": "merch_marge_bye"
+  },
+  "merch_marge_bye": {
+    "speaker": "Merch Marge",
+    "text": "Concourse loops all the way around. So does everything here, eventually."
+  },
+  "count_room_cal_greet": {
+    "speaker": "Count Room Cal",
+    "text": "You are absolutely not supposed to be back here, and I am absolutely not supposed to care. Cal. I count the money.",
+    "choices": [
+      {
+        "label": "Show me the bank.",
+        "encounter": "bank"
+      },
+      {
+        "label": "How much comes through?",
+        "next": "count_room_cal_much"
+      },
+      {
+        "label": "I was never here.",
+        "next": "count_room_cal_bye"
+      }
+    ]
+  },
+  "count_room_cal_much": {
+    "speaker": "Count Room Cal",
+    "text": "Enough that the number stopped meaning anything to me by year two. It's weight now. I know a good night by how my back feels.",
+    "setFlag": "met_count_room_cal",
+    "next": "count_room_cal_bye"
+  },
+  "count_room_cal_bye": {
+    "speaker": "Count Room Cal",
+    "text": "Door at the end goes back to the floor. Walk like you belong and nobody checks."
+  },
+  "stickman_stan_greet": {
+    "speaker": "Stickman Stan",
+    "text": "Dice are out. Hit the back wall, keep one hand on the rail, and do not say the word — you know the word. The one that rhymes with 'heaven'.",
+    "choices": [
+      {
+        "label": "Get me on the pass line.",
+        "encounter": "craps",
+        "setFlag": "played_craps"
+      },
+      {
+        "label": "Which bets are the good ones?",
+        "next": "stickman_stan_odds"
+      },
+      {
+        "label": "Why can't I say it?",
+        "next": "stickman_stan_superstition"
+      },
+      {
+        "label": "I'll just watch the rail.",
+        "next": "stickman_stan_bye"
+      }
+    ]
+  },
+  "stickman_stan_odds": {
+    "speaker": "Stickman Stan",
+    "text": "Pass line with odds behind it is the least rude bet in the building. Everything painted in the middle of my layout is there because it's pretty, not because it's fair.",
+    "setFlag": "hint_craps_odds",
+    "next": "stickman_stan_bye"
+  },
+  "stickman_stan_superstition": {
+    "speaker": "Stickman Stan",
+    "text": "Because a table is a group project and the group has decided. Say it and eight strangers will look at you like you turned the lights off.",
+    "next": "stickman_stan_bye"
+  },
+  "stickman_stan_bye": {
+    "speaker": "Stickman Stan",
+    "text": "Dice are coming out. Watch your fingers and your bankroll, in that order."
+  },
+  "stickman_stan_challenge": {
+    "speaker": "Stickman Stan",
+    "text": "You! Yeah — you walked past my table twice and the shooter's been cold both times. That's not a coincidence, that's a job opening. Grab the rail.",
+    "choices": [
+      {
+        "label": "Give me the dice.",
+        "encounter": "craps",
+        "setFlag": "played_craps",
+        "reputation": {
+          "staff": 1
+        }
+      },
+      {
+        "label": "I'm not the lucky type.",
+        "next": "stickman_stan_challenge_decline"
+      }
+    ]
+  },
+  "stickman_stan_challenge_decline": {
+    "speaker": "Stickman Stan",
+    "text": "Nobody is until the dice say so. Table's here all night, and so is the cold streak."
+  },
+  "lottery_lena_greet": {
+    "speaker": "Lottery Lena",
+    "text": "Pick 3, Pick 4, Mandalay Mega, and two scratchers that were printed by somebody having a bad week. The counter is open, the odds are not.",
+    "choices": [
+      {
+        "label": "Buy a ticket.",
+        "encounter": "lottery",
+        "setFlag": "played_lottery"
+      },
+      {
+        "label": "Nevada doesn't have a lottery.",
+        "next": "lottery_lena_legal"
+      },
+      {
+        "label": "Any strategy?",
+        "next": "lottery_lena_strategy"
+      },
+      {
+        "label": "Maybe later.",
+        "next": "lottery_lena_bye"
+      }
+    ]
+  },
+  "lottery_lena_legal": {
+    "speaker": "Lottery Lena",
+    "text": "Correct. That's why this is a resort amusement paid in chips, and why the sign behind me has more disclaimer than name. Enjoy your resort amusement.",
+    "setFlag": "hint_lottery_legal",
+    "next": "lottery_lena_bye"
+  },
+  "lottery_lena_strategy": {
+    "speaker": "Lottery Lena",
+    "text": "Quick Pick if you're honest, birthdays if you're sentimental, and the same four numbers every day if you'd like a hobby that hurts.",
+    "next": "lottery_lena_bye"
+  },
+  "lottery_lena_bye": {
+    "speaker": "Lottery Lena",
+    "text": "Tickets don't expire until the draw. Neither does hope, technically."
+  },
+  "shark_reef_guide_photos": {
+    "speaker": "Reef Guide",
+    "text": "Kiosk in the tunnel does the work. One species per shot, and the dex in your menu keeps score so you don't photograph the same nurse shark six times. People do.",
+    "next": "shark_reef_guide_bye"
+  },
+  "shark_reef_guide_hard": {
+    "speaker": "Reef Guide",
+    "text": "Golden crocodile. Two of them, both beige, both convinced they're furniture. Half the guests walk past and photograph a rock.",
+    "next": "shark_reef_guide_bye"
   }
 }

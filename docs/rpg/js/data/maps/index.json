@@ -1,0 +1,32 @@
+{
+  "maps": [
+    "strip_sidewalk",
+    "valet_garage",
+    "registration_lobby",
+    "main_resort",
+    "casino_floor_south",
+    "race_sports_book",
+    "high_limit_salon",
+    "foundation_room",
+    "mandalay_place",
+    "sky_bridge",
+    "convention_center",
+    "betty_bar",
+    "skyfall_lounge",
+    "hotel_tower",
+    "guest_corridor",
+    "guest_room",
+    "delano_wing",
+    "spa",
+    "mandalay_beach",
+    "cabana_row",
+    "beach_club",
+    "rave_stage",
+    "reef_tunnel",
+    "shark_reef",
+    "house_of_blues",
+    "hob_green_room",
+    "ultra_arena",
+    "staff_corridor"
+  ]
+}

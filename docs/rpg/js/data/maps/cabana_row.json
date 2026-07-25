@@ -1,0 +1,97 @@
+{
+  "id": "cabana_row",
+  "label": "Cabanas & Hot Tubs",
+  "wing": "Pool",
+  "bgm": "lobby",
+  "spawn": {
+    "x": 3,
+    "y": 15
+  },
+  "base": "WALL",
+  "rects": [
+    {
+      "tile": "SAND",
+      "x": 2,
+      "y": 2,
+      "w": 26,
+      "h": 26
+    },
+    {
+      "tile": "WATER",
+      "x": 6,
+      "y": 6,
+      "w": 5,
+      "h": 5
+    },
+    {
+      "tile": "WATER",
+      "x": 19,
+      "y": 6,
+      "w": 5,
+      "h": 5
+    },
+    {
+      "tile": "WATER",
+      "x": 6,
+      "y": 19,
+      "w": 5,
+      "h": 5
+    },
+    {
+      "tile": "WATER",
+      "x": 19,
+      "y": 19,
+      "w": 5,
+      "h": 5
+    }
+  ],
+  "decor": [
+    {
+      "tile": "BAR",
+      "x": 13,
+      "y": 13,
+      "w": 4,
+      "h": 2
+    },
+    {
+      "tile": "PLANT",
+      "points": [
+        [
+          14,
+          4
+        ],
+        [
+          14,
+          25
+        ],
+        [
+          4,
+          14
+        ],
+        [
+          25,
+          14
+        ]
+      ]
+    }
+  ],
+  "clear": [
+    {
+      "tile": "SAND",
+      "x": 2,
+      "y": 14,
+      "w": 3,
+      "h": 3
+    }
+  ],
+  "doors": [
+    {
+      "x": 2,
+      "y": 15,
+      "to": "mandalay_beach",
+      "toX": 26,
+      "toY": 15,
+      "message": "Back to the wave pool."
+    }
+  ]
+}

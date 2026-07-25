@@ -363,68 +363,143 @@ function drawScreenTile(g) {
 }
 
 function drawVoidTile(g) {
-  px(g, 0x040308, 0, 0, 16, 16);
-  px(g, 0x06050a, 1, 1, 14, 14, 0.5);
+  const w = makeWriter(g);
+  // Off-map filler: near-black with a faint weave so it reads as depth, not a hole.
+  w.px(0x040308, 0, 0, 16, 16);
+  ditherWeave(w, 0, 0, 16, 16, 0x070510, 0x040308);
+  w.px(0x0a0818, 4, 4, 8, 8);
+  w.px(0x100c20, 7, 7, 2, 2);
 }
 
 function drawRoadTile(g) {
-  // Porte-cochère asphalt with a worn lane stripe
-  px(g, 0x22212a, 0, 0, 16, 16);
-  px(g, 0x2a2933, 1, 1, 14, 14);
-  px(g, 0x1a1922, 3, 6, 4, 1);
-  px(g, 0x1a1922, 9, 11, 5, 1);
-  px(g, 0x33323d, 11, 3, 3, 1);
-  px(g, 0x6a6752, 0, 7, 6, 2);
+  const w = makeWriter(g);
+  // Porte-cochère asphalt: coarse aggregate, oil sheen, worn lane paint.
+  w.px(0x22212a, 0, 0, 16, 16);
+  ditherWeave(w, 0, 0, 16, 16, 0x2a2933, 0x24232d);
+  w.px(0x33323d, 1, 1, 6, 3);
+  w.px(0x2e2d38, 9, 5, 6, 4);
+  w.px(0x1a1922, 3, 6, 4, 1);
+  w.px(0x1a1922, 9, 11, 5, 1);
+  w.px(0x15141c, 4, 13, 3, 1);
+  w.px(0x3d3c48, 12, 2, 2, 1);
+  w.px(0x3d3c48, 2, 10, 2, 1);
+  // Lane stripe, sun-bleached and chipped
+  w.px(0x8a8770, 0, 7, 16, 2);
+  w.px(0xa8a58c, 0, 7, 16, 1);
+  w.px(0x6a6752, 5, 7, 2, 2);
+  w.px(0x6a6752, 12, 8, 3, 1);
+  w.px(0x2a2933, 8, 7, 1, 2);
+  w.px(0x4a4956, 0, 15, 16, 1);
 }
 
 function drawSandTile(g) {
-  px(g, 0xc9ad72, 0, 0, 16, 16);
-  px(g, 0xd8bd83, 1, 1, 14, 14);
-  px(g, 0xb89a5e, 3, 5, 3, 1);
-  px(g, 0xb89a5e, 9, 10, 4, 1);
-  px(g, 0xe6cf9c, 6, 3, 2, 1);
-  px(g, 0xe6cf9c, 12, 13, 2, 1);
+  const w = makeWriter(g);
+  // Beach club sand: warm base, wind ripples, a few shell flecks.
+  w.px(0xc9ad72, 0, 0, 16, 16);
+  ditherWeave(w, 0, 0, 16, 16, 0xd8bd83, 0xceb379);
+  w.px(0xe6cf9c, 0, 0, 16, 1);
+  w.px(0xb89a5e, 0, 15, 16, 1);
+  for (let i = 0; i < 16; i += 1) {
+    const wave = 3 + Math.round(Math.sin(i / 2.4) * 2);
+    w.px(0xbfa268, i, wave + 2, 1, 1);
+    w.px(0xe6cf9c, i, wave + 3, 1, 1);
+    w.px(0xbfa268, i, wave + 9, 1, 1);
+  }
+  w.px(0xfff0c8, 4, 6, 1, 1);
+  w.px(0xfff0c8, 11, 12, 1, 1);
+  w.px(0xa88c50, 7, 9, 2, 1);
+  w.px(0xf0e0b8, 13, 3, 2, 1);
 }
 
 function drawStageTile(g) {
-  // Black lacquered boards under stage wash
-  px(g, 0x14101c, 0, 0, 16, 16);
-  px(g, 0x1e1828, 0, 1, 16, 6);
-  px(g, 0x1a1424, 0, 9, 16, 6);
-  px(g, 0x0c0a14, 0, 7, 16, 2);
-  px(g, 0x5a2a6a, 2, 2, 5, 1);
-  px(g, 0x2a5a6a, 10, 11, 4, 1);
+  const w = makeWriter(g);
+  // House of Blues boards: black lacquer catching magenta and cyan wash.
+  w.px(0x14101c, 0, 0, 16, 16);
+  w.px(0x1e1828, 0, 0, 16, 7);
+  w.px(0x1a1424, 0, 9, 16, 7);
+  w.px(0x0c0a14, 0, 7, 16, 2);
+  w.px(0x0c0a14, 0, 15, 16, 1);
+  // Board seams and grain
+  w.px(0x241c30, 0, 1, 16, 1);
+  w.px(0x241c30, 0, 10, 16, 1);
+  w.px(0x100c18, 5, 0, 1, 7);
+  w.px(0x100c18, 11, 9, 1, 7);
+  // Colored wash from the rig
+  w.px(0x5a2a6a, 1, 2, 6, 2, 0.55);
+  w.px(0x8a48a0, 2, 2, 3, 1, 0.5);
+  w.px(0x2a5a6a, 9, 11, 5, 2, 0.5);
+  w.px(0x48a0b8, 10, 11, 3, 1, 0.45);
+  w.px(0xffe890, 13, 3, 2, 1, 0.3);
+  w.px(0xffffff, 3, 5, 1, 1, 0.35);
 }
 
 function drawSpaTile(g) {
-  // Bathhouse stone with grout lines
-  px(g, 0x4a5a60, 0, 0, 16, 16);
-  px(g, 0x5c6d74, 1, 1, 6, 6);
-  px(g, 0x5c6d74, 9, 1, 6, 6);
-  px(g, 0x5c6d74, 1, 9, 6, 6);
-  px(g, 0x5c6d74, 9, 9, 6, 6);
-  px(g, 0x6e8188, 2, 2, 2, 1);
-  px(g, 0x6e8188, 10, 10, 2, 1);
+  const w = makeWriter(g);
+  // Bathhouse: honed stone squares, grout, a wet-looking highlight.
+  w.px(0x3a4a50, 0, 0, 16, 16);
+  const stones = [[1, 1], [9, 1], [1, 9], [9, 9]];
+  for (const [sx, sy] of stones) {
+    w.px(0x5c6d74, sx, sy, 6, 6);
+    w.px(0x6e8188, sx, sy, 6, 1);
+    w.px(0x6e8188, sx, sy, 1, 5);
+    w.px(0x4a5a60, sx + 5, sy, 1, 6);
+    w.px(0x4a5a60, sx, sy + 5, 6, 1);
+    w.px(0x82949a, sx + 1, sy + 1, 2, 1);
+  }
+  groutGrid(w, 0x2e3c42, 8);
+  w.px(0x2e3c42, 0, 0, 16, 1);
+  w.px(0x2e3c42, 0, 0, 1, 16);
+  w.px(0xa8c0c8, 3, 3, 1, 1, 0.5);
+  w.px(0xa8c0c8, 11, 11, 1, 1, 0.4);
+  w.px(0x9ab8c8, 12, 4, 2, 1, 0.3);
 }
 
 function drawGlassTile(g) {
-  px(g, 0x18303c, 0, 0, 16, 16);
-  px(g, 0x24485a, 1, 1, 14, 14);
-  px(g, 0x39c5cf, 2, 2, 5, 12);
-  px(g, 0x2a94a4, 9, 2, 5, 12);
-  px(g, 0xa8e8f0, 3, 3, 1, 8);
-  px(g, 0x0e1c24, 7, 0, 2, 16);
+  const w = makeWriter(g);
+  // Shark Reef acrylic: lit water behind a mullion, with a specular streak.
+  w.px(0x18303c, 0, 0, 16, 16);
+  w.px(0x24485a, 1, 1, 14, 14);
+  w.px(0x2a94a4, 1, 1, 6, 14);
+  w.px(0x39c5cf, 1, 3, 6, 9);
+  w.px(0x2a94a4, 9, 1, 6, 14);
+  w.px(0x2f9fb0, 9, 4, 6, 8);
+  w.px(0x6ae8f0, 2, 4, 2, 6, 0.7);
+  w.px(0xa8e8f0, 2, 4, 1, 6);
+  w.px(0x80f8ff, 11, 6, 1, 4, 0.6);
+  // Mullion and frame
+  w.px(0x0e1c24, 7, 0, 2, 16);
+  w.px(0x1e3a48, 7, 0, 1, 16);
+  w.px(0x0e1c24, 0, 0, 16, 1);
+  w.px(0x0e1c24, 0, 15, 16, 1);
+  w.px(0x3a6878, 0, 1, 16, 1, 0.6);
 }
 
 function drawRopeTile(g) {
-  // Velvet rope stanchion
-  px(g, 0x2a2010, 0, 0, 16, 16);
-  px(g, 0x3a2a14, 1, 1, 14, 14);
-  px(g, 0xe8c547, 6, 3, 4, 2);
-  px(g, 0xc4a030, 7, 5, 2, 9);
-  px(g, 0xe8c547, 5, 13, 6, 2);
-  px(g, 0x8a1030, 0, 6, 6, 3);
-  px(g, 0x8a1030, 10, 6, 6, 3);
+  const w = makeWriter(g);
+  // Velvet rope stanchion on the carpet it guards.
+  tileFrame(w, 0x2a2010, 0x3a2a14, 0x1a1408);
+  ditherWeave(w, 1, 1, 14, 14, 0x3a2a14, 0x342410);
+  // Post
+  w.px(OUTLINE, 6, 2, 4, 13);
+  w.px(0xc4a030, 7, 3, 2, 11);
+  w.px(0xe8c547, 7, 3, 1, 11);
+  w.px(0x8a6018, 9, 3, 1, 11);
+  // Finial and base
+  w.px(OUTLINE, 5, 1, 6, 3);
+  w.px(0xe8c547, 6, 2, 4, 2);
+  w.px(0xffe890, 6, 2, 2, 1);
+  w.px(OUTLINE, 4, 13, 8, 3);
+  w.px(0xc4a030, 5, 14, 6, 2);
+  w.px(0xe8c547, 5, 14, 4, 1);
+  // Swagged velvet either side
+  w.px(0x5a0a20, 0, 5, 6, 4);
+  w.px(0x8a1030, 0, 6, 6, 3);
+  w.px(0xb03048, 0, 6, 6, 1);
+  w.px(0x5a0a20, 10, 5, 6, 4);
+  w.px(0x8a1030, 10, 6, 6, 3);
+  w.px(0xb03048, 10, 6, 6, 1);
+  w.px(0xd05068, 1, 6, 2, 1, 0.6);
+  w.px(0xd05068, 13, 6, 2, 1, 0.6);
 }
 
 const TILE_DRAWERS = {
@@ -779,6 +854,43 @@ function drawScreenDecor(g) {
   w.px(0x304050, 5, 14, 6, 1);
   // Ambient glow
   w.px(0x48d8e8, 1, 10, 14, 2, 0.12);
+}
+
+/** Standalone sprites, keyed by the texture name the scene looks them up by. */
+const SPRITE_DRAWERS = {
+  decor_bar: drawBarDecor,
+  decor_plant: drawPlantDecor,
+  decor_slot: drawSlotDecor,
+  decor_screen: drawScreenDecor,
+  decor_glass: drawGlassTile,
+  decor_rope: drawRopeTile,
+  interact_icon: drawInteractIcon,
+  shadow: drawShadow,
+};
+
+/** Every art key the overworld registers at boot. */
+export function artKeys() {
+  return [
+    ...Object.keys(TILE_DRAWERS).map((id) => `tile_${id}`),
+    ...Object.keys(SPRITE_DRAWERS),
+  ];
+}
+
+/**
+ * Draw one art key onto a 2D canvas. The scene draws through Phaser Graphics;
+ * this is the same drawer against a canvas, for previews and headless checks.
+ */
+export function drawArtToCanvas(canvas, key) {
+  const drawer = key.startsWith("tile_")
+    ? TILE_DRAWERS[key.slice("tile_".length)]
+    : SPRITE_DRAWERS[key];
+  if (!drawer) throw new Error(`unknown art key "${key}"`);
+  const ctx = canvas.getContext("2d");
+  canvas.width = TILE_SIZE;
+  canvas.height = TILE_SIZE;
+  ctx.imageSmoothingEnabled = false;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawer(canvas);
 }
 
 export function createGameTextures(scene) {

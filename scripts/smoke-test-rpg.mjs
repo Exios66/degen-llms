@@ -23,6 +23,13 @@ const { HOSTED_ENCOUNTERS, TABLE_STAKE_ACTIVITIES } = await import(
   join(rpgRoot, "js/systems/HostedEncounters.js"));
 const { RPG_ITEMS } = await import(join(rpgRoot, "js/systems/Inventory.js"));
 const { DEX_REGISTRY } = await import(join(rpgRoot, "js/systems/Dex.js"));
+const { ART_UNIT } = await import(join(rpgRoot, "js/systems/MapTiles.js"));
+const { artKeys, drawArtToCanvas, drawCharacterToCanvas } = await import(
+  join(rpgRoot, "js/systems/TextureFactory.js"));
+const {
+  HAIR_COLORS, OUTFIT_COLORS, SKIN_TONES, SPEAKER_PORTRAITS,
+  defaultAppearance, resolvePalette, resolveSpeakerPortrait,
+} = await import(join(rpgRoot, "js/systems/CharacterAppearance.js"));
 const { DEALER_ROSTER } = await import(join(here, "..", "docs", "js", "dealers.js"));
 const { PlayerSession, RPG_START_MAP, SAVE_VERSION, defaultRpgState } = await import(
   join(here, "..", "docs", "js", "core.js"));
@@ -397,6 +404,76 @@ for (const [collection, entries] of Object.entries(DEX_REGISTRY)) {
 for (const [id, spec] of Object.entries(HOSTED_ENCOUNTERS)) {
   check(Boolean(spec.view), `hosted ${id}: missing view`);
   check(Boolean(spec.title), `hosted ${id}: missing title`);
+}
+
+// ── Art ───────────────────────────────────────────────────────────────────
+// The drawers run at boot on the main thread, so a single bad palette lookup
+// takes the whole overworld down. Draw every one of them here, off the wire.
+{
+  /** A 2D context that records rectangles instead of painting them. */
+  const recorder = () => {
+    const rects = [];
+    const ctx = {
+      imageSmoothingEnabled: true,
+      fillStyle: "",
+      clearRect() {},
+      fillRect(x, y, w, h) { rects.push({ x, y, w, h, style: ctx.fillStyle }); },
+    };
+    return { width: 0, height: 0, getContext: () => ctx, rects };
+  };
+
+  const drawn = (label, draw) => {
+    const canvas = recorder();
+    try {
+      draw(canvas);
+    } catch (err) {
+      fail(`art ${label}: threw ${err.message}`);
+      return null;
+    }
+    check(canvas.rects.length >= 4, `art ${label}: drew almost nothing`);
+    return canvas;
+  };
+
+  // Every archetype's default look, plus one sweep of each wardrobe axis.
+  const base = defaultAppearance("weekend_warrior");
+  const samples = [
+    ...["weekend_warrior", "high_roller", "convention_goer", "local"].map(defaultAppearance),
+    ...SKIN_TONES.map((s) => ({ ...base, skin: s.id })),
+    ...HAIR_COLORS.map((h) => ({ ...base, hair: h.id })),
+    ...OUTFIT_COLORS.map((o) => ({ ...base, outfit: o.id })),
+  ];
+
+  for (const appearance of samples) {
+    const palette = resolvePalette(appearance);
+    const label = `${appearance.skin}/${appearance.hair}/${appearance.outfit}`;
+    for (const dir of ["down", "up", "left", "right"]) {
+      for (const frame of [0, 1, 2]) {
+        drawn(`player ${label} ${dir}#${frame}`,
+          (c) => drawCharacterToCanvas(c, palette, dir, frame));
+      }
+    }
+  }
+  for (const speaker of Object.keys(SPEAKER_PORTRAITS)) {
+    drawn(`portrait ${speaker}`,
+      (c) => drawCharacterToCanvas(c, resolveSpeakerPortrait(speaker)));
+  }
+
+  for (const key of artKeys()) {
+    const canvas = drawn(`sprite ${key}`, (c) => drawArtToCanvas(c, key));
+    if (!canvas || !key.startsWith("tile_")) continue;
+    // A floor tile with a hole in it shows the void through the map.
+    const cell = canvas.width / ART_UNIT;
+    const covered = new Set();
+    for (const r of canvas.rects) {
+      if (r.style.startsWith("rgba")) continue;
+      for (let y = r.y / cell; y < (r.y + r.h) / cell; y += 1) {
+        for (let x = r.x / cell; x < (r.x + r.w) / cell; x += 1) covered.add(`${x},${y}`);
+      }
+    }
+    check(covered.size === ART_UNIT * ART_UNIT,
+      `art ${key}: ${ART_UNIT * ART_UNIT - covered.size} of ${ART_UNIT * ART_UNIT} pixels ` +
+      "are transparent — ground tiles must be fully opaque");
+  }
 }
 
 if (failures.length) {

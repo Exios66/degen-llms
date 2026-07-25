@@ -4,7 +4,7 @@ import {
   currentHallwayBeat, hallwayChoice, upgradeRoom, extendStay, resetHallway,
   isNetPositive, sessionNetChips, reviewFolio, lateCheckout, triggerWakeUpCall,
   checkoutStay, expressCheckout, getWorldCycleSummary, settleHotelOverdue, reservationStatusMessage,
-  canAccessHotelRoom, recordFrontDeskVisit,
+  canAccessHotelRoom, recordFrontDeskVisit, grantRoomKeyIfReservationReady,
 } from "./hotel.js";
 import {
   loadGuestRegistry, listAllGuests, signGuestDirectory, hasSigned, formatSignedAt,
@@ -105,6 +105,7 @@ export function buildHotelRenderers(ctx) {
 
   function renderHotelLobby() {
     const hotel = ensureHotel(session);
+    grantRoomKeyIfReservationReady(session);
     const room = getRoomType(hotel);
     const prop = getProperty(hotel);
     const netLine = isNetPositive(session)
@@ -152,6 +153,7 @@ export function buildHotelRenderers(ctx) {
   function renderHotelFrontDesk() {
     const hotel = ensureHotel(session);
     recordFrontDeskVisit(session);
+    grantRoomKeyIfReservationReady(session);
     persist();
     const log = el("div", { className: "log-area" });
     const netPositive = isNetPositive(session);
@@ -166,11 +168,18 @@ export function buildHotelRenderers(ctx) {
         el("ul", { className: "menu-list" }, [
           menuBtn("Locate reservation (desk terminal)", () => {
             const r = findReservationAtDesk(session);
+            grantRoomKeyIfReservationReady(session);
             log.appendChild(el("div", { className: `line ${r.ok ? "success" : "error"}`, textContent: r.message }));
             if (r.ok) tracker()?.pushNotification("Desk Check-In", r.message);
             persist();
             render();
           }),
+          canAccessHotelRoom(session) && hotel.reachedRoom
+            ? menuBtn("Enter your room", () => pushView("hotel-room"))
+            : null,
+          canAccessHotelRoom(session) && !hotel.reachedRoom
+            ? menuBtn("Find my room (hallway)", () => pushView("hotel-hallway"))
+            : null,
           menuBtn("Settle overdue resort charges", () => {
             appendResult(log, settleHotelOverdue(session));
             persist();
@@ -390,6 +399,7 @@ export function buildHotelRenderers(ctx) {
 
   function renderHotelRoom() {
     const hotel = ensureHotel(session);
+    grantRoomKeyIfReservationReady(session);
     const room = getRoomType(hotel);
     ensureRoomAmenities(hotel);
     const unlocked = getUnlockedEvents(hotel);
@@ -734,6 +744,10 @@ export function buildHotelRenderers(ctx) {
 }
 
 function viewToHub(ctx) {
+  if (typeof ctx.onExitToFloor === "function") {
+    ctx.onExitToFloor();
+    return;
+  }
   ctx.viewStack.length = 0;
   ctx.viewStack.push({ name: "hub", data: {} });
   ctx.render();

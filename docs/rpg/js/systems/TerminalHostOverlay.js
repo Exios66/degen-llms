@@ -64,6 +64,9 @@ export class TerminalHostOverlay {
         onSessionSwing(session, activity, net);
       },
       settingsBar: () => null,
+      // Terminal screens that "return to the casino floor" reset to the hub view;
+      // in the overworld the floor is the map behind the panel, so close instead.
+      onExitToFloor: () => this.close(),
     };
     this.ctx = ctx;
 

@@ -269,6 +269,7 @@ export function locateReservationViaPhone(session) {
     return { ok: true, already: true, message: reservationStatusMessage(session) };
   }
   hotel.foundReservation = true;
+  grantRoomKeyIfReservationReady(session);
   return {
     ok: true,
     message: `${reservationStatusMessage(session)}\nHead to the ${hotel.wing.toUpperCase()} tower — floor ${hotel.floor}.`,
@@ -288,13 +289,25 @@ export function confirmReservationAtDesk(session) {
     return { ok: false, message: "Locate via MGM Rewards phone (P) first — today's two-step check-in." };
   }
   if (!req.needsDesk) {
-    return { ok: true, message: "Desk confirmation not required today. Phone locate is enough." };
+    if (hotel.foundReservation) {
+      grantRoomKeyIfReservationReady(session);
+      return {
+        ok: true,
+        already: true,
+        message: `${reservationStatusMessage(session)}\nPhone locate is enough today — your key is active.`,
+      };
+    }
+    return {
+      ok: false,
+      message: "Locate via MGM Rewards phone (P → Reservation) first — desk confirmation not required today.",
+    };
   }
   if (hotel.reservationConfirmedDesk) {
     return { ok: true, already: true, message: reservationStatusMessage(session) };
   }
   hotel.reservationConfirmedDesk = true;
   hotel.foundReservation = true;
+  grantRoomKeyIfReservationReady(session);
   return {
     ok: true,
     message: `${reservationStatusMessage(session)}\nCarmen stamps your folio. Hallway access granted.`,
@@ -306,6 +319,19 @@ export function canAccessHotelRoom(session) {
   const hotel = ensureHotel(session);
   if (hotel.roomEvicted || session.worldCycle?.roomEvicted) return false;
   return reservationAccessMet(session);
+}
+
+/**
+ * When check-in requirements are satisfied (phone, desk, or both — per today's rule),
+ * grant in-room access so amenities unlock regardless of which path completed last.
+ */
+export function grantRoomKeyIfReservationReady(session) {
+  if (!canAccessHotelRoom(session)) return false;
+  const hotel = ensureHotel(session);
+  if (!hotel.reachedRoom) {
+    hotel.reachedRoom = true;
+  }
+  return true;
 }
 
 /** Pay overdue balance + today's catch-up at front desk. */

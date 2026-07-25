@@ -533,12 +533,16 @@
   },
   "clerk_carmen_greet": {
     "speaker": "Clerk Carmen",
-    "text": "Welcome to the hotel tower. Reservation on file? Front desk can upgrade, explore the hallway, or checkout.",
+    "text": "Welcome to the hotel tower. I can locate your reservation, open front desk services, or point you to your room.",
     "choices": [
       {
         "label": "Front desk services",
-        "encounter": "hotel",
+        "encounter": "hotel_front_desk",
         "setFlag": "hotel_tower_visit"
+      },
+      {
+        "label": "Locate my reservation",
+        "next": "clerk_carmen_locate"
       },
       {
         "label": "What's worth doing in the room?",
@@ -561,11 +565,23 @@
       }
     ]
   },
+  "clerk_carmen_locate": {
+    "speaker": "Clerk Carmen",
+    "text": "Pulling your conf now — front desk terminal has the full stay menu once you're checked in. Phone locate counts too if you already used MGM Rewards.",
+    "setFlag": "met_carmen",
+    "choices": [
+      { "label": "Open front desk terminal", "encounter": "hotel", "setFlag": "hotel_tower_visit" },
+      { "label": "I'm all set", "next": "clerk_carmen_bye" }
+    ]
+  },
   "clerk_carmen_room": {
     "speaker": "Clerk Carmen",
-    "text": "North end of the hallway — your room door. Or open front desk services for upgrades.",
+    "text": "Once your reservation is located — phone or desk — your key activates. Open front desk services for your full room menu.",
     "setFlag": "hotel_tower_visit",
-    "next": "clerk_carmen_bye"
+    "choices": [
+      { "label": "Open hotel services", "encounter": "hotel" },
+      { "label": "Thanks", "next": "clerk_carmen_bye" }
+    ]
   },
   "clerk_carmen_bye": {
     "speaker": "Clerk Carmen",

@@ -68,7 +68,8 @@ flowchart TB
 | Tile vocabulary | `js/systems/MapTiles.js` |
 | JSON → tile layers | `js/systems/MapLoader.js` |
 | Map/NPC/door accessors + procedural fallback | `js/systems/MapData.js` |
-| Procedural sprites and tiles | `js/systems/TextureFactory.js` |
+| Vendored tiles + procedural FX | `js/systems/EnvironmentTextures.js`, `js/systems/TextureFactory.js` |
+| Character / staff sprite sheets | `js/systems/CharacterSprites.js` |
 | Dialogue graph | `js/systems/DialogueManager.js` |
 | Encounter routing | `js/systems/EncounterBridge.js`, `js/systems/HostedEncounters.js` |
 | Mounting terminal screens | `js/systems/TerminalHostOverlay.js` |

@@ -39,12 +39,26 @@ export const NPC_PORTRAITS = {
   npc_red: { body: 0xf08088, mid: 0xc86068, shade: 0x984048, hair: 0x682830, skin: "tan" },
   npc_orange: { body: 0xffb060, mid: 0xd89048, shade: 0xa86830, hair: 0x784820, skin: "tan" },
   npc_silver: { body: 0xc0c8d8, mid: 0x9098a8, shade: 0x606878, hair: 0x404850, skin: "fair" },
+  // Dealer keys share palette slots for any CSS fallback; portraits use raster sheets.
+  dealer_steve: { body: 0xf0d050, mid: 0xc8a838, shade: 0x987820, hair: 0x685010, skin: "medium" },
+  dealer_meryl: { body: 0x50e8a0, mid: 0x38b878, shade: 0x288858, hair: 0x186040, skin: "medium" },
+  dealer_judi: { body: 0x48d8e8, mid: 0x30a8b8, shade: 0x208898, hair: 0x1a6070, skin: "fair" },
+  dealer_jennifer: { body: 0xd888f0, mid: 0xa868c0, shade: 0x7848a0, hair: 0x503070, skin: "fair" },
+  dealer_sofia: { body: 0xf08088, mid: 0xc86068, shade: 0x984048, hair: 0x682830, skin: "tan" },
+  dealer_octavia: { body: 0xffb060, mid: 0xd89048, shade: 0xa86830, hair: 0x784820, skin: "tan" },
+  dealer_nicole: { body: 0xc0c8d8, mid: 0x9098a8, shade: 0x606878, hair: 0x404850, skin: "fair" },
 };
 
 /** Map dialogue speaker names to portrait palette keys. */
 export const SPEAKER_PORTRAITS = {
   "Chip Chandler": "npc_gold",
-  "Steve Harvey": "npc_gold",
+  "Steve Harvey": "dealer_steve",
+  "Dealer Meryl Screech": "dealer_meryl",
+  "Croupier Judi Bench": "dealer_judi",
+  "Jennifer Lawless": "dealer_jennifer",
+  "Sofia Volume": "dealer_sofia",
+  "Octavia Spectacular": "dealer_octavia",
+  "Nicole Widechart": "dealer_nicole",
   "Betty": "npc_orange",
   "Barkeep Betty": "npc_orange",
   "Paula": "npc_pink",
@@ -111,7 +125,7 @@ export function resolvePalette(appearance) {
 
 export function resolveSpeakerPortrait(speaker) {
   const key = SPEAKER_PORTRAITS[speaker] ?? "npc_gold";
-  const palette = NPC_PORTRAITS[key];
+  const palette = NPC_PORTRAITS[key] ?? NPC_PORTRAITS.npc_gold;
   const skin = SKIN_TONES.find((s) => s.id === palette.skin) ?? SKIN_TONES[1];
   return {
     body: palette.body,

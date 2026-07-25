@@ -3,6 +3,7 @@ import {
   saveSlot,
   defaultRpgState,
 } from "../../../js/core.js";
+import { defaultAppearance, normalizeAppearance } from "./CharacterAppearance.js";
 
 /**
  * Persist RPG position/state alongside the shared casino save library.
@@ -60,6 +61,11 @@ export function initSessionRpg(session, spawn = null) {
   }
   if (!session.rpg.archetype) {
     session.rpg.archetype = session.rpg.playerSprite || "weekend_warrior";
+  }
+  if (!session.rpg.appearance) {
+    session.rpg.appearance = defaultAppearance(session.rpg.archetype);
+  } else {
+    session.rpg.appearance = normalizeAppearance(session.rpg);
   }
   if (session.rpg.worldTime == null) session.rpg.worldTime = 720;
   if (!session.rpg.reputation) {

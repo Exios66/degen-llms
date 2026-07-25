@@ -13,7 +13,7 @@ export const SKIN_TONES = [
 export const HAIR_COLORS = [
   { id: "chestnut", label: "Chestnut", color: 0x684010, shade: 0x503008 },
   { id: "blonde", label: "Blonde", color: 0xe8c878, shade: 0xc8a858 },
-  { id: "black", label: "Black", color: 0x282830, shade: 0x181820 },
+  { id: "black", label: "Black", color: 0x413a52, shade: 0x2b2638 },
   { id: "auburn", label: "Auburn", color: 0x983828, shade: 0x782820 },
   { id: "silver", label: "Silver", color: 0xc0c8d8, shade: 0x9098a8 },
   { id: "pink", label: "Pink", color: 0xd888f0, shade: 0xa868c0 },

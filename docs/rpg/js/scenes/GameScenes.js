@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import {
-  createGameTextures, ensurePlayerTextures, groundTileKey, playerAnimKey, playerTextureKey,
+  CHAR_METRICS, FOOT_DROP, createGameTextures, ensurePlayerTextures, groundTileKey,
+  playerAnimKey, playerTextureKey,
 } from "../systems/TextureFactory.js";
 import { normalizeAppearance } from "../systems/CharacterAppearance.js";
 import {
@@ -28,6 +29,22 @@ const MIN_VIEW_TILES_Y = 13;
 const SPEED_PER_TIER = 12;
 const GOLF_CART_BONUS = 68;
 const GOLF_CART_TIER_IDX = 3;
+
+/**
+ * Sprite position that stands a character's feet on the middle of a tile.
+ *
+ * Character art is a tile and a half tall, so its centre is well above the
+ * shoes. Placing sprites by their centre would leave everyone hovering half a
+ * tile north of the square they actually occupy.
+ */
+const tileToSprite = (tileX, tileY) => ({
+  x: tileX * TILE_SIZE + TILE_SIZE / 2,
+  y: tileY * TILE_SIZE + TILE_SIZE / 2 - FOOT_DROP,
+});
+
+/** Y for a name plate or badge floating just clear of a character's head. */
+const tileHeadY = (tileY) =>
+  tileToSprite(0, tileY).y - (CHAR_METRICS.height * CHAR_METRICS.scale) / 2 - 6;
 
 /** Per-surface footstep sound. */
 const FOOTSTEP_SFX = {
@@ -156,11 +173,13 @@ export class OverworldScene extends Phaser.Scene {
     this.playerAppearance = normalizeAppearance(spawn);
     ensurePlayerTextures(this, this.playerAppearance);
     const pKey = playerTextureKey({ appearance: this.playerAppearance }, "down");
-    this.player = this.physics.add.sprite(px * TILE_SIZE + TILE_SIZE / 2, py * TILE_SIZE + TILE_SIZE / 2, pKey);
+    const spawnPos = tileToSprite(px, py);
+    this.player = this.physics.add.sprite(spawnPos.x, spawnPos.y, pKey);
     this.player.setCollideWorldBounds(true);
     this.player.setDepth(10);
-    this.player.body.setSize(TILE_SIZE * 0.625, TILE_SIZE * 0.5);
-    this.player.body.setOffset(TILE_SIZE * 0.1875, TILE_SIZE * 0.75);
+    const feet = CHAR_METRICS.feet;
+    this.player.body.setSize(feet.w * CHAR_METRICS.scale, feet.h * CHAR_METRICS.scale);
+    this.player.body.setOffset(feet.x * CHAR_METRICS.scale, feet.y * CHAR_METRICS.scale);
 
     this.physics.world.setBounds(0, 0, MAP_WIDTH * TILE_SIZE, MAP_HEIGHT * TILE_SIZE);
 
@@ -178,17 +197,14 @@ export class OverworldScene extends Phaser.Scene {
       return { ...npc, x: pos.x, y: pos.y };
     });
     for (const npc of this.currentNpcs) {
-      const sprite = this.add.sprite(
-        npc.x * TILE_SIZE + TILE_SIZE / 2,
-        npc.y * TILE_SIZE + TILE_SIZE / 2,
-        npc.sprite
-      );
+      const at = tileToSprite(npc.x, npc.y);
+      const sprite = this.add.sprite(at.x, at.y, npc.sprite);
       sprite.setDepth(10);
       sprite.setData("npc", npc);
       this.npcSprites.set(npc.id, sprite);
 
       const displayName = this._resolveNpcDisplayName(npc);
-      const label = this._createNpcLabel(sprite.x, sprite.y - TILE_SIZE * 0.62, displayName, npc.zone);
+      const label = this._createNpcLabel(sprite.x, tileHeadY(npc.y), displayName, npc.zone);
       this.npcLabels.set(npc.id, label);
 
       if (npc.zone) {
@@ -392,10 +408,13 @@ export class OverworldScene extends Phaser.Scene {
       npc.y = pos.y;
       const sprite = this.npcSprites.get(npc.id);
       const label = this.npcLabels.get(npc.id);
-      const tx = pos.x * TILE_SIZE + TILE_SIZE / 2;
-      const ty = pos.y * TILE_SIZE + TILE_SIZE / 2;
+      const { x: tx, y: ty } = tileToSprite(pos.x, pos.y);
       if (sprite) this.tweens.add({ targets: sprite, x: tx, y: ty, duration: 600 });
-      if (label) this.tweens.add({ targets: label, x: tx, y: ty - 16, duration: 600 });
+      if (label) {
+        this.tweens.add({
+          targets: label, x: tx, y: tileHeadY(pos.y), duration: 600,
+        });
+      }
     }
   }
 
@@ -895,7 +914,7 @@ export class OverworldScene extends Phaser.Scene {
       this.interactIcon.setVisible(true);
       this.interactIcon.setPosition(
         closest.x * TILE_SIZE + TILE_SIZE / 2,
-        closest.y * TILE_SIZE - TILE_SIZE * 0.55
+        tileHeadY(closest.y) - 8
       );
     } else {
       this.interactIcon.setVisible(false);
@@ -945,7 +964,7 @@ export class OverworldScene extends Phaser.Scene {
     this.audio?.sfx?.("secret");
     const bang = this.add.text(
       npc.x * TILE_SIZE + TILE_SIZE / 2,
-      npc.y * TILE_SIZE - 14,
+      tileHeadY(npc.y),
       "!",
       { fontFamily: "Press Start 2P", fontSize: "10px", color: "#f07178", stroke: "#0a0812", strokeThickness: 3 }
     ).setOrigin(0.5).setDepth(120);

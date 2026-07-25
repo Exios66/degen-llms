@@ -12,9 +12,9 @@ import {
 
 const SCALE = TILE_SIZE / ART_UNIT;
 const CHAR_W = ART_UNIT;
-const CHAR_H = 22;
-const OUTLINE = 0x181828;
-const OUTLINE_SOFT = 0x303040;
+const CHAR_H = 24;
+const OUTLINE = 0x241d2e;
+const OUTLINE_SOFT = 0x3a3048;
 
 // ─── Color utilities ───────────────────────────────────────────────────────
 
@@ -572,9 +572,17 @@ const TEX_CHAR_H = CHAR_H * SCALE;
 
 /**
  * Characters are authored as pixel grids rather than stacked rectangles: one
- * character per pixel, 16 wide, read against a palette legend. The upper body
- * (rows 1-15) is separate from the legs (rows 15-21) so a walk cycle only has
- * to swap the leg block and bob the body a pixel, the way DS sprites do.
+ * character per pixel, 16 wide, read against a palette legend.
+ *
+ * Two rules keep them from reading as a stack of boxes, which is the failure
+ * mode this format invites. The silhouette narrows at the crown, the jaw, and
+ * the shoulders, so nothing has a flat edge longer than it needs. And the arms
+ * carry their own tone plus a two-pixel hand, so they separate from the torso
+ * instead of merging into one slab. Proportions follow the CC0 Kenney RPG Urban
+ * pack: a big round head on a short body, most of the frame's width used.
+ *
+ * The upper body (rows 1-17) is a separate block from the legs (rows 17-23), so
+ * a walk cycle only swaps the leg block and drops the body a pixel.
  */
 
 const CHAR_LEGEND = (palette) => {
@@ -584,118 +592,124 @@ const CHAR_LEGEND = (palette) => {
     o: [OUTLINE_SOFT, 1],
     H: [hair, 1],
     h: [hairShade, 1],
-    G: [mix(hair, 0xffffff, 0.22), 1],
+    G: [mix(hair, 0xffffff, 0.24), 1],
     S: [skinLight, 1],
     s: [skinMid, 1],
     d: [skinShade, 1],
     e: [0xfffaf2, 1],
-    p: [OUTLINE, 1],
-    c: [mix(skinMid, 0xe06878, 0.5), 1],
+    E: [0x4a3550, 1],
+    F: [mix(0x4a3550, skinLight, 0.4), 1],
+    c: [mix(skinMid, 0xe06878, 0.45), 1],
     B: [body, 1],
-    M: [mid, 1],
-    D: [outfit, 1],
-    W: [mix(body, 0xffffff, 0.5), 1],
-    b: [shade(outfit, 0.55), 1],
-    L: [0xf4dc84, 1],
+    M: [mix(body, 0xffffff, 0.3), 1],
+    D: [mid, 1],
+    b: [outfit, 1],
     // Trousers stay a neutral denim so the outfit colour reads as one garment
     // instead of tinting the whole character.
-    N: [0x46507a, 1],
-    n: [0x323a5c, 1],
-    k: [0x2a2a3a, 1],
-    K: [0x4e4e64, 1],
-    ",": [0x000000, 0.16],
-    ";": [0x000000, 0.26],
+    N: [0x4a5480, 1],
+    n: [0x343c62, 1],
+    g: [mix(0x343c62, OUTLINE, 0.35), 1],
+    k: [0x413c52, 1],
+    K: [0x6d6683, 1],
+    ",": [0x000000, 0.15],
+    ";": [0x000000, 0.24],
   };
 };
 
-/** Head, torso and arms: grid rows 1 through 15. */
+/** Head, torso and arms: grid rows 1 through 17. */
 const CHAR_BODY = {
   down: [
     ".....OOOOOO.....",
-    "....OhhhhhhO....",
-    "...OhGGHHHHhO...",
-    "...OHGHHHHHhO...",
-    "...OHSSSSSShO...",
-    "...OHOOSSOOhO...",
-    "...OHepSSephO...",
-    "....OcSSSScO....",
+    "...OHHHHHHHhO...",
+    "..OHGGHHHHHhhO..",
+    "..OHGHHHHHHhhO..",
+    "..OHHSSSSSSShO..",
+    "..OSSESSSSESSO..",
+    "...OSFSSSSFSO...",
+    "....OcSssScO....",
     ".....OssssO.....",
-    "...OOOOOOOOOO...",
-    "...OMMOddOMMO...",
-    "..OMoBBBBBBoDO..",
-    "..OMoBBBBBBoDO..",
-    "..OSoBBBBBBosO..",
-    "...ObbbLLbbbO...",
+    "....OMMMMMMO....",
+    "..OMMMMMMMMMDO..",
+    ".OMMBBBBBBBDDDO.",
+    ".OMMBBBBBBBDDDO.",
+    ".OSSBBBBBBBDssO.",
+    "...OBBBBBBBDO...",
+    "...OBBBBBBBDO...",
+    "...ObbbbbbbbO...",
   ],
   up: [
     ".....OOOOOO.....",
-    "....OhhhhhhO....",
-    "...OhGGHHHHhO...",
-    "...OHGHHHHHhO...",
     "...OHHHHHHHhO...",
-    "...OHHHHHHHhO...",
-    "...OHHHHHhhhO...",
+    "..OHGGHHHHHhhO..",
+    "..OHGHHHHHHhhO..",
+    "..OHHHHHHHHhhO..",
+    "..OHHHHHHHHHhO..",
+    "...OHHHHHHhhO...",
     "....OhhhhhhO....",
     ".....OhsshO.....",
-    "...OOOOOOOOOO...",
-    "...OMMMMMMMMO...",
-    "..OMoBBBBBBoDO..",
-    "..OMoBBBBBBoDO..",
-    "..OSoBBBBBBosO..",
+    "....OMMMMMMO....",
+    "..OMMMMMMMMMDO..",
+    ".OMMBBBBBBBDDDO.",
+    ".OMMBBBBBBBDDDO.",
+    ".OSSBBBBBBBDssO.",
+    "...OBBBBBBBDO...",
+    "...OBBBBBBBDO...",
     "...ObbbbbbbbO...",
   ],
   left: [
     ".....OOOOOO.....",
-    "....OhhhhhhO....",
-    "...OGHHHHHhhO...",
-    "...OHHHHHHhhO...",
-    "...OSSSSHHhhO...",
-    "...OOOSSSHhhO...",
-    "...OepSdSHhhO...",
-    "...OcSSdHhhO....",
-    "....OdSshhO.....",
-    "...OOOOOOOOOO...",
-    "...OMMMMMMMMO...",
-    "..OMoBBBBBBBO...",
-    "..OMoBBBBBBBO...",
-    "..OSoBBBBBBBO...",
+    "...OHHHHHHHhO...",
+    "..OGHHHHHHhhhO..",
+    "..OGHHHHHHhhhO..",
+    "..OSSSSSHHhhhO..",
+    "..OSESSSHHhhhO..",
+    "...OFSSdHhhhO...",
+    "....OcSShhhO....",
+    ".....OsshhO.....",
+    "....OMMMMMMO....",
+    "..OMMMMMMMMMDO..",
+    ".OMMBBBBBBBBDDO.",
+    ".OMMBBBBBBBBDDO.",
+    ".OSSBBBBBBBBDsO.",
+    "...OBBBBBBBDO...",
+    "...OBBBBBBBDO...",
     "...ObbbbbbbbO...",
   ],
 };
 
-/** Legs, shoes and contact shadow: grid rows 15 through 21, one per frame. */
+/** Legs, shoes and contact shadow: grid rows 17 through 23, one per frame. */
 const CHAR_LEGS = [
   [
     "...ONNNNNNNNO...",
-    "...ONNNOOnnnO...",
-    "...ONNNOOnnnO...",
-    "...OnnnOOnnnO...",
-    "...OKkkOOKkkO...",
+    "...ONNNggNNNO...",
+    "...ONNNggnnnO...",
+    "...OnnnggnnnO...",
+    "...OKKKggkkkO...",
     "..,OOOO,,OOOO,..",
     "....;;;;;;;;....",
   ],
   [
     "...ONNNNNNNNO...",
-    "...ONNNOOnnnO...",
-    "...ONNNOOnnnO...",
-    "...OKkkOOnnnO...",
-    "........OKkkO...",
+    "...ONNNggNNNO...",
+    "...ONNNggnnnO...",
+    "...OKKKggnnnO...",
+    "........OkkkO...",
     "..,,,,,,OOOOO,..",
     "....;;;;;;;;....",
   ],
   [
     "...ONNNNNNNNO...",
-    "...ONNNOOnnnO...",
-    "...ONNNOOnnnO...",
-    "...OnnnOOKkkO...",
-    "...OKkkO........",
+    "...ONNNggNNNO...",
+    "...ONNNggnnnO...",
+    "...OnnnggkkkO...",
+    "...OKKKO........",
     "..,OOOOO,,,,,,..",
     "....;;;;;;;;....",
   ],
 ];
 
 const BODY_TOP = 1;
-const LEGS_TOP = 15;
+const LEGS_TOP = 17;
 
 const mirrorRows = (rows) => rows.map((row) => [...row].reverse().join(""));
 
@@ -723,26 +737,45 @@ function drawCharacterPixels(w, palette, dir, frame) {
   const legs = CHAR_LEGS[frame] ?? CHAR_LEGS[0];
   const body = CHAR_BODY_BY_DIR[dir] ?? CHAR_BODY_BY_DIR.down;
   // Frames 1 and 2 lift a foot, so the upper body rides a pixel higher. The leg
-  // block always starts at row 15, which keeps the waist joined either way.
+  // block always starts at row 17, which keeps the waist joined either way.
   const bob = frame === 0 ? 0 : -1;
   paintGrid(w, legs, legend, LEGS_TOP);
   paintGrid(w, body, legend, BODY_TOP + bob);
 }
 
-/** The authored grids, so tests can assert their shape and legend coverage. */
-export function characterGrids() {
-  return {
-    legend: Object.keys(CHAR_LEGEND(resolvePalette({}))),
-    rowWidth: CHAR_W,
-    bodyRows: 15,
-    legRows: 7,
-    body: CHAR_BODY_BY_DIR,
-    legs: CHAR_LEGS,
-  };
-}
-
 function drawCharacter(g, palette, dir, frame) {
   drawCharacterPixels(makeWriter(g), palette, dir, frame);
+}
+
+/**
+ * Where a character's feet sit inside its texture, in art units.
+ *
+ * The scene uses this for the collision body so the box hugs the shoes rather
+ * than the whole 24-row sprite. Anything that positions a character on the tile
+ * grid has to agree with it, or the player and the NPCs end up standing on
+ * different parts of the same tile.
+ */
+export const CHAR_METRICS = {
+  width: CHAR_W,
+  height: CHAR_H,
+  scale: SCALE,
+  feet: { x: 3, y: 18, w: 10, h: 5 },
+};
+
+/** Sprite-centre offset that puts a character's feet on a tile centre, in px. */
+export const FOOT_DROP =
+  (CHAR_METRICS.feet.y + CHAR_METRICS.feet.h / 2 - CHAR_H / 2) * SCALE;
+
+/** The raw grids, so tests can assert shape and legend coverage off the wire. */
+export function characterGrids() {
+  return {
+    rowWidth: CHAR_W,
+    bodyRows: CHAR_BODY.down.length,
+    legRows: CHAR_LEGS[0].length,
+    body: CHAR_BODY_BY_DIR,
+    legs: CHAR_LEGS,
+    legend: Object.keys(CHAR_LEGEND(resolvePalette())),
+  };
 }
 
 /** Draw character to a 2D canvas (for previews and dialogue portraits). */

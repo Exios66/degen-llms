@@ -13,8 +13,8 @@ import { getActiveProfileSummary, getActiveSlotId } from "../../../js/profileCac
 import { getWorldCycleState } from "../../../js/world-cycle.js";
 import { SaveAdapter, initSessionRpg } from "../systems/SaveAdapter.js";
 import { renderCharacterCreator } from "../systems/CharacterCreator.js";
-import { archetypeLabel, normalizeAppearance, resolvePalette } from "../systems/CharacterAppearance.js";
-import { drawCharacterToCanvas } from "../systems/TextureFactory.js";
+import { archetypeLabel, normalizeAppearance } from "../systems/CharacterAppearance.js";
+import { resolvePlayerSprite, drawCharacterToCanvas } from "../systems/CharacterSprites.js";
 
 const INTRO_AUTO_MS = 3200;
 
@@ -411,7 +411,7 @@ export function renderTrainerCard(root, saveAdapter, questManager, hooks = {}) {
   `;
   const portrait = root.querySelector("#trainer-portrait");
   if (portrait) {
-    drawCharacterToCanvas(portrait, resolvePalette(appearance), "down", 0, 3);
+    drawCharacterToCanvas(portrait, resolvePlayerSprite(appearance), "down", 0, 3);
   }
   root.querySelector("#trainer-wardrobe")?.addEventListener("click", () => {
     root.dataset.wardrobe = "1";

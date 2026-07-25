@@ -1,9 +1,4 @@
 import { ART_UNIT, TILE, TILE_SIZE } from "./MapTiles.js";
-import {
-  appearanceTextureBase,
-  normalizeAppearance,
-  resolvePalette,
-} from "./CharacterAppearance.js";
 
 /**
  * Production-grade procedural pixel textures — 16px art grid, 2× upscale.
@@ -11,8 +6,6 @@ import {
  */
 
 const SCALE = TILE_SIZE / ART_UNIT;
-const CHAR_W = ART_UNIT;
-const CHAR_H = 22;
 const OUTLINE = 0x181828;
 const OUTLINE_SOFT = 0x303040;
 const TILE_VARIANTS = 3;
@@ -522,169 +515,6 @@ const TILE_DRAWERS = {
   [TILE.TRIM]: drawTrimTile,
 };
 
-const TEX_CHAR_W = CHAR_W * SCALE;
-const TEX_CHAR_H = CHAR_H * SCALE;
-
-// ─── Characters ──────────────────────────────────────────────────────────────
-
-function drawCharacterPixels(w, palette, dir, frame) {
-  const { body, mid, shade: bodyShade, hair, hairShade, skinLight, skinMid, skinShade } = palette;
-  const bob = frame === 1 ? -1 : frame === 2 ? 1 : 0;
-  const legL = frame === 1 ? 1 : frame === 2 ? -1 : 0;
-  const legR = -legL;
-  const shoe = 0x282838;
-  const shoeHi = 0x484858;
-  const belt = shade(bodyShade, 0.65);
-
-  w.px(0x000000, 3, 20, 10, 1, 0.35);
-  w.px(0x000000, 4, 19, 8, 1, 0.2);
-
-  w.px(OUTLINE, 4 + legL, 15 + bob, 3, 5);
-  w.px(OUTLINE, 9 + legR, 15 + bob, 3, 5);
-  w.px(shoe, 4 + legL, 16 + bob, 3, 3);
-  w.px(shoe, 9 + legR, 16 + bob, 3, 3);
-  w.px(shoeHi, 4 + legL, 16 + bob, 2, 1);
-  w.px(shoeHi, 9 + legR, 16 + bob, 2, 1);
-  w.px(OUTLINE, 4 + legL, 19 + bob, 3, 1);
-  w.px(OUTLINE, 9 + legR, 19 + bob, 3, 1);
-
-  w.px(OUTLINE, 3, 8 + bob, 10, 8);
-  w.px(body, 4, 9 + bob, 8, 6);
-  w.px(mid, 4, 9 + bob, 8, 2);
-  w.px(bodyShade, 4, 13 + bob, 8, 2);
-  w.px(0xffffff, 5, 10 + bob, 2, 1, 0.85);
-  w.px(belt, 4, 13 + bob, 8, 1);
-  w.px(shade(belt, 1.2), 5, 13 + bob, 1, 1);
-
-  if (dir === "left") {
-    w.px(OUTLINE, 1, 10 + bob, 3, 5);
-    w.px(body, 2, 11 + bob, 2, 3);
-    w.px(skinMid, 1, 11 + bob, 1, 2);
-    w.px(OUTLINE, 12, 10 + bob, 2, 4);
-    w.px(body, 13, 11 + bob, 1, 2);
-  } else if (dir === "right") {
-    w.px(OUTLINE, 12, 10 + bob, 3, 5);
-    w.px(body, 13, 11 + bob, 2, 3);
-    w.px(skinMid, 14, 11 + bob, 1, 2);
-    w.px(OUTLINE, 2, 10 + bob, 2, 4);
-    w.px(body, 2, 11 + bob, 1, 2);
-  } else {
-    w.px(OUTLINE, 2, 10 + bob, 2, 5);
-    w.px(OUTLINE, 12, 10 + bob, 2, 5);
-    w.px(body, 2, 11 + bob, 1, 3);
-    w.px(body, 13, 11 + bob, 1, 3);
-    w.px(skinMid, 2, 13 + bob, 1, 1);
-    w.px(skinMid, 13, 13 + bob, 1, 1);
-  }
-
-  w.px(OUTLINE, 4, 1 + bob, 8, 8);
-  w.px(skinLight, 5, 2 + bob, 6, 6);
-  w.px(skinMid, 5, 6 + bob, 6, 2);
-  w.px(skinShade, 6, 7 + bob, 4, 1);
-  w.px(skinLight, 5, 2 + bob, 2, 2);
-
-  if (dir === "up") {
-    w.px(OUTLINE, 4, 1 + bob, 8, 4);
-    w.px(hair, 5, 1 + bob, 6, 3);
-    w.px(hairShade, 5, 1 + bob, 6, 1);
-    w.px(hairShade, 5, 3 + bob, 2, 1);
-    w.px(hairShade, 9, 3 + bob, 2, 1);
-  } else if (dir === "down") {
-    w.px(hair, 5, 1 + bob, 6, 3);
-    w.px(hairShade, 5, 1 + bob, 6, 1);
-    w.px(hair, 4, 3 + bob, 1, 2);
-    w.px(hair, 11, 3 + bob, 1, 2);
-    w.px(OUTLINE, 6, 5 + bob, 1, 2);
-    w.px(OUTLINE, 9, 5 + bob, 1, 2);
-    w.px(0xffffff, 6, 5 + bob, 1, 1);
-    w.px(0xffffff, 9, 5 + bob, 1, 1);
-    w.px(0x181828, 7, 6 + bob, 1, 1);
-    w.px(0x181828, 10, 6 + bob, 1, 1);
-    w.px(0xf0a0a0, 7, 7 + bob, 1, 1);
-    w.px(0xf0a0a0, 10, 7 + bob, 1, 1);
-    w.px(OUTLINE_SOFT, 7, 8 + bob, 2, 1);
-  } else if (dir === "left") {
-    w.px(hair, 4, 1 + bob, 5, 3);
-    w.px(hairShade, 4, 1 + bob, 4, 1);
-    w.px(hair, 4, 3 + bob, 2, 2);
-    w.px(OUTLINE, 6, 5 + bob, 1, 2);
-    w.px(0xffffff, 6, 5 + bob, 1, 1);
-    w.px(0x181828, 7, 6 + bob, 1, 1);
-    w.px(0xf0a0a0, 7, 7 + bob, 1, 1);
-  } else {
-    w.px(hair, 7, 1 + bob, 5, 3);
-    w.px(hairShade, 8, 1 + bob, 4, 1);
-    w.px(hair, 10, 3 + bob, 2, 2);
-    w.px(OUTLINE, 9, 5 + bob, 1, 2);
-    w.px(0xffffff, 9, 5 + bob, 1, 1);
-    w.px(0x181828, 10, 6 + bob, 1, 1);
-    w.px(0xf0a0a0, 10, 7 + bob, 1, 1);
-  }
-}
-
-function drawCharacter(g, palette, dir, frame) {
-  drawCharacterPixels(makeWriter(g), palette, dir, frame);
-}
-
-export function drawCharacterToCanvas(canvas, palette, dir = "down", frame = 0, pixelScale = 3) {
-  const ctx = canvas.getContext("2d");
-  const w = CHAR_W * pixelScale;
-  const h = CHAR_H * pixelScale;
-  canvas.width = w;
-  canvas.height = h;
-  ctx.imageSmoothingEnabled = false;
-  ctx.clearRect(0, 0, w, h);
-  drawCharacterPixels(makeWriter(canvas, pixelScale), palette, dir, frame);
-}
-
-function createPlayerAnims(scene, base) {
-  for (const dir of ["down", "up", "left", "right"]) {
-    const animKey = `${base}_walk_${dir}`;
-    if (scene.anims.exists(animKey)) scene.anims.remove(animKey);
-    scene.anims.create({
-      key: animKey,
-      frames: [
-        { key: `${base}_${dir}_1` },
-        { key: `${base}_${dir}` },
-        { key: `${base}_${dir}_2` },
-        { key: `${base}_${dir}` },
-      ],
-      frameRate: 8,
-      repeat: -1,
-    });
-    const idleKey = `${base}_idle_${dir}`;
-    if (scene.anims.exists(idleKey)) scene.anims.remove(idleKey);
-    scene.anims.create({
-      key: idleKey,
-      frames: [{ key: `${base}_${dir}` }],
-      frameRate: 1,
-      repeat: 0,
-    });
-  }
-}
-
-export function ensurePlayerTextures(scene, appearance) {
-  const normalized = normalizeAppearance({ appearance });
-  const palette = resolvePalette(normalized);
-  const base = appearanceTextureBase(normalized);
-  if (scene.textures.exists(`${base}_down`)) return base;
-
-  for (const dir of ["down", "up", "left", "right"]) {
-    for (const frame of [0, 1, 2]) {
-      const suffix = frame === 0 ? "" : `_${frame}`;
-      makeTex(
-        scene,
-        `${base}_${dir}${suffix}`,
-        (g) => drawCharacter(g, palette, dir, frame),
-        TEX_CHAR_W,
-        TEX_CHAR_H
-      );
-    }
-  }
-  createPlayerAnims(scene, base);
-  return base;
-}
-
 // ─── Decor, glows, signage, UI ─────────────────────────────────────────────
 
 function drawShadow(g) {
@@ -896,23 +726,6 @@ export function createGameTextures(scene) {
     makeTex(scene, `tile_water_f${frame}`, (g) => drawWaterTile(g, 0, frame));
   }
 
-  const npcs = [
-    ["npc_gold", 0xf0d050, 0xc8a838, 0x987820, 0x685010, 0x504008],
-    ["npc_green", 0x50e8a0, 0x38b878, 0x288858, 0x186040, 0x104030],
-    ["npc_pink", 0xd888f0, 0xa868c0, 0x7848a0, 0x503070, 0x382050],
-    ["npc_teal", 0x48d8e8, 0x30a8b8, 0x208898, 0x1a6070, 0x104050],
-    ["npc_red", 0xf08088, 0xc86068, 0x984048, 0x682830, 0x481820],
-    ["npc_orange", 0xffb060, 0xd89048, 0xa86830, 0x784820, 0x503010],
-    ["npc_silver", 0xc0c8d8, 0x9098a8, 0x606878, 0x404850, 0x303038],
-  ];
-  for (const [key, body, mid, shadeCol, hair, hairShade] of npcs) {
-    const palette = {
-      body, mid, shade: shadeCol, hair, hairShade,
-      skinLight: 0xffe8d0, skinMid: 0xffd8b8, skinShade: 0xffc8a8,
-    };
-    makeTex(scene, key, (g) => drawCharacter(g, palette, "down", 0), TEX_CHAR_W, TEX_CHAR_H);
-  }
-
   makeTex(scene, "decor_bar", drawBarDecor);
   makeTex(scene, "decor_plant", drawPlantDecor);
   makeTex(scene, "decor_slot", drawSlotDecor);
@@ -928,19 +741,16 @@ export function createGameTextures(scene) {
   makeTex(scene, "interact_icon", drawInteractIcon, TILE_SIZE, TILE_SIZE * 0.875);
 }
 
-export function playerTextureKey(rpgOrArchetype, facing = "down") {
-  if (rpgOrArchetype && typeof rpgOrArchetype === "object") {
-    const base = appearanceTextureBase(normalizeAppearance(rpgOrArchetype));
-    return `${base}_${facing}`;
-  }
-  const archetype = rpgOrArchetype ?? "weekend_warrior";
-  const base = appearanceTextureBase(normalizeAppearance({ archetype }));
-  return `${base}_${facing}`;
-}
-
-export function playerAnimKey(rpgOrArchetype, facing, moving) {
-  const base = (rpgOrArchetype && typeof rpgOrArchetype === "object")
-    ? appearanceTextureBase(normalizeAppearance(rpgOrArchetype))
-    : appearanceTextureBase(normalizeAppearance({ archetype: rpgOrArchetype ?? "weekend_warrior" }));
-  return moving ? `${base}_walk_${facing}` : `${base}_idle_${facing}`;
-}
+export {
+  preloadCharacterAssets,
+  cachePortraitImages,
+  ensurePlayerTextures,
+  setupNpcSprite,
+  applySpriteAppearance,
+  resolvePlayerSprite,
+  resolveNpcSprite,
+  resolveSpeakerSprite,
+  drawCharacterToCanvas,
+  playerTextureKey,
+  playerAnimKey,
+} from "./CharacterSprites.js";

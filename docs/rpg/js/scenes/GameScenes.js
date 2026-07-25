@@ -5,7 +5,12 @@ import {
   playerTextureKey,
   playerAnimKey,
   tileTextureKey,
-} from "../systems/TextureFactory.js?v=texture-quality-2b";
+  preloadCharacterAssets,
+  cachePortraitImages,
+  setupNpcSprite,
+  applySpriteAppearance,
+  resolvePlayerSprite,
+} from "../systems/TextureFactory.js?v=character-sprites-2";
 import { normalizeAppearance } from "../systems/CharacterAppearance.js";
 import {
   TILE_SIZE, MAP_WIDTH, MAP_HEIGHT, buildMapLayersForId, getNpcsForMap,
@@ -87,7 +92,12 @@ export class OverworldScene extends Phaser.Scene {
     this.onEgg = data.onEgg ?? null;
   }
 
+  preload() {
+    preloadCharacterAssets(this);
+  }
+
   create() {
+    cachePortraitImages(this);
     createGameTextures(this);
     if (this.dialogues && this.dialogue) {
       this.dialogue.load(this.dialogues);
@@ -163,12 +173,20 @@ export class OverworldScene extends Phaser.Scene {
     this.playerArchetype = spawn.archetype || spawn.playerSprite || "weekend_warrior";
     this.playerAppearance = normalizeAppearance(spawn);
     ensurePlayerTextures(this, this.playerAppearance);
-    const pKey = playerTextureKey({ appearance: this.playerAppearance }, "down");
-    this.player = this.physics.add.sprite(px * TILE_SIZE + TILE_SIZE / 2, py * TILE_SIZE + TILE_SIZE / 2, pKey);
+    const playerSpec = resolvePlayerSprite(this.playerAppearance);
+    const pTex = playerTextureKey({ appearance: this.playerAppearance }, "down");
+    this.player = this.physics.add.sprite(
+      px * TILE_SIZE + TILE_SIZE / 2,
+      py * TILE_SIZE + TILE_SIZE / 2,
+      pTex.key,
+      pTex.frame
+    );
+    applySpriteAppearance(this.player, playerSpec);
+    this.player.setFlipX(pTex.flipX);
     this.player.setCollideWorldBounds(true);
     this.player.setDepth(10);
-    this.player.body.setSize(TILE_SIZE * 0.625, TILE_SIZE * 0.5);
-    this.player.body.setOffset(TILE_SIZE * 0.1875, TILE_SIZE * 0.75);
+    this.player.body.setSize(TILE_SIZE * 0.45, TILE_SIZE * 0.3);
+    this.player.body.setOffset(TILE_SIZE * 0.275, TILE_SIZE * 0.58);
 
     this.playerShadow = this.add.image(this.player.x, this.player.y + TILE_SIZE * 0.28, "shadow");
     this.playerShadow.setDepth(9);
@@ -193,19 +211,21 @@ export class OverworldScene extends Phaser.Scene {
       const sprite = this.add.sprite(
         npc.x * TILE_SIZE + TILE_SIZE / 2,
         npc.y * TILE_SIZE + TILE_SIZE / 2,
-        npc.sprite
+        "char_hero",
+        0
       );
+      setupNpcSprite(this, sprite, npc.sprite);
       sprite.setDepth(10);
       sprite.setData("npc", npc);
       this.npcSprites.set(npc.id, sprite);
 
       const displayName = this._resolveNpcDisplayName(npc);
-      const label = this._createNpcLabel(sprite.x, sprite.y - TILE_SIZE * 0.62, displayName, npc.zone);
+      const label = this._createNpcLabel(sprite.x, sprite.y - TILE_SIZE * 0.72, displayName, npc.zone);
       this.npcLabels.set(npc.id, label);
 
       if (npc.zone) {
         const dealer = this._dealerForZone(npc.zone);
-        sprite.setTexture(dealer.sprite);
+        setupNpcSprite(this, sprite, dealer.sprite);
       }
     }
 
@@ -610,12 +630,15 @@ export class OverworldScene extends Phaser.Scene {
 
   _applyPlayerAnim(moving) {
     const appearance = { appearance: this.playerAppearance };
+    this.player.setFlipX(this.facing === "left");
     const key = playerAnimKey(appearance, this.facing, moving);
     if (this.player.anims?.currentAnim?.key === key) return;
     if (this.anims.exists(key)) {
       this.player.anims.play(key, true);
     } else {
-      this.player.setTexture(playerTextureKey(appearance, this.facing));
+      const tex = playerTextureKey(appearance, this.facing);
+      this.player.setTexture(tex.key, tex.frame);
+      this.player.setFlipX(tex.flipX);
     }
   }
 
@@ -623,6 +646,7 @@ export class OverworldScene extends Phaser.Scene {
     const rpg = this.saveAdapter.rpg;
     this.playerAppearance = normalizeAppearance(rpg);
     ensurePlayerTextures(this, this.playerAppearance);
+    applySpriteAppearance(this.player, resolvePlayerSprite(this.playerAppearance));
     this.player.anims?.stop();
     this._applyPlayerAnim(this._moving);
   }

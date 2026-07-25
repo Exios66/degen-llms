@@ -5,7 +5,7 @@ import { getSessionDealer, pickQuip } from "../dealers.js";
 import { BettingAction, HoldemTable } from "../holdem/game.js";
 import { HAND_CLASS_NAMES } from "../holdem/hand_eval.js";
 import { applyTierSpeedCss, getActivityTiming } from "../rewards-perks.js";
-import { BET_TYPES, RED_NUMBERS, resolveBet, spinWheel, wheelColor } from "../roulette.js";
+import { BET_TYPES, RED_NUMBERS, appendSpinHistory, resolveBet, spinWheel, wheelColor } from "../roulette.js";
 import { effectiveTableStakes, formatStakeRange } from "../stakes.js";
 
 export function buildTableRenderers(ctx) {
@@ -102,6 +102,42 @@ export function buildTableRenderers(ctx) {
       }),
     ]);
     return wrap;
+  }
+
+  /** Animated recent-spin strip — newest result on the left. */
+  function renderRouletteHistory(history = [], { pulseNewest = false } = {}) {
+    const strip = el("div", {
+      className: `roulette-history${pulseNewest ? " roulette-history--pulse" : ""}`,
+      "aria-label": "Roulette spin history",
+    });
+    strip.appendChild(el("div", { className: "roulette-history-label", textContent: "Spin history" }));
+    const track = el("div", { className: "roulette-history-track" });
+    if (!history.length) {
+      track.appendChild(el("span", {
+        className: "roulette-history-empty",
+        textContent: "Results appear here as the wheel spins",
+      }));
+    } else {
+      history.forEach((entry, i) => {
+        track.appendChild(el("div", {
+          className: [
+            "roulette-history-chip",
+            `roulette-history-chip--${entry.color}`,
+            i === 0 && pulseNewest ? "roulette-history-chip--enter" : "",
+          ].filter(Boolean).join(" "),
+          textContent: String(entry.number),
+          title: `${entry.number} · ${entry.color}`,
+          "aria-label": `${entry.number} ${entry.color}`,
+        }));
+      });
+    }
+    strip.appendChild(track);
+    return strip;
+  }
+
+  function pushRouletteHistory(number) {
+    runtime.roulette.history = appendSpinHistory(runtime.roulette.history || [], number, { limit: 18 });
+    runtime.roulette.historyPulse = true;
   }
 
   function renderRouletteBetMat(straightInput, onPick) {
@@ -225,7 +261,6 @@ export function buildTableRenderers(ctx) {
       ]),
     });
   }
-
   function renderHoldemMenu() {
     const act = ACTIVITIES.holdem;
     if (ctx.session.wallet.balance < act.minBet) {
@@ -259,10 +294,14 @@ export function buildTableRenderers(ctx) {
       title: "TEXAS HOLD'EM",
       screenChildren: [
         dealerPanel("holdem"),
+        el("p", {
+          className: "dim",
+          textContent: "No-limit Hold'em · 5-handed (you + 4 bots) · Preflop → Flop → Turn → River. Buy-in stays on the table across hands.",
+        }),
         el("p", { className: "machine-screen-label", textContent: "Hand rankings" }),
         ranksEl,
         el("div", { className: "form-row" }, [
-          el("label", { textContent: `Buy-in (${act.minBet}–${ctx.session.wallet.balance})` }),
+          el("label", { textContent: `Buy-in (${buyInStakes.minBet}–${buyInStakes.maxBet})` }),
           buyInInput,
         ]),
       ],
@@ -277,8 +316,9 @@ export function buildTableRenderers(ctx) {
             if (!ctx.session.wallet.debit(buyIn, "holdem", `Hold'em buy-in ${fmtChips(buyIn)}`)) {
               alert("Insufficient chips."); return;
             }
+            persist();
             runtime.holdem = {
-              table: HoldemTable.quickTable(buyIn),
+              table: HoldemTable.quickTable(buyIn, 4),
               buyIn,
               sessionNet: 0,
               hands: 0,
@@ -293,12 +333,11 @@ export function buildTableRenderers(ctx) {
       ]),
     });
   }
-
   function processHoldemBots() {
     if (!runtime.holdem || runtime.holdem.table.handOver) return;
     const table = runtime.holdem.table;
     let guard = 0;
-    while (!table.handOver && guard < 40) {
+    while (!table.handOver && guard < 80) {
       guard += 1;
       const player = table.players[table.actionIndex];
       if (!player || player.folded || player.allIn) {
@@ -307,12 +346,11 @@ export function buildTableRenderers(ctx) {
         continue;
       }
       if (player.isHuman) break;
-      const action = table.botAction(player);
-      const msg = table.applyAction(player, action);
+      const decision = table.botAction(player);
+      const msg = table.applyAction(player, decision.action, decision.raiseTo);
       runtime.holdem.log.push(msg);
     }
   }
-
   function renderHoldemPlay() {
     if (!runtime.holdem) return el("div", { className: "panel" }, [
       el("p", { className: "error", textContent: "No active Hold'em table." }),
@@ -321,6 +359,11 @@ export function buildTableRenderers(ctx) {
       ]),
     ]);
     const table = runtime.holdem.table;
+
+    // Keep the action log in sync with engine street / bot messages.
+    if (table.actionLog?.length) {
+      runtime.holdem.log = [...table.actionLog];
+    }
     const logLines = [...runtime.holdem.log];
 
     if (table.handOver) {
@@ -329,10 +372,11 @@ export function buildTableRenderers(ctx) {
           logLines.push({ text: `${name}: ${score.name}`, type: "" });
         }
       }
-      logLines.push({ text: table.lastMessage, type: "success" });
+      if (table.lastMessage) logLines.push({ text: table.lastMessage, type: "success" });
     }
 
-    const actionBar = el("div", { className: "action-bar" });
+    const sessionDelta = table.human.stack - runtime.holdem.buyIn;
+    const actionBar = el("div", { className: "action-bar holdem-action-bar" });
 
     if (table.handOver) {
       if (table.human.stack >= table.bigBlind) {
@@ -357,22 +401,100 @@ export function buildTableRenderers(ctx) {
       const player = table.players[table.actionIndex];
       if (player?.isHuman) {
         const legal = table.legalActions(player);
-        for (const act of [BettingAction.CHECK, BettingAction.CALL, BettingAction.RAISE, BettingAction.FOLD]) {
-          if (legal.has(act)) {
-            actionBar.appendChild(el("button", {
-              className: "btn primary",
-              textContent: act.charAt(0).toUpperCase() + act.slice(1),
-              onclick: () => {
-                runtime.holdem.log.push(table.applyAction(player, act));
-                processHoldemBots();
-                render();
-              },
-            }));
-          }
+        const toCall = Math.max(0, table.currentBet - player.betThisStreet);
+        if (legal.has(BettingAction.CHECK)) {
+          actionBar.appendChild(el("button", {
+            className: "btn primary",
+            textContent: "Check",
+            onclick: () => {
+              table.applyAction(player, BettingAction.CHECK);
+              processHoldemBots();
+              render();
+            },
+          }));
+        }
+        if (legal.has(BettingAction.CALL)) {
+          actionBar.appendChild(el("button", {
+            className: "btn primary",
+            textContent: toCall >= player.stack ? `All-in ${fmtChips(player.stack)}` : `Call ${fmtChips(toCall)}`,
+            onclick: () => {
+              table.applyAction(player, BettingAction.CALL);
+              processHoldemBots();
+              render();
+            },
+          }));
+        }
+        if (legal.has(BettingAction.RAISE)) {
+          const minTo = table.minRaiseTo(player);
+          const maxTo = table.maxRaiseTo(player);
+          const raiseWrap = el("div", { className: "holdem-raise-controls" });
+          const raiseInput = el("input", {
+            type: "number",
+            className: "holdem-raise-input",
+            min: String(minTo),
+            max: String(maxTo),
+            value: String(minTo),
+            title: `Raise to between ${minTo} and ${maxTo}`,
+          });
+          raiseWrap.appendChild(el("label", {
+            className: "holdem-raise-label",
+            textContent: toCall > 0 ? "Raise to" : "Bet",
+          }));
+          raiseWrap.appendChild(raiseInput);
+          raiseWrap.appendChild(el("button", {
+            className: "btn primary",
+            textContent: maxTo <= minTo ? `All-in ${fmtChips(maxTo)}` : (toCall > 0 ? "Raise" : "Bet"),
+            onclick: () => {
+              let raiseTo = parseInt(raiseInput.value, 10);
+              if (!Number.isFinite(raiseTo)) raiseTo = minTo;
+              if (raiseTo < minTo && raiseTo < maxTo) {
+                alert(`Raise must be at least ${fmtChips(minTo)}, or go all-in for ${fmtChips(maxTo)}.`);
+                return;
+              }
+              raiseTo = Math.min(Math.max(raiseTo, Math.min(minTo, maxTo)), maxTo);
+              try {
+                table.applyAction(player, BettingAction.RAISE, raiseTo);
+              } catch (err) {
+                alert(err.message || String(err));
+                return;
+              }
+              processHoldemBots();
+              render();
+            },
+          }));
+          raiseWrap.appendChild(el("button", {
+            className: "btn",
+            textContent: "All-in",
+            onclick: () => {
+              try {
+                table.applyAction(player, BettingAction.RAISE, maxTo);
+              } catch (err) {
+                alert(err.message || String(err));
+                return;
+              }
+              processHoldemBots();
+              render();
+            },
+          }));
+          actionBar.appendChild(raiseWrap);
+        }
+        if (legal.has(BettingAction.FOLD)) {
+          actionBar.appendChild(el("button", {
+            className: "btn",
+            textContent: "Fold",
+            onclick: () => {
+              table.applyAction(player, BettingAction.FOLD);
+              processHoldemBots();
+              render();
+            },
+          }));
         }
       } else {
-        actionBar.appendChild(el("p", { className: "dim", textContent: "Waiting for action…" }));
-        processHoldemBots();
+        actionBar.appendChild(el("p", { className: "dim", textContent: "Bots acting…" }));
+        queueMicrotask(() => {
+          processHoldemBots();
+          render();
+        });
       }
       actionBar.appendChild(el("button", {
         className: "btn",
@@ -386,15 +508,15 @@ export function buildTableRenderers(ctx) {
       screenChildren: [
         el("p", {
           className: "machine-status",
-          textContent: `Table stack: ${fmtChips(table.human.stack)} · Blinds ${fmtChips(table.smallBlind)}/${fmtChips(table.bigBlind)}`,
+          textContent: `Stack ${fmtChips(table.human.stack)} · Buy-in ${fmtChips(runtime.holdem.buyIn)} · Session ${signedChips(sessionDelta)} · Blinds ${fmtChips(table.smallBlind)}/${fmtChips(table.bigBlind)} · ${table.players.length} players`,
         }),
         renderHoldemTable(table),
-        machineLog(logLines),
+        machineLog(logLines, { max: 16 }),
       ],
       controls: actionBar,
       footerExtra: el("span", {
         className: "machine-led",
-        textContent: `HAND ${runtime.holdem.hands + 1}`,
+        textContent: `HAND ${runtime.holdem.hands + 1} · ${String(table.street).toUpperCase()}`,
       }),
     });
   }
@@ -414,7 +536,6 @@ export function buildTableRenderers(ctx) {
     popToView("floor");
     render();
   }
-
   function renderRoulette() {
     const act = ACTIVITIES.roulette;
     if (ctx.session.wallet.balance < act.minBet) {
@@ -450,9 +571,19 @@ export function buildTableRenderers(ctx) {
       straightRow.style.display = BET_TYPES[betSelect.value].kind === "straight" ? "" : "none";
     };
 
+    const rememberedWager = Number.isFinite(runtime.roulette.lastWager)
+      ? Math.min(wagerStakes.maxBet, Math.max(wagerStakes.minBet, runtime.roulette.lastWager))
+      : wagerStakes.minBet;
     const amountInput = el("input", {
-      type: "number", min: String(wagerStakes.minBet), max: String(wagerStakes.maxBet), value: String(wagerStakes.minBet),
+      type: "number",
+      min: String(wagerStakes.minBet),
+      max: String(wagerStakes.maxBet),
+      value: String(rememberedWager),
     });
+    amountInput.oninput = () => {
+      const typed = parseInt(amountInput.value, 10);
+      if (Number.isFinite(typed) && typed > 0) runtime.roulette.lastWager = typed;
+    };
     const resultEl = el("p", {
       className: "dim",
       textContent: runtime.roulette.lastNumber != null
@@ -460,11 +591,17 @@ export function buildTableRenderers(ctx) {
         : "European wheel (0–36). Place a bet and spin.",
     });
     const summaryEl = el("p", {
-      className: "roulette-ctx.session",
+      className: "roulette-session",
       textContent: runtime.roulette.spins
         ? `Session: ${signedChips(runtime.roulette.sessionNet)} over ${runtime.roulette.spins} spin(s)`
         : "",
     });
+    const pulseNewest = Boolean(runtime.roulette.historyPulse);
+    if (runtime.roulette.historyPulse) {
+      // Consume the pulse flag so only the newly landed number animates in.
+      runtime.roulette.historyPulse = false;
+    }
+    const historyEl = renderRouletteHistory(runtime.roulette.history || [], { pulseNewest });
 
     const onMatPick = (n) => {
       betSelect.value = "0";
@@ -490,6 +627,7 @@ export function buildTableRenderers(ctx) {
         resultEl.textContent = "Insufficient chips.";
         return;
       }
+      runtime.roulette.lastWager = amount;
       const dealer = runtime.activeTableDealer ?? getSessionDealer(ctx.session, "roulette");
       resultEl.className = "dim";
       resultEl.textContent = `${dealer.name}: "${pickQuip(dealer, "deal")}"`;
@@ -503,6 +641,7 @@ export function buildTableRenderers(ctx) {
         runtime.roulette.spins += 1;
         runtime.roulette.lastNumber = number;
         runtime.roulette.spinning = false;
+        pushRouletteHistory(number);
         resultEl.className = win > 0 ? "success" : "dim";
         const quip = pickQuip(dealer, win > 0 ? "win" : "lose");
         resultEl.textContent = `Ball lands on ${number} (${wheelColor(number)}) — ${reason}. ${dealer.name}: "${quip}"`;
@@ -522,6 +661,7 @@ export function buildTableRenderers(ctx) {
       title: "ROULETTE",
       screenChildren: [
         dealerPanel("roulette"),
+        historyEl,
         rouletteDisplay,
         el("div", { className: "roulette-outside-bets" }, [
           el("div", { className: "form-row" }, [el("label", { textContent: "Bet type" }), betSelect]),
@@ -532,7 +672,12 @@ export function buildTableRenderers(ctx) {
         summaryEl,
       ],
       controls: el("div", { className: "action-bar" }, [
-        el("button", { className: "btn primary", textContent: "Spin", onclick: doSpin }),
+        el("button", {
+          className: "btn primary",
+          textContent: "Spin",
+          onclick: doSpin,
+          disabled: runtime.roulette.spinning,
+        }),
         el("button", {
           className: "btn",
           textContent: "Leave table",

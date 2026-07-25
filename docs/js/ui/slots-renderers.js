@@ -164,7 +164,6 @@ export function buildSlotsRenderers(ctx) {
       el("div", { className: "slot-cabinet-base" }, baseChildren.filter(Boolean)),
     ]);
   }
-
   function renderSlotsMenu() {
     const act = ACTIVITIES.slots;
     if (ctx.session.wallet.balance < act.minBet) {
@@ -197,7 +196,17 @@ export function buildSlotsRenderers(ctx) {
         el("h3", { className: "slot-category-title", textContent: cat.label }),
         el("div", { className: "slot-machine-grid" }, machines.map((m) =>
           slotMachineCard(m, () => {
-            runtime.slots = { machine: m, sessionNet: 0, spins: 0, spinning: false, lastWin: false, lastReels: null, lastMessage: null };
+            runtime.slots = {
+              machine: m,
+              sessionNet: 0,
+              spins: 0,
+              spinning: false,
+              lastWin: false,
+              lastReels: null,
+              lastMessage: null,
+              lastBet: null,
+              tier: runtime.slots.tier ?? runtime.stakeTier,
+            };
             pushView("slots-play");
           })
         )),
@@ -211,7 +220,6 @@ export function buildSlotsRenderers(ctx) {
 
     return floor;
   }
-
   function renderSlotsPlay() {
     const machine = runtime.slots.machine;
     const tier = runtime.slots.tier ?? runtime.stakeTier ?? getTier("standard");
@@ -219,9 +227,16 @@ export function buildSlotsRenderers(ctx) {
     const stakes = effectiveSlotStakes(machine, tier, ctx.session.wallet.balance);
     const minBet = stakes.minBet;
     const maxBet = stakes.maxBet;
+    const rememberedBet = Number.isFinite(runtime.slots.lastBet)
+      ? Math.min(maxBet, Math.max(minBet, runtime.slots.lastBet))
+      : minBet;
     const betInput = el("input", {
-      type: "number", min: String(minBet), max: String(maxBet), value: String(minBet),
+      type: "number", min: String(minBet), max: String(maxBet), value: String(rememberedBet),
     });
+    betInput.oninput = () => {
+      const typed = parseInt(betInput.value, 10);
+      if (Number.isFinite(typed) && typed > 0) runtime.slots.lastBet = typed;
+    };
     const reelsStopped = runtime.slots.reelsStopped ?? 3;
     const reelsForDisplay = (runtime.slots.spinning || reelsStopped < 3)
       ? (runtime.slots.displayReels ?? runtime.slots.lastReels)
@@ -279,6 +294,9 @@ export function buildSlotsRenderers(ctx) {
         render();
         return;
       }
+
+      // Keep the player's last wager as the default for the next pull.
+      runtime.slots.lastBet = bet;
 
       clearSlotsSpinTimers();
       const timing = getActivityTiming(tier.id);

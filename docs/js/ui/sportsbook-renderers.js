@@ -1,13 +1,12 @@
 // Extracted from app.js — shared by the web terminal and the pixel RPG.
 import { ACTIVITIES } from "../core.js";
-import { categoryLabel, predictionPayout } from "../predictionMarkets.js";
+import { MARKET_CATEGORIES, categoryLabel, filterMarkets, predictionPayout } from "../predictionMarkets.js";
 import { fmtOdds, formatEventScore, oddsForSelection } from "../sportsbook.js";
 import { effectiveTableStakes, formatStakeRange } from "../stakes.js";
 
 export function buildSportsbookRenderers(ctx) {
   const { el, banner, chipLine, showStatus, menu, pushView, popView, goBack, render, persist, recordActivityVisit, recordActivityResult } = ctx;
   const runtime = ctx.runtime;
-
   function renderSportsbook() {
     const act = ACTIVITIES.sportsbook;
     const openCount = runtime.sportsbook.getOpenPositionCount();
@@ -20,7 +19,7 @@ export function buildSportsbookRenderers(ctx) {
         ]),
       ]);
     }
-    recordActivityVisit("runtime.sportsbook");
+    recordActivityVisit("sportsbook");
     persist();
 
     if (!runtime.sportsbook.events.length) {
@@ -43,15 +42,30 @@ export function buildSportsbookRenderers(ctx) {
       : { minBet: act.minBet, maxBet: ctx.session.wallet.balance };
 
     const tabSports = el("button", {
-      className: `runtime.sportsbook-tab${runtime.sportsbook.activeTab === "sports" ? " active" : ""}`,
+      className: `sportsbook-tab${runtime.sportsbook.activeTab === "sports" ? " active" : ""}`,
       textContent: "Sports board",
       onclick: () => { runtime.sportsbook.activeTab = "sports"; render(); },
     });
     const tabPredictions = el("button", {
-      className: `runtime.sportsbook-tab${runtime.sportsbook.activeTab === "predictions" ? " active" : ""}`,
+      className: `sportsbook-tab${runtime.sportsbook.activeTab === "predictions" ? " active" : ""}`,
       textContent: "Prediction markets",
       onclick: () => { runtime.sportsbook.activeTab = "predictions"; render(); },
     });
+
+    const predFilter = runtime.sportsbook.predictions.categoryFilter || "all";
+    const filteredPredictions = filterMarkets(runtime.sportsbook.predictions.markets, predFilter);
+    const categoryChips = el("div", { className: "prediction-filter-chips" }, [
+      el("button", {
+        className: `prediction-chip${predFilter === "all" ? " prediction-chip--active" : ""}`,
+        textContent: "All",
+        onclick: () => { runtime.sportsbook.predictions.categoryFilter = "all"; persist(); render(); },
+      }),
+      ...MARKET_CATEGORIES.map((cat) => el("button", {
+        className: `prediction-chip${predFilter === cat.id ? " prediction-chip--active" : ""}`,
+        textContent: cat.label,
+        onclick: () => { runtime.sportsbook.predictions.categoryFilter = cat.id; persist(); render(); },
+      })),
+    ]);
 
     const board = runtime.sportsbook.activeTab === "sports"
       ? el("div", {}, runtime.sportsbook.events.map((event, i) =>
@@ -66,13 +80,27 @@ export function buildSportsbookRenderers(ctx) {
             : null,
         ])
       ))
-      : el("div", {}, runtime.sportsbook.predictions.markets.map((market, i) =>
-        el("div", { className: "event-card prediction-card" }, [
-          el("div", { className: "sport", textContent: categoryLabel(market.category) }),
-          el("div", { innerHTML: `<strong>${i + 1}) ${market.question}</strong>` }),
-          el("div", { className: "dim", textContent: `YES ${market.yesPrice}¢ · NO ${market.noPrice}¢ · Vol ${market.volume.toLocaleString()}` }),
-        ])
-      ));
+      : el("div", {}, [
+        el("p", {
+          className: "dim",
+          textContent: "History Desk settles to recorded truth. Easter Eggs are chaotic longshots. Filter the board, then buy YES/NO.",
+        }),
+        categoryChips,
+        ...filteredPredictions.map((market, i) =>
+          el("div", {
+            className: `event-card prediction-card prediction-card--${market.category}`,
+          }, [
+            el("div", { className: "sport", textContent: categoryLabel(market.category) }),
+            el("div", { innerHTML: `<strong>${i + 1}) ${market.question}</strong>` }),
+            market.blurb ? el("div", { className: "prediction-blurb", textContent: market.blurb }) : null,
+            el("div", {
+              className: "dim",
+              textContent: `YES ${market.yesPrice}¢ · NO ${market.noPrice}¢ · Vol ${market.volume.toLocaleString()}${market.fixedResolution ? " · History Desk" : ""}`,
+            }),
+          ])
+        ),
+        filteredPredictions.length ? null : el("p", { className: "dim", textContent: "No markets in this category — try All or refresh." }),
+      ]);
 
     const pendingEl = el("div", { className: "pending-tickets" });
     if (runtime.sportsbook.pending.length || runtime.sportsbook.predictions.positions.length) {
@@ -99,20 +127,20 @@ export function buildSportsbookRenderers(ctx) {
       banner("Sports Book — Mandalay Sports Book"),
       chipLine(),
       tier ? el("p", { className: "dim", textContent: `${tier.name}: ${formatStakeRange(wagerStakes.minBet, wagerStakes.maxBet, { noCap: tier.maxBet == null })}` }) : null,
-      el("div", { className: "runtime.sportsbook-tabs" }, [tabSports, tabPredictions]),
+      el("div", { className: "sportsbook-tabs" }, [tabSports, tabPredictions]),
       el("p", { className: "subtitle", textContent: runtime.sportsbook.activeTab === "sports" ? "Today's Board" : "Prediction Markets" }),
       board,
       pendingEl,
       menu(menuItems, "Sports Book:", (choice) => {
         if (choice === 0) { goBack(); return; }
         if (runtime.sportsbook.activeTab === "sports") {
-          if (choice === 1) pushView("runtime.sportsbook-wager");
-          else if (choice === 2) pushView("runtime.sportsbook-settle");
+          if (choice === 1) pushView("sportsbook-wager");
+          else if (choice === 2) pushView("sportsbook-settle");
           else if (choice === 3) { runtime.sportsbook.refreshBoard(true); persist(); render(); }
         } else {
-          if (choice === 1) pushView("runtime.sportsbook-prediction");
+          if (choice === 1) pushView("sportsbook-prediction");
           else if (choice === 2) { runtime.sportsbook.predictions.refreshPrices(); persist(); render(); }
-          else if (choice === 3) pushView("runtime.sportsbook-settle");
+          else if (choice === 3) pushView("sportsbook-settle");
         }
       }),
     ]);
@@ -242,7 +270,6 @@ export function buildSportsbookRenderers(ctx) {
       ]),
     ]);
   }
-
   function renderSportsbookPrediction() {
     if (!runtime.sportsbook.predictions.markets.length) {
       runtime.sportsbook.predictions.syncMarkets(runtime.sportsbook.events);
@@ -253,8 +280,13 @@ export function buildSportsbookRenderers(ctx) {
       ? effectiveTableStakes(tier, ctx.session.wallet.balance, act.minBet)
       : { minBet: act.minBet, maxBet: ctx.session.wallet.balance };
 
-    const marketSelect = el("select", {}, runtime.sportsbook.predictions.markets.map((m, i) =>
-      el("option", { value: String(i), textContent: `${i + 1}) ${m.question}` })
+    const marketsForSelect = filterMarkets(
+      runtime.sportsbook.predictions.markets,
+      runtime.sportsbook.predictions.categoryFilter || "all",
+    );
+    const marketPool = marketsForSelect.length ? marketsForSelect : runtime.sportsbook.predictions.markets;
+    const marketSelect = el("select", {}, marketPool.map((m, i) =>
+      el("option", { value: String(i), textContent: `${i + 1}) [${categoryLabel(m.category)}] ${m.question}` })
     ));
     const sideSelect = el("select", {}, [
       el("option", { value: "yes", textContent: "YES" }),
@@ -266,7 +298,7 @@ export function buildSportsbookRenderers(ctx) {
     });
 
     function refreshPrice() {
-      const market = runtime.sportsbook.predictions.markets[parseInt(marketSelect.value, 10)];
+      const market = marketPool[parseInt(marketSelect.value, 10)];
       if (!market) return;
       const side = sideSelect.value;
       const price = side === "yes" ? market.yesPrice : market.noPrice;
@@ -291,13 +323,13 @@ export function buildSportsbookRenderers(ctx) {
           className: "btn primary",
           textContent: "Buy contract",
           onclick: () => {
-            const market = runtime.sportsbook.predictions.markets[parseInt(marketSelect.value, 10)];
+            const market = marketPool[parseInt(marketSelect.value, 10)];
             const side = sideSelect.value;
             const amount = parseInt(amountInput.value, 10);
             const priceCents = side === "yes" ? market.yesPrice : market.noPrice;
             if (amount < wagerStakes.minBet) { alert(`Minimum stake is ${wagerStakes.minBet} chips.`); return; }
             if (amount > wagerStakes.maxBet) { alert(`Maximum stake is ${wagerStakes.maxBet} chips.`); return; }
-            if (!ctx.session.wallet.debit(amount, "runtime.sportsbook", `Prediction ${side} @ ${priceCents}¢`)) {
+            if (!ctx.session.wallet.debit(amount, "sportsbook", `Prediction ${side} @ ${priceCents}¢`)) {
               alert("Insufficient chips."); return;
             }
             runtime.sportsbook.predictions.addPosition({

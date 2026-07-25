@@ -75,28 +75,40 @@ def show_welcome(session: PlayerSession, ui: TerminalUI) -> None:
 
 def run_help(ui: TerminalUI) -> None:
     ui.banner("Casino Guide")
-    choice = ui.menu_choice(
-        [
-            "Overview & navigation",
-            "Blackjack rules & controls",
-            "Texas Hold'em guide",
-            "Roulette guide",
-            "Slot machine paytable",
-            "Sports book guide",
-            "Horse racing guide",
-            "Chip economy",
-            "Save slots & library",
-            "View all sections",
-        ],
-        title="What would you like to read?",
-    )
+    labels = [
+        "Overview & navigation",
+        "Blackjack rules & controls",
+        "Texas Hold'em guide",
+        "Roulette guide",
+        "Craps guide",
+        "Slot machine paytable",
+        "Lottery guide",
+        "Sports book & prediction markets",
+        "Horse racing guide",
+        "Chip economy",
+        "Save slots & library",
+        "View all sections",
+    ]
+    choice = ui.menu_choice(labels, title="What would you like to read?")
     if choice == 0:
         return
-    if choice == 10:
+    if choice == len(labels):
         for section in SECTIONS.values():
             ui.print(section)
     else:
-        keys = list(SECTIONS.keys())
+        keys = [
+            "overview",
+            "blackjack",
+            "holdem",
+            "roulette",
+            "craps",
+            "slots",
+            "lottery",
+            "sportsbook",
+            "horse_racing",
+            "chips",
+            "saves",
+        ]
         ui.print(SECTIONS[keys[choice - 1]])
     ui.pause()
 

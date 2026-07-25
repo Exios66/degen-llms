@@ -5,7 +5,6 @@ import { HIGH_LIMIT_SALON_CHIP_MIN, canEnterFoundationRoom, canEnterHighLimitSal
 export function buildVenueRenderers(ctx) {
   const { el, banner, chipLine, statusBanner, showStatus, menu, pushView, goBack, navigateTo, recordActivityVisit } = ctx;
   const runtime = ctx.runtime;
-
   function renderHighLimitSalon() {
     const gate = canEnterHighLimitSalon(ctx.session, runtime.stakeTier);
     if (!gate.ok) {
@@ -28,14 +27,15 @@ export function buildVenueRenderers(ctx) {
       el("p", { className: "dim", textContent: "Velvet ropes, private felt, and stakes that make the main floor nervous. Salon limits apply." }),
       el("p", { className: "subtitle", textContent: `${runtime.stakeTier?.name ?? "High Limit"} · ${ctx.session.wallet.balance.toLocaleString()} chips on the floor` }),
       menu(
-        ["Blackjack (salon limits)", "Texas Hold'em", "Roulette", "High-limit slots"],
+        ["Blackjack (salon limits)", "Texas Hold'em", "Roulette", "Craps", "High-limit slots"],
         "Salon tables:",
         (choice) => {
           if (choice === 0) { goBack(); return; }
           if (choice === 1) pushView("stake-tier", { activityId: "blackjack", nextView: "blackjack-menu" });
           else if (choice === 2) pushView("stake-tier", { activityId: "holdem", nextView: "holdem-menu" });
           else if (choice === 3) pushView("stake-tier", { activityId: "roulette", nextView: "roulette" });
-          else if (choice === 4) pushView("stake-tier", { activityId: "slots", nextView: "slots-menu" });
+          else if (choice === 4) pushView("stake-tier", { activityId: "craps", nextView: "craps" });
+          else if (choice === 5) pushView("stake-tier", { activityId: "slots", nextView: "slots-menu" });
         },
       ),
     ]);

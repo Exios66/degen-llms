@@ -24,6 +24,12 @@ export function wheelColor(number) {
   return RED_NUMBERS.has(number) ? "red" : "black";
 }
 
+/** Newest-first spin history for the live results strip. */
+export function appendSpinHistory(history, number, { limit = 18 } = {}) {
+  const next = [{ number, color: wheelColor(number) }, ...(history || [])];
+  return next.slice(0, limit);
+}
+
 export function resolveBet(bet, amount, number, straightPick = null) {
   if (bet.kind === "straight") {
     if (straightPick == null) return { win: 0, reason: "No number selected" };

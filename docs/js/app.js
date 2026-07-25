@@ -19,6 +19,8 @@ import { createShell, createRuntime, createViewStack } from "./ui/shell.js";
 import { buildStakesRenderers } from "./ui/stakes-ui.js";
 import { buildSlotsRenderers } from "./ui/slots-renderers.js";
 import { buildTableRenderers } from "./ui/table-renderers.js";
+import { buildCrapsRenderers } from "./ui/craps-renderers.js";
+import { buildLotteryRenderers } from "./ui/lottery-renderers.js";
 import { buildSportsbookRenderers } from "./ui/sportsbook-renderers.js";
 import { buildRacingRenderers } from "./ui/racing-renderers.js";
 import { buildVenueRenderers } from "./ui/venue-renderers.js";
@@ -126,13 +128,10 @@ function mountRewardsPhone() {
 
 function enterCasino(nextSession) {
   session = nextSession;
+  // A new sitting starts every table, machine, and counter from scratch; going
+  // through createRuntime keeps this from drifting as buckets are added.
+  Object.assign(runtime, createRuntime());
   resetSportsbookFromSession();
-  runtime.blackjackGame = null;
-  runtime.blackjackSessionNet = 0;
-  runtime.slots = { machine: null, sessionNet: 0, spins: 0, spinning: false, lastWin: false, lastReels: null, lastMessage: null };
-  runtime.holdem = null;
-  runtime.roulette = { sessionNet: 0, spins: 0, lastNumber: null, spinning: false };
-  runtime.horseRacing = { card: null, pending: [], sessionNet: 0, races: 0 };
   views.reset([{ name: "hub", data: {} }]);
   clearStatus();
   if (session.slotId != null) startCasinoClock();
@@ -523,7 +522,9 @@ function renderFloor({ floor }) {
     if (act.id === "blackjack") pushView("stake-tier", { activityId: "blackjack", nextView: "blackjack-menu" });
     else if (act.id === "holdem") pushView("stake-tier", { activityId: "holdem", nextView: "holdem-menu" });
     else if (act.id === "roulette") pushView("stake-tier", { activityId: "roulette", nextView: "roulette" });
+    else if (act.id === "craps") pushView("stake-tier", { activityId: "craps", nextView: "craps" });
     else if (act.id === "slots") pushView("stake-tier", { activityId: "slots", nextView: "slots-menu" });
+    else if (act.id === "lottery") pushView("stake-tier", { activityId: "lottery", nextView: "lottery" });
     else if (act.id === "sportsbook") pushView("stake-tier", { activityId: "sportsbook", nextView: "sportsbook" });
     else if (act.id === "horse_racing") pushView("stake-tier", { activityId: "horse_racing", nextView: "horse-racing" });
     else if (act.id === "dressage") pushView("stake-tier", { activityId: "dressage", nextView: "dressage" });
@@ -596,6 +597,8 @@ const { renderHorsePaddock, ...racingRenderers } = buildRacingRenderers(ctx);
 const venueRenderers = buildVenueRenderers(ctx);
 const cashierRenderers = buildCashierRenderers(ctx);
 const metaRenderers = buildMetaRenderers(ctx);
+const crapsRenderers = buildCrapsRenderers(ctx);
+const lotteryRenderers = buildLotteryRenderers(ctx);
 
 const RENDERERS = {
   "save-picker": renderSavePicker,
@@ -607,6 +610,8 @@ const RENDERERS = {
   ...stakesRenderers,
   ...slotsRenderers,
   ...tableRenderers,
+  ...crapsRenderers,
+  ...lotteryRenderers,
   ...sportsbookRenderers,
   ...racingRenderers,
   ...venueRenderers,

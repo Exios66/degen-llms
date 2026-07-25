@@ -6,9 +6,10 @@
 
 | Surface | URL / command |
 |---------|----------------|
-| **Web terminal** | [exios66.github.io/degen-llms](https://exios66.github.io/degen-llms/) |
-| **Pixel RPG** | [exios66.github.io/degen-llms/rpg](https://exios66.github.io/degen-llms/rpg/) |
+| **Web terminal** | [Web-Terminal-Access](https://exios66.github.io/degen-llms/) |
+| **Pixel RPG** | [The-Pixel-RPG](https://exios66.github.io/degen-llms/rpg/) |
 | **CLI** | `python3 -m mandalay_bay` |
+| **Quarto docs (Posit Connect Cloud)** | [Posit-Cloud](https://019f9a67-d5c9-226b-b6b1-a86d1655be69.share.connect.posit.cloud/) |
 
 All three surfaces share the same save slots and chip wallet (CLI: `~/.mandalay_bay/saves/`; browser: `localStorage`).
 
@@ -29,7 +30,7 @@ Optional editable install and tests:
 
 ```bash
 pip install -e ".[dev]"
-python3 -m pytest -v                     # 180+ tests
+python3 -m pytest -v                     # 200+ tests
 ```
 
 ## What you can do
@@ -125,21 +126,34 @@ python3 -m blackjack --quick --bots 3 --rounds 10
 
 ```
 degen-llms/
-├── mandalay_bay/          # Python source of truth — hub, hotel, pool, rewards, activities
-├── blackjack/             # Decoupled blackjack engine (casino + standalone modes)
-├── poker/                 # Texas Hold'em hand evaluation
-├── docs/                  # Web terminal (GitHub Pages) + shared JS engine
-│   ├── js/                # Browser parity modules (hotel, pool, slots, sportsbook, …)
-│   └── rpg/               # Phaser overworld (maps, NPCs, encounter bridge)
-├── tests/                 # pytest suite (180+ tests)
-└── scripts/               # GitHub Pages deploy & asset tooling
+├── mandalay_bay/              # Python source of truth — hub, resort systems, CLI activities
+│   ├── activities/            # Blackjack, Hold'em, roulette, slots, sportsbook, racing, equestrian, craps, lottery
+│   ├── craps.py / lottery.py / prediction_markets.py
+│   ├── hotel*.py / pool*.py / rewards*.py / casino_amenities*.py
+│   ├── hub.py / session.py / chips.py / saves.py
+│   └── data/                  # Sports catalog, staff manifest, guest directory, horse names
+├── blackjack/                 # Decoupled blackjack engine (casino + standalone modes)
+├── poker/                     # Texas Hold'em table engine (`holdem.py`) + hand evaluation
+├── docs/                      # Web terminal (GitHub Pages) + shared JS engine
+│   ├── js/                    # Browser parity modules (core, hotel, pool, sportsbook, craps, lottery, …)
+│   │   ├── blackjack/ / holdem/
+│   │   └── app.js             # Casino floor UI
+│   ├── css/                   # Terminal styling
+│   ├── *.md                   # Player & developer guides (mirrored in Quarto)
+│   └── rpg/                   # Phaser overworld (maps, NPCs, encounter overlays)
+├── tests/                     # pytest suite (200+ tests)
+├── scripts/                   # GitHub Pages deploy, Posit Connect publish, asset tooling
+├── .github/workflows/         # gh-pages deploy automation
+├── index.qmd / play.qmd       # Quarto documentation manuscript
+├── _quarto.yml / _publish.yml # Quarto site + Posit Connect Cloud publish target
+└── CONTRIBUTING-POSIT.md      # Connect Cloud deploy notes
 ```
 
-Python is the authoritative game logic; the web app mirrors it in vanilla ES modules. The RPG delegates casino/hotel mechanics to the shared `docs/js/` engine.
+Python is the authoritative game logic; the web app mirrors it in vanilla ES modules. The RPG delegates casino/hotel mechanics to the shared `docs/js/` engine. The Quarto site (`index.qmd`, guides) publishes separately to Posit Connect Cloud.
 
 ## Documentation
 
-Full docs in [`docs/`](docs/README.md):
+Full docs in [`docs/`](docs/README.md) and on the **[GitHub Wiki](https://github.com/Exios66/degen-llms/wiki)** (source in [`wiki/`](wiki/); publish with `/sync-github-wiki` or `bash scripts/sync-github-wiki.sh`):
 
 | Guide | Description |
 |-------|-------------|

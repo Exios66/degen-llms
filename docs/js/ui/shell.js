@@ -53,6 +53,7 @@ export const MACHINE_GAMES = {
   blackjack: { label: "BLACKJACK", icon: "♠♥", variant: "blackjack" },
   holdem: { label: "TEXAS HOLD'EM", icon: "♣♦", variant: "holdem" },
   roulette: { label: "ROULETTE", icon: "◉", variant: "roulette" },
+  craps: { label: "CRAPS", icon: "⚄⚀", variant: "craps" },
 };
 
 export function machineGameNav(activeGame) {
@@ -60,6 +61,7 @@ export function machineGameNav(activeGame) {
     ["blackjack", "BJ"],
     ["holdem", "HOLD'EM"],
     ["roulette", "ROULETTE"],
+    ["craps", "CRAPS"],
   ];
   return el("div", { className: "machine-game-nav" }, tabs.map(([id, label]) =>
     el("span", {
@@ -267,10 +269,18 @@ export function createRuntime(overrides = {}) {
     sportsbook: null,
     blackjackGame: null,
     blackjackSessionNet: 0,
-    slots: { machine: null, sessionNet: 0, spins: 0, tier: null },
+    slots: { machine: null, sessionNet: 0, spins: 0, tier: null, lastBet: null },
     slotsSpinTimers: [],
     holdem: null,
-    roulette: { sessionNet: 0, spins: 0, lastNumber: null, spinning: false, tier: null },
+    roulette: {
+      sessionNet: 0, spins: 0, lastNumber: null, spinning: false, tier: null,
+      history: [], historyPulse: false, lastWager: null,
+    },
+    craps: {
+      table: null, sessionNet: 0, rolls: 0, tier: null,
+      lineBet: null, hardways: {}, lastWager: null, log: [],
+    },
+    lottery: { sessionNet: 0, tickets: 0, lastResult: null, lastTicketId: "pick3" },
     horseRacing: { card: null, pending: [], sessionNet: 0, races: 0, tier: null },
     dressage: { card: null, pending: [], sessionNet: 0, events: 0, tier: null },
     jumper: { card: null, pending: [], sessionNet: 0, events: 0, tier: null },

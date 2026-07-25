@@ -4,6 +4,8 @@ import { createRuntime, createShell, createViewStack } from "../../../js/ui/shel
 import { buildStakesRenderers } from "../../../js/ui/stakes-ui.js";
 import { buildSlotsRenderers } from "../../../js/ui/slots-renderers.js";
 import { buildSportsbookRenderers } from "../../../js/ui/sportsbook-renderers.js";
+import { buildCrapsRenderers } from "../../../js/ui/craps-renderers.js";
+import { buildLotteryRenderers } from "../../../js/ui/lottery-renderers.js";
 import { buildRacingRenderers } from "../../../js/ui/racing-renderers.js";
 import { buildCashierRenderers } from "../../../js/ui/cashier-renderers.js";
 import { buildMetaRenderers } from "../../../js/ui/meta-renderers.js";
@@ -88,6 +90,8 @@ export class TerminalHostOverlay {
       ...buildStakesRenderers(ctx),
       ...slotsRenderers,
       ...buildSportsbookRenderers(ctx),
+      ...buildCrapsRenderers(ctx),
+      ...buildLotteryRenderers(ctx),
       ...racingRenderers,
       ...buildCashierRenderers(ctx),
       ...buildMetaRenderers(ctx),

@@ -15,8 +15,8 @@ on:
       - "scripts/lib/gh-pages-build-log.sh"
       - ".github/workflows/deploy-gh-pages.yml"
   schedule:
-    # Hourly drift check — sync only when docs/ differs from main
-    - cron: "0 * * * *"
+    # 12-hour drift check — sync only when docs/ differs from main (00:00 & 12:00 UTC)
+    - cron: "0 */12 * * *"
   workflow_dispatch:
 
 permissions:

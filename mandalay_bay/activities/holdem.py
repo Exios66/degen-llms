@@ -5,7 +5,7 @@ from mandalay_bay.dealers import announce_dealer, pick_quip
 from mandalay_bay.session import PlayerSession
 from mandalay_bay.stakes import effective_table_stakes, pick_stake_tier
 from poker.hand_eval import HAND_CLASS_NAMES
-from poker.holdem import BettingAction, HoldemTable, human_net_change
+from poker.holdem import BettingAction, STREET_ORDER, HoldemTable, human_net_change
 
 
 class HoldemActivity(Activity):
@@ -13,7 +13,7 @@ class HoldemActivity(Activity):
         id="holdem",
         name="Texas Hold'em",
         floor="Table Games",
-        description="No-limit-style Hold'em vs AI opponents — full streets through showdown.",
+        description="No-limit Hold'em vs 4 AI opponents — full streets through showdown.",
         min_bet=10,
     )
 
@@ -49,16 +49,22 @@ class HoldemActivity(Activity):
             ui.pause()
             return
 
-        table = HoldemTable.quick_table(buy_in)
+        table = HoldemTable.quick_table(buy_in, num_bots=4)
         hands = 0
-        session_net = 0
 
+        ui.print("\nNo-limit Hold'em · 5-handed (you + 4 bots).")
+        ui.print("Streets: " + " → ".join(s.value for s in STREET_ORDER[:-1]) + " → showdown")
+        ui.print("Buy-in stays on the table across hands and moves with wins/losses.")
         ui.print("\nHand rankings follow the UCI/Kaggle poker-hands dataset (CLASS 0–9):")
         for i, name in enumerate(HAND_CLASS_NAMES):
             ui.dim(f"  {i}: {name}")
 
         while table.human.stack >= table.big_blind:
-            ui.print(f"\n--- Hand {hands + 1} ({table.street.value}) ---")
+            ui.print(f"\n--- Hand {hands + 1} ---")
+            ui.print(
+                f"Your stack: {table.human.stack:,} | Buy-in: {buy_in:,} | "
+                f"Session: {human_net_change(table, buy_in):+,}"
+            )
             table.start_hand()
             if table.hand_over:
                 ui.print(table.last_message)
@@ -71,42 +77,91 @@ class HoldemActivity(Activity):
                     table._seek_actor()
                     continue
 
+                street_flow = " → ".join(
+                    (f"[{s.value}]" if s == table.street else s.value) for s in STREET_ORDER
+                )
                 ui.chip_line(session.wallet.balance)
+                ui.print(f"Street: {street_flow}")
                 ui.print(f"Pot: {table.pot:,} | Current bet: {table.current_bet:,}")
                 if table.community:
                     ui.print(f"Board: {' '.join(c.label(session.use_unicode) for c in table.community)}")
+                for p in table.players:
+                    status = []
+                    if p.folded:
+                        status.append("folded")
+                    if p.all_in:
+                        status.append("all-in")
+                    if p.bet_this_street:
+                        status.append(f"bet {p.bet_this_street}")
+                    mark = "->" if p is player else "  "
+                    ui.dim(
+                        f"{mark} {p.name}: stack {p.stack:,}"
+                        + (f" [{', '.join(status)}]" if status else "")
+                    )
                 ui.print(f"Your cards: {' '.join(c.label(session.use_unicode) for c in table.human.hole)}")
 
                 if player.is_human:
                     legal = table.legal_actions(player)
+                    to_call = max(0, table.current_bet - player.bet_this_street)
                     labels = []
                     mapping: dict[int, BettingAction] = {}
                     idx = 1
-                    for act in (BettingAction.CHECK, BettingAction.CALL, BettingAction.RAISE, BettingAction.FOLD):
-                        if act in legal:
+                    for act in (
+                        BettingAction.CHECK,
+                        BettingAction.CALL,
+                        BettingAction.RAISE,
+                        BettingAction.FOLD,
+                    ):
+                        if act not in legal:
+                            continue
+                        if act == BettingAction.CALL:
+                            labels.append(f"(c) Call {to_call:,}")
+                        elif act == BettingAction.RAISE:
+                            min_to = table.min_raise_to(player)
+                            max_to = table.max_raise_to(player)
+                            verb = "Bet" if to_call <= 0 else "Raise to"
+                            labels.append(f"(r) {verb} ({min_to:,}-{max_to:,})")
+                        else:
                             labels.append(f"({act.value[0]}) {act.value.title()}")
-                            mapping[idx] = act
-                            idx += 1
+                        mapping[idx] = act
+                        idx += 1
                     choice = ui.menu_choice(labels, title="Your action:")
                     if choice == 0:
-                        table.human.stack += table.human.total_in_hand
                         session_net = human_net_change(table, buy_in)
-                        session.wallet.credit(table.human.stack, self.info.id, "Cash out from Hold'em table")
+                        session.wallet.credit(
+                            table.human.stack, self.info.id, "Cash out from Hold'em table"
+                        )
                         session.record_result(self.info.id, session_net, bets=hands)
-                        ui.print(f"Left table. Session net: {'+' if session_net >= 0 else ''}{session_net:,}")
+                        ui.print(
+                            f"Left table. Session net: {'+' if session_net >= 0 else ''}{session_net:,}"
+                        )
                         ui.pause()
                         return
-                    table.apply_action(player, mapping[choice])
+
+                    action = mapping[choice]
+                    raise_to = None
+                    if action == BettingAction.RAISE:
+                        min_to = table.min_raise_to(player)
+                        max_to = table.max_raise_to(player)
+                        raise_to = ui.prompt_int(
+                            f"Raise to amount ({min_to}-{max_to})",
+                            min_to,
+                            max_to,
+                            default=min_to,
+                        )
+                    table.apply_action(player, action, raise_to=raise_to)
                     ui.print(table.last_message)
                 else:
-                    action = table.bot_action(player)
-                    table.apply_action(player, action)
+                    action, raise_to = table.bot_action(player)
+                    table.apply_action(player, action, raise_to=raise_to)
                     ui.dim(f"{table.last_message}")
 
             hands += 1
             if table.showdown_scores:
                 for name, score in table.showdown_scores:
                     ui.print(f"  {name}: {score.name}")
+            if table.winners:
+                ui.print(f"Winners: {', '.join(table.winners)}")
             if table.last_message and table.human.name in table.last_message:
                 if "wins" in table.last_message.lower():
                     ui.dim(f'  {dealer.name}: "{pick_quip(dealer, "win")}"')

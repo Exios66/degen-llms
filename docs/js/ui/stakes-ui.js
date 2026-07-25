@@ -30,6 +30,7 @@ export function buildStakesRenderers(ctx) {
         runtime.stakeTier = tier;
         if (activityId === "slots") runtime.slots.tier = tier;
         if (activityId === "roulette") runtime.roulette.tier = tier;
+        if (activityId === "craps") runtime.craps.tier = tier;
         if (activityId === "horse_racing") runtime.horseRacing.tier = tier;
         if (activityId === "dressage") runtime.dressage.tier = tier;
         if (activityId === "jumper") runtime.jumper.tier = tier;

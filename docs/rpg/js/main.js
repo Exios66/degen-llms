@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { OverworldScene } from "./scenes/GameScenes.js?v=casino-floor-legibility-1";
+import { OverworldScene } from "./scenes/GameScenes.js?v=hotel-desk-room-fix-1";
 import { TitleScreen, renderHud, renderTrainerCard } from "./scenes/TitleScreen.js";
 import { DialogueManager } from "./systems/DialogueManager.js";
 import { SaveAdapter } from "./systems/SaveAdapter.js";
@@ -159,7 +159,11 @@ async function startOverworld(activeSession) {
     horse_racing: new HorseRacingOverlay(document.getElementById("racing-overlay"), session, hooks),
     dressage: new EquestrianOverlay(document.getElementById("dressage-overlay"), session, hooks, "dressage"),
     jumper: new EquestrianOverlay(document.getElementById("jumper-overlay"), session, hooks, "jumper"),
-    hotel: new HotelOverlay(document.getElementById("hotel-overlay"), session, hooks),
+    hotel: new HotelOverlay(document.getElementById("hotel-overlay"), session, {
+      ...hooks,
+      onPersist: persistAll,
+      rewardsPhone,
+    }),
     pool: new PoolOverlay(document.getElementById("pool-overlay"), session, {
       ...hooks,
       onSharkPhoto: (speciesId) => {

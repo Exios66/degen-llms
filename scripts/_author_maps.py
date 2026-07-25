@@ -113,22 +113,23 @@ MAPS_SPEC: list[dict] = [
         "rects": [
             rect("LOBBY", 2, 2, 26, 26),
             rect("CARPET", 8, 10, 14, 10),
-            # Gold leads where you can actually walk: down the middle to the
-            # Boulevard, across to valet and the tower, and around the desk —
-            # which blocks the straight line to the casino doors.
-            rect("PATH", 14, 10, 3, 16),
-            rect("PATH", 3, 14, 24, 1),
+            # Two gold walkways, each three wide, crossing at the middle of the
+            # room. Every door sits on one of them, so no arrival ever has to
+            # pick its way around the furniture to reach another exit.
+            rect("PATH", 14, 3, 3, 23),
+            rect("PATH", 3, 14, 24, 3),
             rect("PATH", 8, 9, 14, 1),
-            rect("PATH", 8, 4, 1, 5),
-            rect("PATH", 21, 4, 1, 5),
-            rect("PATH", 8, 4, 14, 1),
         ],
         "decor": [
-            rect("BAR", 10, 7, 10, 1),
+            # Reception is two counters with the walkway running between them,
+            # rather than one bar sealing off the casino doors.
+            rect("BAR", 9, 7, 5, 1),
+            rect("BAR", 17, 7, 5, 1),
             points("PLANT", [(4, 6), (25, 6), (4, 21), (25, 21), (11, 23), (18, 23)]),
         ],
         "signs": [
-            sign(15, 8.6, "FRONT DESK", color="#fff8e8", stroke="#8a6a28"),
+            sign(11.5, 6.2, "CHECK IN", color="#fff8e8", stroke="#8a6a28"),
+            sign(19.5, 6.2, "CONCIERGE", color="#fff8e8", stroke="#8a6a28"),
             sign(15, 3.4, "CASINO \u2191"),
             sign(4.5, 12.5, "\u2190 VALET", **COOL_SIGN),
             sign(25.5, 12.5, "TOWER \u2192"),
@@ -161,28 +162,34 @@ MAPS_SPEC: list[dict] = [
             *trim_ring(8, 7, 15, 11),
             rect("VIP", 13, 2, 5, 4),
             rect("LOBBY", 3, 20, 24, 7),
-            rect("PATH", 3, 18, 24, 1),
-            rect("PATH", 6, 8, 1, 11),
-            rect("PATH", 23, 8, 1, 11),
+            rect("PATH", 3, 18, 24, 2),
+            rect("PATH", 6, 8, 2, 11),
+            rect("PATH", 22, 8, 2, 11),
             rect("PATH", 14, 19, 3, 7),
             rect("PATH", 14, 6, 3, 2),
+            rect("PATH", 4, 19, 2, 5),
         ],
         "decor": [
-            rect("SLOT", 26, 10, 1, 8),
-            rect("SLOT", 24, 10, 1, 8),
+            # Slot banks run across the east wall in two blocks with a two-tile
+            # aisle between them. As single columns they left one-tile gaps that
+            # a player could wedge into on the way to the south floor.
+            rect("SLOT", 24, 8, 4, 2),
+            rect("SLOT", 24, 12, 4, 2),
             rect("SCREEN", 4, 10, 1, 8),
             rect("BAR", 19, 23, 3, 1),
-            points("PLANT", [(7, 6), (24, 6), (7, 19), (24, 19)]),
+            points("PLANT", [(7, 6), (7, 19), (25, 21)]),
         ],
         "signs": [
             sign(15, 7.4, "TABLE PIT", **FELT_SIGN),
-            sign(23.5, 8.6, "SLOTS"),
+            sign(25.5, 6.6, "SLOTS"),
             sign(5, 8.6, "SPORTS", **COOL_SIGN),
             sign(15, 4, "HIGH LIMIT"),
             sign(15, 22, "LOBBY", color="#fff8e8", stroke="#8a6a28"),
             sign(26, 6, "SOUTH \u2192", **COOL_SIGN),
         ],
-        "scatter": [{"tile": "PLANT", "mod": 11, "on": ["LOBBY"], "bounds": rect("LOBBY", 3, 21, 24, 5)}],
+        # Kept off the wall columns: a planter hard against the wall leaves a
+        # one-tile slot behind it that players walk into and stop.
+        "scatter": [{"tile": "PLANT", "mod": 11, "on": ["LOBBY"], "bounds": rect("LOBBY", 5, 21, 20, 4)}],
         "clear": [
             rect("VIP", 14, 1, 3, 5),
             rect("CARPET", 14, 26, 3, 3),
@@ -280,10 +287,12 @@ MAPS_SPEC: list[dict] = [
         "rects": [
             rect("VIP", 6, 3, 18, 25),
             rect("FELT", 9, 8, 12, 11),
+            rect("PATH", 14, 19, 3, 8),
+            rect("PATH", 14, 4, 3, 4),
         ],
         "decor": [
-            rect("SLOT", 7, 10, 1, 8),
-            rect("SLOT", 22, 10, 1, 8),
+            rect("SLOT", 6, 10, 1, 8),
+            rect("SLOT", 23, 10, 1, 8),
             rect("BAR", 8, 22, 3, 1),
             points("ROPE", [(13, 3), (17, 3)]),
         ],
@@ -523,12 +532,21 @@ MAPS_SPEC: list[dict] = [
         "rects": [
             rect("SAND", 2, 2, 26, 26),
             rect("WATER", 9, 9, 13, 12),
+            rect("PATH", 6, 6, 18, 2),
+            rect("PATH", 6, 22, 18, 2),
+            rect("PATH", 6, 6, 2, 18),
+            rect("PATH", 22, 6, 2, 18),
+            rect("PATH", 14, 2, 3, 5),
+            rect("PATH", 14, 23, 3, 5),
+            rect("PATH", 2, 14, 5, 3),
+            rect("PATH", 23, 14, 5, 3),
         ],
         "decor": [
-            points("PLANT", [(5, 5), (24, 5), (5, 24), (24, 24), (5, 14), (24, 14)]),
-            rect("BAR", 12, 25, 6, 1),
+            points("PLANT", [(4, 4), (25, 4), (4, 25), (25, 25)]),
+            rect("BAR", 19, 25, 5, 1),
         ],
-        "scatter": [{"tile": "PLANT", "mod": 13, "on": ["SAND"]}],
+        "scatter": [{"tile": "PLANT", "mod": 17, "on": ["SAND"],
+                     "bounds": rect("SAND", 4, 4, 22, 22)}],
         "clear": [
             rect("SAND", 14, 1, 3, 4),
             rect("SAND", 2, 14, 3, 3),

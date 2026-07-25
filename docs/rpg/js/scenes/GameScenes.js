@@ -1,5 +1,7 @@
 import Phaser from "phaser";
-import { createGameTextures, ensurePlayerTextures, playerTextureKey, playerAnimKey } from "../systems/TextureFactory.js";
+import {
+  createGameTextures, ensurePlayerTextures, groundTileKey, playerAnimKey, playerTextureKey,
+} from "../systems/TextureFactory.js";
 import { normalizeAppearance } from "../systems/CharacterAppearance.js";
 import {
   TILE_SIZE, MAP_WIDTH, MAP_HEIGHT, buildMapLayersForId, getNpcsForMap,
@@ -18,9 +20,9 @@ import { recordDex } from "../systems/Dex.js";
 import { findPath, nearestReachable } from "../systems/Pathfinder.js";
 import { EGG_REGISTRY, discoverEgg, eggForFlag } from "../systems/EasterEggs.js";
 
-/** Most tiles the camera will ever show on an axis — a handheld-sized window. */
-const MAX_VIEW_TILES_X = 20;
-const MAX_VIEW_TILES_Y = 15;
+/** Fewest tiles the camera will ever show on an axis — a handheld-sized window. */
+const MIN_VIEW_TILES_X = 11;
+const MIN_VIEW_TILES_Y = 13;
 
 /** Extra walk speed per MGM Rewards tier, plus the comped cart bonus. */
 const SPEED_PER_TIER = 12;
@@ -127,7 +129,7 @@ export class OverworldScene extends Phaser.Scene {
         const groundImg = this.add.image(
           x * TILE_SIZE + TILE_SIZE / 2,
           y * TILE_SIZE + TILE_SIZE / 2,
-          `tile_${tile}`
+          groundTileKey(tile, x, y)
         );
         groundImg.setDepth(0);
         this.groundLayer.add(groundImg);
@@ -159,10 +161,6 @@ export class OverworldScene extends Phaser.Scene {
     this.player.setDepth(10);
     this.player.body.setSize(TILE_SIZE * 0.625, TILE_SIZE * 0.5);
     this.player.body.setOffset(TILE_SIZE * 0.1875, TILE_SIZE * 0.75);
-
-    this.playerShadow = this.add.image(this.player.x, this.player.y + TILE_SIZE * 0.28, "shadow");
-    this.playerShadow.setDepth(9);
-    this.playerShadow.setAlpha(0.35);
 
     this.physics.world.setBounds(0, 0, MAP_WIDTH * TILE_SIZE, MAP_HEIGHT * TILE_SIZE);
 
@@ -507,20 +505,20 @@ export class OverworldScene extends Phaser.Scene {
   /**
    * Frame a handheld-sized window on the property.
    *
-   * Zoom is whatever keeps both axes under the tile caps — on a tall phone that
-   * is the height that decides, on a wide monitor the width — floored so the
-   * world always covers the viewport instead of sitting in a letterbox. Steps of
-   * a half keep one art pixel on a whole number of screen pixels; anything else
-   * shimmers as the camera pans.
+   * Zoom is the most we can magnify and still keep the minimum tile counts in
+   * view, so the narrow axis of a portrait phone decides rather than its height
+   * — driving off the height would squeeze the view down to a few tiles wide.
+   * Steps of a half land one 16px art pixel on a whole number of screen pixels;
+   * anything else shimmers as the camera pans.
    */
   _fitCamera() {
     const worldW = MAP_WIDTH * TILE_SIZE;
     const worldH = MAP_HEIGHT * TILE_SIZE;
     const vw = this.scale.width;
     const vh = this.scale.height;
-    const framed = Math.max(
-      vw / (MAX_VIEW_TILES_X * TILE_SIZE),
-      vh / (MAX_VIEW_TILES_Y * TILE_SIZE),
+    const framed = Math.min(
+      vw / (MIN_VIEW_TILES_X * TILE_SIZE),
+      vh / (MIN_VIEW_TILES_Y * TILE_SIZE),
     );
     const cover = Math.max(vw / worldW, vh / worldH);
     this.cameras.main.setZoom(Math.max(1, Math.floor(framed * 2) / 2, cover));
@@ -716,10 +714,6 @@ export class OverworldScene extends Phaser.Scene {
     );
     this._prevX = this.player.x;
     this._prevY = this.player.y;
-
-    if (this.playerShadow) {
-      this.playerShadow.setPosition(this.player.x, this.player.y + TILE_SIZE * 0.28);
-    }
 
     if (!this.canMove || this.isMenuOpen?.() || this.dialogue.isActive()
         || this.encounters.isAnyActive?.() || this.encounters.blackjack?.isActive()) {

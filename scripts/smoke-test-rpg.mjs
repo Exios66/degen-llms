@@ -25,7 +25,7 @@ const { RPG_ITEMS } = await import(join(rpgRoot, "js/systems/Inventory.js"));
 const { DEX_REGISTRY } = await import(join(rpgRoot, "js/systems/Dex.js"));
 const { ART_UNIT } = await import(join(rpgRoot, "js/systems/MapTiles.js"));
 const { findPath, nearestReachable } = await import(join(rpgRoot, "js/systems/Pathfinder.js"));
-const { artKeys, drawArtToCanvas, drawCharacterToCanvas } = await import(
+const { artKeys, characterGrids, drawArtToCanvas, drawCharacterToCanvas } = await import(
   join(rpgRoot, "js/systems/TextureFactory.js"));
 const {
   HAIR_COLORS, OUTFIT_COLORS, SKIN_TONES, SPEAKER_PORTRAITS,
@@ -481,6 +481,26 @@ for (const mapId of MAP_IDS) {
     check(canvas.rects.length >= 4, `art ${label}: drew almost nothing`);
     return canvas;
   };
+
+  // Grids are hand-typed strings, so a dropped character silently shears the
+  // sprite one pixel sideways for the rest of the row.
+  {
+    const grids = characterGrids();
+    const legend = new Set([...grids.legend, "."]);
+    const shape = (label, rows, expected) => {
+      check(rows.length === expected,
+        `art ${label}: ${rows.length} rows, expected ${expected}`);
+      rows.forEach((row, index) => {
+        check(row.length === grids.rowWidth,
+          `art ${label} row ${index}: ${row.length} pixels, expected ${grids.rowWidth}`);
+        const stray = [...row].find((ch) => !legend.has(ch));
+        check(stray === undefined,
+          `art ${label} row ${index}: "${stray}" is not in the palette legend`);
+      });
+    };
+    for (const [dir, rows] of Object.entries(grids.body)) shape(`body ${dir}`, rows, grids.bodyRows);
+    grids.legs.forEach((rows, frame) => shape(`legs #${frame}`, rows, grids.legRows));
+  }
 
   // Every archetype's default look, plus one sweep of each wardrobe axis.
   const base = defaultAppearance("weekend_warrior");

@@ -29,6 +29,15 @@ function shade(color, factor) {
   return (r << 16) | (g << 8) | b;
 }
 
+function mix(a, b, t) {
+  const ch = (shift) => {
+    const av = (a >> shift) & 0xff;
+    const bv = (b >> shift) & 0xff;
+    return clamp(Math.round(av + (bv - av) * t), 0, 255);
+  };
+  return (ch(16) << 16) | (ch(8) << 8) | ch(0);
+}
+
 // ─── Pixel writers (Phaser Graphics + HTML Canvas) ─────────────────────────
 
 function px(g, color, x, y, w = 1, h = 1, alpha = 1) {
@@ -525,111 +534,211 @@ const TILE_DRAWERS = {
   [TILE.TRIM]: drawTrimTile,
 };
 
+/**
+ * Wide floors otherwise read as wallpaper, because every tile repeats on an
+ * exact 32px grid. Each of these gets a few extra variants with a sparse scuff
+ * pattern laid over the base draw — too faint to notice on one tile, enough to
+ * hide the grid across a ballroom.
+ */
+const SCUFFED_FLOORS = new Set([
+  TILE.LOBBY, TILE.CARPET, TILE.FELT, TILE.VIP,
+  TILE.ROAD, TILE.SAND, TILE.SPA, TILE.PATH,
+]);
+
+const SCUFFS = [
+  [[2, 3, 1], [11, 6, 0], [6, 12, 1], [13, 13, 0]],
+  [[9, 2, 0], [4, 7, 1], [14, 9, 1], [3, 14, 0]],
+  [[6, 1, 1], [13, 4, 0], [1, 9, 0], [10, 13, 1]],
+];
+
+function scuff(g, variant) {
+  const w = makeWriter(g);
+  for (const [x, y, light] of SCUFFS[variant]) {
+    w.px(light ? 0xffffff : 0x000000, x, y, 1, 1, light ? 0.07 : 0.1);
+  }
+}
+
+/** Texture key for a ground tile at a map position, spreading the variants. */
+export function groundTileKey(tile, x, y) {
+  if (!SCUFFED_FLOORS.has(tile)) return `tile_${tile}`;
+  const variant = (x * 5 + y * 3 + ((x * y) % 7)) % (SCUFFS.length + 1);
+  return variant === 0 ? `tile_${tile}` : `tile_${tile}_s${variant - 1}`;
+}
+
 const TEX_CHAR_W = CHAR_W * SCALE;
 const TEX_CHAR_H = CHAR_H * SCALE;
 
 // ─── Characters ──────────────────────────────────────────────────────────────
 
+/**
+ * Characters are authored as pixel grids rather than stacked rectangles: one
+ * character per pixel, 16 wide, read against a palette legend. The upper body
+ * (rows 1-15) is separate from the legs (rows 15-21) so a walk cycle only has
+ * to swap the leg block and bob the body a pixel, the way DS sprites do.
+ */
+
+const CHAR_LEGEND = (palette) => {
+  const { body, mid, shade: outfit, hair, hairShade, skinLight, skinMid, skinShade } = palette;
+  return {
+    O: [OUTLINE, 1],
+    o: [OUTLINE_SOFT, 1],
+    H: [hair, 1],
+    h: [hairShade, 1],
+    G: [mix(hair, 0xffffff, 0.22), 1],
+    S: [skinLight, 1],
+    s: [skinMid, 1],
+    d: [skinShade, 1],
+    e: [0xfffaf2, 1],
+    p: [OUTLINE, 1],
+    c: [mix(skinMid, 0xe06878, 0.5), 1],
+    B: [body, 1],
+    M: [mid, 1],
+    D: [outfit, 1],
+    W: [mix(body, 0xffffff, 0.5), 1],
+    b: [shade(outfit, 0.55), 1],
+    L: [0xf4dc84, 1],
+    // Trousers stay a neutral denim so the outfit colour reads as one garment
+    // instead of tinting the whole character.
+    N: [0x46507a, 1],
+    n: [0x323a5c, 1],
+    k: [0x2a2a3a, 1],
+    K: [0x4e4e64, 1],
+    ",": [0x000000, 0.16],
+    ";": [0x000000, 0.26],
+  };
+};
+
+/** Head, torso and arms: grid rows 1 through 15. */
+const CHAR_BODY = {
+  down: [
+    ".....OOOOOO.....",
+    "....OhhhhhhO....",
+    "...OhGGHHHHhO...",
+    "...OHGHHHHHhO...",
+    "...OHSSSSSShO...",
+    "...OHOOSSOOhO...",
+    "...OHepSSephO...",
+    "....OcSSSScO....",
+    ".....OssssO.....",
+    "...OOOOOOOOOO...",
+    "...OMMOddOMMO...",
+    "..OMoBBBBBBoDO..",
+    "..OMoBBBBBBoDO..",
+    "..OSoBBBBBBosO..",
+    "...ObbbLLbbbO...",
+  ],
+  up: [
+    ".....OOOOOO.....",
+    "....OhhhhhhO....",
+    "...OhGGHHHHhO...",
+    "...OHGHHHHHhO...",
+    "...OHHHHHHHhO...",
+    "...OHHHHHHHhO...",
+    "...OHHHHHhhhO...",
+    "....OhhhhhhO....",
+    ".....OhsshO.....",
+    "...OOOOOOOOOO...",
+    "...OMMMMMMMMO...",
+    "..OMoBBBBBBoDO..",
+    "..OMoBBBBBBoDO..",
+    "..OSoBBBBBBosO..",
+    "...ObbbbbbbbO...",
+  ],
+  left: [
+    ".....OOOOOO.....",
+    "....OhhhhhhO....",
+    "...OGHHHHHhhO...",
+    "...OHHHHHHhhO...",
+    "...OSSSSHHhhO...",
+    "...OOOSSSHhhO...",
+    "...OepSdSHhhO...",
+    "...OcSSdHhhO....",
+    "....OdSshhO.....",
+    "...OOOOOOOOOO...",
+    "...OMMMMMMMMO...",
+    "..OMoBBBBBBBO...",
+    "..OMoBBBBBBBO...",
+    "..OSoBBBBBBBO...",
+    "...ObbbbbbbbO...",
+  ],
+};
+
+/** Legs, shoes and contact shadow: grid rows 15 through 21, one per frame. */
+const CHAR_LEGS = [
+  [
+    "...ONNNNNNNNO...",
+    "...ONNNOOnnnO...",
+    "...ONNNOOnnnO...",
+    "...OnnnOOnnnO...",
+    "...OKkkOOKkkO...",
+    "..,OOOO,,OOOO,..",
+    "....;;;;;;;;....",
+  ],
+  [
+    "...ONNNNNNNNO...",
+    "...ONNNOOnnnO...",
+    "...ONNNOOnnnO...",
+    "...OKkkOOnnnO...",
+    "........OKkkO...",
+    "..,,,,,,OOOOO,..",
+    "....;;;;;;;;....",
+  ],
+  [
+    "...ONNNNNNNNO...",
+    "...ONNNOOnnnO...",
+    "...ONNNOOnnnO...",
+    "...OnnnOOKkkO...",
+    "...OKkkO........",
+    "..,OOOOO,,,,,,..",
+    "....;;;;;;;;....",
+  ],
+];
+
+const BODY_TOP = 1;
+const LEGS_TOP = 15;
+
+const mirrorRows = (rows) => rows.map((row) => [...row].reverse().join(""));
+
+const CHAR_BODY_BY_DIR = { ...CHAR_BODY, right: mirrorRows(CHAR_BODY.left) };
+
+/** Paint a grid, merging horizontal runs of one colour into a single rect. */
+function paintGrid(w, rows, legend, top) {
+  rows.forEach((row, index) => {
+    const y = top + index;
+    if (y < 0) return;
+    let run = 0;
+    while (run < row.length) {
+      const ch = row[run];
+      let width = 1;
+      while (row[run + width] === ch) width += 1;
+      const paint = ch === "." ? null : legend[ch];
+      if (paint) w.px(paint[0], run, y, width, 1, paint[1]);
+      run += width;
+    }
+  });
+}
+
 function drawCharacterPixels(w, palette, dir, frame) {
-  // `outfitShade` must not be named `shade` — that would shadow the shade() helper.
-  const { body, mid, shade: outfitShade, hair, hairShade, skinLight, skinMid, skinShade } = palette;
-  const bob = frame === 1 ? -1 : frame === 2 ? 1 : 0;
-  const legL = frame === 1 ? 1 : frame === 2 ? -1 : 0;
-  const legR = -legL;
-  const shoe = 0x282838;
-  const shoeHi = 0x484858;
-  const belt = shade(outfitShade, 0.65);
+  const legend = CHAR_LEGEND(palette);
+  const legs = CHAR_LEGS[frame] ?? CHAR_LEGS[0];
+  const body = CHAR_BODY_BY_DIR[dir] ?? CHAR_BODY_BY_DIR.down;
+  // Frames 1 and 2 lift a foot, so the upper body rides a pixel higher. The leg
+  // block always starts at row 15, which keeps the waist joined either way.
+  const bob = frame === 0 ? 0 : -1;
+  paintGrid(w, legs, legend, LEGS_TOP);
+  paintGrid(w, body, legend, BODY_TOP + bob);
+}
 
-  // Ground shadow
-  w.px(0x000000, 3, 20, 10, 1, 0.35);
-  w.px(0x000000, 4, 19, 8, 1, 0.2);
-
-  // Legs / shoes
-  w.px(OUTLINE, 4 + legL, 15 + bob, 3, 5);
-  w.px(OUTLINE, 9 + legR, 15 + bob, 3, 5);
-  w.px(shoe, 4 + legL, 16 + bob, 3, 3);
-  w.px(shoe, 9 + legR, 16 + bob, 3, 3);
-  w.px(shoeHi, 4 + legL, 16 + bob, 2, 1);
-  w.px(shoeHi, 9 + legR, 16 + bob, 2, 1);
-  w.px(OUTLINE, 4 + legL, 19 + bob, 3, 1);
-  w.px(OUTLINE, 9 + legR, 19 + bob, 3, 1);
-
-  // Torso
-  w.px(OUTLINE, 3, 8 + bob, 10, 8);
-  w.px(body, 4, 9 + bob, 8, 6);
-  w.px(mid, 4, 9 + bob, 8, 2);
-  w.px(outfitShade, 4, 13 + bob, 8, 2);
-  w.px(0xffffff, 5, 10 + bob, 2, 1, 0.85);
-  w.px(belt, 4, 13 + bob, 8, 1);
-  w.px(shade(belt, 1.2), 5, 13 + bob, 1, 1);
-
-  // Arms
-  if (dir === "left") {
-    w.px(OUTLINE, 1, 10 + bob, 3, 5);
-    w.px(body, 2, 11 + bob, 2, 3);
-    w.px(skinMid, 1, 11 + bob, 1, 2);
-    w.px(OUTLINE, 12, 10 + bob, 2, 4);
-    w.px(body, 13, 11 + bob, 1, 2);
-  } else if (dir === "right") {
-    w.px(OUTLINE, 12, 10 + bob, 3, 5);
-    w.px(body, 13, 11 + bob, 2, 3);
-    w.px(skinMid, 14, 11 + bob, 1, 2);
-    w.px(OUTLINE, 2, 10 + bob, 2, 4);
-    w.px(body, 2, 11 + bob, 1, 2);
-  } else {
-    w.px(OUTLINE, 2, 10 + bob, 2, 5);
-    w.px(OUTLINE, 12, 10 + bob, 2, 5);
-    w.px(body, 2, 11 + bob, 1, 3);
-    w.px(body, 13, 11 + bob, 1, 3);
-    w.px(skinMid, 2, 13 + bob, 1, 1);
-    w.px(skinMid, 13, 13 + bob, 1, 1);
-  }
-
-  // Head
-  w.px(OUTLINE, 4, 1 + bob, 8, 8);
-  w.px(skinLight, 5, 2 + bob, 6, 6);
-  w.px(skinMid, 5, 6 + bob, 6, 2);
-  w.px(skinShade, 6, 7 + bob, 4, 1);
-  w.px(skinLight, 5, 2 + bob, 2, 2);
-
-  // Hair + face by direction
-  if (dir === "up") {
-    w.px(OUTLINE, 4, 1 + bob, 8, 4);
-    w.px(hair, 5, 1 + bob, 6, 3);
-    w.px(hairShade, 5, 1 + bob, 6, 1);
-    w.px(hairShade, 5, 3 + bob, 2, 1);
-    w.px(hairShade, 9, 3 + bob, 2, 1);
-  } else if (dir === "down") {
-    w.px(hair, 5, 1 + bob, 6, 3);
-    w.px(hairShade, 5, 1 + bob, 6, 1);
-    w.px(hair, 4, 3 + bob, 1, 2);
-    w.px(hair, 11, 3 + bob, 1, 2);
-    w.px(OUTLINE, 6, 5 + bob, 1, 2);
-    w.px(OUTLINE, 9, 5 + bob, 1, 2);
-    w.px(0xffffff, 6, 5 + bob, 1, 1);
-    w.px(0xffffff, 9, 5 + bob, 1, 1);
-    w.px(0x181828, 7, 6 + bob, 1, 1);
-    w.px(0x181828, 10, 6 + bob, 1, 1);
-    w.px(0xf0a0a0, 7, 7 + bob, 1, 1);
-    w.px(0xf0a0a0, 10, 7 + bob, 1, 1);
-    w.px(OUTLINE_SOFT, 7, 8 + bob, 2, 1);
-  } else if (dir === "left") {
-    w.px(hair, 4, 1 + bob, 5, 3);
-    w.px(hairShade, 4, 1 + bob, 4, 1);
-    w.px(hair, 4, 3 + bob, 2, 2);
-    w.px(OUTLINE, 6, 5 + bob, 1, 2);
-    w.px(0xffffff, 6, 5 + bob, 1, 1);
-    w.px(0x181828, 7, 6 + bob, 1, 1);
-    w.px(0xf0a0a0, 7, 7 + bob, 1, 1);
-  } else {
-    w.px(hair, 7, 1 + bob, 5, 3);
-    w.px(hairShade, 8, 1 + bob, 4, 1);
-    w.px(hair, 10, 3 + bob, 2, 2);
-    w.px(OUTLINE, 9, 5 + bob, 1, 2);
-    w.px(0xffffff, 9, 5 + bob, 1, 1);
-    w.px(0x181828, 10, 6 + bob, 1, 1);
-    w.px(0xf0a0a0, 10, 7 + bob, 1, 1);
-  }
+/** The authored grids, so tests can assert their shape and legend coverage. */
+export function characterGrids() {
+  return {
+    legend: Object.keys(CHAR_LEGEND(resolvePalette({}))),
+    rowWidth: CHAR_W,
+    bodyRows: 15,
+    legRows: 7,
+    body: CHAR_BODY_BY_DIR,
+    legs: CHAR_LEGS,
+  };
 }
 
 function drawCharacter(g, palette, dir, frame) {
@@ -698,34 +807,37 @@ export function ensurePlayerTextures(scene, appearance) {
 
 // ─── Decor & UI sprites ──────────────────────────────────────────────────────
 
-function drawShadow(g) {
-  const w = makeWriter(g);
-  w.px(0x000000, 1, 5, 14, 2, 0.08);
-  w.px(0x000000, 2, 4, 12, 3, 0.14);
-  w.px(0x000000, 3, 3, 10, 4, 0.22);
-  w.px(0x000000, 4, 4, 8, 3, 0.32);
-  w.px(0x000000, 5, 4, 6, 2, 0.42);
-}
+/** Speech balloon with a gold "!" — the same read as a DS interaction cue. */
+const INTERACT_GRID = [
+  "...OOOOOOOOOO...",
+  ".OOWWWWWWWWWWOO.",
+  ".OWWWWWWWWWWWWO.",
+  ".OWWWWOGGOWWWWO.",
+  ".OWWWWOGGOWWWWO.",
+  ".OWWWWOGGOWWWWO.",
+  ".OWWWWOGgOWWWWO.",
+  ".OWWWWWggWWWWWO.",
+  ".OWWWWWWWWWWWWO.",
+  ".OWWWWOGGOWWWWO.",
+  ".OOWWWOGgOWWWOO.",
+  "...OOWWWWWWOO...",
+  "....OOWWWWO.....",
+  ".....OOOO.......",
+];
 
 function drawInteractIcon(g) {
   const w = makeWriter(g);
-  // Pulsing gold diamond prompt
-  w.px(OUTLINE, 7, 0, 2, 2);
-  w.px(0xf0d050, 7, 0, 2, 1);
-  w.px(0xffe890, 7, 0, 1, 1);
-  w.px(OUTLINE, 5, 2, 6, 2);
-  w.px(0xf0d050, 6, 2, 4, 2);
-  w.px(OUTLINE, 3, 4, 10, 2);
-  w.px(0xf0d050, 4, 4, 8, 2);
-  w.px(0xffe890, 5, 4, 6, 1);
-  w.px(OUTLINE, 1, 6, 14, 2);
-  w.px(0xe8c030, 2, 6, 12, 2);
-  w.px(0xffe890, 3, 6, 10, 1);
-  w.px(OUTLINE, 3, 8, 10, 2);
-  w.px(0xc8a030, 4, 8, 8, 2);
-  w.px(0xa87820, 6, 10, 4, 2);
-  w.px(0xffffff, 5, 5, 1, 1, 0.7);
-  w.px(0xffffff, 10, 3, 1, 1, 0.5);
+  const legend = {
+    O: [OUTLINE, 1],
+    W: [0xfff6e0, 1],
+    G: [0xf0c840, 1],
+    g: [0xb88818, 1],
+  };
+  paintGrid(w, INTERACT_GRID, legend, 0);
+  // Top-left light, bottom-right falloff, same rule the tiles follow.
+  w.px(0xffffff, 3, 2, 4, 1);
+  w.px(0xe4d6b8, 2, 10, 3, 1);
+  w.px(0xe4d6b8, 11, 8, 3, 1);
 }
 
 function drawBarDecor(g) {
@@ -865,7 +977,6 @@ const SPRITE_DRAWERS = {
   decor_glass: drawGlassTile,
   decor_rope: drawRopeTile,
   interact_icon: drawInteractIcon,
-  shadow: drawShadow,
 };
 
 /** Every art key the overworld registers at boot. */
@@ -896,6 +1007,13 @@ export function drawArtToCanvas(canvas, key) {
 export function createGameTextures(scene) {
   for (const [id, drawer] of Object.entries(TILE_DRAWERS)) {
     makeTex(scene, `tile_${id}`, drawer);
+    if (!SCUFFED_FLOORS.has(Number(id))) continue;
+    SCUFFS.forEach((_, variant) => {
+      makeTex(scene, `tile_${id}_s${variant}`, (g) => {
+        drawer(g);
+        scuff(g, variant);
+      });
+    });
   }
 
   const npcs = [
@@ -921,7 +1039,6 @@ export function createGameTextures(scene) {
   makeTex(scene, "decor_screen", drawScreenDecor);
   makeTex(scene, "decor_glass", drawGlassTile);
   makeTex(scene, "decor_rope", drawRopeTile);
-  makeTex(scene, "shadow", drawShadow, TILE_SIZE, TILE_SIZE * 0.625);
   makeTex(scene, "interact_icon", drawInteractIcon, TILE_SIZE, TILE_SIZE * 0.875);
 }
 

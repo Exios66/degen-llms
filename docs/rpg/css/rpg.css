@@ -1127,6 +1127,7 @@ body {
   display: grid;
   grid-template-columns: repeat(3, 46px);
   grid-template-rows: repeat(3, 46px);
+  gap: 2px;
 }
 
 .touch-pad__actions {
@@ -1134,7 +1135,7 @@ body {
   grid-template-columns: repeat(2, auto);
   align-items: end;
   justify-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .touch-btn {
@@ -1150,6 +1151,7 @@ body {
   color: var(--text);
   background: rgba(20, 16, 31, 0.82);
   border: 3px solid var(--border);
+  border-radius: 8px;
   box-shadow: 0 3px 0 rgba(0, 0, 0, 0.55);
 }
 
@@ -1172,7 +1174,7 @@ body {
 }
 
 .touch-btn--talk {
-  grid-column: 2;
+  grid-area: 2 / 2;
   width: 74px;
   height: 74px;
   color: #0a0812;
@@ -1181,7 +1183,7 @@ body {
 }
 
 .touch-btn--run {
-  grid-column: 1;
+  grid-area: 2 / 1;
   width: 56px;
   height: 56px;
   color: var(--cyan);
@@ -1189,11 +1191,10 @@ body {
 }
 
 .touch-btn--menu {
-  grid-column: 1 / span 2;
-  width: 100%;
-  min-height: 40px;
-  font-size: 13px;
-  letter-spacing: 0.1em;
+  grid-area: 1 / 1;
+  width: 46px;
+  height: 46px;
+  font-size: 15px;
 }
 
 /* Menu rows are keyboard-sized by default; a thumb needs a bigger target. */
@@ -1226,6 +1227,7 @@ body.has-touch-pad .rewards-phone-root {
   }
   .touch-btn--talk { width: 60px; height: 60px; }
   .touch-btn--run { width: 46px; height: 46px; }
+  .touch-btn--menu { width: 42px; height: 42px; }
 }
 
 /* ─── Hosted terminal screens ──────────────────────────────────────────────

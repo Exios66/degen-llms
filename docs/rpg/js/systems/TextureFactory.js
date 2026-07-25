@@ -35,54 +35,88 @@ function makeTex(scene, key, draw, w = TILE_SIZE, h = TILE_SIZE) {
 }
 
 function drawLobbyTile(g) {
-  px(g, 0xb8923e, 0, 0, 16, 16);
-  px(g, 0xd4b86a, 0, 0, 16, 2);
-  px(g, 0xd4b86a, 0, 0, 2, 16);
-  px(g, 0xc9a54a, 1, 1, 14, 14);
-  px(g, 0xa67d32, 2, 5, 4, 1);
-  px(g, 0xa67d32, 8, 9, 5, 1);
-  px(g, 0xe8d080, 11, 3, 2, 1);
-  px(g, 0x8f6a28, 4, 12, 5, 1);
-  px(g, 0xf0e0a0, 13, 13, 2, 2);
-  px(g, OUTLINE_SOFT, 15, 15, 1, 1);
+  // Bright cream marble — clearly distinct lobby floor
+  px(g, 0xe8dcc8, 0, 0, 16, 16);
+  px(g, 0xf8f0e0, 1, 1, 14, 14);
+  px(g, 0xfff8f0, 2, 2, 6, 6);
+  px(g, 0xfff8f0, 9, 9, 5, 5);
+  px(g, 0xd8c8a8, 7, 0, 2, 16);
+  px(g, 0xd8c8a8, 0, 7, 16, 2);
+  px(g, 0xc8b898, 7, 7, 2, 2);
+  px(g, 0xe8c878, 1, 1, 2, 1);
+  px(g, 0xe8c878, 13, 13, 2, 1);
 }
 
 function drawCarpetTile(g) {
-  px(g, 0x2a0a24, 0, 0, 16, 16);
-  px(g, 0x3a1034, 1, 1, 14, 14);
-  px(g, 0x4a1942, 2, 2, 12, 12);
-  px(g, 0x5c2454, 4, 4, 8, 8);
-  px(g, 0x7a3a6e, 6, 6, 4, 4);
+  // Rich burgundy casino carpet with gold diamond motif
+  px(g, 0x4a0828, 0, 0, 16, 16);
+  px(g, 0x6a1038, 1, 1, 14, 14);
+  px(g, 0x801848, 2, 2, 12, 12);
+  px(g, 0x982058, 3, 3, 10, 10);
   px(g, 0xe8c547, 7, 7, 2, 2);
   px(g, 0xffe890, 7, 7, 1, 1);
-  px(g, 0x6a2a5e, 0, 0, 16, 1);
-  px(g, 0x6a2a5e, 0, 15, 16, 1);
+  px(g, 0xc8a030, 3, 3, 2, 2);
+  px(g, 0xc8a030, 11, 11, 2, 2);
+  px(g, 0xc8a030, 3, 11, 2, 2);
+  px(g, 0xc8a030, 11, 3, 2, 2);
+  px(g, 0x5a1840, 0, 0, 16, 1);
+  px(g, 0x5a1840, 0, 15, 16, 1);
 }
 
 function drawFeltTile(g) {
-  px(g, 0x0e3a24, 0, 0, 16, 16);
-  px(g, 0x145232, 1, 1, 14, 14);
-  px(g, 0x1a5c3a, 2, 2, 12, 12);
-  px(g, 0x227048, 3, 3, 10, 10);
-  for (let i = 2; i < 14; i += 3) {
-    px(g, 0x0a2818, i, 1, 1, 1);
-    px(g, 0x0a2818, 1, i, 1, 1);
-    px(g, 0x0a2818, i, 14, 1, 1);
-    px(g, 0x0a2818, 14, i, 1, 1);
-  }
-  px(g, 0x3aaa68, 6, 6, 4, 4);
-  px(g, 0x4acc80, 7, 7, 2, 2);
+  // Vivid table felt with gold rail and white betting line
+  px(g, 0x0a5028, 0, 0, 16, 16);
+  px(g, 0x0e6838, 1, 1, 14, 14);
+  px(g, 0x148848, 2, 2, 12, 12);
+  px(g, 0x1aa858, 3, 3, 10, 10);
+  px(g, 0xe8c547, 0, 0, 16, 1);
+  px(g, 0xe8c547, 0, 15, 16, 1);
+  px(g, 0xe8c547, 0, 0, 1, 16);
+  px(g, 0xe8c547, 15, 0, 1, 16);
+  px(g, 0xffffff, 4, 7, 8, 1);
+  px(g, 0xffffff, 7, 4, 1, 8);
+  px(g, 0x30d070, 6, 6, 4, 4);
+  px(g, 0x50f090, 7, 7, 2, 2);
 }
 
 function drawWallTile(g) {
-  px(g, 0x080610, 0, 0, 16, 16);
-  px(g, 0x12101a, 1, 1, 14, 14);
-  px(g, 0x1a1520, 2, 2, 12, 12);
-  px(g, 0x2a2438, 0, 0, 16, 2);
-  px(g, 0x0a0810, 0, 14, 16, 2);
-  px(g, 0x3a3048, 2, 4, 4, 2);
-  px(g, 0x3a3048, 9, 8, 4, 2);
-  px(g, 0x4a4060, 3, 5, 2, 1);
+  // Navy wall panels with gold trim — readable boundary
+  px(g, 0x101828, 0, 0, 16, 16);
+  px(g, 0x182038, 1, 1, 14, 14);
+  px(g, 0x202848, 2, 2, 12, 12);
+  px(g, 0xe8c547, 0, 0, 16, 2);
+  px(g, 0xc8a030, 0, 14, 16, 2);
+  px(g, 0xe8c547, 0, 0, 2, 16);
+  px(g, 0xe8c547, 14, 0, 2, 16);
+  px(g, 0x304060, 4, 5, 3, 4);
+  px(g, 0x304060, 9, 5, 3, 4);
+  px(g, 0x405080, 5, 6, 1, 2);
+  px(g, 0x405080, 10, 6, 1, 2);
+}
+
+function drawPathTile(g) {
+  // Bright gold walkway — navigation paths
+  px(g, 0x8a6018, 0, 0, 16, 16);
+  px(g, 0xc8a030, 1, 1, 14, 14);
+  px(g, 0xe8c547, 2, 2, 12, 12);
+  px(g, 0xffe890, 3, 3, 10, 10);
+  px(g, 0xfff0b0, 4, 4, 8, 8);
+  px(g, 0xe8c547, 6, 6, 4, 4);
+  px(g, 0xc8a030, 7, 7, 2, 2);
+  px(g, 0xa87820, 0, 7, 16, 2);
+  px(g, 0xa87820, 7, 0, 2, 16);
+}
+
+function drawTrimTile(g) {
+  // Dark wood/metal border between zones
+  px(g, 0x1a1018, 0, 0, 16, 16);
+  px(g, 0x2a1828, 1, 1, 14, 14);
+  px(g, 0x3a2038, 2, 2, 12, 12);
+  px(g, 0xe8c547, 1, 1, 14, 1);
+  px(g, 0xe8c547, 1, 14, 14, 1);
+  px(g, 0x684010, 3, 3, 10, 10);
+  px(g, 0x4a2838, 4, 4, 8, 8);
+  px(g, 0xc8a030, 7, 7, 2, 2);
 }
 
 function drawWaterTile(g) {
@@ -98,13 +132,17 @@ function drawWaterTile(g) {
 }
 
 function drawVipTile(g) {
-  px(g, 0x1a1408, 0, 0, 16, 16);
-  px(g, 0x2a2010, 1, 1, 14, 14);
-  px(g, 0x3a2a10, 2, 2, 12, 12);
-  px(g, 0xe8c547, 3, 3, 10, 10);
-  px(g, 0xffe08a, 4, 4, 8, 8);
-  px(g, 0x3a2a10, 5, 5, 6, 6);
-  px(g, 0xc4a030, 6, 6, 4, 4);
+  // Black-and-gold VIP / slot aisle carpet
+  px(g, 0x0a0810, 0, 0, 16, 16);
+  px(g, 0x14101a, 1, 1, 14, 14);
+  px(g, 0x1a1520, 2, 2, 12, 12);
+  px(g, 0xe8c547, 3, 3, 10, 1);
+  px(g, 0xe8c547, 3, 12, 10, 1);
+  px(g, 0xe8c547, 3, 3, 1, 10);
+  px(g, 0xe8c547, 12, 3, 1, 10);
+  px(g, 0xffe890, 7, 7, 2, 2);
+  px(g, 0xc8a030, 4, 4, 8, 8);
+  px(g, 0x2a2030, 5, 5, 6, 6);
   px(g, 0xffe08a, 7, 7, 2, 2);
 }
 
@@ -136,6 +174,8 @@ const TILE_DRAWERS = {
   [TILE.SCREEN]: drawCarpetTile,
   [TILE.VIP]: drawVipTile,
   [TILE.AQUA]: drawAquaTile,
+  [TILE.PATH]: drawPathTile,
+  [TILE.TRIM]: drawTrimTile,
 };
 
 const TEX_CHAR_W = CHAR_W * SCALE;
@@ -357,52 +397,56 @@ function drawInteractIcon(g) {
 }
 
 function drawBarDecor(g) {
-  px(g, OUTLINE, 0, 4, 16, 12);
-  px(g, 0x3a2410, 1, 5, 14, 11);
-  px(g, 0x5c3a1a, 2, 6, 12, 9);
-  px(g, 0x9a7040, 1, 4, 14, 3);
-  px(g, 0xc4a070, 2, 4, 12, 1);
-  px(g, 0x48d8e8, 4, 8, 2, 3);
-  px(g, 0xf08088, 8, 8, 2, 3);
-  px(g, 0xf0d050, 12, 8, 2, 3);
+  px(g, OUTLINE, 0, 3, 16, 13);
+  px(g, 0x5c3a1a, 1, 4, 14, 12);
+  px(g, 0x9a7040, 1, 3, 14, 4);
+  px(g, 0xc4a070, 2, 3, 12, 2);
+  px(g, 0xe8c547, 2, 2, 12, 1);
+  px(g, 0x48d8e8, 3, 8, 3, 4);
+  px(g, 0xf08088, 7, 8, 3, 4);
+  px(g, 0xf0d050, 11, 8, 3, 4);
+  px(g, 0xffffff, 4, 4, 8, 1);
+  px(g, 0xffe890, 6, 4, 4, 1);
 }
 
 function drawPlantDecor(g) {
-  px(g, OUTLINE, 4, 10, 8, 6);
-  px(g, 0x5c3a1a, 5, 11, 6, 5);
-  px(g, 0x3a2410, 6, 12, 4, 3);
-  px(g, 0x1a4a28, 3, 4, 10, 8);
-  px(g, 0x2d6a3f, 4, 3, 8, 7);
-  px(g, 0x4a9c5a, 4, 2, 8, 6);
-  px(g, 0x6aba6a, 6, 1, 4, 3);
-  px(g, 0x8ada8a, 7, 1, 2, 2);
+  px(g, OUTLINE, 3, 9, 10, 7);
+  px(g, 0x5c3a1a, 4, 10, 8, 6);
+  px(g, 0x3a2410, 6, 11, 4, 4);
+  px(g, OUTLINE, 2, 3, 12, 9);
+  px(g, 0x1a5a30, 3, 4, 10, 7);
+  px(g, 0x2d8a48, 4, 3, 8, 7);
+  px(g, 0x4acc68, 5, 2, 6, 6);
+  px(g, 0x70f090, 6, 1, 4, 4);
+  px(g, 0x90ffb0, 7, 1, 2, 2);
 }
 
 function drawSlotDecor(g) {
   px(g, OUTLINE, 0, 0, 16, 16);
   px(g, 0x1a0a18, 1, 1, 14, 15);
   px(g, 0x3a1838, 2, 2, 12, 13);
+  px(g, 0xe8c547, 2, 2, 12, 2);
   px(g, 0xf0d050, 3, 3, 10, 5);
   px(g, 0xffe890, 4, 3, 8, 2);
-  px(g, 0x0a0812, 4, 4, 2, 3);
-  px(g, 0xf08088, 7, 4, 2, 3);
-  px(g, 0x50e8a0, 10, 4, 2, 3);
-  px(g, 0x2a1028, 3, 9, 10, 5);
-  px(g, 0xc4a030, 5, 10, 6, 2);
+  px(g, 0xff4a60, 4, 5, 2, 4);
+  px(g, 0x50e8a0, 7, 5, 2, 4);
+  px(g, 0x48d8e8, 10, 5, 2, 4);
+  px(g, 0x2a1028, 3, 10, 10, 4);
   px(g, 0xff4a60, 7, 13, 2, 2);
+  px(g, 0xffffff, 5, 1, 6, 1);
 }
 
 function drawScreenDecor(g) {
   px(g, OUTLINE, 0, 1, 16, 14);
   px(g, 0x0a1520, 1, 2, 14, 12);
+  px(g, 0xe8c547, 1, 2, 14, 1);
   px(g, 0x1a3040, 2, 3, 12, 10);
   px(g, 0x48d8e8, 3, 4, 10, 7);
   px(g, 0x6ae8f0, 4, 4, 8, 2);
-  px(g, 0x0a2030, 3, 4, 4, 3);
-  px(g, 0x0a2030, 9, 4, 4, 3);
-  px(g, 0x50e8a0, 3, 8, 10, 1);
-  px(g, 0xf0d050, 3, 10, 3, 1);
-  px(g, 0xf08088, 8, 10, 4, 1);
+  px(g, 0x50e8a0, 3, 8, 10, 2);
+  px(g, 0xf0d050, 3, 11, 4, 1);
+  px(g, 0xf08088, 9, 11, 4, 1);
+  px(g, 0xffffff, 4, 3, 8, 1);
   px(g, OUTLINE, 6, 14, 4, 2);
   px(g, 0x1a1520, 7, 14, 2, 2);
 }

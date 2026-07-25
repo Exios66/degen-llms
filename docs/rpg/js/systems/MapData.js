@@ -12,6 +12,10 @@ export const TILE = {
   SCREEN: 9,
   VIP: 10,
   AQUA: 11,
+  /** Bright gold walkway — navigation paths between zones. */
+  PATH: 12,
+  /** Dark border trim between floor types. */
+  TRIM: 13,
 };
 
 export const TILE_SIZE = 32;
@@ -241,60 +245,108 @@ export const NPCS = [
   },
 ];
 
+export const SPAWN_DEFAULT = { x: 15, y: 26 };
+
+/** Floor zone signage for the main resort map (world tile coords). */
+export const MAP_ZONE_SIGNS = {
+  main_resort: [
+    { x: 15, y: 23.2, text: "LOBBY", color: "#fff8e8", stroke: "#8a6a28" },
+    { x: 15, y: 12, text: "TABLE PIT", color: "#b8ffd0", stroke: "#0a5028" },
+    { x: 24, y: 14.5, text: "SLOTS →", color: "#ffe890", stroke: "#684810" },
+    { x: 5, y: 14.5, text: "← SPORTS", color: "#a8e8ff", stroke: "#184868" },
+    { x: 15, y: 3.5, text: "HIGH LIMIT", color: "#ffe890", stroke: "#684810" },
+    { x: 26.5, y: 21.5, text: "HOTEL ↑", color: "#ffe890", stroke: "#684810" },
+    { x: 3.5, y: 21.5, text: "POOL ↓", color: "#a8e8ff", stroke: "#184868" },
+  ],
+};
+
+function inTablePit(x, y) {
+  return x >= 10 && x <= 20 && y >= 8 && y <= 16;
+}
+
+function inMainCarpet(x, y) {
+  return x >= 4 && x <= 25 && y >= 8 && y <= 18;
+}
+
+function isGoldPath(x, y) {
+  if (y === 19 && x >= 4 && x <= 25) return true;
+  if ((x === 9 || x === 21) && y >= 8 && y <= 18) return true;
+  if (y >= 20 && (x === 14 || x === 15 || x === 16)) return true;
+  return false;
+}
+
+function isPitTrim(x, y) {
+  const onEdge =
+    (x === 9 || x === 21) && y >= 7 && y <= 17 ||
+    (y === 7 || y === 17) && x >= 9 && x <= 21;
+  return onEdge && !inTablePit(x, y);
+}
+
 /**
- * Build the 30×30 main resort map with slot aisle, sports book, high limit.
+ * Build the 30×30 main resort map with distinct, legible floor zones.
  */
 export function buildMapLayers() {
   const { ground, collision, decor } = emptyLayers();
 
   for (let y = 1; y < MAP_HEIGHT - 1; y++) {
     for (let x = 1; x < MAP_WIDTH - 1; x++) {
-      let tile = TILE.LOBBY;
+      let tile = TILE.VOID;
       let decorTile = 0;
 
-      if (y >= 20) {
+      // North wall band
+      if (y >= 2 && y <= 5) {
+        tile = (x >= 13 && x <= 17) ? TILE.VIP : TILE.WALL;
+      }
+      // Lobby — bright marble south wing
+      else if (y >= 20) {
         tile = TILE.LOBBY;
-      } else if (y >= 8 && y <= 19 && x >= 4 && x <= 25) {
-        tile = TILE.CARPET;
-      } else if (y >= 6 && y <= 14 && x >= 10 && x <= 20) {
-        tile = TILE.FELT;
-      } else if (y >= 2 && y <= 5) {
-        tile = TILE.WALL;
+      }
+      // Lobby / floor transition strip
+      else if (y === 19) {
+        tile = isGoldPath(x, y) ? TILE.PATH : TILE.TRIM;
+      }
+      // Main casino floor
+      else if (inMainCarpet(x, y) || (y >= 6 && y <= 7 && x >= 10 && x <= 20)) {
+        if (inTablePit(x, y)) {
+          tile = TILE.FELT;
+        } else if (isPitTrim(x, y)) {
+          tile = TILE.TRIM;
+        } else if (isGoldPath(x, y)) {
+          tile = TILE.PATH;
+        } else if (x >= 22 && x <= 26 && y >= 12 && y <= 17) {
+          tile = TILE.VIP;
+        } else {
+          tile = TILE.CARPET;
+        }
+      }
+      // Side corridors flanking the pit
+      else if (y >= 6 && y <= 18) {
+        tile = TILE.LOBBY;
       }
 
-      // High Limit salon corridor (north)
-      if (y >= 2 && y <= 5 && x >= 13 && x <= 17) {
-        tile = TILE.VIP;
+      // Slot machines on gold aisle
+      if (x >= 22 && x <= 26 && y >= 12 && y <= 17 && (x === 22 || x === 26)) {
+        decorTile = TILE.SLOT;
       }
 
-      // Slot aisle east
-      if (y >= 12 && y <= 17 && x >= 22 && x <= 26) {
-        tile = TILE.CARPET;
-        if (x === 26 || x === 22) decorTile = TILE.SLOT;
+      // Sports book screens on west aisle
+      if (x >= 3 && x <= 7 && y >= 12 && y <= 17 && (x === 3 || x === 7)) {
+        decorTile = TILE.SCREEN;
       }
 
-      // Sports book west
-      if (y >= 12 && y <= 17 && x >= 3 && x <= 7) {
-        tile = TILE.CARPET;
-        if (x === 3 || x === 7) decorTile = TILE.SCREEN;
-      }
-
-      // Lobby bar
+      // Bars and service desks
       if (y >= 21 && y <= 23 && x >= 3 && x <= 6) decorTile = TILE.BAR;
-      // Pavilion / arena kiosks
       if (y >= 8 && y <= 10 && x >= 23 && x <= 26) decorTile = TILE.BAR;
       if (y >= 8 && y <= 10 && x >= 4 && x <= 7) decorTile = TILE.BAR;
-      // Cashier desk
       if (y === 23 && x >= 19 && x <= 21) decorTile = TILE.BAR;
 
-      if (tile === TILE.CARPET || tile === TILE.LOBBY) {
-        if ((x + y) % 11 === 0 && x > 2 && x < 27 && y > 15 && y < 27) {
-          decorTile = TILE.PLANT;
-        }
+      // Lobby plants — spaced, not cluttered
+      if (tile === TILE.LOBBY && y >= 21 && (x === 8 || x === 22)) {
+        decorTile = TILE.PLANT;
       }
       if (y === 7 && x >= 12 && x <= 18) decorTile = TILE.PLANT;
 
-      // STAFF ONLY north wall secret (walkable if flag — collision cleared in scene)
+      // STAFF ONLY north wall secret
       if (y === 1 && x >= 14 && x <= 16) {
         tile = TILE.WALL;
         decorTile = 0;
@@ -307,8 +359,6 @@ export function buildMapLayers() {
 
   return finalize(ground, collision, decor);
 }
-
-export const SPAWN_DEFAULT = { x: 15, y: 26 };
 
 /** Door warps between resort maps. */
 export const DOOR_TRIGGERS = [

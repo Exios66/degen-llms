@@ -4,6 +4,7 @@ import { normalizeAppearance } from "../systems/CharacterAppearance.js";
 import {
   TILE_SIZE, MAP_WIDTH, MAP_HEIGHT, buildMapLayersForId, getNpcsForMap,
   DOOR_TRIGGERS, getMapDefinition, SPAWN_DEFAULT, TILE, resolveNpcPosition,
+  MAP_ZONE_SIGNS,
 } from "../systems/MapData.js";
 import { getSessionDealer } from "../../../js/dealers.js";
 import { resolveNpc } from "../../../js/staff-manifest.js";
@@ -56,21 +57,30 @@ export class OverworldScene extends Phaser.Scene {
       for (let x = 0; x < MAP_WIDTH; x++) {
         const tile = ground[y][x];
         if (tile === 0) continue;
-        this.groundLayer.add(
-          this.add.image(x * TILE_SIZE + TILE_SIZE / 2, y * TILE_SIZE + TILE_SIZE / 2, `tile_${tile}`)
+        const groundImg = this.add.image(
+          x * TILE_SIZE + TILE_SIZE / 2,
+          y * TILE_SIZE + TILE_SIZE / 2,
+          `tile_${tile}`
         );
+        groundImg.setDepth(0);
+        this.groundLayer.add(groundImg);
         if (decor[y][x]) {
           const d = decor[y][x];
           let decorKey = "decor_plant";
           if (d === TILE.BAR) decorKey = "decor_bar";
           else if (d === TILE.SLOT) decorKey = "decor_slot";
           else if (d === TILE.SCREEN) decorKey = "decor_screen";
-          this.groundLayer.add(
-            this.add.image(x * TILE_SIZE + TILE_SIZE / 2, y * TILE_SIZE + TILE_SIZE / 2, decorKey)
+          const decorImg = this.add.image(
+            x * TILE_SIZE + TILE_SIZE / 2,
+            y * TILE_SIZE + TILE_SIZE / 2,
+            decorKey
           );
+          decorImg.setDepth(2);
+          this.groundLayer.add(decorImg);
         }
       }
     }
+    this._createZoneSigns(mapId);
 
     const spawn = this.saveAdapter.rpg;
     const mapDef = getMapDefinition(mapId);
@@ -111,13 +121,7 @@ export class OverworldScene extends Phaser.Scene {
       this.npcSprites.set(npc.id, sprite);
 
       const displayName = this._resolveNpcDisplayName(npc);
-      const label = this.add.text(sprite.x, sprite.y - TILE_SIZE * 0.5, displayName.split(" ")[0], {
-        fontFamily: "Press Start 2P",
-        fontSize: `${Math.max(8, Math.round(TILE_SIZE * 0.3125))}px`,
-        color: "#e8c547",
-        stroke: "#0a0812",
-        strokeThickness: 3,
-      }).setOrigin(0.5).setDepth(11);
+      const label = this._createNpcLabel(sprite.x, sprite.y - TILE_SIZE * 0.62, displayName, npc.zone);
       this.npcLabels.set(npc.id, label);
 
       if (npc.zone) {
@@ -232,6 +236,49 @@ export class OverworldScene extends Phaser.Scene {
     this.input.keyboard.on("keydown", (ev) => this._trackKonami(ev));
   }
 
+  _createZoneSigns(mapId) {
+    const signs = MAP_ZONE_SIGNS[mapId];
+    if (!signs?.length) return;
+    this.zoneSigns = [];
+    const fontSize = Math.max(7, Math.round(TILE_SIZE * 0.28));
+    for (const sign of signs) {
+      const x = sign.x * TILE_SIZE + TILE_SIZE / 2;
+      const y = sign.y * TILE_SIZE + TILE_SIZE / 2;
+      const bg = this.add.rectangle(x, y, sign.text.length * fontSize * 0.72 + 10, fontSize + 8, 0x0a0812, 0.82);
+      bg.setStrokeStyle(2, sign.stroke ?? "#e8c547");
+      bg.setDepth(3);
+      const text = this.add.text(x, y, sign.text, {
+        fontFamily: "Press Start 2P",
+        fontSize: `${fontSize}px`,
+        color: sign.color ?? "#ffe890",
+        stroke: sign.stroke ?? "#684810",
+        strokeThickness: 2,
+      }).setOrigin(0.5).setDepth(4);
+      this.zoneSigns.push(bg, text);
+    }
+  }
+
+  _createNpcLabel(x, y, displayName, isPit = false) {
+    const shortName = isPit ? displayName : displayName.split(" ").slice(-1)[0];
+    const fontSize = Math.max(7, Math.round(TILE_SIZE * (isPit ? 0.26 : 0.3)));
+    const text = this.add.text(0, 0, shortName, {
+      fontFamily: "Press Start 2P",
+      fontSize: `${fontSize}px`,
+      color: isPit ? "#b8ffd0" : "#ffe890",
+      stroke: "#0a0812",
+      strokeThickness: 3,
+    }).setOrigin(0.5);
+    const padX = 8;
+    const padY = 4;
+    const w = text.width + padX * 2;
+    const h = text.height + padY * 2;
+    const bg = this.add.rectangle(0, 0, w, h, 0x0a0812, 0.88);
+    bg.setStrokeStyle(2, isPit ? 0x30a858 : 0xe8c547);
+    const container = this.add.container(x, y, [bg, text]);
+    container.setDepth(12);
+    return container;
+  }
+
   _applyDayNightTint(worldTime) {
     const isNight = worldTime >= 1200 || worldTime < 360;
     if (isNight) {
@@ -248,7 +295,7 @@ export class OverworldScene extends Phaser.Scene {
           MAP_WIDTH * TILE_SIZE,
           MAP_HEIGHT * TILE_SIZE,
           0x1a0a40,
-          0.28
+          0.18
         ).setDepth(50).setScrollFactor(1);
       }
     } else if (this._nightOverlay) {

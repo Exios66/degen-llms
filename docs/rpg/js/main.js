@@ -18,7 +18,7 @@ import { loadEggRegistry, syncEggsFromFlags, discoverEgg, eggForFlag } from "./s
 import { RPG_ITEMS, giveItem } from "./systems/Inventory.js";
 import { audioManager } from "./systems/AudioManager.js";
 import {
-  TILE_SIZE, MAP_WIDTH, MAP_HEIGHT, installWorld, DEFAULT_MAP_ID,
+  installWorld, DEFAULT_MAP_ID,
 } from "./systems/MapData.js";
 import { loadWorld } from "./systems/MapLoader.js";
 import { RewardsPhone } from "../../js/RewardsPhone.js";
@@ -27,9 +27,6 @@ import { enterZone, ensurePoolComplex } from "../../js/pool-complex.js";
 import { startCasinoClock } from "../../js/casino-time.js";
 import { syncContactIntros } from "../../js/phone-contacts.js";
 import { recordConsumption, applyIntoxicationEffects } from "../../js/intoxication-effects.js";
-
-const GAME_WIDTH = MAP_WIDTH * TILE_SIZE;
-const GAME_HEIGHT = MAP_HEIGHT * TILE_SIZE;
 
 let game = null;
 let session = null;
@@ -236,8 +233,6 @@ async function startOverworld(activeSession) {
 
   game = new Phaser.Game({
     type: Phaser.AUTO,
-    width: GAME_WIDTH,
-    height: GAME_HEIGHT,
     parent: "phaser-root",
     backgroundColor: "#0a0812",
     pixelArt: true,
@@ -256,9 +251,14 @@ async function startOverworld(activeSession) {
       default: "arcade",
       arcade: { gravity: { y: 0 }, debug: false },
     },
+    // RESIZE, not FIT: the world is square and phones are not, so FIT letterboxed
+    // the game into a band. The canvas takes the whole shell and the camera
+    // decides how much of the property fits (see OverworldScene._fitCamera).
     scale: {
-      mode: Phaser.Scale.FIT,
-      autoCenter: Phaser.Scale.CENTER_BOTH,
+      mode: Phaser.Scale.RESIZE,
+      autoCenter: Phaser.Scale.NO_CENTER,
+      width: "100%",
+      height: "100%",
     },
     scene: [OverworldScene],
   });

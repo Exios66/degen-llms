@@ -17,6 +17,10 @@ import { tierIndex } from "../../../js/rewards-perks.js";
 import { recordDex } from "../systems/Dex.js";
 import { EGG_REGISTRY, discoverEgg, eggForFlag } from "../systems/EasterEggs.js";
 
+/** Most tiles the camera will ever show on an axis — a handheld-sized window. */
+const MAX_VIEW_TILES_X = 20;
+const MAX_VIEW_TILES_Y = 15;
+
 /** Extra walk speed per MGM Rewards tier, plus the comped cart bonus. */
 const SPEED_PER_TIER = 12;
 const GOLF_CART_BONUS = 68;
@@ -488,14 +492,26 @@ export class OverworldScene extends Phaser.Scene {
     this._phaseOverlay.setFillStyle(wash.tint, wash.alpha);
   }
 
+  /**
+   * Frame a handheld-sized window on the property.
+   *
+   * Zoom is whatever keeps both axes under the tile caps — on a tall phone that
+   * is the height that decides, on a wide monitor the width — floored so the
+   * world always covers the viewport instead of sitting in a letterbox. Steps of
+   * a half keep one art pixel on a whole number of screen pixels; anything else
+   * shimmers as the camera pans.
+   */
   _fitCamera() {
-    const w = MAP_WIDTH * TILE_SIZE;
-    const h = MAP_HEIGHT * TILE_SIZE;
-    const scaleX = this.scale.width / w;
-    const scaleY = this.scale.height / h;
-    const fit = Math.min(scaleX, scaleY);
-    const zoom = Phaser.Math.Clamp(fit * 1.55, 1.15, 2.35);
-    this.cameras.main.setZoom(zoom);
+    const worldW = MAP_WIDTH * TILE_SIZE;
+    const worldH = MAP_HEIGHT * TILE_SIZE;
+    const vw = this.scale.width;
+    const vh = this.scale.height;
+    const framed = Math.max(
+      vw / (MAX_VIEW_TILES_X * TILE_SIZE),
+      vh / (MAX_VIEW_TILES_Y * TILE_SIZE),
+    );
+    const cover = Math.max(vw / worldW, vh / worldH);
+    this.cameras.main.setZoom(Math.max(1, Math.floor(framed * 2) / 2, cover));
   }
 
   _setupTouchInput() {

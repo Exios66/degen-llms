@@ -26,7 +26,7 @@ import {
 import { BlackjackGame, defaultConfig, Action } from "./blackjack/game.js";
 import { HoldemTable, BettingAction, STREET_ORDER, Street } from "./holdem/game.js";
 import { HAND_CLASS_NAMES } from "./holdem/hand_eval.js";
-import { BET_TYPES, spinWheel, wheelColor, resolveBet, RED_NUMBERS } from "./roulette.js";
+import { BET_TYPES, spinWheel, wheelColor, resolveBet, RED_NUMBERS, appendSpinHistory } from "./roulette.js";
 import { generateRace, simulateRace, settleTicket, fmtOdds as fmtRaceOdds, loadBundledHorseNames, parseHorseNamesCSV, setCustomHorseNames, getHorseNamePool } from "./horse_racing.js";
 import { generateDressage, simulateDressage, settleDressageTicket, generateJumper, simulateJumper, settleJumperTicket, fmtOddsEq } from "./equestrian.js";
 import { createHorseSpriteCanvas, getHorseSprite, getJockeySilks, HORSE_SPRITE_ROSTER } from "./horse-sprites.js";
@@ -57,10 +57,19 @@ let rewardsPhone = null;
 let sportsbook = new SportsbookState();
 let blackjackGame = null;
 let blackjackSessionNet = 0;
-let slotsState = { machine: null, sessionNet: 0, spins: 0, tier: null };
+let slotsState = { machine: null, sessionNet: 0, spins: 0, tier: null, lastBet: null };
 let slotsSpinTimers = [];
 let holdemState = null;
-let rouletteState = { sessionNet: 0, spins: 0, lastNumber: null, spinning: false, tier: null };
+let rouletteState = {
+  sessionNet: 0,
+  spins: 0,
+  lastNumber: null,
+  spinning: false,
+  tier: null,
+  history: [],
+  historyPulse: false,
+  lastWager: null,
+};
 let horseRacingState = { card: null, pending: [], sessionNet: 0, races: 0, tier: null };
 let dressageState = { card: null, pending: [], sessionNet: 0, events: 0, tier: null };
 let jumperState = { card: null, pending: [], sessionNet: 0, events: 0, tier: null };
@@ -497,9 +506,26 @@ function enterCasino(nextSession) {
   resetSportsbookFromSession();
   blackjackGame = null;
   blackjackSessionNet = 0;
-  slotsState = { machine: null, sessionNet: 0, spins: 0, spinning: false, lastWin: false, lastReels: null, lastMessage: null };
+  slotsState = {
+    machine: null,
+    sessionNet: 0,
+    spins: 0,
+    spinning: false,
+    lastWin: false,
+    lastReels: null,
+    lastMessage: null,
+    lastBet: null,
+  };
   holdemState = null;
-  rouletteState = { sessionNet: 0, spins: 0, lastNumber: null, spinning: false };
+  rouletteState = {
+    sessionNet: 0,
+    spins: 0,
+    lastNumber: null,
+    spinning: false,
+    history: [],
+    historyPulse: false,
+    lastWager: null,
+  };
   horseRacingState = { card: null, pending: [], sessionNet: 0, races: 0 };
   viewStack = [{ name: "hub", data: {} }];
   clearStatus();
@@ -708,6 +734,42 @@ function renderRouletteWheel(lastNumber = null, spinning = false) {
     }),
   ]);
   return wrap;
+}
+
+/** Animated recent-spin strip — newest result on the left. */
+function renderRouletteHistory(history = [], { pulseNewest = false } = {}) {
+  const strip = el("div", {
+    className: `roulette-history${pulseNewest ? " roulette-history--pulse" : ""}`,
+    "aria-label": "Roulette spin history",
+  });
+  strip.appendChild(el("div", { className: "roulette-history-label", textContent: "Spin history" }));
+  const track = el("div", { className: "roulette-history-track" });
+  if (!history.length) {
+    track.appendChild(el("span", {
+      className: "roulette-history-empty",
+      textContent: "Results appear here as the wheel spins",
+    }));
+  } else {
+    history.forEach((entry, i) => {
+      track.appendChild(el("div", {
+        className: [
+          "roulette-history-chip",
+          `roulette-history-chip--${entry.color}`,
+          i === 0 && pulseNewest ? "roulette-history-chip--enter" : "",
+        ].filter(Boolean).join(" "),
+        textContent: String(entry.number),
+        title: `${entry.number} · ${entry.color}`,
+        "aria-label": `${entry.number} ${entry.color}`,
+      }));
+    });
+  }
+  strip.appendChild(track);
+  return strip;
+}
+
+function pushRouletteHistory(number) {
+  rouletteState.history = appendSpinHistory(rouletteState.history || [], number, { limit: 18 });
+  rouletteState.historyPulse = true;
 }
 
 function renderRouletteBetMat(straightInput, onPick) {
@@ -1597,7 +1659,17 @@ function renderSlotsMenu() {
       el("h3", { className: "slot-category-title", textContent: cat.label }),
       el("div", { className: "slot-machine-grid" }, machines.map((m) =>
         slotMachineCard(m, () => {
-          slotsState = { machine: m, sessionNet: 0, spins: 0, spinning: false, lastWin: false, lastReels: null, lastMessage: null };
+          slotsState = {
+            machine: m,
+            sessionNet: 0,
+            spins: 0,
+            spinning: false,
+            lastWin: false,
+            lastReels: null,
+            lastMessage: null,
+            lastBet: null,
+            tier: slotsState.tier ?? currentStakeTier,
+          };
           pushView("slots-play");
         })
       )),
@@ -1619,9 +1691,16 @@ function renderSlotsPlay() {
   const stakes = effectiveSlotStakes(machine, tier, session.wallet.balance);
   const minBet = stakes.minBet;
   const maxBet = stakes.maxBet;
+  const rememberedBet = Number.isFinite(slotsState.lastBet)
+    ? Math.min(maxBet, Math.max(minBet, slotsState.lastBet))
+    : minBet;
   const betInput = el("input", {
-    type: "number", min: String(minBet), max: String(maxBet), value: String(minBet),
+    type: "number", min: String(minBet), max: String(maxBet), value: String(rememberedBet),
   });
+  betInput.oninput = () => {
+    const typed = parseInt(betInput.value, 10);
+    if (Number.isFinite(typed) && typed > 0) slotsState.lastBet = typed;
+  };
   const reelsStopped = slotsState.reelsStopped ?? 3;
   const reelsForDisplay = (slotsState.spinning || reelsStopped < 3)
     ? (slotsState.displayReels ?? slotsState.lastReels)
@@ -1679,6 +1758,9 @@ function renderSlotsPlay() {
       render();
       return;
     }
+
+    // Keep the player's last wager as the default for the next pull.
+    slotsState.lastBet = bet;
 
     clearSlotsSpinTimers();
     const timing = getActivityTiming(tier.id);
@@ -2654,9 +2736,19 @@ function renderRoulette() {
     straightRow.style.display = BET_TYPES[betSelect.value].kind === "straight" ? "" : "none";
   };
 
+  const rememberedWager = Number.isFinite(rouletteState.lastWager)
+    ? Math.min(wagerStakes.maxBet, Math.max(wagerStakes.minBet, rouletteState.lastWager))
+    : wagerStakes.minBet;
   const amountInput = el("input", {
-    type: "number", min: String(wagerStakes.minBet), max: String(wagerStakes.maxBet), value: String(wagerStakes.minBet),
+    type: "number",
+    min: String(wagerStakes.minBet),
+    max: String(wagerStakes.maxBet),
+    value: String(rememberedWager),
   });
+  amountInput.oninput = () => {
+    const typed = parseInt(amountInput.value, 10);
+    if (Number.isFinite(typed) && typed > 0) rouletteState.lastWager = typed;
+  };
   const resultEl = el("p", {
     className: "dim",
     textContent: rouletteState.lastNumber != null
@@ -2669,6 +2761,12 @@ function renderRoulette() {
       ? `Session: ${signedChips(rouletteState.sessionNet)} over ${rouletteState.spins} spin(s)`
       : "",
   });
+  const pulseNewest = Boolean(rouletteState.historyPulse);
+  if (rouletteState.historyPulse) {
+    // Consume the pulse flag so only the newly landed number animates in.
+    rouletteState.historyPulse = false;
+  }
+  const historyEl = renderRouletteHistory(rouletteState.history || [], { pulseNewest });
 
   const onMatPick = (n) => {
     betSelect.value = "0";
@@ -2694,6 +2792,7 @@ function renderRoulette() {
       resultEl.textContent = "Insufficient chips.";
       return;
     }
+    rouletteState.lastWager = amount;
     const dealer = activeTableDealer ?? getSessionDealer(session, "roulette");
     resultEl.className = "dim";
     resultEl.textContent = `${dealer.name}: "${pickQuip(dealer, "deal")}"`;
@@ -2707,6 +2806,7 @@ function renderRoulette() {
       rouletteState.spins += 1;
       rouletteState.lastNumber = number;
       rouletteState.spinning = false;
+      pushRouletteHistory(number);
       resultEl.className = win > 0 ? "success" : "dim";
       const quip = pickQuip(dealer, win > 0 ? "win" : "lose");
       resultEl.textContent = `Ball lands on ${number} (${wheelColor(number)}) — ${reason}. ${dealer.name}: "${quip}"`;
@@ -2726,6 +2826,7 @@ function renderRoulette() {
     title: "ROULETTE",
     screenChildren: [
       dealerPanel("roulette"),
+      historyEl,
       rouletteDisplay,
       el("div", { className: "roulette-outside-bets" }, [
         el("div", { className: "form-row" }, [el("label", { textContent: "Bet type" }), betSelect]),
@@ -2736,7 +2837,12 @@ function renderRoulette() {
       summaryEl,
     ],
     controls: el("div", { className: "action-bar" }, [
-      el("button", { className: "btn primary", textContent: "Spin", onclick: doSpin }),
+      el("button", {
+        className: "btn primary",
+        textContent: "Spin",
+        onclick: doSpin,
+        disabled: rouletteState.spinning,
+      }),
       el("button", {
         className: "btn",
         textContent: "Leave table",

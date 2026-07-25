@@ -50,6 +50,7 @@ SLOTS_HELP = """
 SLOT MACHINES — MANDALAY BAY FLOOR
 ===================================
 Penny slots to high-limit progressives — pick any machine on the floor.
+Your last spin amount stays selected as the default for the next pull.
 
 Classic & high limit:
   Mandalay Fortune     5–50 chips per spin
@@ -133,6 +134,7 @@ Bet types:
   • Dozens 1–12, 13–24, 25–36 (2:1)
 
 Zero wins only on straight-up bets; all outside bets lose on 0.
+A live spin history strip shows recent results (newest first) as you play.
 """
 
 HORSE_RACING_HELP = """

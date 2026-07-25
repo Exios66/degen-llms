@@ -21,12 +21,14 @@ export class SlotsOverlay extends OverlayBase {
     this.machineId = machineId;
     this.lastLine = "";
     this.reels = null;
+    this.lastBet = null;
   }
 
   open(options = {}) {
     if (options.machineId) this.machineId = options.machineId;
     this.lastLine = "";
     this.reels = null;
+    this.lastBet = null;
     return super.open(options);
   }
 
@@ -45,13 +47,22 @@ export class SlotsOverlay extends OverlayBase {
     }
     if (this.lastLine) this._msg(panel, this.lastLine);
 
+    const maxAllowed = Math.min(machine.maxBet, this.session.wallet.balance);
+    const remembered = Number.isFinite(this.lastBet)
+      ? Math.min(maxAllowed, Math.max(machine.minBet, this.lastBet))
+      : machine.minBet;
+
     const form = document.createElement("div");
     form.className = "bj-form";
     const input = document.createElement("input");
     input.type = "number";
     input.min = String(machine.minBet);
-    input.max = String(Math.min(machine.maxBet, this.session.wallet.balance));
-    input.value = String(machine.minBet);
+    input.max = String(maxAllowed);
+    input.value = String(remembered);
+    input.oninput = () => {
+      const typed = parseInt(input.value, 10);
+      if (Number.isFinite(typed) && typed > 0) this.lastBet = typed;
+    };
     form.appendChild(input);
     panel.appendChild(form);
 
@@ -69,6 +80,7 @@ export class SlotsOverlay extends OverlayBase {
             alert("Not enough chips.");
             return;
           }
+          this.lastBet = bet;
           contributeToProgressive(this.session, machine, bet);
           const reels = spinReels(machine);
           this.reels = reels;

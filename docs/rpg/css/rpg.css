@@ -1196,6 +1196,15 @@ body {
   letter-spacing: 0.1em;
 }
 
+/* Menu rows are keyboard-sized by default; a thumb needs a bigger target. */
+@media (pointer: coarse) {
+  .menu-panel-list button,
+  .terminal-host-mount .menu-btn {
+    min-height: 44px;
+    align-items: center;
+  }
+}
+
 /* With a pad on screen, the bottom-right corner belongs to the A button: move
    the hint and the rewards phone out from under the player's thumb. */
 body.has-touch-pad .touch-hint {

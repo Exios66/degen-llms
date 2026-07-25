@@ -28,6 +28,12 @@ export class QuestManager {
     this.session = session;
     this.hooks = hooks;
     this.defs = { ...QUEST_DEFS };
+    /**
+     * Progress the world has already produced, whether or not the matching
+     * quest has been accepted. Accepting a quest late still credits the work.
+     * @type {Record<string, number>}
+     */
+    this.derived = {};
   }
 
   /** @param {Record<string, object>} registry */
@@ -54,11 +60,10 @@ export class QuestManager {
   }
 
   start(id, target = null) {
-    if (this.quests[id]?.stage === "complete") return;
-    if (!this.quests[id]) {
-      this.quests[id] = { stage: 0, target: target ?? this.defs[id]?.target ?? 1 };
-      this.hooks.onUpdate?.();
-    }
+    if (this.quests[id]) return;
+    this.quests[id] = { stage: 0, target: target ?? this.defs[id]?.target ?? 1 };
+    if (this.derived[id] != null) this._setProgress(id, this.derived[id]);
+    this.hooks.onUpdate?.();
   }
 
   /**
@@ -76,9 +81,13 @@ export class QuestManager {
     return q;
   }
 
-  /** Set absolute progress, completing the quest when it reaches its target. */
+  /**
+   * Set absolute progress on an accepted quest, completing it at its target.
+   * Unaccepted quests only bank the value in `derived`.
+   */
   setProgress(id, value) {
-    this.start(id);
+    this.derived[id] = value;
+    if (!this.quests[id]) return false;
     const changed = this._setProgress(id, value);
     if (changed) this.hooks.onUpdate?.();
     return changed;
@@ -172,6 +181,22 @@ export class QuestManager {
         complete: q.stage === "complete",
       };
     });
+  }
+
+  /**
+   * Quests in the registry the player has not accepted yet, with the NPC who
+   * hands them out — the quest log doubles as a to-do list of people to meet.
+   * @returns {{ id: string, label: string, hint: string, giver: string }[]}
+   */
+  available() {
+    return Object.entries(this.defs)
+      .filter(([id]) => !this.quests[id])
+      .map(([id, def]) => ({
+        id,
+        label: def.label ?? id,
+        hint: def.hint ?? "",
+        giver: def.giverName ?? def.giver ?? "",
+      }));
   }
 
   summaryLines() {

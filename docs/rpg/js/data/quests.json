@@ -5,9 +5,9 @@
     "target": 5,
     "giver": "reef_docent",
     "category": "collection",
-    "autoStart": true,
     "reward": "Reef Photographer badge (cosmetic)",
-    "rewardItem": "reef_badge"
+    "rewardItem": "reef_badge",
+    "giverName": "Reef Docent"
   },
   "dana_lucky_hand": {
     "label": "Dana's Lucky Hand",
@@ -16,7 +16,8 @@
     "giver": "pit_blackjack",
     "category": "tables",
     "autoStart": true,
-    "reward": "Dealer's nod (cosmetic)"
+    "reward": "Dealer's nod (cosmetic)",
+    "giverName": "Blackjack Pit"
   },
   "bar_crawl": {
     "label": "Mandalay Bar Crawl",
@@ -25,7 +26,8 @@
     "giver": "barkeep_betty",
     "category": "amenities",
     "reward": "Betty's coaster (cosmetic)",
-    "rewardItem": "betty_coaster"
+    "rewardItem": "betty_coaster",
+    "giverName": "Barkeep Betty"
   },
   "dealer_meet_and_greet": {
     "label": "Meet the Pit",
@@ -34,7 +36,8 @@
     "giver": "pit_holdem",
     "category": "collection",
     "reward": "Pit regular lanyard (cosmetic)",
-    "rewardItem": "pit_lanyard"
+    "rewardItem": "pit_lanyard",
+    "giverName": "Hold'em Pit"
   },
   "jackpot_hunt": {
     "label": "Jackpot Hunt",
@@ -43,7 +46,8 @@
     "giver": "spinster_sal",
     "category": "slots",
     "reward": "Loose-slot map (cosmetic)",
-    "rewardItem": "loose_slot_map"
+    "rewardItem": "loose_slot_map",
+    "giverName": "Spinster Sal"
   },
   "room_vignettes": {
     "label": "Suite Stories",
@@ -52,7 +56,8 @@
     "giver": "clerk_carmen",
     "category": "hotel",
     "reward": "Do-not-disturb hanger (cosmetic)",
-    "rewardItem": "dnd_hanger"
+    "rewardItem": "dnd_hanger",
+    "giverName": "Clerk Carmen"
   },
   "pool_vignettes": {
     "label": "Eleven Acres",
@@ -61,7 +66,8 @@
     "giver": "lifeguard_lou",
     "category": "pool",
     "reward": "Wave pool wristband (cosmetic)",
-    "rewardItem": "wave_wristband"
+    "rewardItem": "wave_wristband",
+    "giverName": "Lifeguard Lou"
   },
   "sky_bridge_haul": {
     "label": "Sky Bridge Haul",
@@ -70,7 +76,8 @@
     "giver": "shop_clerk",
     "category": "amenities",
     "reward": "Mandalay Place tote (cosmetic)",
-    "rewardItem": "mandalay_tote"
+    "rewardItem": "mandalay_tote",
+    "giverName": "Shop Clerk"
   },
   "resort_completion": {
     "label": "Resort Completionist",
@@ -79,7 +86,8 @@
     "giver": "lobby_statue",
     "category": "meta",
     "reward": "Golden statue wink (cosmetic)",
-    "rewardItem": "statue_wink"
+    "rewardItem": "statue_wink",
+    "giverName": "Golden Statue"
   },
   "egg_hunt": {
     "label": "The Bay Remembers",
@@ -88,6 +96,7 @@
     "giver": "janitor_joe",
     "category": "secrets",
     "reward": "Back-of-house key ring (cosmetic)",
-    "rewardItem": "keyring"
+    "rewardItem": "keyring",
+    "giverName": "Janitor Joe"
   }
 }

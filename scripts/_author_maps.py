@@ -44,19 +44,26 @@ MAPS_SPEC: list[dict] = [
         "bgm": "lobby",
         "spawn": {"x": 15, "y": 26},
         "base": "WALL",
+        # Sidewalk south, the Boulevard across the middle, porte-cochère north.
         "rects": [
-            rect("ROAD", 1, 18, 28, 11),
-            rect("LOBBY", 6, 4, 18, 14),
+            rect("LOBBY", 2, 23, 26, 5),
+            rect("ROAD", 1, 17, 28, 6),
+            rect("LOBBY", 5, 3, 20, 14),
             rect("ROAD", 12, 1, 6, 4),
+            rect("SAND", 14, 17, 3, 6),
         ],
         "decor": [
-            points("PLANT", [(6, 6), (23, 6), (6, 15), (23, 15), (4, 20), (25, 20)]),
-            rect("SCREEN", 9, 3, 2, 1),
-            rect("SCREEN", 19, 3, 2, 1),
+            points("PLANT", [
+                (5, 5), (24, 5), (5, 15), (24, 15),
+                (5, 24), (24, 24), (9, 27), (20, 27),
+            ]),
+            rect("SCREEN", 8, 3, 2, 1),
+            rect("SCREEN", 20, 3, 2, 1),
+            rect("BAR", 11, 26, 4, 1),
         ],
         "doors": [
-            door(15, 4, "registration_lobby", 15, 27, "Through the gold doors — Mandalay Bay."),
-            door(3, 22, "valet_garage", 26, 15, "Valet ramp, level P1."),
+            door(15, 3, "registration_lobby", 15, 27, "Through the gold doors — Mandalay Bay."),
+            door(2, 24, "valet_garage", 26, 15, "Valet ramp, level P1."),
         ],
     },
     {
@@ -74,7 +81,7 @@ MAPS_SPEC: list[dict] = [
         ],
         "clear": [rect("ROAD", 26, 14, 2, 3), rect("ROAD", 14, 26, 3, 2)],
         "doors": [
-            door(27, 15, "strip_sidewalk", 4, 22, "Back out to the Boulevard."),
+            door(27, 15, "strip_sidewalk", 3, 24, "Back out to the Boulevard."),
             door(15, 27, "registration_lobby", 15, 4, "Elevator up to registration."),
         ],
     },
@@ -99,7 +106,7 @@ MAPS_SPEC: list[dict] = [
             rect("LOBBY", 25, 14, 3, 3),
         ],
         "doors": [
-            door(15, 27, "strip_sidewalk", 15, 5, "Out to the Boulevard."),
+            door(15, 27, "strip_sidewalk", 15, 4, "Out to the Boulevard."),
             door(15, 3, "main_resort", 15, 26, "Casino floor — north."),
             door(2, 15, "valet_garage", 15, 26, "Down to the garage."),
             door(27, 15, "hotel_tower", 15, 26, "Gold elevators to the tower."),
@@ -650,9 +657,9 @@ NPCS: dict[str, list[dict]] = {
     "strip_sidewalk": [
         {"id": "doorman_dante", "name": "Doorman Dante", "x": 15, "y": 6, "sprite": "npc_red",
          "dialogueId": "doorman_dante_greet", "direction": "down"},
-        {"id": "cab_line_carl", "name": "Cab Line Carl", "x": 9, "y": 21, "sprite": "npc_silver",
+        {"id": "cab_line_carl", "name": "Cab Line Carl", "x": 9, "y": 25, "sprite": "npc_silver",
          "dialogueId": "cab_line_carl_greet", "direction": "up",
-         "schedule": {"late": {"x": 20, "y": 21}}},
+         "schedule": {"late": {"x": 21, "y": 25}}},
     ],
     "valet_garage": [
         {"id": "valet_vic", "name": "Valet Vic", "x": 15, "y": 8, "sprite": "npc_orange",

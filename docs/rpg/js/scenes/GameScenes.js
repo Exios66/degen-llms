@@ -269,7 +269,8 @@ export class OverworldScene extends Phaser.Scene {
 
     this.cameras.main.fadeIn(300, 0, 0, 0);
 
-    if (!this.saveAdapter.hasFlag("tutorial_complete")) {
+    const hasGreeter = this.currentNpcs.some((n) => n.id === "chip_chandler");
+    if (hasGreeter && !this.saveAdapter.hasFlag("tutorial_complete")) {
       this.time.delayedCall(600, () => {
         this.canMove = false;
         this.dialogue.start("chip_chandler_intro").then(() => {

@@ -251,19 +251,37 @@ export class MenuOverlay {
 
   _renderQuests(body) {
     const entries = this.deps.questManager?.entries?.() ?? [];
-    if (!entries.length) {
+    const available = this.deps.questManager?.available?.() ?? [];
+    if (!entries.length && !available.length) {
       body.innerHTML = "<p class=\"dim\">No quests yet. Talk to the staff.</p>";
       return;
     }
+    if (entries.length) {
+      const ul = document.createElement("ul");
+      ul.className = "menu-quest-list";
+      for (const q of entries.sort((a, b) => Number(a.complete) - Number(b.complete))) {
+        const li = document.createElement("li");
+        li.className = q.complete ? "quest-complete" : "";
+        li.innerHTML = `<strong>${q.label}</strong>` +
+          `<span class="menu-detail">${q.complete ? "COMPLETE" : `${q.stage}/${q.target}`}</span>` +
+          (q.hint ? `<span class="dim">${q.hint}</span>` : "") +
+          (q.complete && q.reward ? `<span class="dim">Reward: ${q.reward}</span>` : "");
+        ul.appendChild(li);
+      }
+      body.appendChild(ul);
+    }
+    if (!available.length) return;
+    const h = document.createElement("h3");
+    h.textContent = "Not accepted yet";
+    body.appendChild(h);
     const ul = document.createElement("ul");
     ul.className = "menu-quest-list";
-    for (const q of entries.sort((a, b) => Number(a.complete) - Number(b.complete))) {
+    for (const q of available) {
       const li = document.createElement("li");
-      li.className = q.complete ? "quest-complete" : "";
+      li.className = "quest-locked";
       li.innerHTML = `<strong>${q.label}</strong>` +
-        `<span class="menu-detail">${q.complete ? "COMPLETE" : `${q.stage}/${q.target}`}</span>` +
-        (q.hint ? `<span class="dim">${q.hint}</span>` : "") +
-        (q.complete && q.reward ? `<span class="dim">Reward: ${q.reward}</span>` : "");
+        (q.giver ? `<span class="menu-detail">ask ${q.giver}</span>` : "") +
+        (q.hint ? `<span class="dim">${q.hint}</span>` : "");
       ul.appendChild(li);
     }
     body.appendChild(ul);

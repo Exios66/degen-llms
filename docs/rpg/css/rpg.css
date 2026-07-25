@@ -1085,6 +1085,11 @@ body {
   opacity: 0.75;
 }
 
+.menu-quest-list li.quest-locked {
+  border-left-style: dashed;
+  opacity: 0.6;
+}
+
 .menu-quest-list .menu-detail {
   margin-left: auto;
   color: var(--gold);

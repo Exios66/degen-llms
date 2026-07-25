@@ -24,7 +24,7 @@ import {
 import { formatVegasDateTimeShort } from "./vegas-time.js";
 
 export const CASINO_NAME = "The Mandalay Bay";
-export const SAVE_VERSION = 7;
+export const SAVE_VERSION = 8;
 
 export {
   formatCasinoTimeInGame,
@@ -35,10 +35,13 @@ export {
   getCasinoTimeMs,
 };
 
+/** New arrivals start on the sidewalk and walk in through the gold doors. */
+export const RPG_START_MAP = "strip_sidewalk";
+
 /** Default RPG overworld state for pixel mode (Phase 1+). */
 export function defaultRpgState(overrides = {}) {
   return {
-    mapId: "main_resort",
+    mapId: RPG_START_MAP,
     x: 15,
     y: 26,
     playerSprite: "weekend_warrior",
@@ -48,8 +51,41 @@ export function defaultRpgState(overrides = {}) {
     playTimeMinutes: 0,
     worldTime: 720,
     reputation: { whales: 0, staff: 0, tourists: 0 },
+    inventory: [],
+    dex: {},
+    eggs: {},
+    mapVisits: {},
+    options: { muted: false, textSpeed: "normal", footsteps: true },
     ...overrides,
   };
+}
+
+/**
+ * Fold a save's `rpg` blob forward to the v8 shape.
+ *
+ * v7 and earlier stored only position, flags, and quests; the collection
+ * buckets are added empty rather than derived, and existing keys are never
+ * renamed, so a v7 save loads with its progress intact. The pre-Phase-1
+ * `rpgData` blob is folded in here and no longer written back out.
+ * @param {object | null | undefined} rpg
+ * @param {{ flags?: Record<string, boolean> } | null} [legacyRpgData]
+ */
+export function migrateRpgState(rpg, legacyRpgData = null) {
+  const legacyFlags = legacyRpgData?.flags ?? null;
+  if (!rpg) {
+    if (!legacyFlags || !Object.keys(legacyFlags).length) return null;
+    return { ...defaultRpgState(), mapId: "main_resort", flags: { ...legacyFlags } };
+  }
+  const merged = { ...defaultRpgState(), ...rpg };
+  if (legacyFlags) merged.flags = { ...legacyFlags, ...merged.flags };
+  // A v7 save was mid-game on the old 9-map world; keep it where it stood.
+  if (!rpg.mapId) merged.mapId = "main_resort";
+  if (!Array.isArray(merged.inventory)) merged.inventory = [];
+  for (const key of ["dex", "eggs", "mapVisits"]) {
+    if (!merged[key] || typeof merged[key] !== "object") merged[key] = {};
+  }
+  merged.options = { ...defaultRpgState().options, ...(rpg.options ?? {}) };
+  return merged;
 }
 
 export const TransactionKind = {
@@ -192,7 +228,6 @@ export class PlayerSession {
     this.slotLabel = slotLabel;
     this.sportsbookData = null;
     this.rpg = null;
-    this.rpgData = null;
     this.rewards = null;
     this.hotel = null;
     this.amenities = null;
@@ -241,7 +276,6 @@ export class PlayerSession {
       useUnicode: this.useUnicode,
       activityStats: this.activityStats,
       sportsbook: this.sportsbookData ?? null,
-      rpgData: this.rpgData ?? null,
       progressivePools: this.progressivePools ?? {},
       horseRacingCustomNames: this.horseRacingCustomNames ?? null,
       horseRacingNameOffset: this.horseRacingNameOffset ?? 0,
@@ -276,8 +310,7 @@ export class PlayerSession {
     s.horseRacingCustomNames = data.horseRacingCustomNames ?? null;
     s.horseRacingNameOffset = data.horseRacingNameOffset ?? 0;
     s.horseRacingSpriteOffset = data.horseRacingSpriteOffset ?? 0;
-    s.rpg = data.rpg ? { ...defaultRpgState(), ...data.rpg } : null;
-    s.rpgData = data.rpgData ?? null;
+    s.rpg = migrateRpgState(data.rpg, data.rpgData);
     attachRewardsToSession(s, data);
     attachHotelToSession(s, data);
     attachAmenitiesToSession(s, data);
@@ -289,23 +322,6 @@ export class PlayerSession {
     s.casinoTimeMs = data.casinoTimeMs ?? 0;
     return s;
   }
-}
-
-export const DEFAULT_RPG_DATA = {
-  location: "main_lobby",
-  flags: {},
-};
-
-export function ensureRpgData(session) {
-  if (!session.rpgData) {
-    session.rpgData = { ...DEFAULT_RPG_DATA, flags: {} };
-  } else {
-    session.rpgData = {
-      location: session.rpgData.location ?? DEFAULT_RPG_DATA.location,
-      flags: { ...session.rpgData.flags },
-    };
-  }
-  return session.rpgData;
 }
 
 export const MAX_SLOTS = 5;

@@ -13,14 +13,14 @@
       "id": "cab_line_carl",
       "name": "Cab Line Carl",
       "x": 9,
-      "y": 21,
+      "y": 25,
       "sprite": "npc_silver",
       "dialogueId": "cab_line_carl_greet",
       "direction": "up",
       "schedule": {
         "late": {
-          "x": 20,
-          "y": 21
+          "x": 21,
+          "y": 25
         }
       }
     }

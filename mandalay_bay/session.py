@@ -25,6 +25,9 @@ class PlayerSession:
     slot_label: str = ""
     progressive_pools: dict[str, int] = field(default_factory=dict)
     casino_time_ms: int = 0
+    #: Save keys owned by the web build (pixel RPG state, web sportsbook) that
+    #: the CLI carries through untouched. See saves.WEB_ONLY_SAVE_KEYS.
+    web_only_state: dict = field(default_factory=dict)
 
     def stat_for(self, activity: str) -> ActivityStats:
         if activity not in self.activity_stats:

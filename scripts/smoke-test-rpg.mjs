@@ -24,6 +24,8 @@ const { HOSTED_ENCOUNTERS, TABLE_STAKE_ACTIVITIES } = await import(
 const { RPG_ITEMS } = await import(join(rpgRoot, "js/systems/Inventory.js"));
 const { DEX_REGISTRY } = await import(join(rpgRoot, "js/systems/Dex.js"));
 const { DEALER_ROSTER } = await import(join(here, "..", "docs", "js", "dealers.js"));
+const { PlayerSession, RPG_START_MAP, SAVE_VERSION, defaultRpgState } = await import(
+  join(here, "..", "docs", "js", "core.js"));
 
 const readJson = (rel) => JSON.parse(readFileSync(join(rpgRoot, rel), "utf8"));
 const dialogues = readJson("js/data/dialogues.json");
@@ -314,6 +316,48 @@ for (const [collection, entries] of Object.entries(DEX_REGISTRY)) {
     check(!ids.has(entry.id), `dex ${collection}: duplicate entry "${entry.id}"`);
     ids.add(entry.id);
   }
+}
+
+// ── Save migration ────────────────────────────────────────────────────────
+// A v7 save predates the collection buckets and the 28-map world. It must load
+// with its progress intact, keep its old map, and gain empty buckets.
+{
+  const v7 = {
+    version: 7,
+    playerName: "Legacy",
+    wallet: { balance: 3300, transactions: [] },
+    rpg: {
+      mapId: "main_resort",
+      x: 9,
+      y: 12,
+      archetype: "high_roller",
+      flags: { tutorial_complete: true, easter_cherry: true },
+      quests: { shark_photos: { progress: 3 } },
+    },
+    rpgData: { location: "main_lobby", flags: { hint_plants: true } },
+  };
+  const restored = PlayerSession.fromJSON(v7);
+  check(restored.rpg.mapId === "main_resort", "v7 save moved off its saved map");
+  check(restored.rpg.x === 9 && restored.rpg.y === 12, "v7 save lost its position");
+  check(restored.rpg.flags.tutorial_complete === true, "v7 save lost its flags");
+  check(restored.rpg.flags.hint_plants === true, "legacy rpgData flags were not folded in");
+  check(restored.rpg.quests.shark_photos?.progress === 3, "v7 save lost quest progress");
+  check(Array.isArray(restored.rpg.inventory), "v8 inventory bucket missing");
+  for (const key of ["dex", "eggs", "mapVisits", "options"]) {
+    check(restored.rpg[key] != null && typeof restored.rpg[key] === "object",
+      `v8 ${key} bucket missing`);
+  }
+  check(restored.rpg.options.textSpeed === "normal", "v8 options defaults missing");
+
+  const round = PlayerSession.fromJSON(restored.toJSON());
+  check(round.toJSON().version === SAVE_VERSION, "round trip did not stamp the new version");
+  check(round.toJSON().rpgData === undefined, "retired rpgData blob is still written");
+  check(round.rpg.flags.easter_cherry === true, "round trip dropped a flag");
+
+  const fresh = defaultRpgState();
+  check(fresh.mapId === RPG_START_MAP, "new games should start at the arrival map");
+  check(MAP_IDS.includes(fresh.mapId), `start map "${fresh.mapId}" is not in the world`);
+  check(connected(fresh.mapId, fresh.x, fresh.y), "new-game spawn is not walkable");
 }
 
 // ── Hosted encounters ─────────────────────────────────────────────────────

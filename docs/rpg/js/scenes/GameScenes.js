@@ -244,9 +244,16 @@ export class OverworldScene extends Phaser.Scene {
     for (const sign of signs) {
       const x = sign.x * TILE_SIZE + TILE_SIZE / 2;
       const y = sign.y * TILE_SIZE + TILE_SIZE / 2;
-      const bg = this.add.rectangle(x, y, sign.text.length * fontSize * 0.72 + 10, fontSize + 8, 0x0a0812, 0.82);
-      bg.setStrokeStyle(2, sign.stroke ?? "#e8c547");
+      const padW = sign.text.length * fontSize * 0.72 + 14;
+      const padH = fontSize + 10;
+      const glow = this.add.rectangle(x, y, padW + 4, padH + 4, 0xe8c547, 0.12);
+      glow.setDepth(2);
+      const bg = this.add.rectangle(x, y, padW, padH, 0x0a0812, 0.9);
+      bg.setStrokeStyle(2, sign.stroke ?? 0xe8c547);
       bg.setDepth(3);
+      const inner = this.add.rectangle(x, y, padW - 4, padH - 4, 0x14101f, 0.55);
+      inner.setStrokeStyle(1, 0x684810);
+      inner.setDepth(3);
       const text = this.add.text(x, y, sign.text, {
         fontFamily: "Press Start 2P",
         fontSize: `${fontSize}px`,
@@ -254,7 +261,7 @@ export class OverworldScene extends Phaser.Scene {
         stroke: sign.stroke ?? "#684810",
         strokeThickness: 2,
       }).setOrigin(0.5).setDepth(4);
-      this.zoneSigns.push(bg, text);
+      this.zoneSigns.push(glow, bg, inner, text);
     }
   }
 

@@ -381,7 +381,7 @@ export function renderHud(hudRoot, saveAdapter, questManager = null) {
       <span class="hud-name">${lines.name}</span>
       <span class="hud-chips">${lines.chips}</span>
       <span class="hud-time">${hour}:${mins}</span>
-      <span class="hud-hint">WASD/Arrows · E talk · P phone · T trainer · Shift run · badges ${badges}</span>
+      <span class="hud-hint">WASD move · E talk · Esc menu · P phone · Shift run · badges ${badges}</span>
     </div>
   `;
 }

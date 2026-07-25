@@ -25,6 +25,8 @@ TERMINAL_VIEWS = [
     "hotel-lobby", "hotel-front-desk", "hotel-dining", "casino-floor", "pool-complex",
 ]
 
+MENU_PAGES = ["root", "trainer", "quests", "dex", "bag", "eggs", "completion", "options"]
+
 IGNORED = (
     "favicon",
     "ERR_CONNECTION",
@@ -147,6 +149,18 @@ def main() -> int:
                 for err in errors:
                     failures.append(f"rpg encounter {encounter}: {err}")
                 print(f"  rpg/encounter/{encounter:<24} {'FAIL' if errors else 'ok'}")
+
+            for page_id in MENU_PAGES:
+                errors.clear()
+                page.evaluate("(p) => { window.__rpg.menu.close(); window.__rpg.menu.open(p); }", page_id)
+                page.wait_for_timeout(150)
+                text = page.inner_text("#menu-overlay")
+                if len(text.strip()) < 10:
+                    failures.append(f"rpg menu {page_id}: nothing rendered")
+                for err in errors:
+                    failures.append(f"rpg menu {page_id}: {err}")
+                print(f"  rpg/menu/{page_id:<29} {'FAIL' if errors else 'ok'}")
+            page.evaluate("() => window.__rpg.menu.close()")
 
         browser.close()
     httpd.shutdown()

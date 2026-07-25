@@ -12,6 +12,8 @@ import {
 } from "./systems/EncounterBridge.js";
 import { TerminalHostOverlay } from "./systems/TerminalHostOverlay.js";
 import { QuestManager } from "./systems/QuestManager.js";
+import { MenuOverlay } from "./systems/MenuOverlay.js";
+import { loadEggRegistry, syncEggsFromFlags, discoverEgg } from "./systems/EasterEggs.js";
 import { audioManager } from "./systems/AudioManager.js";
 import { TILE_SIZE, MAP_WIDTH, MAP_HEIGHT } from "./systems/MapData.js";
 import { RewardsPhone } from "../../js/RewardsPhone.js";
@@ -31,6 +33,7 @@ let rewardsPhone = null;
 let questManager = null;
 let encounters = null;
 let terminalHost = null;
+let menu = null;
 
 const hudRoot = document.getElementById("hud");
 const rewardsRoot = document.getElementById("rewards-phone");
@@ -88,13 +91,13 @@ async function loadDialogues() {
   return res.json();
 }
 
-async function loadTriggers() {
+async function loadJson(path, fallback) {
   try {
-    const res = await fetch("js/data/triggers.json");
-    if (!res.ok) return [];
-    return res.json();
+    const res = await fetch(path);
+    if (!res.ok) return fallback;
+    return await res.json();
   } catch {
-    return [];
+    return fallback;
   }
 }
 
@@ -110,14 +113,26 @@ async function startOverworld(activeSession) {
   syncContactIntros(session);
   dialogue.setFlags(rpg.flags ?? {});
 
+  const [dialogues, triggers, questDefs, eggDefs] = await Promise.all([
+    loadDialogues(),
+    loadJson("js/data/triggers.json", []),
+    loadJson("js/data/quests.json", null),
+    loadJson("js/data/easter_eggs.json", null),
+  ]);
+  loadEggRegistry(eggDefs);
+  syncEggsFromFlags(session);
+
   questManager = new QuestManager(session, {
     onUpdate: () => {
       persistAll();
       renderHud(hudRoot, saveAdapter, questManager);
     },
+    onComplete: (id, def) => {
+      audioManager.sfx("secret");
+      dialogue.showSystemMessage?.(`Quest complete — ${def?.label ?? id}${def?.reward ? ` · ${def.reward}` : ""}`);
+    },
   });
-  questManager.start("shark_photos", 5);
-  questManager.start("dana_lucky_hand", 1);
+  questManager.loadRegistry(questDefs);
   dialogue.setQuestManager?.(questManager);
 
   rewardsPhone = new RewardsPhone(rewardsRoot, session, {
@@ -159,9 +174,27 @@ async function startOverworld(activeSession) {
     },
   });
 
-  renderHud(hudRoot, saveAdapter, questManager);
+  menu = new MenuOverlay(document.getElementById("menu-overlay"), session, {
+    saveAdapter,
+    questManager,
+    terminalHost,
+    rewardsPhone,
+    audio: audioManager,
+    onPersist: () => persistAll(),
+    onClose: () => {
+      renderHud(hudRoot, saveAdapter, questManager);
+      game?.scene?.getScene("OverworldScene")?.resumeFromMenu?.();
+    },
+    onTextSpeed: (speed) => dialogue.setTextSpeed?.(speed),
+    onExit: () => {
+      const url = session.slotId != null ? `../index.html?slot=${session.slotId}` : "../index.html?guest=1";
+      window.location.href = url;
+    },
+  });
+  audioManager.setMuted?.(Boolean(saveAdapter.rpg.options?.muted));
+  dialogue.setTextSpeed?.(saveAdapter.rpg.options?.textSpeed ?? "normal");
 
-  const [dialogues, triggers] = await Promise.all([loadDialogues(), loadTriggers()]);
+  renderHud(hudRoot, saveAdapter, questManager);
   dialogue.load(dialogues);
 
   if (game) {
@@ -205,6 +238,7 @@ async function startOverworld(activeSession) {
     terminalHost,
     questManager,
     dialogue,
+    get menu() { return menu; },
   };
 
   game.scene.start("OverworldScene", {
@@ -216,6 +250,16 @@ async function startOverworld(activeSession) {
     triggers,
     questManager,
     audio: audioManager,
+    onOpenMenu: (page) => menu?.open(page),
+    isMenuOpen: () => Boolean(menu?.isActive()),
+    onMapBanner: (label, phaseLabel) => showMapBanner(label, phaseLabel),
+    onEgg: (eggId) => {
+      if (!discoverEgg(session, eggId)) return;
+      audioManager.sfx("secret");
+      persistAll();
+      renderHud(hudRoot, saveAdapter, questManager);
+      questManager?.syncDerived?.();
+    },
     onHudUpdate: (opts) => {
       renderHud(hudRoot, saveAdapter, questManager);
       rewardsPhone?.sync();
@@ -224,6 +268,26 @@ async function startOverworld(activeSession) {
       }
     },
   });
+}
+
+let mapBannerTimer = null;
+
+/** Pokémon-style room placard on every map transition. */
+function showMapBanner(label, phaseLabel) {
+  const root = document.getElementById("map-banner");
+  if (!root) return;
+  root.innerHTML = `<strong>${label}</strong>${phaseLabel ? `<span>${phaseLabel}</span>` : ""}`;
+  root.hidden = false;
+  root.classList.remove("map-banner--out");
+  // Restart the CSS animation on back-to-back transitions.
+  void root.offsetWidth;
+  root.classList.add("map-banner--in");
+  clearTimeout(mapBannerTimer);
+  mapBannerTimer = setTimeout(() => {
+    root.classList.remove("map-banner--in");
+    root.classList.add("map-banner--out");
+    mapBannerTimer = setTimeout(() => { root.hidden = true; }, 400);
+  }, 2200);
 }
 
 const title = new TitleScreen(titleRoot, (s) => {

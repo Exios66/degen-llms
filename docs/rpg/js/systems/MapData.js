@@ -212,10 +212,10 @@ export const NPCS = [
     id: "high_limit_host",
     name: "High Limit Host",
     x: 15,
-    y: 3,
+    y: 5,
     sprite: "npc_gold",
     dialogueId: "high_limit_host_greet",
-    encounter: "slots_high_roller",
+    encounter: "high_limit_salon",
     direction: "down",
   },
   {
@@ -312,7 +312,9 @@ export const SPAWN_DEFAULT = { x: 15, y: 26 };
 export const DOOR_TRIGGERS = [
   { mapId: "main_resort", x: 26, y: 21, targetMap: "hotel_tower", targetX: 15, targetY: 26, message: "Gold elevator to the hotel tower." },
   { mapId: "main_resort", x: 3, y: 21, targetMap: "mandalay_beach", targetX: 15, targetY: 26, message: "Exit to the 11-acre pool complex." },
-  { mapId: "main_resort", x: 15, y: 2, targetMap: "foundation_room", targetX: 15, targetY: 26, message: "Foundation Room — VIP only.", requiresChips: 10000, highRollerAlt: 5000 },
+  { mapId: "main_resort", x: 15, y: 2, targetMap: "high_limit_salon", targetX: 15, targetY: 26, message: "High Limit Salon — velvet rope.", venueGate: "high_limit_salon" },
+  { mapId: "high_limit_salon", x: 15, y: 28, targetMap: "main_resort", targetX: 15, targetY: 6, message: "Back to the main floor." },
+  { mapId: "high_limit_salon", x: 15, y: 2, targetMap: "foundation_room", targetX: 15, targetY: 26, message: "Foundation Room — Noir members only.", venueGate: "foundation_room" },
   { mapId: "main_resort", x: 1, y: 15, targetMap: "house_of_blues", targetX: 15, targetY: 26, message: "House of Blues stage door." },
   { mapId: "main_resort", x: 28, y: 15, targetMap: "ultra_arena", targetX: 15, targetY: 26, message: "Michelob ULTRA Arena." },
   { mapId: "hotel_tower", x: 15, y: 28, targetMap: "main_resort", targetX: 26, targetY: 22, message: "Elevator down to casino lobby." },
@@ -321,7 +323,7 @@ export const DOOR_TRIGGERS = [
   { mapId: "shark_reef", x: 15, y: 28, targetMap: "mandalay_beach", targetX: 8, targetY: 9, message: "Back to the pool deck." },
   { mapId: "house_of_blues", x: 15, y: 28, targetMap: "main_resort", targetX: 2, targetY: 15, message: "Back to the casino." },
   { mapId: "ultra_arena", x: 15, y: 28, targetMap: "main_resort", targetX: 27, targetY: 15, message: "Back to the casino." },
-  { mapId: "foundation_room", x: 15, y: 28, targetMap: "main_resort", targetX: 15, targetY: 3, message: "Back to the high limit salon." },
+  { mapId: "foundation_room", x: 15, y: 28, targetMap: "high_limit_salon", targetX: 15, targetY: 4, message: "Back to the high limit salon." },
   { mapId: "staff_corridor", x: 15, y: 28, targetMap: "main_resort", targetX: 15, targetY: 2, message: "Slip back onto the floor." },
   { mapId: "main_resort", x: 15, y: 1, targetMap: "staff_corridor", targetX: 15, targetY: 26, message: "STAFF ONLY — you found the back room.", requiresFlag: "hint_north_wall" },
 ];
@@ -448,6 +450,39 @@ export const MAP_NPCS = {
       direction: "left",
     },
   ],
+  high_limit_salon: [
+    {
+      id: "salon_pit_boss",
+      name: "Salon Pit Boss",
+      x: 15,
+      y: 20,
+      sprite: "npc_gold",
+      dialogueId: "salon_pit_boss_greet",
+      encounter: "high_limit_salon",
+      direction: "down",
+    },
+    {
+      id: "salon_dealer",
+      name: "Salon Dealer",
+      x: 15,
+      y: 12,
+      sprite: "npc_green",
+      dialogueId: "salon_dealer_greet",
+      zone: "blackjack",
+      encounter: "blackjack",
+      direction: "down",
+    },
+    {
+      id: "salon_cage",
+      name: "Salon Cage",
+      x: 9,
+      y: 22,
+      sprite: "npc_silver",
+      dialogueId: "salon_cage_greet",
+      encounter: "cashier",
+      direction: "right",
+    },
+  ],
   staff_corridor: [
     {
       id: "janitor_joe",
@@ -564,6 +599,27 @@ export function buildStaffCorridorLayers() {
   return buildCorridorMap(TILE.CARPET, TILE.BAR);
 }
 
+export function buildHighLimitSalonLayers() {
+  const { ground, collision, decor } = emptyLayers();
+  for (let y = 1; y < MAP_HEIGHT - 1; y++) {
+    for (let x = 1; x < MAP_WIDTH - 1; x++) {
+      let tile = TILE.WALL;
+      let decorTile = 0;
+      if (x >= 6 && x <= 23 && y >= 3 && y <= 27) tile = TILE.VIP;
+      if (x >= 9 && x <= 20 && y >= 8 && y <= 18) tile = TILE.FELT;
+      if (tile === TILE.VIP && (x === 7 || x === 22) && y >= 10 && y <= 20) decorTile = TILE.SLOT;
+      if (y === 5 && x >= 13 && x <= 17) tile = TILE.VIP;
+      ground[y][x] = tile;
+      decor[y][x] = decorTile;
+    }
+  }
+  // Keep the north and south thresholds walkable so the warps are reachable.
+  for (const y of [1, 2, 28]) {
+    for (let x = 14; x <= 16; x++) ground[y][x] = TILE.VIP;
+  }
+  return finalize(ground, collision, decor);
+}
+
 export const MAP_REGISTRY = {
   main_resort: { build: buildMapLayers, spawn: { x: 15, y: 26 }, label: "Casino Lobby" },
   hotel_tower: { build: buildHotelTowerLayers, spawn: { x: 15, y: 26 }, label: "Hotel Tower" },
@@ -573,6 +629,7 @@ export const MAP_REGISTRY = {
   ultra_arena: { build: buildUltraArenaLayers, spawn: { x: 15, y: 26 }, label: "ULTRA Arena" },
   foundation_room: { build: buildFoundationRoomLayers, spawn: { x: 15, y: 26 }, label: "Foundation Room" },
   staff_corridor: { build: buildStaffCorridorLayers, spawn: { x: 15, y: 26 }, label: "Staff Corridor" },
+  high_limit_salon: { build: buildHighLimitSalonLayers, spawn: { x: 15, y: 26 }, label: "High Limit Salon" },
 };
 
 export function getMapDefinition(mapId) {
@@ -583,11 +640,29 @@ export function buildMapLayersForId(mapId) {
   return getMapDefinition(mapId).build();
 }
 
-/** Resolve NPC position accounting for day/night schedule. */
-export function resolveNpcPosition(npc, worldTimeMinutes = 720) {
-  const isNight = worldTimeMinutes >= 1200 || worldTimeMinutes < 360;
-  if (isNight && npc.schedule?.night) {
-    return { x: npc.schedule.night.x, y: npc.schedule.night.y };
-  }
+/** Day-phase ids from world-cycle.js, in order. */
+export const PHASE_KEYS = ["dawn", "midday", "dusk", "late"];
+
+/**
+ * Resolve an NPC's position for the current world phase.
+ *
+ * Schedules may be keyed by world-cycle phase (`dawn`/`midday`/`dusk`/`late`)
+ * or by the older `night` key, which still covers dusk and late night.
+ *
+ * @param {object} npc
+ * @param {number} [worldTimeMinutes] legacy footstep clock, used when no phase is given
+ * @param {number} [phaseId] world-cycle phase index (0-3)
+ */
+export function resolveNpcPosition(npc, worldTimeMinutes = 720, phaseId = null) {
+  const schedule = npc.schedule;
+  if (!schedule) return { x: npc.x, y: npc.y };
+
+  const idx = phaseId != null
+    ? phaseId
+    : (worldTimeMinutes >= 1200 || worldTimeMinutes < 360 ? 3 : 1);
+  const byPhase = schedule[PHASE_KEYS[idx]];
+  if (byPhase) return { x: byPhase.x, y: byPhase.y };
+  if (idx >= 2 && schedule.night) return { x: schedule.night.x, y: schedule.night.y };
+  if (idx < 2 && schedule.day) return { x: schedule.day.x, y: schedule.day.y };
   return { x: npc.x, y: npc.y };
 }

@@ -13,6 +13,12 @@ export class DialogueManager {
     this.flags = {};
     this._resolve = null;
     this._active = false;
+    this._typeDelayMs = 18;
+  }
+
+  /** @param {"slow"|"normal"|"fast"} speed */
+  setTextSpeed(speed) {
+    this._typeDelayMs = { slow: 34, normal: 18, fast: 6 }[speed] ?? 18;
   }
 
   load(dialogues) {
@@ -139,7 +145,7 @@ export class DialogueManager {
         textEl.textContent = fullText.slice(0, idx);
         idx += 1;
         if (idx <= fullText.length) {
-          setTimeout(typeTick, 18);
+          setTimeout(typeTick, this._typeDelayMs);
         } else {
           typing = false;
           this._afterText(node, box, advanceHint);

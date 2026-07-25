@@ -7,6 +7,26 @@ import {
 import { getSessionDealer } from "../../../js/dealers.js";
 import { resolveNpc } from "../../../js/staff-manifest.js";
 import { audioManager } from "../systems/AudioManager.js";
+import { getWorldPhase, syncWorldCycle } from "../../../js/world-cycle.js";
+import { tierForWagered } from "../../../js/rewards.js";
+import { tierIndex } from "../../../js/rewards-perks.js";
+import { recordDex } from "../systems/Dex.js";
+import { discoverEgg, eggForFlag } from "../systems/EasterEggs.js";
+
+/** Extra walk speed per MGM Rewards tier, plus the comped cart bonus. */
+const SPEED_PER_TIER = 6;
+const GOLF_CART_BONUS = 34;
+const GOLF_CART_TIER_IDX = 3;
+
+/** Per-surface footstep sound. */
+const FOOTSTEP_SFX = {
+  [TILE.LOBBY]: "foot_lobby",
+  [TILE.CARPET]: "foot_carpet",
+  [TILE.FELT]: "foot_felt",
+  [TILE.VIP]: "foot_vip",
+  [TILE.AQUA]: "foot_water",
+  [TILE.WATER]: "foot_water",
+};
 
 export class OverworldScene extends Phaser.Scene {
   constructor() {
@@ -23,6 +43,9 @@ export class OverworldScene extends Phaser.Scene {
     this.triggers = data.triggers ?? [];
     this.questManager = data.questManager ?? null;
     this.audio = data.audio ?? audioManager;
+    this.onOpenMenu = data.onOpenMenu ?? null;
+    this.isMenuOpen = data.isMenuOpen ?? (() => false);
+    this.onMapBanner = data.onMapBanner ?? null;
   }
 
   create() {
@@ -90,11 +113,15 @@ export class OverworldScene extends Phaser.Scene {
 
     this.physics.world.setBounds(0, 0, MAP_WIDTH * TILE_SIZE, MAP_HEIGHT * TILE_SIZE);
 
+    // world-cycle.js is the single clock: the overworld tint and NPC schedules
+    // both read its day phase, and rpg.worldTime mirrors it for older saves.
+    syncWorldCycle(this.session);
+    this.dayPhase = getWorldPhase(this.session);
     const worldTime = spawn.worldTime ?? 720;
     this.npcSprites = new Map();
     this.npcLabels = new Map();
     this.currentNpcs = getNpcsForMap(mapId).map((npc) => {
-      const pos = resolveNpcPosition(npc, worldTime);
+      const pos = resolveNpcPosition(npc, worldTime, this.dayPhase?.id);
       return { ...npc, x: pos.x, y: pos.y };
     });
     for (const npc of this.currentNpcs) {
@@ -181,6 +208,8 @@ export class OverworldScene extends Phaser.Scene {
       space: Phaser.Input.Keyboard.KeyCodes.SPACE,
       shift: Phaser.Input.Keyboard.KeyCodes.SHIFT,
       t: Phaser.Input.Keyboard.KeyCodes.T,
+      esc: Phaser.Input.Keyboard.KeyCodes.ESC,
+      x: Phaser.Input.Keyboard.KeyCodes.X,
     });
 
     this.cameras.main.setBounds(0, 0, MAP_WIDTH * TILE_SIZE, MAP_HEIGHT * TILE_SIZE);
@@ -207,6 +236,10 @@ export class OverworldScene extends Phaser.Scene {
     this._applyDayNightTint(worldTime);
     this.audio?.playBgm?.(this.audio.bgmForMap(mapId));
 
+    this._recordMapVisit(mapId);
+    this._applyWalkSpeed();
+    this.onMapBanner?.(getMapDefinition(mapId).label ?? mapId, this.dayPhase?.label ?? "");
+
     this.onHudUpdate?.();
     this.scale.on("resize", this._fitCamera, this);
     this._fitCamera();
@@ -227,8 +260,34 @@ export class OverworldScene extends Phaser.Scene {
     window.__rpgReady = true;
   }
 
+  /** First visit to a room counts toward exploration and the trainer card. */
+  _recordMapVisit(mapId) {
+    const rpg = this.saveAdapter.rpg;
+    if (!rpg.mapVisits || typeof rpg.mapVisits !== "object") rpg.mapVisits = {};
+    const first = !rpg.mapVisits[mapId];
+    rpg.mapVisits[mapId] = (rpg.mapVisits[mapId] ?? 0) + 1;
+    if (first) this.saveAdapter.persist();
+  }
+
+  /**
+   * Walk speed scales with MGM Rewards tier; Platinum+ guests get the comped
+   * golf cart, which is the RPG's bicycle.
+   */
+  _applyWalkSpeed() {
+    const rpg = this.saveAdapter.rpg;
+    const idx = tierIndex(tierForWagered(this.session.rewards?.lifetimeWagered ?? 0).id);
+    if (idx >= GOLF_CART_TIER_IDX && !rpg.flags.comped_golf_cart) {
+      rpg.flags.comped_golf_cart = true;
+      this.dialogue?.showSystemMessage?.("A host tosses you the keys to a comped golf cart. Hold Shift.");
+    }
+    const cart = rpg.flags.comped_golf_cart ? GOLF_CART_BONUS : 0;
+    this.walkSpeed = 88 + idx * SPEED_PER_TIER;
+    this.runSpeed = 130 + idx * SPEED_PER_TIER * 2 + cart;
+  }
+
   _applyDayNightTint(worldTime) {
-    const isNight = worldTime >= 1200 || worldTime < 360;
+    const phaseId = this.dayPhase?.id;
+    const isNight = phaseId != null ? phaseId >= 2 : (worldTime >= 1200 || worldTime < 360);
     if (isNight) {
       this.cameras.main.setBackgroundColor("#080610");
       this.tweens.add({
@@ -301,7 +360,8 @@ export class OverworldScene extends Phaser.Scene {
       this.playerShadow.setPosition(this.player.x, this.player.y + 9);
     }
 
-    if (!this.canMove || this.dialogue.isActive() || this.encounters.isAnyActive?.() || this.encounters.blackjack?.isActive()) {
+    if (!this.canMove || this.isMenuOpen?.() || this.dialogue.isActive()
+        || this.encounters.isAnyActive?.() || this.encounters.blackjack?.isActive()) {
       this.player.body.setVelocity(0, 0);
       if (this._moving) {
         this._moving = false;
@@ -310,12 +370,17 @@ export class OverworldScene extends Phaser.Scene {
       return;
     }
 
+    if (Phaser.Input.Keyboard.JustDown(this.keys.esc) || Phaser.Input.Keyboard.JustDown(this.keys.x)) {
+      this.onOpenMenu?.();
+      return;
+    }
     if (Phaser.Input.Keyboard.JustDown(this.keys.t)) {
-      this.onHudUpdate?.({ trainerCard: true });
+      this.onOpenMenu?.("trainer");
+      return;
     }
 
     const run = this.moveKeys?.run || this._isKeyDown(this.keys.shift);
-    const speed = run ? 130 : 88;
+    const speed = run ? (this.runSpeed ?? 130) : (this.walkSpeed ?? 88);
     const { x: mx, y: my } = this._readMoveVector();
 
     let vx = mx * speed;
@@ -336,10 +401,11 @@ export class OverworldScene extends Phaser.Scene {
       this._footTimer += delta;
       if (this._footTimer > 200) {
         this._footTimer = 0;
-        const tx = Math.floor(this.player.x / TILE_SIZE);
-        const ty = Math.floor(this.player.y / TILE_SIZE);
-        const tile = this.groundGrid?.[ty]?.[tx];
-        this.audio?.sfx?.(tile === TILE.LOBBY ? "foot_lobby" : "foot_carpet");
+        if (this.saveAdapter.rpg.options?.footsteps !== false) {
+          const tx = Math.floor(this.player.x / TILE_SIZE);
+          const ty = Math.floor(this.player.y / TILE_SIZE);
+          this.audio?.sfx?.(FOOTSTEP_SFX[this.groundGrid?.[ty]?.[tx]] ?? "foot_carpet");
+        }
         this._advanceWorldTime(1);
       }
     }
@@ -350,6 +416,7 @@ export class OverworldScene extends Phaser.Scene {
     }
 
     this._updateNearbyNpc();
+    this._checkChallengers();
     this._checkDoorTriggers();
     this._checkZoneTriggers();
 
@@ -452,6 +519,85 @@ export class OverworldScene extends Phaser.Scene {
     }
   }
 
+  /**
+   * Trainer-battle logic: an NPC with a `sight` cone notices the player
+   * walking through it, marches over, and starts its dialogue/encounter.
+   * Each challenger fires once per save.
+   */
+  _checkChallengers() {
+    if (this._challengeRunning) return;
+    const px = Math.floor(this.player.x / TILE_SIZE);
+    const py = Math.floor(this.player.y / TILE_SIZE);
+    for (const npc of this.currentNpcs ?? []) {
+      if (!npc.sight) continue;
+      if (this.saveAdapter.hasFlag(`challenged_${npc.id}`)) continue;
+      if (!this._inSightCone(npc, px, py)) continue;
+      this._runChallenge(npc);
+      return;
+    }
+  }
+
+  _inSightCone(npc, px, py) {
+    const { dir = npc.direction ?? "down", range = 4 } = npc.sight;
+    const dx = px - npc.x;
+    const dy = py - npc.y;
+    const axis = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] }[dir] ?? [0, 1];
+    const along = dx * axis[0] + dy * axis[1];
+    const across = axis[0] === 0 ? dx : dy;
+    if (along < 1 || along > range || across !== 0) return false;
+    // Walls break line of sight.
+    for (let step = 1; step < along; step += 1) {
+      if (this._isBlocked(npc.x + axis[0] * step, npc.y + axis[1] * step)) return false;
+    }
+    return true;
+  }
+
+  async _runChallenge(npc) {
+    this._challengeRunning = true;
+    this.saveAdapter.setFlag(`challenged_${npc.id}`);
+    this.canMove = false;
+    this.player.body.setVelocity(0, 0);
+
+    const sprite = this.npcSprites.get(npc.id);
+    this.audio?.sfx?.("secret");
+    const bang = this.add.text(
+      npc.x * TILE_SIZE + TILE_SIZE / 2,
+      npc.y * TILE_SIZE - 14,
+      "!",
+      { fontFamily: "Press Start 2P", fontSize: "10px", color: "#f07178", stroke: "#0a0812", strokeThickness: 3 }
+    ).setOrigin(0.5).setDepth(120);
+
+    if (sprite) {
+      await new Promise((resolve) => {
+        this.tweens.add({
+          targets: sprite,
+          x: this.player.x,
+          y: this.player.y + TILE_SIZE,
+          duration: 420,
+          ease: "Linear",
+          onComplete: resolve,
+        });
+      });
+    }
+    bang.destroy();
+
+    const result = await this.dialogue.start(npc.challengeDialogueId ?? npc.dialogueId);
+    const encounterId = result.encounter || npc.encounter;
+    if (encounterId) {
+      await this._runEncounter(encounterId, npc, npc.zone ? this._dealerForZone(npc.zone) : null);
+    }
+    this._challengeRunning = false;
+    this.canMove = true;
+    this.onHudUpdate?.();
+  }
+
+  /** Called by main.js when the START menu closes. */
+  resumeFromMenu() {
+    this.canMove = true;
+    this._applyWalkSpeed();
+    this.onHudUpdate?.();
+  }
+
   _isFacingNpc(npc) {
     const px = this.player.x;
     const py = this.player.y;
@@ -486,7 +632,8 @@ export class OverworldScene extends Phaser.Scene {
     return this.dialogues[greetId] ? greetId : greetId;
   }
 
-  _checkDoorTriggers() {
+  async _checkDoorTriggers() {
+    if (this._gateBusy) return;
     const tx = Math.floor(this.player.x / TILE_SIZE);
     const ty = Math.floor(this.player.y / TILE_SIZE);
     const key = `${tx},${ty}`;
@@ -507,6 +654,24 @@ export class OverworldScene extends Phaser.Scene {
         : trigger.requiresChips;
       if (this.session.wallet.balance < need) {
         this.dialogue.showSystemMessage(`Need ${need.toLocaleString()} chips to enter.`);
+        return;
+      }
+    }
+    if (trigger.venueGate) {
+      // The salon gate can open the stake picker, so hold the player at the
+      // rope until the check settles.
+      this._gateBusy = true;
+      this.canMove = false;
+      this.player.body.setVelocity(0, 0);
+      let gate = { ok: true };
+      try {
+        gate = (await this.encounters?.checkVenue?.(trigger.venueGate)) ?? { ok: true };
+      } finally {
+        this._gateBusy = false;
+        this.canMove = true;
+      }
+      if (!gate.ok) {
+        this.dialogue.showSystemMessage(gate.reason ?? "The velvet rope stays closed.");
         return;
       }
     }
@@ -559,7 +724,11 @@ export class OverworldScene extends Phaser.Scene {
   }
 
   async _tryInteract() {
-    if (!this.nearbyNpc) return;
+    if (!this.nearbyNpc) {
+      // Nothing to talk to — the confirm key doubles as START, Pokémon-style.
+      this.onOpenMenu?.();
+      return;
+    }
     const npc = this.nearbyNpc;
     let dialogueId = npc.dialogueId;
     let activeDealer = null;
@@ -601,18 +770,58 @@ export class OverworldScene extends Phaser.Scene {
     this.onHudUpdate?.();
   }
 
+  /** Pokémon-style pixel wipe into an encounter, with the BGM ducked. */
+  _encounterWipe() {
+    const cam = this.cameras.main;
+    const cell = 24;
+    const cols = Math.ceil((MAP_WIDTH * TILE_SIZE) / cell);
+    const rows = Math.ceil((MAP_HEIGHT * TILE_SIZE) / cell);
+    const squares = [];
+    for (let row = 0; row < rows; row += 1) {
+      for (let col = 0; col < cols; col += 1) {
+        const rect = this.add.rectangle(
+          col * cell + cell / 2, row * cell + cell / 2, cell, cell, 0x0a0812, 1
+        ).setDepth(150).setAlpha(0);
+        squares.push({ rect, delay: (col + row) * 6 });
+      }
+    }
+    cam.flash(120, 232, 197, 71);
+    for (const { rect, delay } of squares) {
+      this.tweens.add({ targets: rect, alpha: 1, duration: 90, delay });
+    }
+    return () => {
+      for (const { rect, delay } of squares) {
+        this.tweens.add({
+          targets: rect,
+          alpha: 0,
+          duration: 110,
+          delay: delay / 2,
+          onComplete: () => rect.destroy(),
+        });
+      }
+    };
+  }
+
   async _runEncounter(encounterId, npc, dealerProfile = null) {
-    this.scene.pause();
+    const clearWipe = this._encounterWipe();
     this.canMove = false;
-    this.cameras.main.flash(120, 20, 10, 40);
     this.audio?.sfx?.("click");
+    this.audio?.duck?.();
+    if (dealerProfile?.id) recordDex(this.session, "staff", dealerProfile.id);
+    if (npc?.id) recordDex(this.session, "staff", npc.id);
+
+    // The scene keeps ticking (update() no-ops while an encounter is active)
+    // so the wipe tweens can play out behind the overlay.
     await this.encounters.start(encounterId, {
-      dealerName: npc.name,
+      dealerName: npc?.name,
       dealerProfile: dealerProfile ?? null,
     });
-    this.scene.resume();
+
+    clearWipe();
+    this.audio?.unduck?.();
     this.canMove = true;
     this._advanceWorldTime(5);
+    this.questManager?.syncDerived?.();
     this.saveAdapter.persist();
     this.onHudUpdate?.();
   }

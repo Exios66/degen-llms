@@ -1,0 +1,84 @@
+{
+  "shark_photos": {
+    "label": "Shark Reef Photographer",
+    "hint": "Photograph all five Shark Reef species.",
+    "target": 5,
+    "giver": "reef_docent",
+    "category": "collection",
+    "autoStart": true,
+    "reward": "Reef Photographer badge (cosmetic)"
+  },
+  "dana_lucky_hand": {
+    "label": "Dana's Lucky Hand",
+    "hint": "Sit down at the blackjack pit at least once.",
+    "target": 1,
+    "giver": "pit_blackjack",
+    "category": "tables",
+    "autoStart": true,
+    "reward": "Dealer's nod (cosmetic)"
+  },
+  "bar_crawl": {
+    "label": "Mandalay Bar Crawl",
+    "hint": "Order a drink at all three resort bars.",
+    "target": 3,
+    "giver": "barkeep_betty",
+    "category": "amenities",
+    "reward": "Betty's coaster (cosmetic)"
+  },
+  "dealer_meet_and_greet": {
+    "label": "Meet the Pit",
+    "hint": "Meet every dealer working the pits tonight.",
+    "target": 7,
+    "giver": "pit_holdem",
+    "category": "collection",
+    "reward": "Pit regular lanyard (cosmetic)"
+  },
+  "jackpot_hunt": {
+    "label": "Jackpot Hunt",
+    "hint": "Play eight different slot machines on the floor.",
+    "target": 8,
+    "giver": "spinster_sal",
+    "category": "slots",
+    "reward": "Loose-slot map (cosmetic)"
+  },
+  "room_vignettes": {
+    "label": "Suite Stories",
+    "hint": "Unlock five in-room vignettes upstairs.",
+    "target": 5,
+    "giver": "clerk_carmen",
+    "category": "hotel",
+    "reward": "Do-not-disturb hanger (cosmetic)"
+  },
+  "pool_vignettes": {
+    "label": "Eleven Acres",
+    "hint": "Trigger four vignettes across the pool complex.",
+    "target": 4,
+    "giver": "lifeguard_lou",
+    "category": "pool",
+    "reward": "Wave pool wristband (cosmetic)"
+  },
+  "sky_bridge_haul": {
+    "label": "Sky Bridge Haul",
+    "hint": "Carry six purchases back across the sky bridge.",
+    "target": 6,
+    "giver": "shop_clerk",
+    "category": "amenities",
+    "reward": "Mandalay Place tote (cosmetic)"
+  },
+  "resort_completion": {
+    "label": "Resort Completionist",
+    "hint": "Finish the resort completion tracker.",
+    "target": 100,
+    "giver": "lobby_statue",
+    "category": "meta",
+    "reward": "Golden statue wink (cosmetic)"
+  },
+  "egg_hunt": {
+    "label": "The Bay Remembers",
+    "hint": "Find the resort's hidden easter eggs.",
+    "target": 10,
+    "giver": "janitor_joe",
+    "category": "secrets",
+    "reward": "Back-of-house key ring (cosmetic)"
+  }
+}

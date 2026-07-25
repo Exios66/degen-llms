@@ -1219,6 +1219,12 @@ body.has-touch-pad .rewards-phone-root {
   bottom: auto;
 }
 
+/* The flip phone floats over everything in the terminal build. In here it has
+   to sit under the pixel panels, or its badge covers the menu's chip total. */
+body .rewards-phone-root {
+  z-index: 18;
+}
+
 /* Landscape phones have no room for a tall stack. */
 @media (orientation: landscape) and (max-height: 480px) {
   .touch-pad__dpad {

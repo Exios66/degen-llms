@@ -359,11 +359,23 @@ erases pixel progress.
 | **Konami code** | Secret room Easter egg |
 | **Procedural textures** | `TextureFactory.js` generates pixel art at runtime |
 
-### Art pipeline (future)
+### Art pipeline
 
-Layouts are already data (`js/data/maps/*.json`); the art is not. The remaining
-step is swapping `TextureFactory`'s runtime-generated tiles for an Aseprite
-tileset, which `MapLoader` can consume without changing a single map record.
+There is no sprite sheet to download — `TextureFactory.js` draws everything at
+boot on a 16-pixel grid and blits it at 2×, so a tile is 32 screen pixels and one
+art pixel is always exactly two. Tiles light from the top left without exception,
+and the wide floors register three faintly scuffed variants that `groundTileKey()`
+spreads across the map so a ballroom stops reading as wallpaper.
+
+Characters are authored pixel grids: arrays of 16-character strings, one
+character per pixel, resolved through a palette legend. The head and torso are a
+separate block from the legs, which is how a three-frame walk cycle swaps only
+the legs and drops the body a pixel. Right-facing is the left grid mirrored.
+Editing a sprite means editing the strings; the smoke test rejects a row that is
+not 16 characters or uses a letter outside the legend.
+
+Layouts are already data (`js/data/maps/*.json`). Swapping the procedural
+drawers for an Aseprite tileset later would not change a single map record.
 
 ---
 

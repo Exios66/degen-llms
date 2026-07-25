@@ -1,6 +1,7 @@
 {
   "id": "guest_corridor",
   "label": "Guest Floor Corridor",
+  "wing": "Hotel",
   "bgm": "lobby",
   "spawn": {
     "x": 15,

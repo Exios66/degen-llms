@@ -1,6 +1,7 @@
 {
   "id": "mandalay_place",
   "label": "The Shoppes at Mandalay Place",
+  "wing": "Retail",
   "bgm": "lobby",
   "spawn": {
     "x": 15,

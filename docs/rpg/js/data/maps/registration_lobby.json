@@ -1,6 +1,7 @@
 {
   "id": "registration_lobby",
   "label": "Registration Lobby",
+  "wing": "Arrival",
   "bgm": "lobby",
   "spawn": {
     "x": 15,

@@ -1,6 +1,7 @@
 {
   "id": "beach_club",
   "label": "Moorea Beach Club",
+  "wing": "Pool",
   "bgm": "encounter",
   "spawn": {
     "x": 15,

@@ -1,6 +1,7 @@
 {
   "id": "reef_tunnel",
   "label": "Shark Reef Tunnel",
+  "wing": "Attractions",
   "bgm": "title",
   "spawn": {
     "x": 26,

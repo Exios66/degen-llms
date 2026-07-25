@@ -1,6 +1,7 @@
 {
   "id": "ultra_arena",
   "label": "ULTRA Arena Concourse",
+  "wing": "Attractions",
   "bgm": "lobby",
   "spawn": {
     "x": 15,

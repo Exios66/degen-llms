@@ -1,6 +1,7 @@
 {
   "id": "strip_sidewalk",
   "label": "Las Vegas Blvd",
+  "wing": "Arrival",
   "bgm": "lobby",
   "spawn": {
     "x": 15,

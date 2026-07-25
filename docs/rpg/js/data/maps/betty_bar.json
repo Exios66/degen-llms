@@ -1,6 +1,7 @@
 {
   "id": "betty_bar",
   "label": "Betty's Bar",
+  "wing": "Bars",
   "bgm": "lobby",
   "spawn": {
     "x": 15,

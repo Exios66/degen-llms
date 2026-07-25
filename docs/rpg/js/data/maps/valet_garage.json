@@ -1,6 +1,7 @@
 {
   "id": "valet_garage",
   "label": "Valet & Parking",
+  "wing": "Arrival",
   "bgm": "lobby",
   "spawn": {
     "x": 26,

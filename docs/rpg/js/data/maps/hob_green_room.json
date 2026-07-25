@@ -1,6 +1,7 @@
 {
   "id": "hob_green_room",
   "label": "HOB Green Room",
+  "wing": "Attractions",
   "bgm": "secret",
   "spawn": {
     "x": 26,

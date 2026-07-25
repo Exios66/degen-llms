@@ -1,6 +1,7 @@
 {
   "id": "foundation_room",
   "label": "Foundation Room",
+  "wing": "Casino",
   "bgm": "secret",
   "spawn": {
     "x": 15,

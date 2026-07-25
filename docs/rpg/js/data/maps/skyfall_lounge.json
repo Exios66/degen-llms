@@ -1,6 +1,7 @@
 {
   "id": "skyfall_lounge",
   "label": "Skyfall Lounge",
+  "wing": "Bars",
   "bgm": "secret",
   "spawn": {
     "x": 15,

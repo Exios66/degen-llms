@@ -1,6 +1,7 @@
 {
   "id": "spa",
   "label": "Bathhouse Spa",
+  "wing": "Hotel",
   "bgm": "title",
   "spawn": {
     "x": 15,

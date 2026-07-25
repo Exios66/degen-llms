@@ -1,6 +1,7 @@
 {
   "id": "hotel_tower",
   "label": "Tower Elevator Lobby",
+  "wing": "Hotel",
   "bgm": "lobby",
   "spawn": {
     "x": 15,

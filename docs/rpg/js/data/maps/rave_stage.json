@@ -1,6 +1,7 @@
 {
   "id": "rave_stage",
   "label": "Moonlight Rave Stage",
+  "wing": "Pool",
   "bgm": "encounter",
   "spawn": {
     "x": 15,

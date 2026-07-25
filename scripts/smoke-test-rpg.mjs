@@ -103,6 +103,8 @@ check(knownMap(DEFAULT_MAP_ID), `default map "${DEFAULT_MAP_ID}" is not in the i
 for (const mapId of MAP_IDS) {
   const def = getMapDefinition(mapId);
   check(typeof def.label === "string" && def.label.length > 0, `${mapId}: missing label`);
+  check(typeof def.wing === "string" && def.wing !== "Unsorted",
+    `${mapId}: missing wing — add it to WINGS in scripts/_author_maps.py`);
   const { ground, collision } = layers.get(mapId);
   check(ground.length === MAP_HEIGHT && ground[0].length === MAP_WIDTH,
     `${mapId}: layer is not ${MAP_WIDTH}x${MAP_HEIGHT}`);

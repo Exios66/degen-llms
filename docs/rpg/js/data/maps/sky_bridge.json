@@ -1,6 +1,7 @@
 {
   "id": "sky_bridge",
   "label": "Sky Bridge",
+  "wing": "Retail",
   "bgm": "lobby",
   "spawn": {
     "x": 15,

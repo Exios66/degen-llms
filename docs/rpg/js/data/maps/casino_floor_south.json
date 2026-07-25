@@ -1,6 +1,7 @@
 {
   "id": "casino_floor_south",
   "label": "Casino Floor South",
+  "wing": "Casino",
   "bgm": "casino",
   "spawn": {
     "x": 15,

@@ -1,6 +1,7 @@
 {
   "id": "staff_corridor",
   "label": "Back of House",
+  "wing": "Back of house",
   "bgm": "secret",
   "spawn": {
     "x": 15,

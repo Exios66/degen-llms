@@ -1,6 +1,7 @@
 {
   "id": "convention_center",
   "label": "Convention Center",
+  "wing": "Retail",
   "bgm": "lobby",
   "spawn": {
     "x": 15,

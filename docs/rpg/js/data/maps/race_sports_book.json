@@ -1,6 +1,7 @@
 {
   "id": "race_sports_book",
   "label": "Race & Sports Book",
+  "wing": "Casino",
   "bgm": "casino",
   "spawn": {
     "x": 26,

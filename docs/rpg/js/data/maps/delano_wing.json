@@ -1,6 +1,7 @@
 {
   "id": "delano_wing",
   "label": "Delano Wing",
+  "wing": "Hotel",
   "bgm": "secret",
   "spawn": {
     "x": 26,

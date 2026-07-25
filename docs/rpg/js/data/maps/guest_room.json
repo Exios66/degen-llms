@@ -1,6 +1,7 @@
 {
   "id": "guest_room",
   "label": "Your Room",
+  "wing": "Hotel",
   "bgm": "lobby",
   "spawn": {
     "x": 15,

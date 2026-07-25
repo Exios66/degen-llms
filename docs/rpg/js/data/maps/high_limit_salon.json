@@ -1,6 +1,7 @@
 {
   "id": "high_limit_salon",
   "label": "High Limit Salon",
+  "wing": "Casino",
   "bgm": "secret",
   "spawn": {
     "x": 15,

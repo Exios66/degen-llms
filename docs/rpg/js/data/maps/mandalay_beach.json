@@ -1,6 +1,7 @@
 {
   "id": "mandalay_beach",
   "label": "Mandalay Beach",
+  "wing": "Pool",
   "bgm": "lobby",
   "spawn": {
     "x": 15,

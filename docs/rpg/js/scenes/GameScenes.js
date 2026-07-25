@@ -52,6 +52,10 @@ const DECOR_KEYS = {
   [TILE.ROPE]: "decor_rope",
 };
 
+/** Sub-line under the room placard: which wing you are in, and when. */
+const placardSub = (mapDef, phaseLabel) =>
+  [mapDef?.wing, phaseLabel].filter(Boolean).join(" · ");
+
 export class OverworldScene extends Phaser.Scene {
   constructor() {
     super({ key: "OverworldScene" });
@@ -261,7 +265,7 @@ export class OverworldScene extends Phaser.Scene {
 
     this._recordMapVisit(mapId);
     this._applyWalkSpeed();
-    this.onMapBanner?.(mapDef.label ?? mapId, this.dayPhase?.label ?? "");
+    this.onMapBanner?.(mapDef.label ?? mapId, placardSub(mapDef, this.dayPhase?.label));
 
     this.onHudUpdate?.();
     this.scale.on("resize", this._fitCamera, this);
@@ -336,8 +340,8 @@ export class OverworldScene extends Phaser.Scene {
       this.dayPhase = cycle.phase;
       this._applyDayNightTint(cycle.dayProgress * 1440);
       this._repositionNpcsForPhase();
-      this.onMapBanner?.(getMapDefinition(this.currentMapId).label ?? this.currentMapId,
-        cycle.phase.label);
+      const mapDef = getMapDefinition(this.currentMapId);
+      this.onMapBanner?.(mapDef.label ?? this.currentMapId, placardSub(mapDef, cycle.phase.label));
     }
     this.onHudUpdate?.();
   }

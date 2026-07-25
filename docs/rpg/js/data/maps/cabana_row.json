@@ -1,6 +1,7 @@
 {
   "id": "cabana_row",
   "label": "Cabanas & Hot Tubs",
+  "wing": "Pool",
   "bgm": "lobby",
   "spawn": {
     "x": 3,

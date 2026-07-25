@@ -1,6 +1,7 @@
 {
   "id": "house_of_blues",
   "label": "House of Blues",
+  "wing": "Attractions",
   "bgm": "encounter",
   "spawn": {
     "x": 15,

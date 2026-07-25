@@ -597,15 +597,15 @@ export function buildHighLimitSalonLayers() {
 
 /** Procedural fallback builders, kept as the generator of last resort. */
 const FALLBACK_REGISTRY = {
-  main_resort: { build: buildMapLayers, spawn: { x: 15, y: 26 }, label: "Casino Lobby" },
-  hotel_tower: { build: buildHotelTowerLayers, spawn: { x: 15, y: 26 }, label: "Hotel Tower" },
-  mandalay_beach: { build: buildMandalayBeachLayers, spawn: { x: 15, y: 26 }, label: "Pool Complex" },
-  shark_reef: { build: buildSharkReefLayers, spawn: { x: 15, y: 26 }, label: "Shark Reef" },
-  house_of_blues: { build: buildHouseOfBluesLayers, spawn: { x: 15, y: 26 }, label: "House of Blues" },
-  ultra_arena: { build: buildUltraArenaLayers, spawn: { x: 15, y: 26 }, label: "ULTRA Arena" },
-  foundation_room: { build: buildFoundationRoomLayers, spawn: { x: 15, y: 26 }, label: "Foundation Room" },
-  staff_corridor: { build: buildStaffCorridorLayers, spawn: { x: 15, y: 26 }, label: "Staff Corridor" },
-  high_limit_salon: { build: buildHighLimitSalonLayers, spawn: { x: 15, y: 26 }, label: "High Limit Salon" },
+  main_resort: { build: buildMapLayers, spawn: { x: 15, y: 26 }, label: "Casino Lobby", wing: "Casino" },
+  hotel_tower: { build: buildHotelTowerLayers, spawn: { x: 15, y: 26 }, label: "Hotel Tower", wing: "Hotel" },
+  mandalay_beach: { build: buildMandalayBeachLayers, spawn: { x: 15, y: 26 }, label: "Pool Complex", wing: "Pool" },
+  shark_reef: { build: buildSharkReefLayers, spawn: { x: 15, y: 26 }, label: "Shark Reef", wing: "Attractions" },
+  house_of_blues: { build: buildHouseOfBluesLayers, spawn: { x: 15, y: 26 }, label: "House of Blues", wing: "Attractions" },
+  ultra_arena: { build: buildUltraArenaLayers, spawn: { x: 15, y: 26 }, label: "ULTRA Arena", wing: "Attractions" },
+  foundation_room: { build: buildFoundationRoomLayers, spawn: { x: 15, y: 26 }, label: "Foundation Room", wing: "Casino" },
+  staff_corridor: { build: buildStaffCorridorLayers, spawn: { x: 15, y: 26 }, label: "Staff Corridor", wing: "Back of house" },
+  high_limit_salon: { build: buildHighLimitSalonLayers, spawn: { x: 15, y: 26 }, label: "High Limit Salon", wing: "Casino" },
 };
 
 // ── Authored world ─────────────────────────────────────────────────────────
@@ -652,6 +652,7 @@ export function getMapDefinition(mapId) {
     return {
       id: authored.id,
       label: authored.label ?? authored.id,
+      wing: authored.wing ?? "Resort",
       spawn: authored.spawn ?? SPAWN_DEFAULT,
       bgm: authored.bgm,
       doors: authored.doors ?? [],
@@ -661,6 +662,7 @@ export function getMapDefinition(mapId) {
   return {
     id: mapId in FALLBACK_REGISTRY ? mapId : DEFAULT_MAP_ID,
     label: fallback.label,
+    wing: fallback.wing,
     spawn: fallback.spawn,
     doors: FALLBACK_DOORS.filter((d) => d.mapId === mapId),
   };

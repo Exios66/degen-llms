@@ -652,6 +652,39 @@ MAPS_SPEC: list[dict] = [
     },
 ]
 
+# Which part of the property each room belongs to. Kept out of the specs above
+# so the groupings read as one list; injected into every record on write.
+WINGS: dict[str, str] = {
+    "strip_sidewalk": "Arrival",
+    "valet_garage": "Arrival",
+    "registration_lobby": "Arrival",
+    "main_resort": "Casino",
+    "casino_floor_south": "Casino",
+    "race_sports_book": "Casino",
+    "high_limit_salon": "Casino",
+    "foundation_room": "Casino",
+    "mandalay_place": "Retail",
+    "sky_bridge": "Retail",
+    "convention_center": "Retail",
+    "betty_bar": "Bars",
+    "skyfall_lounge": "Bars",
+    "hotel_tower": "Hotel",
+    "guest_corridor": "Hotel",
+    "guest_room": "Hotel",
+    "delano_wing": "Hotel",
+    "spa": "Hotel",
+    "mandalay_beach": "Pool",
+    "cabana_row": "Pool",
+    "beach_club": "Pool",
+    "rave_stage": "Pool",
+    "reef_tunnel": "Attractions",
+    "shark_reef": "Attractions",
+    "house_of_blues": "Attractions",
+    "hob_green_room": "Attractions",
+    "ultra_arena": "Attractions",
+    "staff_corridor": "Back of house",
+}
+
 # NPC rosters per map. Positions are validated by scripts/smoke-test-rpg.mjs.
 NPCS: dict[str, list[dict]] = {
     "strip_sidewalk": [
@@ -860,6 +893,16 @@ NPCS: dict[str, list[dict]] = {
 }
 
 
+def with_wing(spec: dict) -> dict:
+    """Return the record with its wing slotted in just after the label."""
+    record: dict = {}
+    for key, value in spec.items():
+        record[key] = value
+        if key == "label":
+            record["wing"] = WINGS.get(spec["id"], "Unsorted")
+    return record
+
+
 def main() -> int:
     MAPS.mkdir(parents=True, exist_ok=True)
     for old in MAPS.glob("*.json"):
@@ -868,7 +911,7 @@ def main() -> int:
     for spec in MAPS_SPEC:
         ids.append(spec["id"])
         (MAPS / f"{spec['id']}.json").write_text(
-            json.dumps(spec, indent=2, ensure_ascii=False) + "\n")
+            json.dumps(with_wing(spec), indent=2, ensure_ascii=False) + "\n")
     (MAPS / "index.json").write_text(
         json.dumps({"maps": ids}, indent=2) + "\n")
     (DATA / "npcs.json").write_text(

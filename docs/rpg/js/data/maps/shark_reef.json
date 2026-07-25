@@ -1,6 +1,7 @@
 {
   "id": "shark_reef",
   "label": "Shark Reef Exhibit Hall",
+  "wing": "Attractions",
   "bgm": "title",
   "spawn": {
     "x": 26,

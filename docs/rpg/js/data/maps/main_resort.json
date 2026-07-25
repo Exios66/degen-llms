@@ -1,6 +1,7 @@
 {
   "id": "main_resort",
   "label": "Casino Floor North",
+  "wing": "Casino",
   "bgm": "casino",
   "spawn": {
     "x": 15,

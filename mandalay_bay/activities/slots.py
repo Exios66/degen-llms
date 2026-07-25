@@ -634,16 +634,18 @@ class SlotsActivity(Activity):
 
         session_net = 0
         spins = 0
+        last_bet = min_bet
         while True:
             ui.chip_line(session.wallet.balance)
             if machine.progressive and machine.progressive_pool_id:
                 pool = progressive_pool(session, machine.progressive_pool_id, machine.progressive_seed)
                 ui.dim(f"Jackpot: {pool:,} chips")
+            default_bet = last_bet if min_bet <= last_bet <= max_bet else min_bet
             bet = ui.prompt_int(
                 f"Spin amount ({min_bet}-{max_bet}, 0 to leave)",
                 0,
                 max_bet,
-                default=min_bet,
+                default=default_bet,
             )
             if bet == 0:
                 break
@@ -654,6 +656,7 @@ class SlotsActivity(Activity):
                 ui.error("Insufficient chips.")
                 continue
 
+            last_bet = bet
             _contribute_to_progressive(session, machine, bet)
             reels = _spin_reels(machine)
             shown = " | ".join(_display_symbol(r, session.use_unicode) for r in reels)

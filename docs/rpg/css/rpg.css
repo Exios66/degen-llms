@@ -226,6 +226,71 @@ body {
   letter-spacing: 0.08em;
 }
 
+.roulette-history {
+  margin: 8px 0 10px;
+  padding: 8px;
+  background: #0a0812;
+  border: 2px solid var(--border);
+}
+
+.roulette-history-label {
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 6px;
+}
+
+.roulette-history-track {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+  overflow-x: auto;
+}
+
+.roulette-history-empty {
+  font-size: 10px;
+  color: var(--dim, #8a8498);
+  font-style: italic;
+}
+
+.roulette-history-chip {
+  flex: 0 0 auto;
+  min-width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  border: 2px solid var(--text);
+}
+
+.roulette-history-chip--red { background: #c41e3a; }
+.roulette-history-chip--black { background: #1a1a2e; }
+.roulette-history-chip--green { background: #0d6b3a; }
+
+.roulette-history-chip--enter {
+  animation: roulette-history-enter 0.55s cubic-bezier(0.2, 0.9, 0.2, 1) both;
+}
+
+.roulette-history--pulse .roulette-history-track {
+  animation: roulette-history-track-shift 0.45s ease-out;
+}
+
+@keyframes roulette-history-enter {
+  0% { transform: translateX(-120%) scale(0.55); opacity: 0; }
+  60% { transform: translateX(0) scale(1.12); opacity: 1; }
+  100% { transform: translateX(0) scale(1); opacity: 1; }
+}
+
+@keyframes roulette-history-track-shift {
+  0% { transform: translateX(-8px); }
+  100% { transform: translateX(0); }
+}
+
 .bj-status.success { color: var(--green); }
 
 #trainer-card {

@@ -40,6 +40,23 @@ def spin_wheel() -> int:
     return SECURE_RANDOM.randrange(0, 37)
 
 
+def wheel_color(number: int) -> str:
+    if number == 0:
+        return "green"
+    return "red" if number in RED_NUMBERS else "black"
+
+
+def append_spin_history(
+    history: list[tuple[int, str]],
+    number: int,
+    *,
+    limit: int = 18,
+) -> list[tuple[int, str]]:
+    """Newest-first spin history for the live results strip."""
+    next_history = [(number, wheel_color(number)), *history]
+    return next_history[:limit]
+
+
 def resolve_bet(bet: RouletteBet, amount: int, number: int, straight_pick: int | None = None) -> tuple[int, str]:
     if bet.kind == "straight":
         if straight_pick is None:
@@ -87,19 +104,25 @@ class RouletteActivity(Activity):
         ui.print("European wheel (0–36). 0 is green; red/black and dozens exclude zero.")
         session_net = 0
         spins = 0
+        history: list[tuple[int, str]] = []
+        last_wager = wager_min
 
         while True:
             ui.chip_line(session.wallet.balance)
+            if history:
+                recent = " · ".join(f"{n}({c[0]})" for n, c in history[:12])
+                ui.print(f"Spin history (newest first): {recent}")
             labels = [b.label for b in BET_TYPES]
             choice = ui.menu_choice(labels, title="Place a bet (or back):")
             if choice == 0:
                 break
             bet_type = BET_TYPES[choice - 1]
+            default_wager = last_wager if wager_min <= last_wager <= wager_max else wager_min
             amount = ui.prompt_int(
                 f"Wager ({wager_min}-{wager_max}, 0 to cancel)",
                 0,
                 wager_max,
-                default=wager_min,
+                default=default_wager,
             )
             if amount == 0 or amount < wager_min:
                 continue
@@ -110,12 +133,15 @@ class RouletteActivity(Activity):
                 ui.error("Insufficient chips.")
                 continue
 
+            last_wager = amount
             number = spin_wheel()
             ui.dim(f'  {dealer.name}: "{pick_quip(dealer, "deal")}"')
             win, reason = resolve_bet(bet_type, amount, number, straight_pick)
             spins += 1
-            color = "green" if number == 0 else ("red" if number in RED_NUMBERS else "black")
+            color = wheel_color(number)
+            history = append_spin_history(history, number, limit=18)
             ui.print(f"\n  🎡 The ball lands on {number} ({color})")
+            ui.dim("  History: " + " · ".join(f"{n}({c[0]})" for n, c in history[:12]))
             if win > 0:
                 session.wallet.credit(win, self.info.id, reason)
                 session_net += win - amount

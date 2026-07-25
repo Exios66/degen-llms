@@ -10,7 +10,7 @@ import {
   setupNpcSprite,
   applySpriteAppearance,
   resolvePlayerSprite,
-} from "../systems/TextureFactory.js?v=character-sprites-2";
+} from "../systems/TextureFactory.js?v=title-boot-1";
 import { normalizeAppearance } from "../systems/CharacterAppearance.js";
 import {
   TILE_SIZE, MAP_WIDTH, MAP_HEIGHT, buildMapLayersForId, getNpcsForMap,

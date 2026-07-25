@@ -29,6 +29,7 @@ export class TitleScreen {
    * @param {{ launchSlotId?: number | null, launchGuest?: boolean }} [options]
    */
   constructor(root, onStart, options = {}) {
+    if (!root) throw new Error("TitleScreen requires #title-overlay");
     this.root = root;
     this.onStart = onStart;
     this.launchSlotId = options.launchSlotId ?? null;
@@ -45,11 +46,24 @@ export class TitleScreen {
 
   show() {
     this.root.hidden = false;
-    this.root.classList.remove("title-overlay--menu");
+    this.root.classList.remove("title-overlay--menu", "title-overlay--attract");
     this.root.classList.add("title-overlay--intro");
     this._renderIntro();
     this._armAttract();
     if (this.skipIntro) this._finishIntro();
+  }
+
+  /** Re-open the save library after a failed overworld boot. */
+  showMenu(message = null) {
+    this._clearIntroListeners();
+    this._clearAttract();
+    this._introDone = true;
+    this.root.hidden = false;
+    this.root.classList.remove("title-overlay--intro", "title-overlay--attract");
+    this.root.classList.add("title-overlay--menu");
+    this._renderMain();
+    if (message) this._showBootMessage(message);
+    this._armAttract();
   }
 
   hide() {
@@ -58,6 +72,20 @@ export class TitleScreen {
     this.root.hidden = true;
     this.root.innerHTML = "";
     this.root.classList.remove("title-overlay--intro", "title-overlay--menu", "title-overlay--attract");
+  }
+
+  _showBootMessage(message) {
+    const panel = this.root.querySelector(".title-panel");
+    if (!panel || !message) return;
+    let note = panel.querySelector(".title-boot-note");
+    if (!note) {
+      note = document.createElement("p");
+      note.className = "title-boot-note";
+      const subtitle = panel.querySelector(".subtitle");
+      if (subtitle) subtitle.insertAdjacentElement("afterend", note);
+      else panel.prepend(note);
+    }
+    note.textContent = message;
   }
 
   _armAttract() {
@@ -153,27 +181,34 @@ export class TitleScreen {
     this.root.classList.add("title-overlay--menu");
 
     setTimeout(() => {
-      if (this.launchGuest) {
-        const guest = initSessionRpg(createGuestSession(
-          this.launchChips != null ? { chips: this.launchChips } : {}
-        ));
-        if (this.launchArchetype) {
-          this._applyArchetype(guest, this.launchArchetype);
-          this._start(guest);
+      try {
+        if (this.launchGuest) {
+          const guest = createGuestSession(
+            this.launchChips != null ? { chips: this.launchChips } : {},
+          );
+          initSessionRpg(guest);
+          if (this.launchArchetype) {
+            this._applyArchetype(guest, this.launchArchetype);
+            this._start(guest);
+            return;
+          }
+          this._promptArchetype(guest);
           return;
         }
-        this._promptArchetype(guest);
-        return;
-      }
-      if (this.launchSlotId != null) {
-        const session = loadSlot(this.launchSlotId);
-        if (session) {
-          initSessionRpg(session);
-          this._start(session);
-          return;
+        if (this.launchSlotId != null) {
+          const session = loadSlot(this.launchSlotId);
+          if (session) {
+            initSessionRpg(session);
+            this._start(session);
+            return;
+          }
         }
+        this._renderMain();
+      } catch (err) {
+        console.error(err);
+        this._renderMain();
+        this._showBootMessage(err?.message || "Could not open save library.");
       }
-      this._renderMain();
     }, intro ? 480 : 0);
   }
 
@@ -241,7 +276,11 @@ export class TitleScreen {
     const guestBtn = document.createElement("button");
     guestBtn.type = "button";
     guestBtn.textContent = "Guest visit (no save)";
-    guestBtn.onclick = () => this._promptArchetype(initSessionRpg(createGuestSession()));
+    guestBtn.onclick = () => {
+      const guest = createGuestSession();
+      initSessionRpg(guest);
+      this._promptArchetype(guest);
+    };
     actions.appendChild(guestBtn);
     panel.appendChild(actions);
 
@@ -251,6 +290,7 @@ export class TitleScreen {
     panel.appendChild(link);
 
     this.root.appendChild(panel);
+    panel.classList.add("title-panel--visible");
     requestAnimationFrame(() => panel.classList.add("title-panel--visible"));
   }
 

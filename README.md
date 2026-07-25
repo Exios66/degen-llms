@@ -6,10 +6,10 @@
 
 | Surface | URL / command |
 |---------|----------------|
-| **Web terminal** | [exios66.github.io/degen-llms](https://exios66.github.io/degen-llms/) |
-| **Pixel RPG** | [exios66.github.io/degen-llms/rpg](https://exios66.github.io/degen-llms/rpg/) |
+| **Web terminal** | [Web-Terminal-Access](https://exios66.github.io/degen-llms/) |
+| **Pixel RPG** | [The-Pixel-RPG](https://exios66.github.io/degen-llms/rpg/) |
 | **CLI** | `python3 -m mandalay_bay` |
-| **Quarto docs (Posit Connect Cloud)** | [019f9a67-d5c9-226b-b6b1-a86d1655be69.share.connect.posit.cloud](https://019f9a67-d5c9-226b-b6b1-a86d1655be69.share.connect.posit.cloud/) |
+| **Quarto docs (Posit Connect Cloud)** | [Posit-Cloud](https://019f9a67-d5c9-226b-b6b1-a86d1655be69.share.connect.posit.cloud/) |
 
 All three surfaces share the same save slots and chip wallet (CLI: `~/.mandalay_bay/saves/`; browser: `localStorage`).
 

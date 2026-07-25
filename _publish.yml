@@ -1,0 +1,4 @@
+- source: project
+  posit-connect-cloud:
+    - id: 019f9a67-d5c9-226b-b6b1-a86d1655be69
+      url: https://connect.posit.cloud/jackjburleson/content/019f9a67-d5c9-226b-b6b1-a86d1655be69

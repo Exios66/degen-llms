@@ -21,6 +21,7 @@ website:
   title: "The Mandalay Bay"
   description: "Digital resort simulator — casino floor, hotel, pool complex, MGM Rewards, and pixel RPG"
   favicon: docs/favicon.svg
+  site-url: https://connect.posit.cloud/jackjburleson/content/019f9a67-d5c9-226b-b6b1-a86d1655be69
   repo-url: https://github.com/Exios66/degen-llms
   repo-actions: [source, issue]
   page-navigation: true

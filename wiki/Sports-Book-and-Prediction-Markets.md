@@ -2,6 +2,8 @@
 
 Simulated sports wagering and prediction markets at the **Sports Book** floor.
 
+![Sports Book floor in the web terminal](images/sportsbook.png)
+
 Minimum wager: **10 chips** per ticket or contract.
 
 ## Supported sports

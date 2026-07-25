@@ -1,5 +1,7 @@
 # Getting Started
 
+![Main casino lobby — web terminal entry](images/casino-floor.png)
+
 ## Requirements
 
 - **Python 3.11+**

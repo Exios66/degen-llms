@@ -2,7 +2,7 @@
 
 A complete catalog of everything on the Mandalay Bay casino floor and resort.
 
-## Casino floors
+![Main casino lobby — floor hub](images/casino-floor.png)
 
 Six floors, ten activities, one chip wallet:
 
@@ -29,6 +29,8 @@ Choose a tier before playing any machine or table. Each tier sets min/max wagers
 
 ## Table Games
 
+![Table Games floor — blackjack, hold'em, roulette](images/table-games.png)
+
 ### Blackjack
 Classic Vegas 21 — solo or full table with AI players. 6-deck shoe, H17, 3:2 blackjack, double/split/surrender/insurance.
 
@@ -50,6 +52,8 @@ Pass Line / Don't Pass with come-out and point phases. Side bets: Field, Any Cra
 → [[Table-Games#craps]]
 
 ## Slot Machines
+
+![Slot Machines floor — Mandalay Bay Slots](images/slot-machines.png)
 
 Fourteen machines from penny progressives to high-limit classics:
 
@@ -86,6 +90,8 @@ Progressive jackpots (Megabucks, Monte Carlo, Super Spin) persist in your save. 
 → [[Lottery-Counter]]
 
 ## Sports Book
+
+![Sports Book floor — wagering and prediction markets](images/sportsbook.png)
 
 Simulated wagering across NFL, NBA, MLB, MLS, NHL, NCAA, UFC, tennis, and golf. Bet types: moneyline, spread, totals, props, outrights.
 

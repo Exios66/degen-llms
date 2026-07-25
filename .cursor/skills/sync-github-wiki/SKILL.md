@@ -30,7 +30,8 @@ Requires git credentials with push access to `Exios66/degen-llms.wiki.git`.
 ## What sync does
 
 - Clones `https://github.com/Exios66/degen-llms.wiki.git` (or initializes if missing)
-- Replaces all top-level `*.md` pages with files from `wiki/`
+- Replaces all top-level `*.md` pages and the `images/` folder from `wiki/`
+- Applies themed `_Sidebar.md` and `_Footer.md` on every wiki page
 - Commits and pushes only when content differs
 - Force-pushes on first init if the remote wiki repo does not exist yet
 

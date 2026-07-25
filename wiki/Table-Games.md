@@ -2,6 +2,8 @@
 
 Table Games floor activities: **Texas Hold'em**, **Mandalay Roulette**, and **Craps** (plus [[Blackjack]]).
 
+![Table Games floor in the web terminal](images/table-games.png)
+
 Minimum bet: **10 chips** (varies by stake tier).
 
 ---

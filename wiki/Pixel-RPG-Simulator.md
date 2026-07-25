@@ -2,6 +2,8 @@
 
 Walk **The Mandalay Bay** in a **16-bit JRPG–style overworld** built with Phaser 3. Inspired by [Operation Epic Furious](https://www.epicfurious.com/).
 
+![Pixel RPG overworld — casino carpet, NPCs, and chip HUD](images/pixel-rpg-overworld.png)
+
 **Play URL:** https://exios66.github.io/degen-llms/rpg/
 
 ---

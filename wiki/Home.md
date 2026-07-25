@@ -2,6 +2,10 @@
 
 Welcome to the official wiki for **[degen-llms](https://github.com/Exios66/degen-llms)** — a satirical choose-your-adventure resort simulator with a unified chip economy.
 
+![Main casino lobby — The Mandalay Bay web terminal](images/casino-floor.png)
+
+*Web terminal main lobby — chip wallet, floor navigation, and resort amenities.*
+
 ## Play now
 
 | Surface | Link |
@@ -12,6 +16,8 @@ Welcome to the official wiki for **[degen-llms](https://github.com/Exios66/degen
 | **Quarto docs (Posit Connect Cloud)** | https://019f9a67-d5c9-226b-b6b1-a86d1655be69.share.connect.posit.cloud/ |
 
 See [[Access-Points]] for full details on every surface.
+
+📸 **More screenshots:** [[Screenshots-Gallery]]
 
 ---
 

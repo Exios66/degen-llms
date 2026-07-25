@@ -83,7 +83,7 @@ This deployment is a **new** JackJBurleson Posit Connect Cloud content item for 
 | **Hotel** | Clerk Carmen, hallway mini-game, in-room amenities, guest directory |
 | **Pool complex** | Wave pool, cabanas, Shark Reef collection, beach club |
 | **MGM Rewards** | Sapphire → Chairman tiers, comps, phone (press **P** on web) |
-| **Pixel RPG** | Eight maps, quests, encounters bridged to the shared JS engine |
+| **Pixel RPG** | 28 walkable rooms, 59 NPCs, quests, and a dex — see [Pixel RPG](rpg.qmd) |
 :::
 
 ```{python}
@@ -199,7 +199,7 @@ See [Save Slots](docs/saves.md) and [Getting Started](docs/getting-started.md).
 
 # Architecture
 
-Python is the source of truth. The web terminal mirrors logic in vanilla ES modules under `docs/js/`. The RPG delegates casino/hotel mechanics to that shared engine via an encounter bridge.
+Python is the source of truth. The web terminal mirrors logic in vanilla ES modules under `docs/js/`. Screens are written once as `buildXRenderers(ctx)` factories in `docs/js/ui/`: the terminal spreads them into its renderer table and the RPG mounts the same functions inside an encounter panel, so neither surface reimplements the other.
 
 ```{python}
 #| label: tbl-package-inventory

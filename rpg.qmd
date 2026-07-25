@@ -1,0 +1,347 @@
+---
+title: "The Pixel RPG"
+subtitle: "A walkable Mandalay Bay that mounts the terminal's own screens"
+date: last-modified
+abstract: |
+  The pixel RPG is the third playable surface of **The Mandalay Bay**: a Phaser 3
+  top-down overworld of twenty-eight authored rooms, laid over the exact same chip
+  wallet, save slot, and rule set as the Python CLI and the web terminal. This page
+  is generated from the live world data in `docs/rpg/js/data/` — every table below
+  is read from the JSON the game itself loads at boot.
+keywords:
+  - Phaser
+  - pixel RPG
+  - overworld
+  - quest design
+  - Mandalay Bay
+---
+
+::: {.github-access}
+<a class="github-btn" href="https://exios66.github.io/degen-llms/rpg/"><i class="bi bi-controller"></i> Launch the RPG</a>
+<a class="github-btn" href="https://github.com/Exios66/degen-llms/tree/main/docs/rpg"><i class="bi bi-github"></i> Source</a>
+<a class="github-btn" href="docs/rpg/GDD.md"><i class="bi bi-journal-code"></i> Design document</a>
+:::
+
+```{python}
+#| label: setup
+#| include: false
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+import matplotlib.pyplot as plt
+import pandas as pd
+
+ROOT = Path.cwd()
+DATA = ROOT / "docs" / "rpg" / "js" / "data"
+
+
+def load(rel: str):
+    return json.loads((DATA / rel).read_text())
+
+
+MAP_IDS = load("maps/index.json")["maps"]
+MAPS = {mid: load(f"maps/{mid}.json") for mid in MAP_IDS}
+NPCS = load("npcs.json")
+DIALOGUES = load("dialogues.json")
+QUESTS = load("quests.json")
+EGGS = load("easter_eggs.json")
+TRIGGERS = load("triggers.json")
+
+WING_ORDER = [
+    "Arrival", "Casino", "Retail", "Bars", "Hotel", "Pool", "Attractions", "Back of house",
+]
+```
+
+# What it is
+
+Pick an archetype, arrive on Las Vegas Blvd, and walk in through the gold doors.
+From there the resort is a place rather than a menu tree: you cross the casino
+floor to reach the sports book, ride the tower up to a room that charges you
+nightly, and get stopped by staff who spotted you from across the carpet.
+
+The reference feel is Pokémon — a top-down overworld, a START menu that holds
+your whole life, line-of-sight challengers, a collection dex, and secrets that
+pay in flavor rather than chips.
+
+```{python}
+#| label: tbl-scale
+#| tbl-cap: "World size at render time, read from the authored JSON"
+
+pd.DataFrame(
+    [
+        {"Content": "Rooms", "Count": len(MAPS)},
+        {"Content": "NPCs", "Count": sum(len(v) for v in NPCS.values())},
+        {"Content": "Doors", "Count": sum(len(m.get("doors", [])) for m in MAPS.values())},
+        {"Content": "Dialogue nodes", "Count": len(DIALOGUES)},
+        {"Content": "Quests", "Count": len(QUESTS)},
+        {"Content": "Easter eggs", "Count": len(EGGS)},
+        {"Content": "Zone triggers", "Count": len(TRIGGERS)},
+    ]
+)
+```
+
+# The delegation rule
+
+The RPG **does not reimplement game logic or game screens.** Every casino,
+hotel, pool, and shopping flow lives once in `docs/js/` as a
+`buildXRenderers(ctx)` factory. The web terminal spreads those factories into
+its renderer table; the RPG's `TerminalHostOverlay` builds the same context and
+mounts them inside an encounter panel. A feature shipped to the terminal shows
+up in the RPG with no RPG-side work.
+
+```{mermaid}
+flowchart LR
+  LOGIC["docs/js/ — rules, wallet, world clock"] --> UI["docs/js/ui/ — buildXRenderers(ctx)"]
+  UI --> APP["app.js — web terminal"]
+  UI --> HOST["TerminalHostOverlay — RPG"]
+  DATA["docs/rpg/js/data/*.json"] --> OW["OverworldScene"]
+  OW -->|encounter id| HOST
+  OW -->|Esc / X| MENU["MenuOverlay — START"]
+  MENU --> HOST
+```
+
+The four exceptions are the screens that read better in-world: blackjack,
+hold'em, roulette, and the House of Blues rhythm minigame. Those are the battle
+screens, and they still take their bet through the shared stake-tier picker.
+
+# The property
+
+Rooms are authored as declarative JSON — a base fill, ground rectangles, decor,
+a deterministic scatter rule for greenery, and explicit clears that keep
+doorways open — then compiled into tile layers by `MapLoader.compileMap()` at
+boot.
+
+```{python}
+#| label: tbl-wings
+#| tbl-cap: "Rooms, residents, and exits per wing"
+
+rows = []
+for mid, m in MAPS.items():
+    rows.append(
+        {
+            "Wing": m.get("wing", "Unsorted"),
+            "Room": m.get("label", mid),
+            "Map id": mid,
+            "NPCs": len(NPCS.get(mid, [])),
+            "Exits": len(m.get("doors", [])),
+            "Spawn": f"({m['spawn']['x']}, {m['spawn']['y']})",
+        }
+    )
+world = pd.DataFrame(rows)
+world["Wing"] = pd.Categorical(world["Wing"], categories=WING_ORDER, ordered=True)
+world = world.sort_values(["Wing", "Room"]).reset_index(drop=True)
+
+world.groupby("Wing", observed=True).agg(
+    Rooms=("Room", "count"), NPCs=("NPCs", "sum"), Exits=("Exits", "sum")
+).reset_index()
+```
+
+```{python}
+#| label: fig-wing-mix
+#| fig-cap: "Where the world's rooms and residents sit"
+
+summary = world.groupby("Wing", observed=True).agg(
+    Rooms=("Room", "count"), NPCs=("NPCs", "sum")
+)
+fig, ax = plt.subplots(figsize=(8.4, 4.0))
+x = range(len(summary))
+ax.bar([i - 0.2 for i in x], summary["Rooms"], width=0.4, label="Rooms",
+       color="#C5050C", edgecolor="#7a0307")
+ax.bar([i + 0.2 for i in x], summary["NPCs"], width=0.4, label="NPCs",
+       color="#f0b429", edgecolor="#a8781a")
+ax.set_xticks(list(x))
+ax.set_xticklabels(summary.index, rotation=20, ha="right")
+ax.set_ylabel("Count")
+ax.spines["top"].set_visible(False)
+ax.spines["right"].set_visible(False)
+ax.legend(frameon=False)
+fig.tight_layout()
+plt.show()
+```
+
+```{python}
+#| label: tbl-rooms
+#| tbl-cap: "Every room, its residents, and its exits"
+
+world
+```
+
+Two doors are gated at the rope: the High Limit Salon checks chips and stake
+tier through `docs/js/venues.js`, and the Foundation Room wants Noir standing.
+Your own room door stops working while the folio is unpaid.
+
+```{python}
+#| label: tbl-gated
+#| tbl-cap: "Gated doors and what they ask for"
+
+gates = []
+for mid, m in MAPS.items():
+    for d in m.get("doors", []):
+        conditions = []
+        if d.get("venueGate"):
+            conditions.append(f"venue gate: {d['venueGate']}")
+        if d.get("requiresChips"):
+            conditions.append(f"{d['requiresChips']:,} chips")
+        if d.get("requiresFlag"):
+            conditions.append(f"flag: {d['requiresFlag']}")
+        if d.get("requiresRoomKey"):
+            conditions.append("a working room key")
+        if conditions:
+            gates.append(
+                {
+                    "From": MAPS[mid].get("label", mid),
+                    "To": MAPS.get(d["to"], {}).get("label", d["to"]),
+                    "Requires": ", ".join(conditions),
+                }
+            )
+pd.DataFrame(gates)
+```
+
+# Trainers
+
+An NPC with a `sight` cone notices you walking into it, crosses the room, says
+its piece, and drops straight into its encounter. Each one challenges you once.
+
+```{python}
+#| label: tbl-trainers
+#| tbl-cap: "Line-of-sight challengers"
+
+trainers = [
+    {
+        "Who": npc["name"],
+        "Where": MAPS[mid].get("label", mid),
+        "Watches": npc["sight"].get("dir", npc.get("direction", "down")),
+        "Range": npc["sight"].get("range", 4),
+        "Encounter": npc.get("encounter", "conversation"),
+    }
+    for mid, roster in NPCS.items()
+    for npc in roster
+    if npc.get("sight")
+]
+pd.DataFrame(trainers).sort_values("Where").reset_index(drop=True)
+```
+
+Staff also keep schedules. NPCs carrying a `schedule` entry move with the world
+clock's day phase rather than standing in one spot forever:
+
+```{python}
+#| label: tbl-schedules
+#| tbl-cap: "NPCs who move with the clock"
+
+scheduled = [
+    {
+        "Who": npc["name"],
+        "Where": MAPS[mid].get("label", mid),
+        "Phases": ", ".join(sorted(npc["schedule"])),
+    }
+    for mid, roster in NPCS.items()
+    for npc in roster
+    if npc.get("schedule")
+]
+pd.DataFrame(scheduled).sort_values("Where").reset_index(drop=True)
+```
+
+# Quests
+
+Quest progress is *derived*, never incremented. `QuestManager.syncDerived()`
+reads reef photos, bar orders, dex counts, purchases, unlocked vignettes, egg
+count, and resort completion straight from shared session state, so a quest
+can never disagree with the system that produced it. Work you did before
+accepting a quest still counts — the derived value is banked and applied when
+you take the job.
+
+```{python}
+#| label: tbl-quests
+#| tbl-cap: "The quest board from `js/data/quests.json`"
+
+pd.DataFrame(
+    [
+        {
+            "Quest": q["label"],
+            "Given by": q.get("giverName", q.get("giver", "—")),
+            "Category": q.get("category", "—"),
+            "Goal": q.get("target", 1),
+            "Reward": q.get("reward", "—"),
+        }
+        for q in QUESTS.values()
+    ]
+)
+```
+
+# Collections
+
+The START menu carries three collections, all counting toward resort
+completion.
+
+| Collection | Entries | Filled by |
+|------------|---------|-----------|
+| **Dex — Shark Reef** | 5 species | Photographing the reef |
+| **Dex — Slot floor** | 14 machines | Playing each machine once |
+| **Dex — Staff met** | Every dealer and resort NPC | Talking to people |
+| **Bag** | Quest items, mall purchases, minibar tabs | Playing |
+| **Secrets** | 12 easter eggs | Poking at things |
+
+Easter eggs are **cosmetic only** — an egg never pays chips. That is a hard
+design rule, and the world-data checker enforces that every egg flag is
+actually reachable from something in the world.
+
+```{python}
+#| label: tbl-eggs
+#| tbl-cap: "The secrets board — hints only, no reveals"
+
+pd.DataFrame(
+    [{"Secret": e["label"], "Hint": e["hint"]} for e in EGGS.values()]
+)
+```
+
+# Time and money
+
+`docs/js/world-cycle.js` is the single clock for all three surfaces. Two real
+hours make one resort day, split into four phases. In the overworld that clock
+tints the screen, walks NPCs to their scheduled positions, announces the day's
+rotating reservation requirement, posts daily resort charges to your wallet,
+and — if the folio goes unpaid — evicts you and stops the room door from
+opening until you settle at the desk or win it back on the floor.
+
+# Controls
+
+| Input | Action |
+|-------|--------|
+| WASD / arrows | Walk |
+| Shift | Run — faster once a host comps the golf cart at Platinum |
+| E / Enter / Space | Talk to whoever you are facing, advance dialogue |
+| Esc / X | START menu |
+| T | Trainer Card |
+| P | MGM Rewards phone |
+| ↑↑↓↓←→←→BA | Retro palette |
+
+# Saves
+
+The RPG writes into the same slot as the terminal and the CLI. `SAVE_VERSION`
+is **8**; `rpg` carries position, archetype, flags, quests, inventory, dex,
+eggs, map visits, options, and reputation. A v7 save migrates forward without
+renaming a key and keeps the map it was saved on. On the Python side,
+`mandalay_bay/saves.py` carries the web-only keys through a CLI load/save round
+trip untouched, so playing in the terminal never erases pixel progress.
+
+# Extending it
+
+Full detail lives in the [Pixel RPG GDD](docs/rpg/GDD.md); the short version:
+
+| To add… | Do this |
+|---------|---------|
+| A room | Add a record to `scripts/_author_maps.py`, regenerate, wire doors both ways |
+| An NPC | Add to the `NPCS` table plus a `*_greet` node in `dialogues.json` |
+| A quest | Add to `quests.json`, derive its progress in `QuestManager.syncDerived()` |
+| A casino screen | Build it in `docs/js/ui/` and route it from `HostedEncounters.js` — never twice |
+
+Then run the checks:
+
+```bash
+node scripts/smoke-test-rpg.mjs     # world-data referential integrity
+python3 scripts/smoke-test-web.py   # browser walk + end-to-end journey
+python3 -m pytest                   # Python rules
+```

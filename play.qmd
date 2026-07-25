@@ -16,9 +16,9 @@ Browser hub with casino floors, hotel, pool, and rewards phone.
 
 ::: {.play-card}
 ### Pixel RPG
-Sixteen-bit overworld with encounter bridges into the shared engine.
+Twenty-eight walkable rooms that mount the terminal's own screens.
 
-**[Launch pixel RPG →](https://exios66.github.io/degen-llms/rpg/)**
+**[Launch pixel RPG →](https://exios66.github.io/degen-llms/rpg/)** · [about](rpg.qmd)
 :::
 
 ::: {.play-card}

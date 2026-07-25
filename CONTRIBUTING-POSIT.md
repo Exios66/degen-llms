@@ -13,7 +13,8 @@ This repository publishes a **Quarto website** to the JackJBurleson Posit Connec
 | Field | Value |
 |-------|-------|
 | Account | `jackjburleson` |
-| Content | **New instance** created by `scripts/publish_posit_degen_llms.py` (written into `_publish.yml`) |
+| Content | `019f9a67-d5c9-226b-b6b1-a86d1655be69` (see `_publish.yml`) |
+| Public share | https://019f9a67-d5c9-226b-b6b1-a86d1655be69.share.connect.posit.cloud/ |
 | Do **not** overwrite | PSYCH 755 content `019f9a10-ebb9-d1d5-839f-97e794bfd0ca` |
 
 After the first successful publish, `_publish.yml` records the new content id and dashboard URL. Subsequent publishes update **that** id only.

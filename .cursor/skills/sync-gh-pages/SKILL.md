@@ -1,11 +1,9 @@
 ---
 name: sync-gh-pages
 description: >-
-  Sync main/docs/ to the gh-pages branch for GitHub Pages (The Mandalay Bay
-  digital casino). Use when the user asks to deploy, publish, or sync the live
-  site; mentions gh-pages, GitHub Pages, sync-gh-pages.sh, or wants casino/RPG
-  assets pushed to https://exios66.github.io/degen-llms/. Always logs the run
-  as trigger=manual_run (not schedule/push). Invoke via /sync-gh-pages.
+  Legacy manual-only GitHub Pages sync. Prefer gh-pages-deploy-loop for deploy
+  tasks (12-hour schedule + manual). Use only when the user explicitly invokes
+  /sync-gh-pages or names this skill directly.
 disable-model-invocation: true
 ---
 

@@ -13,7 +13,8 @@ import {
 import { TerminalHostOverlay } from "./systems/TerminalHostOverlay.js";
 import { QuestManager } from "./systems/QuestManager.js";
 import { MenuOverlay } from "./systems/MenuOverlay.js";
-import { loadEggRegistry, syncEggsFromFlags, discoverEgg } from "./systems/EasterEggs.js";
+import { loadEggRegistry, syncEggsFromFlags, discoverEgg, eggForFlag } from "./systems/EasterEggs.js";
+import { RPG_ITEMS, giveItem } from "./systems/Inventory.js";
 import { audioManager } from "./systems/AudioManager.js";
 import { TILE_SIZE, MAP_WIDTH, MAP_HEIGHT } from "./systems/MapData.js";
 import { RewardsPhone } from "../../js/RewardsPhone.js";
@@ -48,8 +49,22 @@ const POOL_FLAG_ZONES = {
 };
 
 const dialogue = new DialogueManager(dialogueRoot, {
+  onItem: (itemId) => {
+    if (!session || !giveItem(session, itemId)) return;
+    audioManager.sfx("secret");
+    dialogue.showSystemMessage(`Got ${RPG_ITEMS[itemId]?.label ?? itemId}. Check your Bag (Esc).`);
+    persistAll();
+  },
   onFlag: (flag) => {
     saveAdapter?.setFlag(flag);
+    if (session) {
+      const egg = eggForFlag(flag);
+      const found = egg ? discoverEgg(session, egg.id) : null;
+      if (found) {
+        audioManager.sfx("secret");
+        dialogue.showSystemMessage(`Secret found — ${found.label}`);
+      }
+    }
     if (POOL_FLAG_ZONES[flag] && session) {
       ensurePoolComplex(session);
       enterZone(session, POOL_FLAG_ZONES[flag]);

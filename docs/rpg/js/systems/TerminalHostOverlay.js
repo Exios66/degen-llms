@@ -12,6 +12,7 @@ import { buildHotelRenderers } from "../../../js/hotel-ui.js";
 import { buildPoolRenderers } from "../../../js/pool-complex-ui.js";
 import { buildAmenitiesRenderers } from "../../../js/casino-amenities-ui.js";
 import { ensureHotel } from "../../../js/hotel.js";
+import { recordDex } from "./Dex.js";
 
 /** View the host stack falls back to when the player backs out of the entry screen. */
 const EXIT_VIEW = "__host_exit__";
@@ -190,6 +191,11 @@ export class TerminalHostOverlay {
       console.warn(`TerminalHostOverlay: missing renderer "${current.name}"`);
       this.close();
       return;
+    }
+    // Sitting down at a machine or table is what fills the dex, and hosted
+    // screens are the only place that happens.
+    if (current.name === "slots-play" && this.runtime.slots?.machine) {
+      recordDex(this.session, "slots", this.runtime.slots.machine.id);
     }
     this.hooks.onView?.(current.name);
     this.root.innerHTML = "";

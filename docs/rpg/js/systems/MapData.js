@@ -39,10 +39,12 @@ export const COLLISION = new Set([
  * @property {number} y
  * @property {string} sprite
  * @property {string} dialogueId
+ * @property {string} [challengeDialogueId] used when the NPC spots you first
  * @property {string} [encounter]
  * @property {string} [direction]
  * @property {PitZone} [zone]
- * @property {{ night?: { x: number, y: number } }} [schedule]
+ * @property {{ dir?: string, range?: number }} [sight] line-of-sight challenge cone
+ * @property {Record<string, { x: number, y: number }>} [schedule] keyed by world-cycle phase
  */
 
 function emptyLayers() {
@@ -102,9 +104,11 @@ export const NPCS = [
     y: 11,
     sprite: "npc_green",
     dialogueId: "pit_blackjack_greet",
+    challengeDialogueId: "pit_blackjack_challenge",
     zone: "blackjack",
     encounter: "blackjack",
     direction: "down",
+    sight: { dir: "down", range: 5 },
   },
   {
     id: "pit_holdem",
@@ -137,6 +141,7 @@ export const NPCS = [
     dialogueId: "barkeep_betty_greet",
     encounter: "bar",
     direction: "right",
+    schedule: { dawn: { x: 4, y: 24 } },
   },
   {
     id: "pavilion_paula",
@@ -156,7 +161,12 @@ export const NPCS = [
     sprite: "npc_silver",
     dialogueId: "tourist_tina",
     direction: "right",
-    schedule: { night: { x: 22, y: 16 } },
+    schedule: {
+      dawn: { x: 15, y: 22 },
+      midday: { x: 8, y: 18 },
+      dusk: { x: 22, y: 16 },
+      late: { x: 5, y: 21 },
+    },
   },
   {
     id: "arena_alex",
@@ -175,8 +185,11 @@ export const NPCS = [
     y: 14,
     sprite: "npc_pink",
     dialogueId: "spinster_sal_greet",
+    challengeDialogueId: "spinster_sal_challenge",
     encounter: "slots_fortune",
     direction: "left",
+    sight: { dir: "left", range: 4 },
+    schedule: { dawn: { x: 24, y: 17 } },
   },
   {
     id: "bookie_blake",
@@ -185,8 +198,11 @@ export const NPCS = [
     y: 14,
     sprite: "npc_silver",
     dialogueId: "bookie_blake_greet",
+    challengeDialogueId: "bookie_blake_challenge",
     encounter: "sportsbook",
     direction: "right",
+    sight: { dir: "right", range: 4 },
+    schedule: { late: { x: 5, y: 17 } },
   },
   {
     id: "cashier_carmen",
@@ -206,7 +222,12 @@ export const NPCS = [
     sprite: "npc_red",
     dialogueId: "security_sam_greet",
     direction: "down",
-    schedule: { night: { x: 15, y: 6 } },
+    schedule: {
+      dawn: { x: 15, y: 4 },
+      midday: { x: 20, y: 8 },
+      dusk: { x: 15, y: 6 },
+      late: { x: 10, y: 8 },
+    },
   },
   {
     id: "high_limit_host",
@@ -361,8 +382,11 @@ export const MAP_NPCS = {
       y: 20,
       sprite: "npc_teal",
       dialogueId: "lifeguard_lou_greet",
+      challengeDialogueId: "lifeguard_lou_challenge",
       encounter: "pool_wave",
       direction: "down",
+      sight: { dir: "down", range: 4 },
+      schedule: { late: { x: 22, y: 20 } },
     },
     {
       id: "shark_reef_guide",
@@ -446,8 +470,10 @@ export const MAP_NPCS = {
       y: 14,
       sprite: "npc_gold",
       dialogueId: "whale_warren_greet",
+      challengeDialogueId: "whale_warren_challenge",
       encounter: "slots_high_roller",
       direction: "left",
+      sight: { dir: "left", range: 5 },
     },
   ],
   high_limit_salon: [
@@ -468,9 +494,11 @@ export const MAP_NPCS = {
       y: 12,
       sprite: "npc_green",
       dialogueId: "salon_dealer_greet",
+      challengeDialogueId: "salon_dealer_challenge",
       zone: "blackjack",
       encounter: "blackjack",
       direction: "down",
+      sight: { dir: "down", range: 6 },
     },
     {
       id: "salon_cage",

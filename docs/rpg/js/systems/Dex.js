@@ -28,6 +28,28 @@ export const RESORT_STAFF_DEX = [
   { id: "beach_dj", name: "Beach DJ", role: "Beach club" },
 ];
 
+/**
+ * Every entry each collection can hold, independent of any save. `dexEntries`
+ * layers the player's sightings (and their staff-manifest renames) on top.
+ * @type {Record<string, { id: string, label: string, sublabel: string }[]>}
+ */
+export const DEX_REGISTRY = {
+  reef: Object.values(SHARK_SPECIES).map((s) => ({
+    id: s.id,
+    label: s.label,
+    sublabel: `${s.points} pt${s.points === 1 ? "" : "s"}`,
+  })),
+  slots: MACHINES.map((m) => ({
+    id: m.id,
+    label: m.name,
+    sublabel: m.tagline ?? m.category ?? "",
+  })),
+  staff: [
+    ...DEALER_ROSTER.map((d) => ({ id: d.id, label: d.name, sublabel: d.tagline ?? "Dealer" })),
+    ...RESORT_STAFF_DEX.map((p) => ({ id: p.id, label: p.name, sublabel: p.role })),
+  ],
+};
+
 function dexState(session) {
   const rpg = session.ensureRpgState();
   if (!rpg.dex) rpg.dex = {};
@@ -67,31 +89,11 @@ export function syncDexFromSession(session) {
 export function dexEntries(session, collection) {
   const dex = syncDexFromSession(session);
   const found = new Set(dex[collection] ?? []);
-  if (collection === "reef") {
-    return Object.values(SHARK_SPECIES).map((s) => ({
-      id: s.id,
-      label: s.label,
-      sublabel: `${s.points} pt${s.points === 1 ? "" : "s"}`,
-      found: found.has(s.id),
-    }));
-  }
-  if (collection === "slots") {
-    return MACHINES.map((m) => ({
-      id: m.id,
-      label: m.name,
-      sublabel: m.tagline ?? "",
-      found: found.has(m.id),
-    }));
-  }
-  const staff = [
-    ...DEALER_ROSTER.map((d) => ({ id: d.id, name: d.name, role: d.tagline ?? "Dealer" })),
-    ...RESORT_STAFF_DEX,
-  ];
-  return staff.map((person) => ({
-    id: person.id,
-    label: resolveNpc(session, person.id, { fallbackName: person.name }).name,
-    sublabel: person.role,
-    found: found.has(person.id),
+  const rename = collection === "staff";
+  return (DEX_REGISTRY[collection] ?? []).map((entry) => ({
+    ...entry,
+    label: rename ? resolveNpc(session, entry.id, { fallbackName: entry.label }).name : entry.label,
+    found: found.has(entry.id),
   }));
 }
 

@@ -89,7 +89,7 @@ export class DialogueManager {
    */
   start(dialogueId) {
     if (this._active) return Promise.resolve({});
-    const node = this.dialogues[dialogueId];
+    const node = this._resolveNode(dialogueId);
     if (!node) return Promise.resolve({});
 
     this._active = true;
@@ -98,6 +98,30 @@ export class DialogueManager {
       this._resolve = resolve;
       this._renderNode(node);
     });
+  }
+
+  /**
+   * Follow a node id, honoring node-level gates. A node whose gate fails hands
+   * off to its `elseNext`, which is how NPCs say something different once a
+   * quest has moved on.
+   * @param {string} id
+   */
+  _resolveNode(id, depth = 0) {
+    const node = this.dialogues[id];
+    if (!node || depth > 8) return node ?? null;
+    if (!this._nodeVisible(node)) {
+      return node.elseNext ? this._resolveNode(node.elseNext, depth + 1) : null;
+    }
+    return node;
+  }
+
+  _nodeVisible(node) {
+    if (node.requiresFlag && !this.flags[node.requiresFlag]) return false;
+    if (node.unlessFlag && this.flags[node.unlessFlag]) return false;
+    if (node.requiresQuestStage && this.questManager) {
+      if (!this.questManager.meets(node.requiresQuestStage)) return false;
+    }
+    return true;
   }
 
   close(result = {}) {
@@ -207,6 +231,7 @@ export class DialogueManager {
       this.flags[choice.setFlag] = true;
       this.hooks.onFlag?.(choice.setFlag);
     }
+    if (choice.giveItem) this.hooks.onItem?.(choice.giveItem);
     const reputation = choice.reputation ?? null;
     if (choice.encounter) {
       this._cleanupKeys?.();
@@ -220,7 +245,7 @@ export class DialogueManager {
       return;
     }
     if (choice.next) {
-      const next = this.dialogues[choice.next];
+      const next = this._resolveNode(choice.next);
       if (next) {
         this._pendingReputation = reputation;
         this._renderNode(next);
@@ -235,7 +260,7 @@ export class DialogueManager {
   _advance(node) {
     if (node.choices?.length) return;
     if (node.next) {
-      const next = this.dialogues[node.next];
+      const next = this._resolveNode(node.next);
       if (next) this._renderNode(next);
       else this._finish(node);
     } else if (node.encounter) {
@@ -252,6 +277,7 @@ export class DialogueManager {
       this.flags[node.setFlag] = true;
       this.hooks.onFlag?.(node.setFlag);
     }
+    if (node.giveItem) this.hooks.onItem?.(node.giveItem);
     const reputation = node.reputation ?? this._pendingReputation ?? null;
     this._pendingReputation = null;
     this._cleanupKeys?.();

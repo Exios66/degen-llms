@@ -11,7 +11,7 @@ import { getWorldPhase, syncWorldCycle } from "../../../js/world-cycle.js";
 import { tierForWagered } from "../../../js/rewards.js";
 import { tierIndex } from "../../../js/rewards-perks.js";
 import { recordDex } from "../systems/Dex.js";
-import { discoverEgg, eggForFlag } from "../systems/EasterEggs.js";
+import { EGG_REGISTRY, discoverEgg, eggForFlag } from "../systems/EasterEggs.js";
 
 /** Extra walk speed per MGM Rewards tier, plus the comped cart bonus. */
 const SPEED_PER_TIER = 6;
@@ -46,6 +46,7 @@ export class OverworldScene extends Phaser.Scene {
     this.onOpenMenu = data.onOpenMenu ?? null;
     this.isMenuOpen = data.isMenuOpen ?? (() => false);
     this.onMapBanner = data.onMapBanner ?? null;
+    this.onEgg = data.onEgg ?? null;
   }
 
   create() {
@@ -581,10 +582,15 @@ export class OverworldScene extends Phaser.Scene {
     }
     bang.destroy();
 
-    const result = await this.dialogue.start(npc.challengeDialogueId ?? npc.dialogueId);
+    const dealer = npc.zone ? this._dealerForZone(npc.zone) : null;
+    const dialogueId = [npc.challengeDialogueId, dealer && `${dealer.id}_challenge`,
+      dealer && `${dealer.id}_greet`, npc.dialogueId]
+      .find((id) => id && this.dialogues[id]) ?? npc.dialogueId;
+
+    const result = await this.dialogue.start(dialogueId);
     const encounterId = result.encounter || npc.encounter;
     if (encounterId) {
-      await this._runEncounter(encounterId, npc, npc.zone ? this._dealerForZone(npc.zone) : null);
+      await this._runEncounter(encounterId, npc, dealer);
     }
     this._challengeRunning = false;
     this.canMove = true;
@@ -719,6 +725,10 @@ export class OverworldScene extends Phaser.Scene {
         questManager: this.questManager,
         audio: this.audio,
         onHudUpdate: this.onHudUpdate,
+        onOpenMenu: this.onOpenMenu,
+        isMenuOpen: this.isMenuOpen,
+        onMapBanner: this.onMapBanner,
+        onEgg: this.onEgg,
       });
     });
   }
@@ -763,8 +773,10 @@ export class OverworldScene extends Phaser.Scene {
 
     // Security Sam escort comedy
     if (npc.id === "security_sam" && this.saveAdapter.hasFlag("hint_north_wall")) {
-      this.saveAdapter.setFlag("found_back_room");
+      this._findEgg("found_back_room");
     }
+
+    if (npc.id) recordDex(this.session, "staff", npc.id);
 
     this.canMove = true;
     this.onHudUpdate?.();
@@ -831,12 +843,30 @@ export class OverworldScene extends Phaser.Scene {
     this._konami.push(ev.key);
     if (this._konami.length > code.length) this._konami.shift();
     if (this._konami.join(",") === code.join(",")) {
-      this.saveAdapter.setFlag("konami_mode");
-      this.audio?.sfx?.("secret");
+      this._findEgg("konami_mode");
       this.dialogue.showSystemMessage("Retro palette unlocked. The statue winks.");
       document.getElementById("game-shell")?.classList.add("konami-mode");
       this._konami = [];
     }
+  }
+
+  /**
+   * Record an easter egg by registry id (or by legacy flag name), so the
+   * Secrets page and the overworld agree on what has been found.
+   */
+  _findEgg(idOrFlag) {
+    const egg = EGG_REGISTRY[idOrFlag] ? { id: idOrFlag } : eggForFlag(idOrFlag);
+    if (!egg) {
+      this.saveAdapter.setFlag(idOrFlag);
+      return null;
+    }
+    const found = discoverEgg(this.session, egg.id);
+    this.saveAdapter.setFlag(EGG_REGISTRY[egg.id]?.flag ?? egg.id);
+    if (found) {
+      this.audio?.sfx?.("secret");
+      this.onEgg?.(egg.id);
+    }
+    return found;
   }
 
   _saveTimer = 0;

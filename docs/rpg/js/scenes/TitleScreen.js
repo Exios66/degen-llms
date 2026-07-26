@@ -281,7 +281,11 @@ export class TitleScreen {
     const guestBtn = document.createElement("button");
     guestBtn.type = "button";
     guestBtn.textContent = "Guest visit (no save)";
-    guestBtn.onclick = () => this._promptArchetype(initSessionRpg(createGuestSession()));
+    guestBtn.onclick = () => {
+      const guest = createGuestSession();
+      initSessionRpg(guest);
+      this._promptArchetype(guest);
+    };
     actions.appendChild(guestBtn);
     panel.appendChild(actions);
 

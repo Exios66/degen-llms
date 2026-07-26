@@ -156,10 +156,12 @@ else
   SYNCED="yes"
   SYNC_DEBUG_CODES+=("$GBP_DEBUG_SYNC_PUSHED")
 
-  if git show-ref --verify --quiet "refs/heads/$TARGET_BRANCH"; then
-    git checkout "$TARGET_BRANCH"
-  elif git show-ref --verify --quiet "refs/remotes/origin/$TARGET_BRANCH"; then
+  # Always reset to the remote tip so a stale local gh-pages cannot diverge
+  # and reject the push (non-fast-forward).
+  if git show-ref --verify --quiet "refs/remotes/origin/$TARGET_BRANCH"; then
     git checkout -B "$TARGET_BRANCH" "origin/$TARGET_BRANCH"
+  elif git show-ref --verify --quiet "refs/heads/$TARGET_BRANCH"; then
+    git checkout "$TARGET_BRANCH"
   else
     git checkout --orphan "$TARGET_BRANCH"
     git rm -rf . 2>/dev/null || true

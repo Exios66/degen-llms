@@ -223,6 +223,7 @@ function renderSavePicker() {
       banner(CASINO_NAME),
       el("p", { className: "subtitle", textContent: "Save Library" }),
       el("p", { className: "dim", textContent: "Select a save slot to continue, create a new visit, or play as a guest:" }),
+      el("p", { className: "dim", textContent: "Save slots are shared with Pixel RPG mode — wallet, hotel, and MGM Rewards carry over." }),
     ]),
   ]);
 
@@ -290,7 +291,28 @@ function renderSavePicker() {
 
   panel.appendChild(el("p", { className: "subtitle", textContent: "Save slots:" }));
   panel.appendChild(menuList);
-  panel.appendChild(el("p", { className: "footer-note", textContent: "Your most recent saves appear at the top of the library." }));
+
+  const occupied = allSlots.filter((slot) => slot.occupied);
+  if (occupied.length) {
+    panel.appendChild(el("p", { className: "subtitle", textContent: "Pixel RPG (shared slots):" }));
+    const rpgList = el("ul", { className: "menu-list" });
+    for (const slot of occupied) {
+      const mode = slot.hasRpgProgress ? "continue RPG" : "carry profile into RPG";
+      rpgList.appendChild(el("li", {}, [
+        el("button", {
+          className: "menu-btn",
+          innerHTML: `<span class="num">→</span> Slot ${slot.slotId} — ${slot.playerName} (${mode})`,
+          onclick: () => {
+            persist();
+            window.location.href = `./rpg/?slot=${slot.slotId}&skipIntro=1`;
+          },
+        }),
+      ]));
+    }
+    panel.appendChild(rpgList);
+  }
+
+  panel.appendChild(el("p", { className: "footer-note", textContent: "Your most recent saves appear at the top of the library. Chips, hotel, and rewards sync between terminal and RPG." }));
   return container;
 
   function handleSlotChoice(slot) {
@@ -473,8 +495,9 @@ function renderHub() {
     } else if (choice === FLOOR_ORDER.length + 7) {
       pushView("casino-floor");
     } else if (choice === FLOOR_ORDER.length + 8) {
+      persist();
       const rpgUrl = session.slotId != null
-        ? `./rpg/?slot=${session.slotId}`
+        ? `./rpg/?slot=${session.slotId}&skipIntro=1`
         : "./rpg/?guest=1";
       window.location.href = rpgUrl;
     } else {

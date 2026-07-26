@@ -2,6 +2,7 @@ import {
   fmtChips,
   saveSlot,
   defaultRpgState,
+  bootstrapSessionForRpg,
 } from "../../../js/core.js";
 import { defaultAppearance, normalizeAppearance } from "./CharacterAppearance.js";
 
@@ -50,26 +51,23 @@ export class SaveAdapter {
   }
 }
 
-export function initSessionRpg(session, spawn = null) {
-  session.ensureRpgState();
+export function initSessionRpg(session, spawn = null, { allowDefaultArchetype = true } = {}) {
+  bootstrapSessionForRpg(session);
+  const rpg = session.rpg;
   if (spawn) {
-    session.rpg.x = spawn.x;
-    session.rpg.y = spawn.y;
+    rpg.x = spawn.x;
+    rpg.y = spawn.y;
   }
-  if (!session.rpg.playerSprite) {
-    session.rpg.playerSprite = "weekend_warrior";
+  if (!rpg.playerSprite) {
+    rpg.playerSprite = "weekend_warrior";
   }
-  if (!session.rpg.archetype) {
-    session.rpg.archetype = session.rpg.playerSprite || "weekend_warrior";
+  if (!rpg.archetype && allowDefaultArchetype) {
+    rpg.archetype = rpg.playerSprite || "weekend_warrior";
   }
-  if (!session.rpg.appearance) {
-    session.rpg.appearance = defaultAppearance(session.rpg.archetype);
-  } else {
-    session.rpg.appearance = normalizeAppearance(session.rpg);
-  }
-  if (session.rpg.worldTime == null) session.rpg.worldTime = 720;
-  if (!session.rpg.reputation) {
-    session.rpg.reputation = { whales: 0, staff: 0, tourists: 0 };
+  if (!rpg.appearance && (rpg.archetype || allowDefaultArchetype)) {
+    rpg.appearance = defaultAppearance(rpg.archetype || rpg.playerSprite || "weekend_warrior");
+  } else if (rpg.appearance) {
+    rpg.appearance = normalizeAppearance(rpg);
   }
   return session;
 }

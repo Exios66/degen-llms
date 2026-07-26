@@ -8,6 +8,8 @@ import {
   formatSaveTime,
   fmtChips,
   formatSaveSlotPlayTimes,
+  hasCasinoProfileProgress,
+  bootstrapSessionForRpg,
 } from "../../../js/core.js";
 import { getActiveProfileSummary, getActiveSlotId } from "../../../js/profileCache.js";
 import { getWorldCycleState } from "../../../js/world-cycle.js";
@@ -202,8 +204,7 @@ export class TitleScreen {
         if (this.launchSlotId != null) {
           const session = loadSlot(this.launchSlotId);
           if (session) {
-            initSessionRpg(session);
-            this._start(session);
+            this._beginSlotSession(session);
             return;
           }
         }
@@ -227,7 +228,7 @@ export class TitleScreen {
 
     const sub = document.createElement("p");
     sub.className = "subtitle";
-    sub.textContent = "Pixel RPG — 28 rooms of Mandalay Bay";
+    sub.textContent = "Same save slots as the web terminal — chips, hotel, and rewards carry over.";
     panel.appendChild(sub);
 
     const active = getActiveProfileSummary(listSlots);
@@ -280,7 +281,11 @@ export class TitleScreen {
     const guestBtn = document.createElement("button");
     guestBtn.type = "button";
     guestBtn.textContent = "Guest visit (no save)";
-    guestBtn.onclick = () => this._promptArchetype(initSessionRpg(createGuestSession()));
+    guestBtn.onclick = () => {
+      const guest = createGuestSession();
+      initSessionRpg(guest);
+      this._promptArchetype(guest);
+    };
     actions.appendChild(guestBtn);
     panel.appendChild(actions);
 
@@ -299,7 +304,11 @@ export class TitleScreen {
     const btn = document.createElement("button");
     btn.type = "button";
     if (isActive) btn.classList.add("active-profile");
-    btn.textContent = `${slot.label}: ${slot.playerName} — ${fmtChips(slot.balance)} · ${formatSaveSlotPlayTimes(slot.casinoTimeMs)} (${formatSaveTime(slot.updatedAt)})`;
+    const mode = slot.occupied
+      ? (slot.hasRpgProgress ? "casino + RPG" : "casino profile")
+      : "";
+    const modeSuffix = mode ? ` · ${mode}` : "";
+    btn.textContent = `${slot.label}: ${slot.playerName} — ${fmtChips(slot.balance)} · ${formatSaveSlotPlayTimes(slot.casinoTimeMs)}${modeSuffix} (${formatSaveTime(slot.updatedAt)})`;
     btn.onclick = () => this._loadAndStart(slot.slotId);
     li.appendChild(btn);
     return li;
@@ -366,7 +375,11 @@ export class TitleScreen {
     renderCharacterCreator(this.root, {
       session,
       title: "Choose Your Guest",
-      onComplete: (s) => this._start(s),
+      onComplete: (s) => {
+        initSessionRpg(s);
+        new SaveAdapter(s).persist();
+        this._start(s);
+      },
       onBack: () => this._renderMain(),
     });
   }
@@ -381,13 +394,66 @@ export class TitleScreen {
   _loadAndStart(slotId) {
     const session = loadSlot(slotId);
     if (!session) return;
-    initSessionRpg(session);
-    const rpg = session.ensureRpgState();
-    if (!rpg.archetype) {
-      this._promptArchetype(session);
+    this._beginSlotSession(session);
+  }
+
+  _beginSlotSession(session) {
+    const { importedFromCasino, needsCharacterSetup } = bootstrapSessionForRpg(session);
+    initSessionRpg(session, null, { allowDefaultArchetype: false });
+    if (needsCharacterSetup) {
+      this._promptCarryOver(session, importedFromCasino);
       return;
     }
+    initSessionRpg(session);
     this._start(session);
+  }
+
+  _promptCarryOver(session, importedFromCasino) {
+    this.root.innerHTML = "";
+    const panel = document.createElement("div");
+    panel.className = "title-panel title-panel--enter title-panel--visible";
+
+    const h1 = document.createElement("h1");
+    h1.textContent = importedFromCasino ? "Carry Over Casino Profile" : "Enter the Resort";
+    panel.appendChild(h1);
+
+    const intro = document.createElement("p");
+    intro.className = "subtitle";
+    intro.textContent = importedFromCasino
+      ? "Your web terminal progress loads into this save slot — wallet, hotel, and MGM Rewards stay synced."
+      : "Pick a guest look before walking the floor.";
+    panel.appendChild(intro);
+
+    const stats = document.createElement("p");
+    stats.className = "title-carry-stats";
+    const lines = [`${session.playerName} · ${fmtChips(session.wallet.balance)}`];
+    if ((session.casinoTimeMs ?? 0) > 0) {
+      lines.push(formatSaveSlotPlayTimes(session.casinoTimeMs));
+    }
+    if (session.rewards?.tier) {
+      lines.push(`MGM Rewards ${session.rewards.tier}`);
+    }
+    if (session.hotel?.foundReservation) {
+      lines.push("Hotel reservation on file");
+    } else if (hasCasinoProfileProgress(session)) {
+      lines.push("Casino activity saved");
+    }
+    stats.textContent = lines.join(" · ");
+    panel.appendChild(stats);
+
+    const nextBtn = document.createElement("button");
+    nextBtn.type = "button";
+    nextBtn.textContent = "Customize guest →";
+    nextBtn.onclick = () => this._promptArchetype(session);
+    panel.appendChild(nextBtn);
+
+    const backBtn = document.createElement("button");
+    backBtn.type = "button";
+    backBtn.textContent = "Back";
+    backBtn.onclick = () => this._renderMain();
+    panel.appendChild(backBtn);
+
+    this.root.appendChild(panel);
   }
 
   _start(session) {

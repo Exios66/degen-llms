@@ -1,16 +1,17 @@
 import Phaser from "phaser";
-import { OverworldScene } from "./scenes/GameScenes.js?v=sprite-clip-1";
-import { TitleScreen, renderHud, renderTrainerCard } from "./scenes/TitleScreen.js?v=sprite-clip-1";
+import { OverworldScene } from "./scenes/GameScenes.js?v=sheet-sprites-1";
+import { TitleScreen, renderHud, renderTrainerCard } from "./scenes/TitleScreen.js?v=sheet-sprites-1";
 import { DialogueManager } from "./systems/DialogueManager.js";
 import { SaveAdapter } from "./systems/SaveAdapter.js";
-import { defaultAppearance } from "./systems/CharacterAppearance.js";
+import { defaultAppearance, indexSpeakerLooks } from "./systems/CharacterAppearance.js";
+import { preloadCharacterArt } from "./systems/CharacterSprites.js";
 import {
   BlackjackOverlay,
   EncounterBridge,
   RouletteOverlay,
   HoldemOverlay,
   RhythmOverlay,
-} from "./systems/EncounterBridge.js?v=sprite-clip-1";
+} from "./systems/EncounterBridge.js?v=sheet-sprites-1";
 import { TerminalHostOverlay } from "./systems/TerminalHostOverlay.js";
 import { QuestManager } from "./systems/QuestManager.js";
 import { MenuOverlay } from "./systems/MenuOverlay.js";
@@ -138,8 +139,12 @@ async function startOverworld(activeSession) {
     loadJson("js/data/quests.json", null),
     loadJson("js/data/easter_eggs.json", null),
     loadWorld(),
+    // Sheets must decode before the first scene bakes a recoloured texture.
+    preloadCharacterArt(),
   ]);
   const knownMaps = new Set(installWorld(world));
+  // Lets dialogue portraits match the guest sprite out on the floor.
+  indexSpeakerLooks(world?.npcs);
   // A save can point at a map id that a later world revision dropped.
   if (!knownMaps.has(rpg.mapId)) {
     rpg.mapId = DEFAULT_MAP_ID;

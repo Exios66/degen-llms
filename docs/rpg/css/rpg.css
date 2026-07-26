@@ -58,10 +58,12 @@ body {
     0 24px 64px rgba(0, 0, 0, 0.75);
 }
 
+/* Printed on the cabinet bezel, so it sits in the border rather than over the
+   play area where gold on a pale floor is unreadable. */
 #game-shell.arcade-cabinet::before {
   content: "THE MANDALAY BAY";
   position: absolute;
-  top: 4px;
+  top: -11px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 30;
@@ -93,8 +95,7 @@ body {
 
 #hud {
   position: absolute;
-  /* Clear of the cabinet marquee printed along the top of the bezel. */
-  top: 18px;
+  top: 10px;
   left: 50%;
   transform: translateX(-50%);
   width: min(100%, 640px);
@@ -474,9 +475,16 @@ body {
   color: var(--cyan);
 }
 
+/* Two across, so the colour pickers below stay on screen without scrolling. */
 .character-creator__archetypes {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
+}
+
+.character-creator__archetypes .archetype-btn {
+  margin: 0;
+  padding: 8px;
 }
 
 .character-creator__archetype--active {

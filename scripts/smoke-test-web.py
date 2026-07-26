@@ -170,6 +170,30 @@ def rpg_journey(page, base, failures: list[str], errors: list[str]) -> None:
     step("hotel_exit", page.evaluate("() => !window.__rpg.terminalHost.isActive()"),
          "leaving the hotel did not close the overworld panel")
 
+    # Wardrobe: every choice has to reach the sprite and the save slot. The
+    # sprite is a repainted sheet, so "it changed" means the pixels changed —
+    # checking the saved ids alone would pass even if the repaint never ran.
+    wardrobe = page.evaluate("""() => {
+      const s = window.__rpg.scene;
+      const rpg = window.__rpg.saveAdapter.rpg;
+      const frame = () => {
+        const src = s.player.texture.getSourceImage();
+        const c = document.createElement('canvas');
+        c.width = src.width;
+        c.height = src.height;
+        c.getContext('2d').drawImage(src, 0, 0);
+        return c.toDataURL();
+      };
+      const before = frame();
+      rpg.appearance = { body: 'judi', skin: 'ebony', hair: 'pink',
+                         outfit: 'violet', legs: 'khaki' };
+      s.refreshPlayerAppearance();
+      window.__rpg.saveAdapter.persist();
+      return { changed: frame() !== before, textureKey: s.player.texture.key };
+    }""")
+    step("wardrobe_repaints", wardrobe["changed"],
+         f"changing every option left the sprite identical ({wardrobe['textureKey']})")
+
     # Reload: position, map, and chips must all come back off the save slot.
     before = page.evaluate("""() => {
       const s = window.__rpg.scene;
@@ -189,6 +213,12 @@ def rpg_journey(page, base, failures: list[str], errors: list[str]) -> None:
                chips: window.__rpg.session.wallet.balance };
     }""")
     step("reload", after == before, f"{before} restored as {after}")
+
+    look = page.evaluate("() => window.__rpg.saveAdapter.rpg.appearance")
+    step("wardrobe_persists",
+         look == {"body": "judi", "skin": "ebony", "hair": "pink",
+                  "outfit": "violet", "legs": "khaki"},
+         f"the saved look came back as {look}")
 
 
 def rpg_phone(browser, base, failures: list[str]) -> None:

@@ -74,6 +74,49 @@ def test_reservation_requirement_desk_day() -> None:
     assert confirm_reservation_at_desk(session).ok is True
 
 
+def test_desk_checkin_works_on_phone_only_day() -> None:
+    """Carmen's terminal can complete check-in even when the day label says phone."""
+    from mandalay_bay.world_cycle import (
+        can_access_hotel_room,
+        confirm_reservation_at_desk,
+        get_reservation_requirement,
+    )
+
+    session = _session()
+    wc = ensure_world_cycle(session)
+    # Day 0 = phone-only requirement
+    wc.clock_anchor_ms = int(time.time() * 1000)
+    wc.processed_day = 0
+    sync_world_cycle(session)
+    req = get_reservation_requirement(session)
+    assert req["needs_phone"] is True
+    assert req["needs_desk"] is False
+    hotel = ensure_hotel(session)
+    assert hotel.found_reservation is False
+    res = confirm_reservation_at_desk(session)
+    assert res.ok is True
+    assert hotel.found_reservation is True
+    assert hotel.room_key_active is True
+    assert can_access_hotel_room(session) is True
+    assert hotel.reached_room is False
+
+
+def test_desk_checkin_works_on_two_step_day_without_phone_first() -> None:
+    from mandalay_bay.world_cycle import can_access_hotel_room, confirm_reservation_at_desk
+
+    session = _session()
+    wc = ensure_world_cycle(session)
+    # Day 2 = phone + desk
+    wc.clock_anchor_ms = int(time.time() * 1000) - (MS_PER_GAME_DAY * 2) - 1000
+    wc.processed_day = 0
+    sync_world_cycle(session)
+    res = confirm_reservation_at_desk(session)
+    assert res.ok is True
+    hotel = ensure_hotel(session)
+    assert hotel.found_reservation and hotel.reservation_confirmed_desk
+    assert can_access_hotel_room(session) is True
+
+
 def test_daily_rates_scale_by_room_type() -> None:
     session = _session()
     hotel = ensure_hotel(session)

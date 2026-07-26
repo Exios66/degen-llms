@@ -57,6 +57,7 @@ class HotelState:
     reached_room: bool = False
     hallway_progress: int = 0
     hallway_log: list[str] = field(default_factory=list)
+    carmen_desk_log: list[dict] = field(default_factory=list)
     room_amenities: RoomAmenitiesState | None = None
     resort_time: int = 0
     folio_reviewed: bool = False

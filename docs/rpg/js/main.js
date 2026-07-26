@@ -97,6 +97,10 @@ function persistAll() {
   saveAdapter?.persist();
 }
 
+window.addEventListener("mandalay:intoxication-settled", () => {
+  persistAll();
+});
+
 function closeHooks() {
   return {
     onClose: () => {

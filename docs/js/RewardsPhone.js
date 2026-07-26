@@ -5,7 +5,7 @@ import {
 import {
   getActivityTiming, getTierExperience, RESORT_OFFERS, tierIndex,
 } from "./rewards-perks.js";
-import { ensureHotel, findReservation, reservationHint, getRoomType } from "./hotel.js";
+import { ensureHotel, findReservation, reservationHint, getRoomType, upgradeRoom } from "./hotel.js";
 import { getReservationRequirement, reservationStatusMessage, grantRoomKeyIfReservationReady } from "./world-cycle.js";
 import {
   advanceDialogue,
@@ -258,10 +258,13 @@ export class RewardsPhone {
     const exp = getTierExperience(tier.id);
     const timing = getActivityTiming(tier.id);
     const prog = this.tracker.progressToNextTier();
+    const hotel = ensureHotel(this.session);
+    const room = getRoomType(hotel);
     body.innerHTML = "";
     body.className = `rewards-lcd-body rewards-tier-${tier.id}`;
     body.appendChild(this._line(`Member ${rewards.memberId}`));
     body.appendChild(this._line(`${tier.label} · ${fmtChips(rewards.lifetimeWagered)} wagered`));
+    body.appendChild(this._line(`Stay: ${room.label} · Rm ${hotel.roomNumber}`, "dim"));
     body.appendChild(this._line(exp.tagline, "dim"));
     body.appendChild(this._line(`Floor speed: ${Math.round((1 / timing.speedMultiplier) * 100)}% VIP`, "dim"));
     if (prog.next) {
@@ -501,6 +504,8 @@ export class RewardsPhone {
     const rewards = this.tracker.ensureRewards();
     const tier = tierForWagered(rewards.lifetimeWagered);
     const exp = getTierExperience(tier.id);
+    const hotel = ensureHotel(this.session);
+    const room = getRoomType(hotel);
     body.innerHTML = "";
     body.className = `rewards-lcd-body rewards-tier-${tier.id}`;
     const card = document.createElement("div");
@@ -511,9 +516,11 @@ export class RewardsPhone {
       <div class="rewards-member-name">${this.session.playerName}</div>
       <div class="rewards-member-wager">${fmtChips(rewards.lifetimeWagered)} lifetime</div>
       <div class="rewards-member-cost">${exp.monthlyAmortizedCost}</div>
+      <div class="rewards-member-room">${room.label} · Room ${hotel.roomNumber}</div>
     `;
     body.appendChild(card);
     body.appendChild(this._line(exp.pitBossLine, "dim"));
+    body.appendChild(this._line(reservationHint(hotel), "dim"));
   }
 
   _renderComps(body) {
@@ -533,9 +540,23 @@ export class RewardsPhone {
       if (!redeemed) {
         const btn = document.createElement("button");
         btn.type = "button";
-        btn.textContent = "Redeem";
+        btn.textContent = compId === "suite_upgrade" || compId === "penthouse_fantasy"
+          ? "Redeem → Upgrade room"
+          : "Redeem";
         btn.onclick = () => {
-          this.tracker.redeemComp(compId);
+          if (compId === "suite_upgrade" || compId === "penthouse_fantasy") {
+            const target = compId === "suite_upgrade" ? "suite" : "penthouse";
+            const result = upgradeRoom(this.session, target, this.tracker);
+            this.tracker.pushNotification(
+              result.ok ? "Room Upgraded" : "Upgrade Held",
+              result.message,
+            );
+            if (result.ok) {
+              this._showToast?.({ title: "Room Upgraded", body: result.message });
+            }
+          } else {
+            this.tracker.redeemComp(compId);
+          }
           this.onPersist();
           this._renderScreen();
           this._updateBadge();
@@ -586,12 +607,15 @@ export class RewardsPhone {
     const req = getReservationRequirement(this.session);
     body.innerHTML = "";
     body.appendChild(this._line(`${room.label}`));
+    body.appendChild(this._line(`Room ${hotel.roomNumber} · ${hotel.wing.toUpperCase()} tower · Fl ${hotel.floor}`));
     body.appendChild(this._line(`Conf ${hotel.reservationCode}`, "dim"));
     body.appendChild(this._line(reservationStatusMessage(this.session), "dim"));
-    if (hotel.foundReservation && (!req.needsDesk || hotel.reservationConfirmedDesk)) {
+    if (hotel.reachedRoom) {
+      body.appendChild(this._line("Door reached — enter from the hotel lobby or Carmen's desk.", "dim"));
+    } else if (hotel.roomKeyActive || (hotel.foundReservation && (!req.needsDesk || hotel.reservationConfirmedDesk))) {
       grantRoomKeyIfReservationReady(this.session);
       body.appendChild(this._line(reservationHint(hotel), "dim"));
-      body.appendChild(this._line("Your room key is active — open hotel services for TV, minibar, and more.", "dim"));
+      body.appendChild(this._line("Key active — take the hotel hallway (or ask Carmen to skip) to unlock your room.", "dim"));
     } else if (req.needsPhone && !hotel.foundReservation) {
       body.appendChild(this._line("Tap locate to reveal your tower.", "dim"));
       const btn = document.createElement("button");

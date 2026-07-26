@@ -122,6 +122,11 @@ PHONE_CALLS = {
 ROOM_DECISIONS = {
     "do_not_disturb": {"label": "Hang the Do Not Disturb sign", "flavor": "Privacy secured."},
     "balcony": {"label": "Step onto the balcony", "flavor": "The Strip glitters below."},
+    "balcony_smoke_pov": {
+        "label": "Suite balcony — Strip POV smoke break",
+        "flavor": "Glass railing. Warm wind. A joint and the entire Strip performing for you.",
+        "room_types": ["suite", "penthouse"],
+    },
     "room_service": {"label": "Order room service", "flavor": "A burger arrives in forty-five minutes.", "price": 35},
     "tip_maid": {"label": "Leave a chip tip for housekeeping", "flavor": "Tomorrow's towels will be fluffier.", "price": 25},
     "sky_bridge_walk": {"label": "Walk Mandalay Place sky bridge", "flavor": "Luxor's pyramid glows through the glass."},
@@ -418,6 +423,8 @@ def make_room_decision(session: PlayerSession, decision_id: str) -> AmenityResul
         return AmenityResult(False, f"Need {fmt_chips(price)}.")
     if decision_id not in ra.decisions:
         ra.decisions.append(decision_id)
+    if decision_id == "balcony_smoke_pov" and "balcony" not in ra.decisions:
+        ra.decisions.append("balcony")
     if decision_id == "wake_up_call":
         ra.wake_up_scheduled = True
     unlocked = _after_amenity_action(session)

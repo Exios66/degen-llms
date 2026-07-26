@@ -135,6 +135,7 @@ export class SportsbookState {
     this.activeTab = "sports";
     this.liveCache = null;
     this.scenarioCursor = 0;
+    this.salonDesk = false;
     this.predictions = new PredictionMarketsState();
     if (data) {
       this.events = data.events ?? [];
@@ -143,6 +144,7 @@ export class SportsbookState {
       this.activeTab = data.activeTab ?? "sports";
       this.liveCache = data.liveCache ?? null;
       this.scenarioCursor = data.scenarioCursor ?? 0;
+      this.salonDesk = Boolean(data.salonDesk);
       this.predictions = PredictionMarketsState.fromJSON(data.predictions ?? null);
     }
   }
@@ -172,7 +174,10 @@ export class SportsbookState {
     if (this.events.length && !force) return;
     if (this.scenarioDb?.scenarios?.length) {
       const { events, nextCursor } = boardFromScenarios(
-        this.scenarioDb, this.scenarioCursor, this.scenarioDb.boardSize ?? 10,
+        this.scenarioDb,
+        this.scenarioCursor,
+        this.scenarioDb.boardSize ?? 10,
+        { includeSalonOnly: Boolean(this.salonDesk) },
       );
       this.events = events;
       this.scenarioCursor = nextCursor;
@@ -180,6 +185,24 @@ export class SportsbookState {
       this.events = generateBoard(this.catalog);
     }
     this.predictions.syncMarkets(this.events, force);
+  }
+
+  /** Swap to the High Limit Salon sports desk catalog. */
+  loadSalonBoard(salonDb) {
+    this.salonDesk = true;
+    this.scenarioDb = salonDb;
+    this.scenarioCursor = 0;
+    this.events = [];
+    this.refreshBoard(true);
+  }
+
+  /** Restore main-floor sports scenarios after leaving the salon. */
+  clearSalonDesk(mainDb = null) {
+    this.salonDesk = false;
+    // Drop salon catalog so ensureCatalog reloads the main-floor slate.
+    this.scenarioDb = mainDb ?? null;
+    this.scenarioCursor = 0;
+    this.events = [];
   }
 
   async refreshBoardAsync(force = false) {

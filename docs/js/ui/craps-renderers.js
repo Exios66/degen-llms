@@ -2,6 +2,7 @@
 import { ACTIVITIES, fmtChips, signedChips } from "../core.js";
 import { CrapsTable } from "../craps.js";
 import { effectiveTableStakes } from "../stakes.js";
+import { resolveActivityMin } from "../salon-exclusives.js";
 
 export function buildCrapsRenderers(ctx) {
   const { el, dealerPanel, videoMachine, machineLog, goBack, render, persist,
@@ -39,9 +40,10 @@ export function buildCrapsRenderers(ctx) {
     persist();
     const table = ensureCrapsTable();
     const tier = runtime.craps.tier ?? runtime.stakeTier;
+    const activityMin = resolveActivityMin(runtime, act.minBet);
     const wagerStakes = tier
-      ? effectiveTableStakes(tier, ctx.session.wallet.balance, act.minBet)
-      : { minBet: act.minBet, maxBet: ctx.session.wallet.balance };
+      ? effectiveTableStakes(tier, ctx.session.wallet.balance, activityMin)
+      : { minBet: activityMin, maxBet: ctx.session.wallet.balance };
     const remembered = Number.isFinite(runtime.craps.lastWager)
       ? Math.min(wagerStakes.maxBet, Math.max(wagerStakes.minBet, runtime.craps.lastWager))
       : wagerStakes.minBet;

@@ -12,7 +12,13 @@ from mandalay_bay.sport_simulator import (
     simulate_event_outcome,
     load_catalog,
 )
-from mandalay_bay.trading_desk import entry_cost_chips, load_catalog as load_trading_catalog, settle_position
+from mandalay_bay.trading_desk import (
+    entry_cost_chips,
+    load_catalog as load_trading_catalog,
+    load_market_symbols,
+    settle_position,
+    underlyings_from_catalog,
+)
 
 
 def test_sports_scenario_db_size() -> None:
@@ -28,6 +34,26 @@ def test_prediction_scenario_db_size() -> None:
 def test_trading_catalog_size() -> None:
     catalog = load_trading_catalog()
     assert len(catalog.get("contracts") or []) >= 125
+
+
+def test_market_symbols_db_covers_asset_classes() -> None:
+    db = load_market_symbols()
+    symbols = db.get("symbols") or []
+    assert len(symbols) >= 40
+    classes = {s["assetClass"] for s in symbols}
+    assert {"nyse", "commodities", "crypto"} <= classes
+    sample = next(s for s in symbols if s["symbol"] in {"AAPL", "BTC", "CL"})
+    assert len(sample.get("series1d") or []) >= 12
+    assert len(sample.get("series1w") or []) >= 12
+    assert "perf1dPct" in sample and "perf1wPct" in sample
+
+
+def test_underlyings_filter_by_asset_class() -> None:
+    crypto = underlyings_from_catalog(asset_class="crypto")
+    assert crypto
+    assert all(q["assetClass"] == "crypto" for q in crypto)
+    assert any(q["symbol"] == "BTC" for q in crypto)
+    assert all("perf1dPct" in q and "perf1wPct" in q for q in crypto)
 
 
 def test_sports_board_cycles_and_wraps() -> None:

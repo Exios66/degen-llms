@@ -11,7 +11,9 @@ from mandalay_bay.hotel import (
     is_net_positive,
     reset_hallway,
     upgrade_room,
+    use_room_key_to_door,
 )
+from mandalay_bay.world_cycle import grant_room_key_if_reservation_ready
 from mandalay_bay.saves import session_from_dict, session_to_dict
 from mandalay_bay.session import PlayerSession
 
@@ -53,6 +55,15 @@ def test_hallway_requires_reservation() -> None:
     assert "reservation" in (result.quip or "").lower()
 
 
+def test_locate_activates_key_without_skipping_hallway() -> None:
+    session = PlayerSession()
+    find_reservation(session)
+    hotel = ensure_hotel(session)
+    assert hotel.found_reservation is True
+    assert hotel.room_key_active is True
+    assert hotel.reached_room is False
+
+
 def test_hallway_correct_path_reaches_room() -> None:
     session = PlayerSession()
     find_reservation(session)
@@ -62,6 +73,36 @@ def test_hallway_correct_path_reaches_room() -> None:
         result = hallway_choice(session, idx)
         assert result.success is True
     assert hotel.reached_room is True
+
+
+def test_use_room_key_skips_hallway_to_door() -> None:
+    session = PlayerSession()
+    find_reservation(session)
+    hotel = ensure_hotel(session)
+    assert hotel.reached_room is False
+    res = use_room_key_to_door(session)
+    assert res.ok is True
+    assert hotel.reached_room is True
+    assert hotel.room_key_active is True
+
+
+def test_suite_upgrade_resets_key_and_hallway() -> None:
+    session = _session_with_net(800)
+    find_reservation(session)
+    use_room_key_to_door(session)
+    hotel = ensure_hotel(session)
+    old_number = hotel.room_number
+    res = upgrade_room(session, "suite")
+    assert res.ok is True
+    assert hotel.room_type == "suite"
+    assert hotel.room_number != old_number
+    assert hotel.found_reservation is False
+    assert hotel.room_key_active is False
+    assert hotel.reached_room is False
+    find_reservation(session)
+    grant_room_key_if_reservation_ready(session)
+    assert hotel.room_key_active is True
+    assert hotel.reached_room is False
 
 
 def test_upgrade_suite_when_net_positive() -> None:

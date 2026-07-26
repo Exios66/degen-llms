@@ -114,8 +114,8 @@ Thoroughbred sim with win/place/show wagering. Real horse names, strength-based 
 | **Casino Floor — shopping & bars** | Mandalay Place sky bridge, three bars, intoxication |
 | **Resort Dining** | Aureole, Border Grill, Stripsteak — capacity minigame + drink-scaled encounters |
 | **Staff Manifest** | Editable dealer roster with session overrides |
-| **High Limit salon** | Chip-gated VIP tables (web) |
-| **Foundation Room** | Tier-gated lounge (web + RPG) |
+| **High Limit salon** | Chip-gated VIP venue (web + RPG) — private shoe tables, salon-only slots (Obsidian / Whale / Chairman), and a whale sports desk with exclusive tickets |
+| **Foundation Room** | Noir+ lounge (web + RPG) — host whisper, Foundation edible; open via host rapport, suite stay, phone call, or bar atmosphere |
 
 → [Resort Dining](dining.md)
 
@@ -123,7 +123,7 @@ Thoroughbred sim with win/place/show wagering. Real horse names, strength-based 
 
 | Zone | Highlights |
 |------|------------|
-| **Hotel** | Front desk, hallway mini-game, 17 room vignettes, dining overlay entry |
+| **Hotel** | Front desk, hallway mini-game, 17 room vignettes, dining overlay, suite balcony Strip POV smoke-break |
 | **Pool complex** | Wave pool, cabanas, Shark Reef, beach club |
 | **MGM Rewards** | Tier progression, comps, phone hotline |
 

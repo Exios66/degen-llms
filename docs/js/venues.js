@@ -34,13 +34,10 @@ export function canEnterHighLimitSalon(session, stakeTier) {
     };
   }
   const tierId = stakeTier?.id;
-  if (!tierId || !SALON_STAKE_TIER_IDS.includes(tierId)) {
-    return {
-      ok: false,
-      reason: `Choose a ${STAKE_TIERS.high_limit.name} stake tier or above before the salon door opens.`,
-    };
-  }
-  return { ok: true };
+  return {
+    ok: true,
+    needsStakeAssign: !tierId || !SALON_STAKE_TIER_IDS.includes(tierId),
+  };
 }
 
 /**
@@ -61,20 +58,16 @@ export function canEnterFoundationRoom(session) {
   const hostRapport = getRapport(session, "host_representative");
   const calls = session.hotel?.roomAmenities?.phoneCalls ?? [];
   const calledFoundation = calls.includes("foundation_room");
+  const roomType = session.hotel?.roomType;
+  const suiteOrBetter = roomType === "suite" || roomType === "penthouse";
 
-  if (hostRapport < FOUNDATION_MIN_HOST_RAPPORT && !buzzed) {
-    return {
-      ok: false,
-      reason: "Velvet rope closed — build rapport with Alexandra (host line) or visit Betty's until the lounge recognizes you.",
-    };
+  // Any one social/atmosphere path opens the rope for Noir+ members.
+  if (hostRapport >= FOUNDATION_MIN_HOST_RAPPORT || buzzed || calledFoundation || suiteOrBetter) {
+    return { ok: true, rewardsTier, hostRapport, buzzed, calledFoundation, suiteOrBetter };
   }
 
-  if (!buzzed && !calledFoundation) {
-    return {
-      ok: false,
-      reason: "Noir lounge whispers require atmosphere — call the Foundation Room line from your suite phone or loosen up at the bar first.",
-    };
-  }
-
-  return { ok: true, rewardsTier, hostRapport, buzzed, calledFoundation };
+  return {
+    ok: false,
+    reason: "Velvet rope closed — build host rapport, call the Foundation Room from your suite phone, upgrade to a suite, or loosen up at the bar.",
+  };
 }

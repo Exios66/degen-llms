@@ -14,6 +14,7 @@ flowchart TD
     lobby --> lottery[Lottery Counter]
     lobby --> sports[Sports Book]
     lobby --> trading[Trading Floor]
+    lobby --> arcade[Arcade Alley]
     lobby --> racing[Racing Pavilion]
     lobby --> equestrian[Equestrian Arena]
     lobby --> cashier[Cashier]
@@ -31,6 +32,7 @@ flowchart TD
     bookMenu --> settle[Settle Bets]
     trading --> markets[Browse Contracts]
     markets --> buy[Buy Future or Option]
+    arcade --> cabinet[CRT Cabinet Overlay]
 ```
 
 - **Main lobby** has no "Back" option — you are always at the root
@@ -52,23 +54,24 @@ Choose your adventure:
   3) Explore Lottery Counter
   4) Explore Sports Book
   5) Explore Trading Floor
-  6) Explore Racing Pavilion
-  7) Explore Equestrian Arena
-  8) Cashier
-  9) Player Stats
- 10) Save Game
- 11) Casino Guide
- 12) Leave Casino
+  6) Explore Arcade Alley
+  7) Explore Racing Pavilion
+  8) Explore Equestrian Arena
+  9) Cashier
+ 10) Player Stats
+ 11) Save Game
+ 12) Casino Guide
+ 13) Leave Casino
 ```
 
 | Option | Action |
 |--------|--------|
-| 1–7 | Enter a casino floor and pick an activity |
-| 8 | Buy/cash out chips, view ledger |
-| 9 | Session statistics per activity |
-| 10 | Manual save to your slot |
-| 11 | In-game rules and controls reference |
-| 12 | Auto-save and exit (confirmation required) |
+| 1–8 | Enter a casino floor and pick an activity |
+| 9 | Buy/cash out chips, view ledger |
+| 10 | Session statistics per activity |
+| 11 | Manual save to your slot |
+| 12 | In-game rules and controls reference |
+| 13 | Auto-save and exit (confirmation required) |
 
 Progress **auto-saves** after each floor activity and when leaving.
 
@@ -261,12 +264,6 @@ Sports Book:
 
 Chips are debited immediately when the ticket is placed.
 
----
-
-## Trading Floor
-
-Browse the stored contract catalog, filter by asset class / instrument, buy futures or options, then settle. See [Trading Floor](trading-floor.md).
-
 ### Settling bets
 
 Select **Settle all open bets** to simulate final scores and resolve all pending tickets. Wins credit your wallet; losses are already debited.
@@ -274,6 +271,18 @@ Select **Settle all open bets** to simulate final scores and resolve all pending
 ### Refresh lines
 
 Generates a new board of events with updated odds.
+
+---
+
+## Trading Floor
+
+Browse the stored contract catalog, filter by asset class / instrument, buy futures or options, then settle. See [Trading Floor](trading-floor.md).
+
+---
+
+## Arcade Alley
+
+Pick a cabinet card to open the **CRT overlay** — Strip Cross, Neon Invaders, High-Roller Breakout, or Showgirl Beat. Earn tickets and redeem small perks. See [Arcade Alley](arcade.md).
 
 ---
 

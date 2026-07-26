@@ -125,6 +125,8 @@
   flex: 1;
   overflow-y: auto;
   margin-bottom: 4px;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
 }
 
 .rewards-lcd-body p {
@@ -367,7 +369,7 @@
   flex: 1 1 45%;
 }
 
-/* Responsive: move phone to bottom-left on narrow screens to avoid overlap with menus */
+/* Responsive: keep the FAB reachable on narrow screens */
 @media (max-width: 480px) {
   .rewards-phone-root {
     bottom: 10px;
@@ -379,4 +381,18 @@
     height: 44px;
     font-size: 18px;
   }
+}
+
+/*
+ * RPG touch layout parks the FAB at the top (see rpg.css). Open the flip shell
+ * downward and drop toasts under the FAB so neither leaves the viewport.
+ */
+body.has-touch-pad .rewards-phone {
+  top: 64px;
+  bottom: auto;
+}
+
+body.has-touch-pad .rewards-toast {
+  top: 60px;
+  bottom: auto;
 }

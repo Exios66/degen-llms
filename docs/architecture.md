@@ -4,7 +4,7 @@
 
 ```
 degen-llms/
-├── mandalay_bay/          # Casino hub & economy
+├── mandalay_bay/          # Resort hub & economy
 │   ├── main.py            # CLI entry, session bootstrap
 │   ├── hub.py             # Lobby navigation
 │   ├── chips.py           # ChipWallet & ledger
@@ -17,12 +17,13 @@ degen-llms/
 │   ├── resort_completion.py
 │   ├── casino_amenities.py
 │   ├── rewards.py / rewards_perks.py
+│   ├── craps.py / lottery.py / prediction_markets.py
 │   └── activities/
 │       ├── base.py        # Activity ABC
 │       ├── registry.py    # Activity catalog
-│       ├── blackjack.py   # Table game wrapper
-│       ├── slots.py       # Slot machines
-│       └── sportsbook.py  # Sports wagering
+│       ├── blackjack.py / holdem.py / roulette.py / craps.py
+│       ├── slots.py / lottery.py / sportsbook.py
+│       └── horse_racing.py / equestrian.py
 ├── blackjack/             # Blackjack engine
 │   ├── table.py           # Round orchestration
 │   ├── cards.py           # Shoe & dealing

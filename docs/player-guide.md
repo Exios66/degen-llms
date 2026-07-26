@@ -1,6 +1,6 @@
 # Player Guide
 
-This guide documents every screen, menu, and dialog in **The Mandalay Bay** digital casino.
+This guide documents every screen, menu, and dialog in **The Mandalay Bay** digital resort simulator.
 
 ## Navigation model
 
@@ -11,15 +11,20 @@ flowchart TD
     lobby[Main Lobby]
     lobby --> tableGames[Table Games]
     lobby --> slots[Slot Machines]
+    lobby --> lottery[Lottery Counter]
     lobby --> sports[Sports Book]
+    lobby --> racing[Racing Pavilion]
+    lobby --> equestrian[Equestrian Arena]
     lobby --> cashier[Cashier]
     lobby --> stats[Player Stats]
     lobby --> guide[Casino Guide]
     lobby --> exit[Leave Casino]
 
     tableGames --> blackjack[Blackjack]
+    tableGames --> holdem[HoldEm]
+    tableGames --> roulette[Roulette]
+    tableGames --> craps[Craps]
     slots --> machinePick[Pick Machine]
-    machinePick --> spinLoop[Spin Loop]
     sports --> bookMenu[Sports Book Menu]
     bookMenu --> wager[Place Wager]
     bookMenu --> settle[Settle Bets]
@@ -41,22 +46,25 @@ Chips: $1,000
 Choose your adventure:
   1) Explore Table Games
   2) Explore Slot Machines
-  3) Explore Sports Book
-  4) Cashier
-  5) Player Stats
-  6) Save Game
-  7) Casino Guide
-  8) Leave Casino
+  3) Explore Lottery Counter
+  4) Explore Sports Book
+  5) Explore Racing Pavilion
+  6) Explore Equestrian Arena
+  7) Cashier
+  8) Player Stats
+  9) Save Game
+ 10) Casino Guide
+ 11) Leave Casino
 ```
 
 | Option | Action |
 |--------|--------|
-| 1–3 | Enter a casino floor and pick an activity |
-| 4 | Buy/cash out chips, view ledger |
-| 5 | Session statistics per activity |
-| 6 | Manual save to your slot |
-| 7 | In-game rules and controls reference |
-| 8 | Auto-save and exit (confirmation required) |
+| 1–6 | Enter a casino floor and pick an activity |
+| 7 | Buy/cash out chips, view ledger |
+| 8 | Session statistics per activity |
+| 9 | Manual save to your slot |
+| 10 | In-game rules and controls reference |
+| 11 | Auto-save and exit (confirmation required) |
 
 Progress **auto-saves** after each floor activity and when leaving.
 
@@ -107,9 +115,14 @@ Press **Enter** to enter the lobby.
 
 ## Table Games floor
 
+Activities: Blackjack, Texas Hold'em, Mandalay Roulette, Craps (min 10 chips). See [Table Games](table-games.md) for Hold'em, roulette, and craps.
+
 ```
 Table Games:
   1) Blackjack — Classic 21 with solo or full-table play... (min 10 chips)
+  2) Texas Hold'em — No-limit 5-player table
+  3) Mandalay Roulette — American wheel (0/00)
+  4) Craps — Pass Line, Don't Pass, side bets
   0) Back
 ```
 
@@ -210,7 +223,15 @@ Spin again? (Y/n):
 
 ---
 
+## Lottery Counter
+
+Pick 3, Pick 4, Mega draw, and scratchers. Quick pick or enter your own numbers. See [Lottery Counter](lottery.md).
+
+---
+
 ## Sports Book floor
+
+Two tabs: **Sports** (moneyline, spread, totals) and **Predictions** (binary contracts). See [Sports Book](sportsbook.md).
 
 ```
 --- Today's Board ---
@@ -241,7 +262,13 @@ Select **Settle all open bets** to simulate final scores and resolve all pending
 
 ### Refresh lines
 
-Generates a new board of four events with updated odds.
+Generates a new board of events with updated odds.
+
+---
+
+## Racing Pavilion & Equestrian Arena
+
+Thoroughbred win/place/show wagering (min 5 chips) and equestrian dressage / show jumping (min 10 chips). See [Racing and Equestrian](racing.md).
 
 ---
 
@@ -277,14 +304,16 @@ Displays:
 
 ## Casino Guide
 
-In-game help with six sections:
+In-game help with sections for every activity:
 
 1. Overview & navigation
 2. Blackjack rules & controls
-3. Slot machine paytable
-4. Sports book guide
-5. Chip economy
-6. View all sections
+3. Hold'em, roulette, craps
+4. Slot machine paytables
+5. Lottery tickets
+6. Sports book & prediction markets
+7. Racing & equestrian
+8. Chip economy
 
 ---
 
@@ -366,7 +395,8 @@ ends and the next begins, and floating signs name the zone you're standing in.
 
 ### Getting around
 
-Twenty-eight rooms in eight wings. Doors sit on the outer walkable ring of each
+Thirty-two rooms across the Strip, Arrival, Casino, Retail, Bars, Hotel, Pool,
+Attractions, and back-of-house wings. Doors sit on the outer walkable ring of each
 room — walk onto one and you warp, with a placard naming where you landed.
 
 | Wing | What's there |

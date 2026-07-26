@@ -1,14 +1,14 @@
 :root {
-  --bg: #0a0812;
-  --panel: #14101f;
-  --gold: #e8c547;
+  --bg: #100c0a;
+  --panel: #1a1410;
+  --gold: #e8c868;
   --cyan: #39c5cf;
   --green: #3dd68c;
   --red: #f07178;
   --magenta: #c678dd;
-  --text: #e6e1cf;
-  --dim: #7a8494;
-  --border: #2a2438;
+  --text: #f0e8d4;
+  --dim: #8a7a68;
+  --border: #3a2e24;
   --felt: #1a5c3a;
   --font-pixel: "Press Start 2P", monospace;
 }
@@ -43,10 +43,10 @@ body {
   align-items: center;
   justify-content: center;
   background:
-    radial-gradient(ellipse at 50% 12%, rgba(232, 197, 71, 0.14) 0%, transparent 42%),
-    radial-gradient(ellipse at 20% 80%, rgba(57, 197, 207, 0.06) 0%, transparent 40%),
-    radial-gradient(ellipse at 80% 75%, rgba(198, 120, 221, 0.05) 0%, transparent 38%),
-    linear-gradient(180deg, #120e1c 0%, var(--bg) 45%, #08060e 100%);
+    radial-gradient(ellipse at 50% 12%, rgba(232, 200, 104, 0.16) 0%, transparent 42%),
+    radial-gradient(ellipse at 20% 80%, rgba(57, 197, 207, 0.08) 0%, transparent 40%),
+    radial-gradient(ellipse at 80% 75%, rgba(232, 140, 80, 0.06) 0%, transparent 38%),
+    linear-gradient(180deg, #1a1410 0%, var(--bg) 45%, #0a0806 100%);
 }
 
 #game-shell.arcade-cabinet {
@@ -1318,10 +1318,35 @@ body.has-touch-pad .rewards-phone-root {
   bottom: auto;
 }
 
+/* FAB is top-right: open the shell down into the playfield, not off the top. */
+body.has-touch-pad .rewards-phone {
+  top: 64px;
+  bottom: auto;
+  max-height: min(320px, calc(100vh - 140px));
+}
+
+body.has-touch-pad .rewards-toast {
+  top: 60px;
+  bottom: auto;
+}
+
+body.has-touch-pad .rewards-phone-shell {
+  max-height: inherit;
+}
+
+body.has-touch-pad .rewards-lcd {
+  max-height: min(240px, calc(100vh - 200px));
+}
+
 /* The flip phone floats over everything in the terminal build. In here it has
    to sit under the pixel panels, or its badge covers the menu's chip total. */
 body .rewards-phone-root {
   z-index: 18;
+}
+
+/* While open, stay above the map banner so LCD buttons remain tappable. */
+body .rewards-phone-root.is-open {
+  z-index: 45;
 }
 
 /* Landscape phones have no room for a tall stack. */
@@ -1389,6 +1414,8 @@ body .rewards-phone-root {
   font-family: var(--font-mono, "JetBrains Mono", monospace);
   font-size: 13px;
   line-height: 1.5;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Terminal widgets adopt the cabinet palette. */

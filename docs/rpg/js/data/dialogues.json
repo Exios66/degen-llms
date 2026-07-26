@@ -570,7 +570,7 @@
     "text": "Pulling your conf now — front desk terminal has the full stay menu once you're checked in. Phone locate counts too if you already used MGM Rewards.",
     "setFlag": "met_carmen",
     "choices": [
-      { "label": "Open front desk terminal", "encounter": "hotel", "setFlag": "hotel_tower_visit" },
+      { "label": "Open front desk terminal", "encounter": "hotel_front_desk", "setFlag": "hotel_tower_visit" },
       { "label": "I'm all set", "next": "clerk_carmen_bye" }
     ]
   },
@@ -579,7 +579,7 @@
     "text": "Once your reservation is located — phone or desk — your key activates. Open front desk services for your full room menu.",
     "setFlag": "hotel_tower_visit",
     "choices": [
-      { "label": "Open hotel services", "encounter": "hotel" },
+      { "label": "Open front desk services", "encounter": "hotel_front_desk" },
       { "label": "Thanks", "next": "clerk_carmen_bye" }
     ]
   },
@@ -1452,7 +1452,7 @@
   },
   "doorman_dante_tour": {
     "speaker": "Doorman Dante",
-    "text": "Straight through registration for the casino floor. Slots and the pit up north, race book west, the Shoppes and the sky bridge east. Eleven acres of pool out back and a shark tank under it all.",
+    "text": "Straight through registration for the casino floor. Slots and the pit up north, race book west, the Shoppes and the sky bridge east. Eleven acres of pool out back and a shark tank under it all. Or walk south on the Blvd — Luxor and Excalibur open their atriums if you want the scenic route.",
     "setFlag": "met_doorman_dante",
     "next": "doorman_dante_bye"
   },
@@ -1486,7 +1486,8 @@
   },
   "cab_line_carl_walk": {
     "speaker": "Cab Line Carl",
-    "text": "Walk? On the Strip? Friend, the next hotel is a mile of sidewalk and two escalators away. The line is shorter than the walk. Barely.",
+    "text": "Walk? On the Strip? Fine — follow the gold path south. Luxor's the glowing pyramid, Excalibur's the fake castle. Still feels like a mile. The line is shorter. Barely.",
+    "setFlag": "hint_strip_walk",
     "next": "cab_line_carl_bye"
   },
   "cab_line_carl_card": {
@@ -1981,7 +1982,7 @@
   },
   "housekeeper_hana_delano": {
     "speaker": "Housekeeper Hana",
-    "text": "Quieter. Cleaner. The carpet pattern over there never repeats, and I've walked it more than anyone alive. Go look, then tell me I'm wrong.",
+    "text": "Quieter. Cleaner. East door — SUITE WING — sky bridge straight into Delano. The carpet pattern over there never repeats. Go look, then tell me I'm wrong.",
     "setFlag": "hint_delano_ghost",
     "next": "housekeeper_hana_bye"
   },
@@ -2469,5 +2470,290 @@
     "speaker": "Reef Guide",
     "text": "Golden crocodile. Two of them, both beige, both convinced they're furniture. Half the guests walk past and photograph a rock.",
     "next": "shark_reef_guide_bye"
+  },
+  "strip_hawker_hal_greet": {
+    "speaker": "Hawker Hal",
+    "text": "Show? Club? Buffet flyer that expires in twelve minutes? Don't walk the Strip empty-handed.",
+    "choices": [
+      {
+        "label": "What's worth seeing south?",
+        "next": "strip_hawker_hal_south"
+      },
+      {
+        "label": "I'm staying at Mandalay.",
+        "next": "strip_hawker_hal_mandalay"
+      },
+      {
+        "label": "No thanks.",
+        "next": "strip_hawker_hal_bye"
+      }
+    ]
+  },
+  "strip_hawker_hal_south": {
+    "speaker": "Hawker Hal",
+    "text": "Luxor atrium's free to poke around — sphinxes, a little lagoon, sky bridge back into Mandalay Place. Excalibur's courtyard has a jester who will chase you. Fair warning.",
+    "setFlag": "hint_strip_walk",
+    "next": "strip_hawker_hal_bye"
+  },
+  "strip_hawker_hal_mandalay": {
+    "speaker": "Hawker Hal",
+    "text": "Gold doors behind me. Valet to the west if your feet give out. South is the long walk for people who refuse cabs.",
+    "next": "strip_hawker_hal_bye"
+  },
+  "strip_hawker_hal_bye": {
+    "speaker": "Hawker Hal",
+    "text": "Keep the flyer. It makes a decent fan."
+  },
+  "photographer_pam_greet": {
+    "speaker": "Photographer Pam",
+    "text": "Hold still — the Luxor beam washes everyone out gold at dusk. Perfect for looking richer than you are.",
+    "choices": [
+      {
+        "label": "Can I go inside?",
+        "next": "photographer_pam_inside"
+      },
+      {
+        "label": "Where's Mandalay from here?",
+        "next": "photographer_pam_mandalay"
+      },
+      {
+        "label": "Smile!",
+        "next": "photographer_pam_bye"
+      }
+    ]
+  },
+  "photographer_pam_inside": {
+    "speaker": "Photographer Pam",
+    "text": "West doors into the atrium. Obelisk Owen pours something cold by the lagoon. Sky bridge upstairs stitches you back toward the Shoppes.",
+    "next": "photographer_pam_bye"
+  },
+  "photographer_pam_mandalay": {
+    "speaker": "Photographer Pam",
+    "text": "North on the gold path. You can still see the porte-cochère glow if the taxis behave.",
+    "next": "photographer_pam_bye"
+  },
+  "photographer_pam_bye": {
+    "speaker": "Photographer Pam",
+    "text": "Chin up. The Strip only photographs people who look lost on purpose."
+  },
+  "pyramid_pete_greet": {
+    "speaker": "Pyramid Pete",
+    "text": "Welcome to the mid-Strip. Luxor atrium west — Excalibur further south if you like castles better than pyramids.",
+    "choices": [
+      {
+        "label": "Enter Luxor",
+        "next": "pyramid_pete_luxor"
+      },
+      {
+        "label": "Keep walking south",
+        "next": "pyramid_pete_south"
+      },
+      {
+        "label": "Thanks.",
+        "next": "pyramid_pete_bye"
+      }
+    ]
+  },
+  "pyramid_pete_luxor": {
+    "speaker": "Pyramid Pete",
+    "text": "Through the glass on my left. It's a lobby stroll, not a pit — but the water and the neon are free.",
+    "setFlag": "met_pyramid_pete",
+    "next": "pyramid_pete_bye"
+  },
+  "pyramid_pete_south": {
+    "speaker": "Pyramid Pete",
+    "text": "Follow the Blvd path. Knight Nate guards the Excalibur doors like it's still 1990.",
+    "next": "pyramid_pete_bye"
+  },
+  "pyramid_pete_bye": {
+    "speaker": "Pyramid Pete",
+    "text": "Don't stare into the beam. That's how they get you."
+  },
+  "strip_vendor_viv_greet": {
+    "speaker": "Vendor Viv",
+    "text": "Water, chargers, and a map that claims the Strip is only two miles. It is not.",
+    "choices": [
+      {
+        "label": "Browse the cart",
+        "encounter": "shops",
+        "setFlag": "strip_vendor_visit"
+      },
+      {
+        "label": "Just people-watching.",
+        "next": "strip_vendor_viv_bye"
+      }
+    ]
+  },
+  "strip_vendor_viv_bye": {
+    "speaker": "Vendor Viv",
+    "text": "If your phone dies before Excalibur, don't say I didn't warn you."
+  },
+  "knight_nate_greet": {
+    "speaker": "Knight Nate",
+    "text": "Halt, traveler. Excalibur courtyard west — fake stone, real air conditioning. The Strip continues only if your soles do.",
+    "choices": [
+      {
+        "label": "Enter the courtyard",
+        "next": "knight_nate_enter"
+      },
+      {
+        "label": "Back toward Luxor?",
+        "next": "knight_nate_north"
+      },
+      {
+        "label": "As you were.",
+        "next": "knight_nate_bye"
+      }
+    ]
+  },
+  "knight_nate_enter": {
+    "speaker": "Knight Nate",
+    "text": "Drawbridge doors on my left. Herald Henry will announce you whether you want it or not.",
+    "setFlag": "met_knight_nate",
+    "next": "knight_nate_bye"
+  },
+  "knight_nate_north": {
+    "speaker": "Knight Nate",
+    "text": "North along the gold path — Luxor beam, then Mandalay's gold doors. Civilization, relatively speaking.",
+    "next": "knight_nate_bye"
+  },
+  "knight_nate_bye": {
+    "speaker": "Knight Nate",
+    "text": "Mind the jester. She bites. Comedically."
+  },
+  "jester_jess_greet": {
+    "speaker": "Jester Jess",
+    "text": "Bells on, jokes loaded. You walking the Strip like it's a quest map? Cute.",
+    "choices": [
+      {
+        "label": "Got a tip?",
+        "next": "jester_jess_tip"
+      },
+      {
+        "label": "I'm just passing through.",
+        "next": "jester_jess_bye"
+      }
+    ]
+  },
+  "jester_jess_tip": {
+    "speaker": "Jester Jess",
+    "text": "Courtyard west has mead that tastes like regret and cinnamon. Atrium north has a lagoon you can circle for free. Both beat standing in Carl's cab line.",
+    "next": "jester_jess_bye"
+  },
+  "jester_jess_bye": {
+    "speaker": "Jester Jess",
+    "text": "Try not to trip on the gold path. The path has feelings."
+  },
+  "jester_jess_challenge": {
+    "speaker": "Jester Jess",
+    "text": "Hey — hey! You walked past a jester without laughing. That's a misdemeanor on this block.",
+    "reputation": {
+      "staff": 1
+    },
+    "next": "jester_jess_greet"
+  },
+  "sphinx_sally_greet": {
+    "speaker": "Sphinx Sally",
+    "text": "Riddle-free zone today. Luxor atrium: lagoon in the middle, bar by the obelisk, sky bridge north back toward Mandalay Place.",
+    "choices": [
+      {
+        "label": "Take the sky bridge",
+        "next": "sphinx_sally_bridge"
+      },
+      {
+        "label": "Back to the Blvd",
+        "next": "sphinx_sally_strip"
+      },
+      {
+        "label": "Just browsing.",
+        "next": "sphinx_sally_bye"
+      }
+    ]
+  },
+  "sphinx_sally_bridge": {
+    "speaker": "Sphinx Sally",
+    "text": "North glass doors. You'll land on the sky bridge above the Shoppes — convention one way, atrium the other.",
+    "setFlag": "met_sphinx_sally",
+    "next": "sphinx_sally_bye"
+  },
+  "sphinx_sally_strip": {
+    "speaker": "Sphinx Sally",
+    "text": "East doors spit you onto Las Vegas Blvd. Gold path north is Mandalay; south is Excalibur.",
+    "next": "sphinx_sally_bye"
+  },
+  "sphinx_sally_bye": {
+    "speaker": "Sphinx Sally",
+    "text": "Watch your step around the lagoon. The pyramids don't have railings in the gift-shop murals either."
+  },
+  "obelisk_owen_greet": {
+    "speaker": "Obelisk Owen",
+    "text": "Atrium bar. Cold drinks, warm neon, zero blackjack — that's upstairs in someone else's pyramid.",
+    "choices": [
+      {
+        "label": "Order something",
+        "encounter": "bar",
+        "setFlag": "luxor_bar_visit"
+      },
+      {
+        "label": "Maybe later.",
+        "next": "obelisk_owen_bye"
+      }
+    ]
+  },
+  "obelisk_owen_bye": {
+    "speaker": "Obelisk Owen",
+    "text": "The lagoon tip jar is decorative. The tip jar tip jar is not."
+  },
+  "herald_henry_greet": {
+    "speaker": "Herald Henry",
+    "text": "Hear ye — Excalibur courtyard! Tournament yard south, mead stall, and a jester on the Blvd who thinks she's funny.",
+    "choices": [
+      {
+        "label": "What's worth doing?",
+        "next": "herald_henry_tour"
+      },
+      {
+        "label": "Back to the Strip",
+        "next": "herald_henry_strip"
+      },
+      {
+        "label": "As you were.",
+        "next": "herald_henry_bye"
+      }
+    ]
+  },
+  "herald_henry_tour": {
+    "speaker": "Herald Henry",
+    "text": "Talk to Mead Maya for a pour. Circle the carpet for the full castle fantasy. Real gaming floors are next door — this yard is for atmosphere and knees that need a break.",
+    "setFlag": "met_herald_henry",
+    "next": "herald_henry_bye"
+  },
+  "herald_henry_strip": {
+    "speaker": "Herald Henry",
+    "text": "East gate to Las Vegas Blvd. North takes you past Luxor toward Mandalay Bay.",
+    "next": "herald_henry_bye"
+  },
+  "herald_henry_bye": {
+    "speaker": "Herald Henry",
+    "text": "Go forth. Or go north. Both are forth depending on your map."
+  },
+  "mead_maya_greet": {
+    "speaker": "Mead Maya",
+    "text": "Courtyard mead and mocktails. No dragons were harmed. A few tourists were mildly confused.",
+    "choices": [
+      {
+        "label": "Order a drink",
+        "encounter": "bar",
+        "setFlag": "excalibur_bar_visit"
+      },
+      {
+        "label": "Maybe later.",
+        "next": "mead_maya_bye"
+      }
+    ]
+  },
+  "mead_maya_bye": {
+    "speaker": "Mead Maya",
+    "text": "If the jester follows you in, the first round's on the castle."
   }
 }

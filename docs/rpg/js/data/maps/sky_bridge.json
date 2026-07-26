@@ -42,7 +42,104 @@
         [
           17,
           14
+        ],
+        [
+          12,
+          8
+        ],
+        [
+          17,
+          8
+        ],
+        [
+          12,
+          20
+        ],
+        [
+          17,
+          20
         ]
+      ]
+    },
+    {
+      "tile": "LANTERN",
+      "points": [
+        [
+          12,
+          6
+        ],
+        [
+          17,
+          6
+        ],
+        [
+          12,
+          22
+        ],
+        [
+          17,
+          22
+        ]
+      ]
+    },
+    {
+      "tile": "FLOWER",
+      "points": [
+        [
+          13,
+          11
+        ],
+        [
+          16,
+          11
+        ],
+        [
+          13,
+          17
+        ],
+        [
+          16,
+          17
+        ]
+      ]
+    }
+  ],
+  "signs": [
+    {
+      "x": 15,
+      "y": 26.2,
+      "text": "SHOPPES ↓",
+      "color": "#ffe890",
+      "stroke": "#684810"
+    },
+    {
+      "x": 15,
+      "y": 3.4,
+      "text": "CONVENTION ↑",
+      "color": "#ffe890",
+      "stroke": "#684810"
+    },
+    {
+      "x": 15,
+      "y": 14.5,
+      "text": "← LUXOR ATRIUM",
+      "color": "#a8e8ff",
+      "stroke": "#184868"
+    }
+  ],
+  "scatter": [
+    {
+      "tile": "FLOWER",
+      "mod": 7,
+      "on": [
+        "LOBBY"
+      ]
+    },
+    {
+      "tile": "LANTERN",
+      "mod": 16,
+      "on": [
+        "LOBBY"
       ]
     }
   ],
@@ -60,6 +157,13 @@
       "y": 26,
       "w": 3,
       "h": 3
+    },
+    {
+      "tile": "LOBBY",
+      "x": 11,
+      "y": 13,
+      "w": 3,
+      "h": 4
     }
   ],
   "doors": [
@@ -78,6 +182,14 @@
       "toX": 15,
       "toY": 26,
       "message": "Convention center concourse."
+    },
+    {
+      "x": 11,
+      "y": 14,
+      "to": "luxor_atrium",
+      "toX": 15,
+      "toY": 4,
+      "message": "Across the glass — Luxor atrium."
     }
   ]
 }

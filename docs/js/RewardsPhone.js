@@ -84,6 +84,7 @@ export class RewardsPhone {
     syncContactIntros(this.session);
     onIntoxicationChange(this.session);
     this._phoneEl.hidden = false;
+    this.root?.classList.add("is-open");
     this._renderScreen();
   }
 
@@ -104,6 +105,7 @@ export class RewardsPhone {
     syncContactIntros(this.session);
     onIntoxicationChange(this.session);
     this._phoneEl.hidden = false;
+    this.root?.classList.add("is-open");
     this._renderScreen();
   }
 
@@ -114,6 +116,7 @@ export class RewardsPhone {
   close() {
     this._open = false;
     this._phoneEl.hidden = true;
+    this.root?.classList.remove("is-open");
   }
 
   isOpen() {

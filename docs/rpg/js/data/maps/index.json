@@ -1,6 +1,10 @@
 {
   "maps": [
     "strip_sidewalk",
+    "strip_luxor",
+    "strip_excalibur",
+    "luxor_atrium",
+    "excalibur_courtyard",
     "valet_garage",
     "registration_lobby",
     "main_resort",

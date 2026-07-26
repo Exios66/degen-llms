@@ -98,6 +98,10 @@ Always check `wallet.can_afford(amount)` or handle `debit()` returning `False`.
 
 Use `secrets.SystemRandom()` or `blackjack.rng.SECURE_RANDOM` for all random outcomes. Never use `random.seed()` in production code.
 
+## Documentation
+
+Add `docs/your-game.md`, link it from [`docs/README.md`](README.md), register it in [`_quarto.yml`](../_quarto.yml) (`project.render` + navbar/sidebar), and add a matching page under [`wiki/`](../wiki/) so the GitHub Wiki stays in parity. Publish the wiki with `bash scripts/sync-github-wiki.sh` after merge.
+
 ## Optional: standalone mode
 
 If your game should also run outside the casino, create a separate entry module (like `blackjack/main.py`) and a runner that accepts an optional `ChipWallet`.

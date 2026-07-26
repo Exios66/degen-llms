@@ -166,9 +166,9 @@ export function createShell(ctx) {
 
   function chipLine() {
     const bank = ensureBank(ctx.session);
-    const name = bank.accountName || "Off-Strip Checking";
-    // Avoid "Off-Strip Checking: $0 (off-strip)" redundancy when the default name already says off-strip.
-    const suffix = /off[-\s]?strip/i.test(name) ? "" : " (off-strip)";
+    const name = bank.accountName || "Private Offshore Account";
+    // Avoid repeating "offshore/off-strip" when the account name already says it.
+    const suffix = /off[-\s]?strip|offshore/i.test(name) ? "" : " (offshore)";
     return el("div", { className: "chip-line-wrap" }, [
       el("p", { className: "chip-line", textContent: `Floor chips: ${fmtChips(ctx.session.wallet.balance)}` }),
       el("p", {
@@ -249,6 +249,7 @@ export function createRuntime(overrides = {}) {
     activeTableDealer: null,
     sportsbook: null,
     tradingDesk: null,
+    marketTicker: null,
     blackjackGame: null,
     blackjackSessionNet: 0,
     slots: { machine: null, sessionNet: 0, spins: 0, tier: null, lastBet: null },

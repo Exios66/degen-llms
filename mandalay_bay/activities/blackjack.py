@@ -56,7 +56,7 @@ class BlackjackActivity(Activity):
                 use_unicode=session.use_unicode,
             )
         else:
-            config = self._custom_wizard(session, ui)
+            config = self._custom_wizard(session, ui, table_min, table_max)
 
         config = replace(
             config,
@@ -71,14 +71,23 @@ class BlackjackActivity(Activity):
         ui.chip_line(session.wallet.balance)
         ui.pause()
 
-    def _custom_wizard(self, session: PlayerSession, ui) -> GameConfig:
+    def _custom_wizard(
+        self,
+        session: PlayerSession,
+        ui,
+        table_min: int | None = None,
+        table_max: int | None = None,
+    ) -> GameConfig:
         ui.print("\n--- Table Setup ---")
         mode = ui.menu_choice(["Solo vs dealer", "Full table with AI players"], title="Table mode:")
         if mode == 0:
             mode = 1
         bankroll = session.wallet.balance
-        min_bet = ui.prompt_int("Minimum bet", 1, bankroll, default=min(table_min, bankroll))
-        max_bet = ui.prompt_int("Maximum bet", min_bet, bankroll, default=min(table_max, bankroll))
+        default_min = min(table_min or self.info.min_bet, bankroll)
+        default_max = bankroll if table_max is None else min(table_max, bankroll)
+        min_bet = ui.prompt_int("Minimum bet", 1, bankroll, default=default_min)
+        # Tables have no house max — default to full bankroll.
+        max_bet = ui.prompt_int("Maximum bet", min_bet, bankroll, default=max(default_max, min_bet))
         num_decks = ui.prompt_int("Decks in shoe (1-8)", 1, 8, default=6)
         if mode == 2:
             num_bots = ui.prompt_int("Simulated players (1-6)", 1, 6, default=2)

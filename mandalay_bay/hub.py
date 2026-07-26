@@ -15,11 +15,18 @@ from mandalay_bay.bank_account import (
     ensure_bank,
     expense_category_label,
     fund_bank_from_outside,
+    pay_bank_expense,
     rename_bank_account,
+)
+from mandalay_bay.chip_limits import (
+    BUY_CHIPS_MAX,
+    CASHOUT_TO_BANK_MAX,
+    bank_withdraw_max_for_session,
+    cash_out_max_for_session,
 )
 from mandalay_bay.casino_amenities_experience import run_casino_floor
 from mandalay_bay.hotel_experience import run_hotel_lobby
-from mandalay_bay.rewards import sync_rewards_from_wallet
+from mandalay_bay.rewards import sync_rewards_from_wallet, tier_for_wagered
 from mandalay_bay.rewards_experience import run_rewards_phone
 from mandalay_bay.session import PlayerSession
 from mandalay_bay.casino_time import format_play_time_summary, get_casino_time_ms, start_casino_clock
@@ -143,10 +150,22 @@ def run_cashier(session: PlayerSession, ui: TerminalUI) -> None:
         else:
             ui.success(f"Purchased {fmt_chips(500)} with outside funds. Balance: {fmt_chips(session.wallet.balance)}")
     elif choice == 2:
-        amount = ui.prompt_int("Amount to buy", 50, 100_000, default=500)
+        ui.dim(f"Purchase limit: ${BUY_CHIPS_MAX:,} per transaction.")
+        amount = ui.prompt_int("Amount to buy", 50, BUY_CHIPS_MAX, default=500)
         bank = ensure_bank(session)
+        withdraw_max = bank_withdraw_max_for_session(session)
+        rewards = getattr(session, "rewards", None)
+        tier = tier_for_wagered(getattr(rewards, "lifetime_wagered", 0) or 0)
         if bank.balance >= amount:
             outcome = buy_in_for_session(session, amount)
+            if outcome == "tier_withdraw_limit":
+                if ui.prompt_yes_no(
+                    f"{tier.label} offshore withdraw limit is ${withdraw_max:,}. Use outside funds?",
+                    default=True,
+                ):
+                    outcome = buy_in_for_session(session, amount, use_outside_funds=True)
+                else:
+                    outcome = "cancelled"
         elif ui.prompt_yes_no(
             f"Only {fmt_chips(bank.balance)} in {bank.account_name}. Use outside funds for the buy-in?",
             default=True,
@@ -161,17 +180,21 @@ def run_cashier(session: PlayerSession, ui: TerminalUI) -> None:
             )
         elif outcome == "outside_funds":
             ui.success(f"Purchased {fmt_chips(amount)} with outside funds. Balance: {fmt_chips(session.wallet.balance)}")
+        elif outcome == "over_buy_limit":
+            ui.error(f"Purchase limit is ${BUY_CHIPS_MAX:,}.")
         elif outcome != "cancelled":
             ui.error("Buy-in failed.")
     elif choice == 3:
         if session.wallet.balance <= 0:
             ui.error("You have no chips to cash out.")
         else:
+            max_out = cash_out_max_for_session(session)
+            ui.dim(f"Offshore cash-out limit: ${CASHOUT_TO_BANK_MAX:,} per transfer.")
             amount = ui.prompt_int(
                 "Amount to cash out",
                 1,
-                session.wallet.balance,
-                default=session.wallet.balance,
+                max_out,
+                default=max_out,
             )
             bank = ensure_bank(session)
             if cash_out_to_bank(session, amount):
@@ -217,7 +240,7 @@ def _show_bank_ledger(session: PlayerSession, ui: TerminalUI) -> None:
 def run_bank_account(session: PlayerSession, ui: TerminalUI) -> None:
     bank = ensure_bank(session)
     ui.banner(bank.account_name)
-    ui.print("Your off-strip account — cashed-out chips land here for life outside the casino.")
+    ui.print("Your private offshore account — cashed-out chips land here for life outside the casino.")
     ui.chip_line(session.wallet.balance)
     ui.print(f"Bank balance: {fmt_chips(bank.balance)}")
     choice = ui.menu_choice(
@@ -227,7 +250,7 @@ def run_bank_account(session: PlayerSession, ui: TerminalUI) -> None:
             "Rename account",
             "View bank ledger",
         ],
-        title="Off-strip banking:",
+        title="Offshore banking:",
     )
     if choice == 0:
         return
@@ -245,17 +268,25 @@ def run_bank_account(session: PlayerSession, ui: TerminalUI) -> None:
                 ui.pause()
                 return
             category_id = OUTSIDE_EXPENSE_CATEGORIES[cat_choice - 1][0]
+            withdraw_max = bank_withdraw_max_for_session(session)
+            rewards = getattr(session, "rewards", None)
+            tier = tier_for_wagered(getattr(rewards, "lifetime_wagered", 0) or 0)
+            spend_cap = min(bank.balance, withdraw_max)
+            ui.dim(f"{tier.label} withdraw limit: ${withdraw_max:,} per transfer.")
             amount = ui.prompt_int(
                 "Amount to spend",
                 1,
-                bank.balance,
-                default=min(100, bank.balance),
+                spend_cap,
+                default=min(100, spend_cap),
             )
             note = ui.prompt("Memo (optional): ").strip()
             label = expense_category_label(category_id)
             description = f"{label}" + (f" — {note}" if note else "")
-            if bank.pay_expense(amount, category_id, description):
+            outcome = pay_bank_expense(session, amount, category_id, description)
+            if outcome == "ok":
                 ui.success(f"Paid {fmt_chips(amount)} for {label}. Bank balance: {fmt_chips(bank.balance)}")
+            elif outcome == "tier_withdraw_limit":
+                ui.error(f"{tier.label} withdraw limit is ${withdraw_max:,}.")
             else:
                 ui.error("Payment failed.")
     elif choice == 3:
@@ -422,7 +453,7 @@ def run_hub(
             + [
                 "Casino Floor — shopping & bars",
                 "Cashier",
-                "Off-Strip Bank Account",
+                "Private Offshore Account",
                 "Staff Manifest",
                 "Player Stats",
                 "Save Game",

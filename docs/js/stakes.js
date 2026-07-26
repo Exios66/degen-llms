@@ -8,28 +8,28 @@ export const STAKE_TIERS = {
   penny: {
     id: "penny",
     name: "Penny & Low Limit",
-    description: "Micro stakes — $1–$25 per wager.",
+    description: "Micro stakes — $1 min. Tables: no max (bankroll). Slots: up to $25.",
     minBet: 1,
     maxBet: 25,
   },
   standard: {
     id: "standard",
     name: "Standard",
-    description: "Main floor limits — $5–$100 per wager.",
+    description: "Main floor — $5 min. Tables: no max (bankroll). Slots: up to $100.",
     minBet: 5,
     maxBet: 100,
   },
   high_limit: {
     id: "high_limit",
     name: "High Limit",
-    description: "High-limit room — $25–$500 per wager.",
+    description: "High-limit room — $25 min. Tables: no max (bankroll). Slots: up to $500.",
     minBet: 25,
     maxBet: 500,
   },
   "401k_contribution": {
     id: "401k_contribution",
     name: "401K Contribution",
-    description: `Average employee deferral — $${T401K_MIN.toLocaleString()}/mo style ($${T401K_MAX.toLocaleString()}/yr cap).`,
+    description: `Average employee deferral — $${T401K_MIN.toLocaleString()} min. Tables: no max. Slots: up to $${T401K_MAX.toLocaleString()}.`,
     minBet: T401K_MIN,
     maxBet: T401K_MAX,
   },
@@ -64,8 +64,9 @@ export function effectiveMaxBet(tier, balance) {
 }
 
 export function effectiveTableStakes(tier, balance, activityMin = 1) {
+  // Table games (blackjack, etc.): no table max — wager up to bankroll.
   const minBet = Math.max(activityMin, tier.minBet);
-  const maxBet = effectiveMaxBet(tier, balance);
+  const maxBet = balance;
   return { minBet, maxBet: Math.max(minBet, maxBet) };
 }
 
@@ -93,9 +94,12 @@ export function formatStakeRange(minBet, maxBet, { noCap = false } = {}) {
 }
 
 export function formatTierLabel(tier, balance) {
-  const maxBet = effectiveMaxBet(tier, balance);
-  const stake = formatStakeRange(tier.minBet, maxBet, { noCap: tier.maxBet == null });
-  return `${tier.name} (${stake})`;
+  if (tier.maxBet == null) {
+    const stake = formatStakeRange(tier.minBet, balance, { noCap: true });
+    return `${tier.name} (${stake})`;
+  }
+  const slotMax = effectiveMaxBet(tier, balance);
+  return `${tier.name} (${tier.minBet.toLocaleString()}+ tables (no max) · slots to ${slotMax.toLocaleString()})`;
 }
 
 /** Payout multiplier applied on top of machine paytables for each tier. */

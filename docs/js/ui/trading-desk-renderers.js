@@ -1,4 +1,5 @@
 import { ACTIVITIES } from "../core.js";
+import { mountMarketTicker } from "../marketTicker.js";
 import {
   ASSET_CLASSES, INSTRUMENTS, entryCostChips, filterContracts,
 } from "../tradingDesk.js";
@@ -11,15 +12,23 @@ export function buildTradingDeskRenderers(ctx) {
   } = ctx;
   const runtime = ctx.runtime;
 
+  function stopTicker() {
+    if (runtime.marketTicker?.stop) {
+      runtime.marketTicker.stop();
+      runtime.marketTicker = null;
+    }
+  }
+
   function renderTradingDesk() {
     const act = ACTIVITIES.trading_desk;
     const open = runtime.tradingDesk.positions.length;
     if (ctx.session.wallet.balance < act.minBet && open === 0) {
+      stopTicker();
       return el("div", { className: "panel" }, [
         banner("Trading Floor"),
         el("p", { className: "error", textContent: `You need at least ${act.minBet} chips to trade.` }),
         el("div", { className: "action-bar" }, [
-          el("button", { className: "btn", textContent: "Back", onclick: () => { popView(); render(); } }),
+          el("button", { className: "btn", textContent: "Back", onclick: () => { stopTicker(); popView(); render(); } }),
         ]),
       ]);
     }
@@ -72,19 +81,28 @@ export function buildTradingDeskRenderers(ctx) {
       instrument: runtime.tradingDesk.instrumentFilter,
     }).length;
 
-    const board = el("div", {}, page.map((c, i) =>
-      el("div", { className: "event-card" }, [
+    // Live spot from ticker when available (symbol → current quote)
+    const liveSpots = new Map(
+      (runtime.marketTicker?.quotes ?? []).map((q) => [q.symbol, q]),
+    );
+
+    const board = el("div", {}, page.map((c, i) => {
+      const live = liveSpots.get(c.symbol);
+      const spotLine = live
+        ? ` · live ${live.spot} (${live.changePct >= 0 ? "+" : ""}${live.changePct.toFixed(2)}%)`
+        : "";
+      return el("div", { className: "event-card" }, [
         el("div", { className: "sport", textContent: `${c.assetClass.toUpperCase()} · ${c.instrument.toUpperCase()}` }),
         el("div", { innerHTML: `<strong>${i + 1}) ${c.symbol} — ${c.underlying}</strong>` }),
         el("div", {
           className: "dim",
           textContent: c.instrument === "future"
-            ? `Futures ${c.expiry} · mark ${c.markPrice} · bid ${c.bid} / ask ${c.ask} · mult ${c.multiplier}`
-            : `${c.instrument.toUpperCase()} strike ${c.strike} · ${c.expiry} · prem ${c.markPrice} · mult ${c.multiplier}`,
+            ? `Futures ${c.expiry} · mark ${c.markPrice} · bid ${c.bid} / ask ${c.ask} · mult ${c.multiplier}${spotLine}`
+            : `${c.instrument.toUpperCase()} strike ${c.strike} · ${c.expiry} · prem ${c.markPrice} · und. mark ~${c.markPrice}${spotLine} · mult ${c.multiplier}`,
         }),
         el("div", { className: "dim", textContent: `Margin/premium ≈ ${entryCostChips(c).toLocaleString()} chips / unit` }),
-      ])
-    ));
+      ]);
+    }));
 
     const pending = el("div", { className: "pending-tickets" });
     if (runtime.tradingDesk.positions.length) {
@@ -97,10 +115,20 @@ export function buildTradingDeskRenderers(ctx) {
       }
     }
 
+    const tickerHost = el("div", { className: "market-ticker-host" });
+    // Remount ticker after DOM attach so canvas has layout size
+    queueMicrotask(() => {
+      stopTicker();
+      if (tickerHost.isConnected) {
+        runtime.marketTicker = mountMarketTicker(tickerHost, runtime.tradingDesk.catalog, { el });
+      }
+    });
+
     return el("div", { className: "panel" }, [
       banner("Trading Floor — Mandalay Markets"),
       chipLine(),
-      tier ? el("p", { className: "dim", textContent: `${tier.name}: ${formatStakeRange(stakes.minBet, stakes.maxBet, { noCap: tier.maxBet == null })}` }) : null,
+      tickerHost,
+      tier ? el("p", { className: "dim", textContent: `${tier.name}: ${formatStakeRange(stakes.minBet, stakes.maxBet, { noCap: true })}` }) : null,
       el("p", { className: "dim", textContent: `NYSE · Commodities · Crypto — futures & call/put options · ${total} contracts in filter · ${runtime.tradingDesk.catalog.contracts.length} in book` }),
       assetChips,
       instChips,
@@ -111,9 +139,9 @@ export function buildTradingDeskRenderers(ctx) {
         ["Buy contract", "Settle / expire positions", "Next contract page"],
         "Trading Floor:",
         (choice) => {
-          if (choice === 0) { goBack(); return; }
-          if (choice === 1) pushView("trading-buy");
-          else if (choice === 2) pushView("trading-settle");
+          if (choice === 0) { stopTicker(); goBack(); return; }
+          if (choice === 1) { stopTicker(); pushView("trading-buy"); }
+          else if (choice === 2) { stopTicker(); pushView("trading-settle"); }
           else if (choice === 3) {
             runtime.tradingDesk.nextPage();
             persist();

@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from mandalay_bay.session import PlayerSession
 
-DEFAULT_ACCOUNT_NAME = "Off-Strip Checking"
+DEFAULT_ACCOUNT_NAME = "Private Offshore Account"
 
 
 class BankTransactionKind(str, Enum):
@@ -107,26 +107,36 @@ def ensure_bank(session: PlayerSession) -> BankAccount:
 
 
 def cash_out_to_bank(session: PlayerSession, amount: int) -> bool:
-    """Move floor chips to the off-strip bank account."""
+    """Move floor chips to the private offshore bank account."""
+    from mandalay_bay.chip_limits import CASHOUT_TO_BANK_MAX
+
     if amount <= 0 or amount > session.wallet.balance:
+        return False
+    if amount > CASHOUT_TO_BANK_MAX:
         return False
     if not session.wallet.cash_out(amount):
         return False
     ensure_bank(session).deposit(
         amount,
         "casino",
-        f"Cashed out ${amount:,} in chips from the floor",
+        f"Cashed out ${amount:,} in chips to offshore account",
     )
     return True
 
 
 def buy_in_for_session(session: PlayerSession, amount: int, *, use_outside_funds: bool = False) -> str:
     """Buy chips for the floor wallet. Returns outcome token."""
+    from mandalay_bay.chip_limits import BUY_CHIPS_MAX, bank_withdraw_max_for_session
+
     if amount <= 0:
         raise ValueError("Buy-in must be positive")
+    if amount > BUY_CHIPS_MAX:
+        return "over_buy_limit"
 
     bank = ensure_bank(session)
     if bank.balance >= amount:
+        if amount > bank_withdraw_max_for_session(session):
+            return "tier_withdraw_limit"
         if not bank.withdraw(amount, "casino", f"Buy-in for ${amount:,} in floor chips"):
             return "failed"
         session.wallet.buy_in(amount)
@@ -137,6 +147,20 @@ def buy_in_for_session(session: PlayerSession, amount: int, *, use_outside_funds
         return "outside_funds"
 
     return "insufficient"
+
+
+def pay_bank_expense(session: PlayerSession, amount: int, category: str, description: str) -> str:
+    """Pay an outside expense, capped by MGM Rewards tier withdraw limit."""
+    from mandalay_bay.chip_limits import bank_withdraw_max_for_session
+
+    if amount <= 0:
+        return "invalid"
+    if amount > bank_withdraw_max_for_session(session):
+        return "tier_withdraw_limit"
+    bank = ensure_bank(session)
+    if not bank.pay_expense(amount, category, description):
+        return "insufficient"
+    return "ok"
 
 
 def fund_bank_from_outside(session: PlayerSession, amount: int) -> None:

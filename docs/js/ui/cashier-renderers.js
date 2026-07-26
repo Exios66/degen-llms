@@ -1,7 +1,14 @@
 // Extracted from app.js — shared by the web terminal and the pixel RPG.
-import { OUTSIDE_EXPENSE_CATEGORIES, buyInForSession, cashOutToBank, ensureBank, expenseCategoryLabel, fundBankFromOutside, renameBankAccount } from "../bank-account.js";
+import {
+  OUTSIDE_EXPENSE_CATEGORIES, buyInForSession, cashOutToBank, ensureBank,
+  expenseCategoryLabel, fundBankFromOutside, payBankExpense, renameBankAccount,
+} from "../bank-account.js";
+import {
+  BUY_CHIPS_MAX, CASHOUT_TO_BANK_MAX, bankWithdrawMaxForSession, cashOutMaxForSession,
+} from "../chip-limits.js";
 import { fmtChips } from "../core.js";
 import { formatVegasTime } from "../vegas-time.js";
+import { tierForWagered } from "../rewards.js";
 
 export function buildCashierRenderers(ctx) {
   const { el, banner, chipLine, statusBanner, showStatus, menu, pushView, popView, goBack, render, persist } = ctx;
@@ -40,22 +47,46 @@ export function buildCashierRenderers(ctx) {
   }
 
   function renderCashierBuy() {
-    const input = el("input", { type: "number", min: "50", max: "100000", value: "500" });
+    const input = el("input", {
+      type: "number", min: "50", max: String(BUY_CHIPS_MAX), value: "500",
+    });
+    const withdrawMax = bankWithdrawMaxForSession(ctx.session);
+    const tier = tierForWagered(ctx.session.rewards?.lifetimeWagered ?? 0);
     return el("div", { className: "panel" }, [
       banner("Buy Chips"),
       chipLine(),
-      el("div", { className: "form-row" }, [el("label", { textContent: "Amount ($50–$100,000)" }), input]),
+      el("p", {
+        className: "dim",
+        textContent: `Up to $${BUY_CHIPS_MAX.toLocaleString()} per purchase. Offshore withdraws capped at $${withdrawMax.toLocaleString()} (${tier.label}).`,
+      }),
+      el("div", { className: "form-row" }, [
+        el("label", { textContent: `Amount ($50–$${BUY_CHIPS_MAX.toLocaleString()})` }),
+        input,
+      ]),
       el("div", { className: "action-bar" }, [
         el("button", {
           className: "btn primary",
           textContent: "Purchase",
           onclick: () => {
             const amount = parseInt(input.value, 10);
-            if (amount < 50 || amount > 100000) { alert("Enter $50–$100,000"); return; }
+            if (amount < 50 || amount > BUY_CHIPS_MAX) {
+              alert(`Enter $50–$${BUY_CHIPS_MAX.toLocaleString()}`);
+              return;
+            }
             const bank = ensureBank(ctx.session);
             let outcome;
             if (bank.balance >= amount) {
               outcome = buyInForSession(ctx.session, amount);
+              if (outcome === "tier_withdraw_limit") {
+                if (confirm(
+                  `${tier.label} offshore withdraw limit is $${withdrawMax.toLocaleString()}. `
+                  + "Use outside funds instead?",
+                )) {
+                  outcome = buyInForSession(ctx.session, amount, { useOutsideFunds: true });
+                } else {
+                  return;
+                }
+              }
             } else if (confirm(`Only ${fmtChips(bank.balance)} in ${bank.accountName}. Use outside funds for the buy-in?`)) {
               outcome = buyInForSession(ctx.session, amount, { useOutsideFunds: true });
             } else {
@@ -66,6 +97,9 @@ export function buildCashierRenderers(ctx) {
               showStatus(`Purchased ${fmtChips(amount)} from ${bank.accountName}. Floor balance: ${fmtChips(ctx.session.wallet.balance)}`);
             } else if (outcome === "outside_funds") {
               showStatus(`Purchased ${fmtChips(amount)} with outside funds. Balance: ${fmtChips(ctx.session.wallet.balance)}`);
+            } else if (outcome === "over_buy_limit") {
+              showStatus(`Purchase limit is $${BUY_CHIPS_MAX.toLocaleString()}.`, "error");
+              return;
             } else {
               showStatus("Buy-in failed.", "error");
               return;
@@ -80,12 +114,20 @@ export function buildCashierRenderers(ctx) {
   }
 
   function renderCashierCashout() {
+    const maxOut = cashOutMaxForSession(ctx.session);
     const input = el("input", {
-      type: "number", min: "1", max: String(ctx.session.wallet.balance), value: String(ctx.session.wallet.balance),
+      type: "number",
+      min: "1",
+      max: String(maxOut),
+      value: String(maxOut),
     });
     return el("div", { className: "panel" }, [
       banner("Cash Out"),
       chipLine(),
+      el("p", {
+        className: "dim",
+        textContent: `Wire to your private offshore account — up to $${CASHOUT_TO_BANK_MAX.toLocaleString()} per transfer.`,
+      }),
       el("div", { className: "form-row" }, [el("label", { textContent: "Amount to cash out" }), input]),
       el("div", { className: "action-bar" }, [
         el("button", {
@@ -94,6 +136,10 @@ export function buildCashierRenderers(ctx) {
           onclick: () => {
             const amount = parseInt(input.value, 10);
             const bank = ensureBank(ctx.session);
+            if (amount > CASHOUT_TO_BANK_MAX) {
+              alert(`Offshore cash-out limit is $${CASHOUT_TO_BANK_MAX.toLocaleString()} per transfer.`);
+              return;
+            }
             if (cashOutToBank(ctx.session, amount)) {
               persist();
               showStatus(`Cashed out ${fmtChips(amount)} to ${bank.accountName}. Floor balance: ${fmtChips(ctx.session.wallet.balance)}`);
@@ -146,11 +192,11 @@ export function buildCashierRenderers(ctx) {
       chipLine(),
       el("p", {
         className: "dim",
-        textContent: "Your off-strip account — cashed-out chips land here for life outside the casino.",
+        textContent: "Your private offshore account — cashed-out chips land here for life outside the casino.",
       }),
       menu(
         ["Deposit outside funds", "Pay outside expense", "Rename account", "View bank ledger"],
-        "Off-strip banking:",
+        "Offshore banking:",
         (choice) => {
           if (choice === 0) { goBack(); return; }
           if (choice === 1) pushView("bank-deposit");
@@ -200,20 +246,27 @@ export function buildCashierRenderers(ctx) {
       ]);
     }
 
+    const withdrawMax = bankWithdrawMaxForSession(ctx.session);
+    const tier = tierForWagered(ctx.session.rewards?.lifetimeWagered ?? 0);
+    const spendCap = Math.min(bank.balance, withdrawMax);
     const categorySelect = el("select", {}, OUTSIDE_EXPENSE_CATEGORIES.map(([id, label]) =>
       el("option", { value: id, textContent: label })
     ));
     const amountInput = el("input", {
       type: "number",
       min: "1",
-      max: String(bank.balance),
-      value: String(Math.min(100, bank.balance)),
+      max: String(spendCap),
+      value: String(Math.min(100, spendCap)),
     });
     const memoInput = el("input", { type: "text", placeholder: "Optional memo" });
 
     return el("div", { className: "panel" }, [
       banner("Pay Outside Expense"),
       chipLine(),
+      el("p", {
+        className: "dim",
+        textContent: `${tier.label} withdraw limit: $${withdrawMax.toLocaleString()} per transfer (scales with MGM Rewards).`,
+      }),
       el("div", { className: "form-row" }, [el("label", { textContent: "Category" }), categorySelect]),
       el("div", { className: "form-row" }, [el("label", { textContent: "Amount" }), amountInput]),
       el("div", { className: "form-row" }, [el("label", { textContent: "Memo" }), memoInput]),
@@ -223,18 +276,21 @@ export function buildCashierRenderers(ctx) {
           textContent: "Pay",
           onclick: () => {
             const amount = parseInt(amountInput.value, 10);
-            if (amount < 1 || amount > bank.balance) {
-              alert(`Enter $1–${bank.balance.toLocaleString()}`);
+            if (amount < 1 || amount > spendCap) {
+              alert(`Enter $1–$${spendCap.toLocaleString()} (${tier.label} limit)`);
               return;
             }
             const categoryId = categorySelect.value;
             const label = expenseCategoryLabel(categoryId);
             const memo = memoInput.value.trim();
             const description = memo ? `${label} — ${memo}` : label;
-            if (bank.payExpense(amount, categoryId, description)) {
+            const outcome = payBankExpense(ctx.session, amount, categoryId, description);
+            if (outcome === "ok") {
               persist();
               showStatus(`Paid ${fmtChips(amount)} for ${label}. Bank balance: ${fmtChips(bank.balance)}`);
               goBack();
+            } else if (outcome === "tier_withdraw_limit") {
+              showStatus(`${tier.label} withdraw limit is $${withdrawMax.toLocaleString()}.`, "error");
             } else {
               showStatus("Payment failed.", "error");
             }

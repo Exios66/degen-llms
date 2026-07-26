@@ -339,7 +339,7 @@ def session_from_dict(data: dict) -> PlayerSession:
         bank_data = data["bank"]
         bank = BankAccount(
             balance=bank_data.get("balance", 0),
-            account_name=bank_data.get("account_name", "Off-Strip Checking"),
+            account_name=bank_data.get("account_name", "Private Offshore Account"),
         )
         bank.transactions = []
         for raw in bank_data.get("transactions", []):

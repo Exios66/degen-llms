@@ -4,6 +4,10 @@
 
 ## Play now
 
+[![pages-build-deployment](https://github.com/Exios66/degen-llms/actions/workflows/pages/pages-build-deployment/badge.svg?branch=gh-pages)](https://github.com/Exios66/degen-llms/actions/workflows/pages/pages-build-deployment)
+
+[![Deployed on Posit Cloud](https://img.shields.io/badge/Deployed_on-Posit_Cloud-4d8DC9?style=flat&logo=rstudio)](https://019f9a67-d5c9-226b-b6b1-a86d1655be69.share.connect.posit.cloud/)
+
 | Surface | URL / command |
 |---------|----------------|
 | **Web terminal** | [Web-Terminal-Access](https://exios66.github.io/degen-llms/) |

@@ -4,13 +4,14 @@ import { onTierRankUp } from "./phone-contacts.js";
 
 export const SAVE_VERSION_WITH_REWARDS = 3;
 
+/** Lifetime wager thresholds — keep in sync with mandalay_bay/rewards.py and docs/mgm-rewards.md */
 export const TIERS = [
   { id: "sapphire", label: "Sapphire", minWagered: 0, comp: null },
-  { id: "pearl", label: "Pearl", minWagered: 500, comp: "slot_freeplay" },
-  { id: "gold", label: "Gold", minWagered: 2000, comp: "buffet_comp" },
-  { id: "platinum", label: "Platinum", minWagered: 5000, comp: "room_night" },
-  { id: "noir", label: "Noir", minWagered: 10000, comp: "suite_upgrade" },
-  { id: "chairman", label: "Chairman", minWagered: 25000, comp: "penthouse_fantasy" },
+  { id: "pearl", label: "Pearl", minWagered: 10_000, comp: "slot_freeplay" },
+  { id: "gold", label: "Gold", minWagered: 50_000, comp: "buffet_comp" },
+  { id: "platinum", label: "Platinum", minWagered: 200_000, comp: "room_night" },
+  { id: "noir", label: "Noir", minWagered: 500_000, comp: "suite_upgrade" },
+  { id: "chairman", label: "Chairman", minWagered: 1_000_000, comp: "penthouse_fantasy" },
 ];
 
 export const COMP_CATALOG = {

@@ -236,7 +236,7 @@
       "x": 8,
       "y": 3,
       "to": "guest_corridor",
-      "toX": 3,
+      "toX": 4,
       "toY": 15,
       "message": "Guest elevators — 24th floor."
     },

@@ -26,12 +26,14 @@ export const TILE = {
   PATH: 18,
   /** Dark border trim that separates one floor type from the next. */
   TRIM: 19,
+  /** Carved ice — Minus5 / cold-attraction floors. */
+  ICE: 20,
   /** Walkable floral clutter — bluebells, desert blooms, lobby posies. */
-  FLOWER: 20,
+  FLOWER: 21,
   /** Blocking boulder / stacked-stone clutter. */
-  ROCK: 21,
+  ROCK: 22,
   /** Blocking lantern prop with a warm glow spill. */
-  LANTERN: 22,
+  LANTERN: 23,
 };
 
 export const TILE_SIZE = 32;

@@ -1,9 +1,14 @@
 import Phaser from "phaser";
 import {
-  createGameTextures, ensurePlayerTextures, fringeTextureKey, groundTileKey,
-  playerAnimKey, playerTextureKey, WATER_FRAMES,
+  createGameTextures, fringeTextureKey, groundTileKey, WATER_FRAMES,
 } from "../systems/TextureFactory.js";
-import { normalizeAppearance } from "../systems/CharacterAppearance.js";
+import {
+  CHAR_METRICS, FOOT_DROP, applyLook, ensurePlayerTextures,
+  playerAnimKey, playerTextureKey,
+} from "../systems/CharacterSprites.js";
+import {
+  normalizeAppearance, resolveDealerLook, resolveNpcLook,
+} from "../systems/CharacterAppearance.js";
 import {
   TILE_SIZE, MAP_WIDTH, MAP_HEIGHT, buildMapLayersForId, getNpcsForMap,
   doorAt, getMapDefinition, SPAWN_DEFAULT, TILE, resolveNpcPosition,
@@ -29,6 +34,19 @@ const MIN_VIEW_TILES_Y = 13;
 const SPEED_PER_TIER = 12;
 const GOLF_CART_BONUS = 68;
 const GOLF_CART_TIER_IDX = 3;
+
+/**
+ * Sprite position that stands a character's feet on the middle of a tile.
+ * Sheet art is a tile and a half tall, so the centre sits above the shoes.
+ */
+const tileToSprite = (tileX, tileY) => ({
+  x: tileX * TILE_SIZE + TILE_SIZE / 2,
+  y: tileY * TILE_SIZE + TILE_SIZE / 2 - FOOT_DROP,
+});
+
+/** Y for a name plate floating just clear of a character's head. */
+const tileHeadY = (tileY) =>
+  tileToSprite(0, tileY).y - (CHAR_METRICS.height * CHAR_METRICS.scale) / 2 - 6;
 
 /** Per-surface footstep sound. */
 const FOOTSTEP_SFX = {
@@ -126,7 +144,7 @@ export class OverworldScene extends Phaser.Scene {
 
   /** The pad's A button: talk to whoever is in front of you, or open the menu. */
   touchInteract() {
-    if (!this.canMove || this.dialogue?.isActive()) return;
+    if (!this.canMove || (this.dialogue?.isBlocking?.() ?? this.dialogue?.isActive?.())) return;
     this._clearMovePath();
     this._tryInteract();
   }
@@ -204,12 +222,14 @@ export class OverworldScene extends Phaser.Scene {
     this.playerAppearance = normalizeAppearance(spawn);
     ensurePlayerTextures(this, this.playerAppearance);
     const pKey = playerTextureKey({ appearance: this.playerAppearance }, "down");
-    this.player = this.physics.add.sprite(px * TILE_SIZE + TILE_SIZE / 2, py * TILE_SIZE + TILE_SIZE / 2, pKey);
+    const spawnPos = tileToSprite(px, py);
+    this.player = this.physics.add.sprite(spawnPos.x, spawnPos.y, pKey.key, pKey.frame);
     this.player.setCollideWorldBounds(true);
     this.player.setDepth(10);
-    this.player.body.setSize(TILE_SIZE * 0.625, TILE_SIZE * 0.5);
-    this.player.body.setOffset(TILE_SIZE * 0.1875, TILE_SIZE * 0.75);
-    this.playerShadow = this.add.image(this.player.x, this.player.y + TILE_SIZE * 0.28, "shadow_blob");
+    const feet = CHAR_METRICS.feet;
+    this.player.body.setSize(feet.w * CHAR_METRICS.scale, feet.h * CHAR_METRICS.scale);
+    this.player.body.setOffset(feet.x * CHAR_METRICS.scale, feet.y * CHAR_METRICS.scale);
+    this.playerShadow = this.add.image(this.player.x, this.player.y + FOOT_DROP + 2, "shadow_blob");
     this.playerShadow.setDepth(9);
     this.playerShadow.setAlpha(0.7);
     this.playerShadow.setScale(0.8, 0.4);
@@ -230,26 +250,26 @@ export class OverworldScene extends Phaser.Scene {
       return { ...npc, x: pos.x, y: pos.y };
     });
     for (const npc of this.currentNpcs) {
-      const nx = npc.x * TILE_SIZE + TILE_SIZE / 2;
-      const ny = npc.y * TILE_SIZE + TILE_SIZE / 2;
-      const shadow = this.add.image(nx, ny + TILE_SIZE * 0.28, "shadow_blob");
+      const at = tileToSprite(npc.x, npc.y);
+      const shadow = this.add.image(at.x, at.y + FOOT_DROP + 2, "shadow_blob");
       shadow.setDepth(9);
       shadow.setAlpha(0.65);
       shadow.setScale(0.75, 0.38);
       this.groundLayer.add(shadow);
-      const sprite = this.add.sprite(nx, ny, npc.sprite);
+      const sprite = this.add.sprite(at.x, at.y, "interact_icon");
       sprite.setDepth(10);
       sprite.setData("npc", npc);
       this.npcSprites.set(npc.id, sprite);
 
-      const displayName = this._resolveNpcDisplayName(npc);
-      const label = this._createNpcLabel(sprite.x, sprite.y - TILE_SIZE * 0.62, displayName, npc.zone);
-      this.npcLabels.set(npc.id, label);
+      // Dealers keep their own sheet; guests get a look seeded from their id.
+      const look = npc.zone
+        ? resolveDealerLook(this._dealerForZone(npc.zone).id, npc.sprite)
+        : resolveNpcLook(npc.sprite, npc.id);
+      applyLook(this, sprite, look, npc.direction ?? "down");
 
-      if (npc.zone) {
-        const dealer = this._dealerForZone(npc.zone);
-        sprite.setTexture(dealer.sprite);
-      }
+      const displayName = this._resolveNpcDisplayName(npc);
+      const label = this._createNpcLabel(sprite.x, tileHeadY(npc.y), displayName, npc.zone);
+      this.npcLabels.set(npc.id, label);
     }
 
     this.interactIcon = this.add.image(0, 0, "interact_icon").setVisible(false).setDepth(100);
@@ -323,7 +343,9 @@ export class OverworldScene extends Phaser.Scene {
     this.facing = "down";
     this.canMove = true;
     this.nearbyNpc = null;
-    this._lastDoorTile = null;
+    // Ignore the tile we spawn on so a warp never immediately re-fires an exit
+    // door if the landing tile and a doorway happen to overlap.
+    this._lastDoorTile = `${Math.floor(this.player.x / TILE_SIZE)},${Math.floor(this.player.y / TILE_SIZE)}`;
     this._lastTriggerId = null;
     this._footTimer = 0;
     this._konami = [];
@@ -447,10 +469,9 @@ export class OverworldScene extends Phaser.Scene {
       npc.y = pos.y;
       const sprite = this.npcSprites.get(npc.id);
       const label = this.npcLabels.get(npc.id);
-      const tx = pos.x * TILE_SIZE + TILE_SIZE / 2;
-      const ty = pos.y * TILE_SIZE + TILE_SIZE / 2;
+      const { x: tx, y: ty } = tileToSprite(pos.x, pos.y);
       if (sprite) this.tweens.add({ targets: sprite, x: tx, y: ty, duration: 600 });
-      if (label) this.tweens.add({ targets: label, x: tx, y: ty - 16, duration: 600 });
+      if (label) this.tweens.add({ targets: label, x: tx, y: tileHeadY(pos.y), duration: 600 });
     }
   }
 
@@ -632,7 +653,9 @@ export class OverworldScene extends Phaser.Scene {
     this.input.addPointer(2);
     this.input.on("pointerdown", (pointer) => {
       if (!pointer.wasTouch && pointer.button !== 0) return;
-      if (!this.canMove || this.dialogue.isActive() || this.encounters.isAnyActive?.()) return;
+      if (!this.canMove
+          || (this.dialogue?.isBlocking?.() ?? this.dialogue?.isActive?.())
+          || this.encounters.isAnyActive?.()) return;
 
       const world = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
       const tileX = Math.floor(world.x / TILE_SIZE);
@@ -649,9 +672,18 @@ export class OverworldScene extends Phaser.Scene {
     });
   }
 
+  /**
+   * World position of the player's feet. Sprites are drawn with their feet on
+   * the tile centre, so the sprite origin sits FOOT_DROP px higher.
+   */
+  playerFoot() {
+    const at = this.player.body?.center;
+    return at ? { x: at.x, y: at.y } : { x: this.player.x, y: this.player.y + FOOT_DROP };
+  }
+
   /** Tile the player currently stands on, measured at the feet. */
   playerTile() {
-    const at = this.player.body?.center ?? this.player;
+    const at = this.playerFoot();
     return {
       x: Math.floor(at.x / TILE_SIZE),
       y: Math.floor(at.y / TILE_SIZE),
@@ -659,16 +691,10 @@ export class OverworldScene extends Phaser.Scene {
   }
 
   /**
-   * Where to put the sprite so its feet land in the middle of a tile. The
-   * collision body sits below the sprite's center, so aiming the sprite at the
-   * tile center would leave the body straddling the tile below.
+   * Where to put the sprite so its feet land in the middle of a tile.
    */
   _footTarget(tileX, tileY) {
-    const drop = (this.player.body?.center.y ?? this.player.y) - this.player.y;
-    return {
-      x: tileX * TILE_SIZE + TILE_SIZE / 2,
-      y: tileY * TILE_SIZE + TILE_SIZE / 2 - drop,
-    };
+    return tileToSprite(tileX, tileY);
   }
 
   /**
@@ -796,15 +822,19 @@ export class OverworldScene extends Phaser.Scene {
     if (this.anims.exists(key)) {
       this.player.anims.play(key, true);
     } else {
-      this.player.setTexture(playerTextureKey(appearance, this.facing));
+      const still = playerTextureKey(appearance, this.facing);
+      this.player.setTexture(still.key, still.frame);
     }
   }
 
   refreshPlayerAppearance() {
     const rpg = this.saveAdapter.rpg;
+    this.playerArchetype = rpg.archetype || rpg.playerSprite || this.playerArchetype;
     this.playerAppearance = normalizeAppearance(rpg);
     ensurePlayerTextures(this, this.playerAppearance);
     this.player.anims?.stop();
+    const still = playerTextureKey({ appearance: this.playerAppearance }, this.facing);
+    this.player.setTexture(still.key, still.frame);
     this._applyPlayerAnim(this._moving);
   }
 
@@ -813,7 +843,7 @@ export class OverworldScene extends Phaser.Scene {
 
     this._tickWaterAnim(_time);
     if (this.playerShadow) {
-      this.playerShadow.setPosition(this.player.x, this.player.y + TILE_SIZE * 0.28);
+      this.playerShadow.setPosition(this.player.x, this.player.y + FOOT_DROP + 2);
     }
 
     // Physics runs after update(), so this is how far the last frame got us.
@@ -824,13 +854,19 @@ export class OverworldScene extends Phaser.Scene {
     this._prevX = this.player.x;
     this._prevY = this.player.y;
 
-    if (!this.canMove || this.isMenuOpen?.() || this.dialogue.isActive()
+    const dialogueBlocking = this.dialogue?.isBlocking?.() ?? this.dialogue?.isActive?.();
+    const dialogueVisible = Boolean(this.dialogue?.isActive?.());
+    // Toasts must not freeze the guest, but any visible dialogue still owns the
+    // thumb pad so A/B don't fire under the text box.
+    if (dialogueVisible || this.isMenuOpen?.() || this.encounters.isAnyActive?.()
+        || this.encounters.blackjack?.isActive()) {
+      this.touchPad?.setActive(false);
+    }
+    if (!this.canMove || this.isMenuOpen?.() || dialogueBlocking
         || this.encounters.isAnyActive?.() || this.encounters.blackjack?.isActive()) {
       this.player.body.setVelocity(0, 0);
-      // Whatever just interrupted us outranks a tapped route, and owns the
-      // screen the thumb controls would otherwise sit on.
+      // Whatever just interrupted us outranks a tapped route.
       if (this.moveTarget) this._clearMovePath();
-      this.touchPad?.setActive(false);
       if (this._moving) {
         this._moving = false;
         this._applyPlayerAnim(false);
@@ -847,7 +883,7 @@ export class OverworldScene extends Phaser.Scene {
       return;
     }
 
-    this.touchPad?.setActive(true);
+    if (!dialogueVisible) this.touchPad?.setActive(true);
 
     const run = this.moveKeys?.run || this._isKeyDown(this.keys.shift)
       || Boolean(this.touchPad?.vector().run);
@@ -1004,7 +1040,7 @@ export class OverworldScene extends Phaser.Scene {
       this.interactIcon.setVisible(true);
       this.interactIcon.setPosition(
         closest.x * TILE_SIZE + TILE_SIZE / 2,
-        closest.y * TILE_SIZE - TILE_SIZE * 0.55
+        tileHeadY(closest.y) - 8
       );
     } else {
       this.interactIcon.setVisible(false);

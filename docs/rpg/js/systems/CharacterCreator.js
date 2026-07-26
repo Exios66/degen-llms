@@ -1,18 +1,30 @@
 import {
   ARCHETYPES,
+  BODIES,
   SKIN_TONES,
   HAIR_COLORS,
   OUTFIT_COLORS,
+  LEG_COLORS,
   defaultAppearance,
   normalizeAppearance,
   resolvePalette,
 } from "./CharacterAppearance.js";
-import { drawCharacterToCanvas } from "./TextureFactory.js";
+import { drawCharacterToCanvas } from "./CharacterSprites.js";
 
 /**
  * Character creator / wardrobe UI with live sprite preview.
  */
-export function renderCharacterCreator(root, { session, onComplete, onBack, title = "Customize Your Guest" }) {
+export function renderCharacterCreator(root, {
+  session,
+  onComplete,
+  onBack,
+  title = "Customize Your Guest",
+  confirmLabel = "Save & enter resort \u2192",
+  // Picking a guest type at creation should pull in that type's whole look.
+  // Re-picking one from the in-game wardrobe should not throw away colours the
+  // player has already chosen.
+  resetColorsOnArchetype = true,
+} = {}) {
   root.innerHTML = "";
   const rpg = session.ensureRpgState();
   const state = {
@@ -59,14 +71,39 @@ export function renderCharacterCreator(root, { session, onComplete, onBack, titl
     btn.innerHTML = `<strong>${a.name}</strong><br><span class="dim">${a.perk}</span>`;
     btn.onclick = () => {
       state.archetype = a.id;
-      const defaults = defaultAppearance(a.id);
-      state.appearance = { ...defaults };
+      if (resetColorsOnArchetype) state.appearance = { ...defaultAppearance(a.id) };
       refresh();
     };
     archetypeRow.appendChild(btn);
   }
   archetypeSection.appendChild(archetypeRow);
   optionsCol.appendChild(archetypeSection);
+
+  // Bodies are whole sprites rather than a colour, so they get thumbnails of
+  // the character you would actually be playing.
+  const bodySection = document.createElement("div");
+  bodySection.className = "character-creator__section";
+  bodySection.innerHTML = `<h2 class="character-creator__label">Body</h2>`;
+  const bodyRow = document.createElement("div");
+  bodyRow.className = "character-creator__bodies";
+  for (const body of BODIES) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "character-creator__body";
+    btn.dataset.body = body.id;
+    btn.title = body.label;
+    btn.setAttribute("aria-label", body.label);
+    const thumb = document.createElement("canvas");
+    thumb.className = "character-creator__body-thumb";
+    btn.appendChild(thumb);
+    btn.onclick = () => {
+      state.appearance.body = body.id;
+      refresh();
+    };
+    bodyRow.appendChild(btn);
+  }
+  bodySection.appendChild(bodyRow);
+  optionsCol.appendChild(bodySection);
 
   optionsCol.appendChild(makeSwatchSection("Skin tone", SKIN_TONES, "skin", (id) => {
     state.appearance.skin = id;
@@ -83,6 +120,11 @@ export function renderCharacterCreator(root, { session, onComplete, onBack, titl
     refresh();
   }));
 
+  optionsCol.appendChild(makeSwatchSection("Legwear", LEG_COLORS, "legs", (id) => {
+    state.appearance.legs = id;
+    refresh();
+  }));
+
   layout.append(previewCol, optionsCol);
   panel.appendChild(layout);
 
@@ -91,7 +133,7 @@ export function renderCharacterCreator(root, { session, onComplete, onBack, titl
   const confirmBtn = document.createElement("button");
   confirmBtn.type = "button";
   confirmBtn.className = "character-creator__confirm";
-  confirmBtn.textContent = "Save & enter resort →";
+  confirmBtn.textContent = confirmLabel;
   confirmBtn.onclick = () => {
     rpg.archetype = state.archetype;
     rpg.playerSprite = state.archetype;
@@ -99,19 +141,35 @@ export function renderCharacterCreator(root, { session, onComplete, onBack, titl
     if (state.archetype === "local") rpg.flags.hint_north_wall = true;
     onComplete?.(session);
   };
-  const backBtn = document.createElement("button");
-  backBtn.type = "button";
-  backBtn.textContent = "Back";
-  backBtn.onclick = () => onBack?.();
-  actions.append(confirmBtn, backBtn);
+  actions.append(confirmBtn);
+  // Embedded in the START menu the panel already has its own Back, and two of
+  // them stacked reads as a mistake.
+  if (onBack) {
+    const backBtn = document.createElement("button");
+    backBtn.type = "button";
+    backBtn.textContent = "Back";
+    backBtn.onclick = () => onBack();
+    actions.append(backBtn);
+  }
   panel.appendChild(actions);
   root.appendChild(panel);
 
   function refresh() {
     const palette = resolvePalette(state.appearance);
-    drawCharacterToCanvas(previewCanvas, palette, "down", 0, 2);
+    drawCharacterToCanvas(previewCanvas, palette, "down", 0, 4);
     for (const btn of archetypeRow.querySelectorAll(".character-creator__archetype")) {
       btn.classList.toggle("character-creator__archetype--active", btn.dataset.archetype === state.archetype);
+    }
+    for (const btn of bodyRow.querySelectorAll(".character-creator__body")) {
+      const active = state.appearance.body === btn.dataset.body;
+      btn.classList.toggle("character-creator__body--active", active);
+      // Thumbnails wear the colours already chosen, so switching body is a
+      // straight comparison rather than a guess.
+      drawCharacterToCanvas(
+        btn.querySelector("canvas"),
+        { ...palette, sheet: btn.dataset.body },
+        "down", 0, 2
+      );
     }
     for (const swatch of panel.querySelectorAll(".character-creator__swatch")) {
       const group = swatch.dataset.group;
@@ -140,13 +198,8 @@ function makeSwatchSection(label, options, group, onPick) {
     btn.dataset.id = opt.id;
     btn.title = opt.label;
     btn.setAttribute("aria-label", opt.label);
-    if (group === "skin") {
-      btn.style.background = `#${opt.mid.toString(16).padStart(6, "0")}`;
-    } else if (group === "hair") {
-      btn.style.background = `#${opt.color.toString(16).padStart(6, "0")}`;
-    } else {
-      btn.style.background = `#${opt.body.toString(16).padStart(6, "0")}`;
-    }
+    // Two stops of the ramp, so a swatch previews the shading too.
+    btn.style.background = `linear-gradient(135deg, ${opt.light} 0 50%, ${opt.mid} 50% 100%)`;
     btn.onclick = () => onPick(opt.id);
     row.appendChild(btn);
   }

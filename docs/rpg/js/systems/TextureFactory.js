@@ -1465,35 +1465,47 @@ function drawFringe(g, kind, dir) {
   const fine = fineWriter(g);
   const horizontal = dir === "n" || dir === "s";
   const atStart = dir === "n" || dir === "w";
+  // Keep the contact band mostly opaque — Phaser generateTexture drops
+  // near-transparent-only Graphics, which made fringes invisible in-game.
   const band = horizontal
-    ? { x: 0, y: atStart ? 0 : 13, bw: 16, bh: 3 }
-    : { x: atStart ? 0 : 13, y: 0, bw: 3, bh: 16 };
+    ? { x: 0, y: atStart ? 0 : 14, bw: 16, bh: 2 }
+    : { x: atStart ? 0 : 14, y: 0, bw: 2, bh: 16 };
 
   if (kind === "foam") {
-    w.px(0xa8f0f8, band.x, band.y, band.bw, band.bh, 0.55);
-    w.px(0xffffff, band.x + (horizontal ? 2 : 0), band.y + (horizontal ? 0 : 2),
-      horizontal ? 3 : 2, horizontal ? 1 : 3, 0.7);
-    w.px(0x6ae8f0, band.x + (horizontal ? 8 : 1), band.y + (horizontal ? 1 : 7),
-      horizontal ? 4 : 1, horizontal ? 1 : 4, 0.65);
+    w.px(0xc8f8ff, band.x, band.y, band.bw, band.bh);
+    w.px(0xffffff, band.x + (horizontal ? 1 : 0), band.y + (horizontal ? 0 : 1),
+      horizontal ? 3 : 1, horizontal ? 1 : 3);
+    w.px(0x80f0ff, band.x + (horizontal ? 5 : 0), band.y + (horizontal ? 1 : 5),
+      horizontal ? 2 : 2, horizontal ? 1 : 2);
+    w.px(0xffffff, band.x + (horizontal ? 9 : 1), band.y + (horizontal ? 0 : 9),
+      horizontal ? 2 : 1, horizontal ? 1 : 2);
+    w.px(0xa8f0f8, band.x + (horizontal ? 12 : 0), band.y + (horizontal ? 1 : 12),
+      horizontal ? 3 : 2, horizontal ? 1 : 3);
     sparkle(fine, horizontal
-      ? [[6, (band.y + 1) * 2], [20, (band.y + 1) * 2], [28, band.y * 2]]
-      : [[(band.x + 1) * 2, 8], [(band.x + 1) * 2, 18], [band.x * 2, 26]],
-    0xffffff, 0.55);
+      ? [[4, band.y * 2], [14, band.y * 2 + 1], [24, band.y * 2]]
+      : [[band.x * 2, 6], [band.x * 2 + 1, 16], [band.x * 2, 26]],
+    0xffffff, 0.7);
   } else if (kind === "wet") {
-    w.px(0x8a7040, band.x, band.y, band.bw, band.bh, 0.45);
-    w.px(0x39c5cf, band.x, band.y + (horizontal ? (atStart ? 2 : 0) : 0),
-      horizontal ? 16 : 1, horizontal ? 1 : 16, 0.4);
-    w.px(0x6ae8f0, band.x + (horizontal ? 3 : 0), band.y + (horizontal ? 1 : 4),
-      horizontal ? 2 : 2, horizontal ? 1 : 2, 0.5);
+    w.px(0x8a6830, band.x, band.y, band.bw, band.bh);
+    w.px(0x39c5cf, band.x, band.y + (horizontal ? (atStart ? 1 : 0) : 0),
+      horizontal ? 16 : 1, horizontal ? 1 : 16);
+    w.px(0x6ae8f0, band.x + (horizontal ? 2 : 0), band.y + (horizontal ? 0 : 3),
+      horizontal ? 2 : 1, horizontal ? 1 : 2);
+    w.px(0xb89048, band.x + (horizontal ? 7 : 1), band.y + (horizontal ? 1 : 8),
+      horizontal ? 3 : 1, horizontal ? 1 : 3);
   } else if (kind === "path") {
-    w.px(0xc8a030, band.x, band.y, band.bw, band.bh, 0.35);
+    w.px(0xe8c547, band.x, band.y, band.bw, band.bh);
     w.px(0xffe890, band.x + (horizontal ? 1 : 0), band.y + (horizontal ? 0 : 1),
-      horizontal ? 14 : 1, horizontal ? 1 : 14, 0.4);
+      horizontal ? 14 : 1, horizontal ? 1 : 14);
+    w.px(0xfff6c8, band.x + (horizontal ? 4 : 0), band.y + (horizontal ? 0 : 4),
+      horizontal ? 2 : 1, horizontal ? 1 : 2);
   } else if (kind === "pool") {
-    w.px(0x2a7080, band.x, band.y, band.bw, band.bh, 0.5);
-    w.px(0x6ae8f0, band.x, band.y + (horizontal ? 1 : 0),
-      horizontal ? 16 : 2, horizontal ? 1 : 16, 0.45);
-    sparkle(fine, [[10, (band.y + 1) * 2], [22, (band.y + 1) * 2]], 0xffffff, 0.45);
+    w.px(0x2a8090, band.x, band.y, band.bw, band.bh);
+    w.px(0x6ae8f0, band.x, band.y + (horizontal ? 0 : 0),
+      horizontal ? 16 : 2, horizontal ? 1 : 16);
+    w.px(0xa8f8ff, band.x + (horizontal ? 3 : 0), band.y + (horizontal ? 1 : 4),
+      horizontal ? 2 : 1, horizontal ? 1 : 2);
+    sparkle(fine, [[8, band.y * 2], [20, band.y * 2]], 0xffffff, 0.6);
   }
 }
 

@@ -65,27 +65,34 @@ function ditherWeave(w, x0, y0, w0, h0, c1, c2) {
   }
 }
 
-function marbleVeins(w, base, vein, veinHi) {
-  w.px(base, 0, 0, 16, 16);
-  w.px(vein, 1, 2, 6, 1);
-  w.px(veinHi, 2, 2, 3, 1);
-  w.px(vein, 8, 1, 1, 5);
-  w.px(vein, 9, 5, 5, 1);
-  w.px(veinHi, 10, 5, 2, 1);
-  w.px(vein, 3, 9, 8, 1);
-  w.px(vein, 2, 10, 1, 4);
-  w.px(veinHi, 3, 12, 4, 1);
-  w.px(vein, 11, 8, 1, 6);
-  w.px(veinHi, 12, 10, 2, 1);
-  w.px(0xf8f4ec, 4, 4, 1, 1, 0.7);
-  w.px(0xfffaf0, 11, 3, 1, 1, 0.6);
-}
-
 function groutGrid(w, grout, step = 8) {
   for (let i = step; i < 16; i += step) {
     w.px(grout, i, 0, 1, 16);
     w.px(grout, 0, i, 16, 1);
   }
+}
+
+/**
+ * A writer that sees one 16px tile of a larger pattern.
+ *
+ * A motif that fits inside a tile is a motif that repeats every 32 screen
+ * pixels, and the eye finds that grid immediately however pretty the motif is.
+ * The way out is to draw the pattern at the size it wants to be — four tiles
+ * across — and cut it up. The block drawer works in block coordinates and this
+ * clips each write to the tile being baked, so nothing spills into a
+ * neighbouring texture and nothing has to know it was cut.
+ */
+function patchWriter(w, ox, oy) {
+  return {
+    px: (color, x, y, pw = 1, ph = 1, alpha) => {
+      const x0 = Math.max(0, x - ox);
+      const y0 = Math.max(0, y - oy);
+      const x1 = Math.min(16, x - ox + pw);
+      const y1 = Math.min(16, y - oy + ph);
+      if (x1 <= x0 || y1 <= y0) return;
+      w.px(color, x0, y0, x1 - x0, y1 - y0, alpha);
+    },
+  };
 }
 
 function makeTex(scene, key, draw, w = TILE_SIZE, h = TILE_SIZE) {
@@ -98,75 +105,144 @@ function makeTex(scene, key, draw, w = TILE_SIZE, h = TILE_SIZE) {
 
 // ─── Ground tiles ──────────────────────────────────────────────────────────
 
-function drawLobbyTile(g) {
-  const w = makeWriter(g);
-  // Polished marble. The gold inlay that used to sit in every tile turned
-  // concourses into polka dots, so it moved to an occasional variant.
-  marbleVeins(w, 0xe8e0d0, 0xc8b8a0, 0xd8c8b0);
-  groutGrid(w, 0xb8a890, 8);
-  w.px(0xfff8f0, 3, 3, 3, 2);
-  w.px(0xfff8f0, 10, 10, 3, 2);
-  w.px(0xd0c0a8, 0, 0, 16, 1);
-  w.px(0xd0c0a8, 0, 0, 1, 16);
+/**
+ * Concourse marble, drawn four tiles at a time.
+ *
+ * This is the floor most of the resort stands on, so its repeat is the one that
+ * shows. Per-tile veins and a per-tile polish highlight put the same two marks
+ * in the same place a thousand times over; across a block the veins wander, the
+ * sheen pools, and the only thing on a strict grid is the grout, which is
+ * supposed to be.
+ */
+function drawLobbyPatch(w) {
+  driftFill(w, [0xdcd2bd, 0xe1d8c5, 0xe7dfcf, 0xece5d8, 0xf2ece1]);
+
+  // Veins, broken into runs. An unbroken diagonal across a whole concourse
+  // reads as a scratch on the screen rather than as something in the stone.
+  const vein = (slope, phase, amp, color, alpha) => {
+    for (let t = 0; t < 64; t += 1) {
+      if ((t + phase) % 19 < 6) continue;
+      const y = (slope * t + phase + amp * Math.sin((2 * Math.PI * t) / 64) + 128) % 64;
+      w.px(color, t, Math.floor(y), 1, 1, alpha);
+    }
+  };
+  vein(1, 10, 9, 0xcdbea6, 0.4);
+  vein(-1, 52, 6, 0xd4c6ae, 0.28);
+
+  // Polished sheen, pooled where the drift is highest rather than at a fixed
+  // spot in every tile.
+  for (let y = 0; y < 64; y += 1) {
+    for (let x = 0; x < 64; x += 1) {
+      if (blockDrift(x, y) > 0.62) w.px(0xfff8f0, x, y, 1, 1, 0.35);
+    }
+  }
+
+  // Grout on a strict 8px pitch, so slabs stay square across the whole floor.
+  // This is the only thing here that is allowed to be regular.
+  for (let i = 0; i < 64; i += 8) {
+    w.px(0xb8a890, i, 0, 1, 64, 0.7);
+    w.px(0xb8a890, 0, i, 64, 1, 0.7);
+  }
 }
 
-function drawCarpetTile(g) {
-  const w = makeWriter(g);
-  // Patterned casino carpet. The motif used to be a filled 8×8 gold block in
-  // the middle of every tile, which tiled a whole room into a gold-and-crimson
-  // chequerboard on an exact 32px grid. It is now an outlined fleuron with the
-  // field showing through it, and the corner marks are quarters of one rosette
-  // that four neighbouring tiles complete — so the pattern reads as a woven
-  // lattice rather than a page of stamps.
-  const gold = 0x9c7628;
-  const lit = 0xc9a049;
-  tileFrame(w, 0x5a0c30, 0x6a1840, 0x3e0620);
-  ditherWeave(w, 1, 1, 14, 14, 0x64103a, 0x580c2e);
-  // Fleuron: a diamond outline, lit down its top-left edge.
-  w.px(lit, 7, 4, 2, 1);
-  w.px(lit, 6, 5, 1, 1);
-  w.px(gold, 9, 5, 1, 1);
-  w.px(lit, 5, 6, 1, 1);
-  w.px(gold, 10, 6, 1, 1);
-  w.px(lit, 4, 7, 1, 2);
-  w.px(gold, 11, 7, 1, 2);
-  w.px(lit, 5, 9, 1, 1);
-  w.px(gold, 10, 9, 1, 1);
-  w.px(gold, 6, 10, 1, 1);
-  w.px(gold, 9, 10, 1, 1);
-  w.px(gold, 7, 11, 2, 1);
-  w.px(gold, 7, 7, 2, 2);
-  w.px(lit, 7, 7, 1, 1);
-  // Quarter rosettes at the corners.
-  for (const [x, y] of [[0, 0], [14, 0], [0, 14], [14, 14]]) {
-    w.px(gold, x, y, 2, 2);
+/**
+ * Seamless tonal drift across a 64px block, in the range −1…1.
+ *
+ * A flat fill under a pattern looks printed, and a few translucent rectangles
+ * dropped over it look like a few translucent rectangles. Summed sines whose
+ * periods all divide 64 give a soft mottle that meets itself exactly at the
+ * block edges, so the drift carries from one block to the next.
+ */
+function blockDrift(x, y) {
+  const t = (2 * Math.PI) / 64;
+  return (
+    0.55 * Math.sin(t * x + 0.6) * Math.sin(t * y + 2.1)
+    + 0.28 * Math.sin(2 * t * x + 1.7) * Math.sin(t * y - 0.4)
+    + 0.22 * Math.sin(t * x - 1.2) * Math.sin(2 * t * y + 0.9)
+  );
+}
+
+/** A second drift, out of step with the first, for layering. */
+function blockDriftB(x, y) {
+  const t = (2 * Math.PI) / 64;
+  return (
+    0.5 * Math.sin(t * y - 0.9) * Math.sin(2 * t * x + 0.3)
+    + 0.3 * Math.sin(3 * t * x + 2.6) * Math.sin(2 * t * y + 1.4)
+    + 0.2 * Math.sin(2 * t * x - 2.2) * Math.sin(3 * t * y - 0.7)
+  );
+}
+
+/** Fill a block with a ramp of tones picked by the drift, dithered. */
+function driftFill(w, tones) {
+  const last = tones.length - 1;
+  for (let y = 0; y < 64; y += 1) {
+    for (let x = 0; x < 64; x += 1) {
+      const bias = ((x + y) % 2) * 0.06 - 0.03;
+      const t = (blockDrift(x, y) + 1) / 2 + bias;
+      w.px(tones[Math.max(0, Math.min(last, Math.round(t * last)))], x, y);
+    }
   }
-  w.px(lit, 0, 0, 1, 1);
+}
+
+/**
+ * Casino carpet, drawn four tiles at a time.
+ *
+ * Two earlier versions put a motif in the middle of each tile — first a filled
+ * gold block, then an outlined fleuron — and both tiled a room into a
+ * chequerboard, because a motif that fits inside a tile repeats on the tile
+ * grid however it is drawn. This is a diamond lattice on a 32px pitch laid
+ * across a 64px block instead: the ribs cross tile seams, the medallions land
+ * where the lattice puts them rather than at the tile centre, and alternating
+ * their colour puts the true repeat at four tiles.
+ */
+function drawCarpetPatch(w) {
+  const rib = 0x7d5c22;
+  const ribLit = 0xa07a30;
+  const gold = 0xc9a049;
+  const teal = 0x1d6160;
+  const tealLo = 0x144443;
+
+  driftFill(w, [0x4a0824, 0x520a2b, 0x5a0c30, 0x621038, 0x6a143e]);
+
+  for (let y = 0; y < 64; y += 1) {
+    for (let x = 0; x < 64; x += 1) {
+      // Distance to the nearest lattice centre, and to the smaller medallion
+      // sitting in the gap between four of them.
+      const dx = (x % 32) - 16;
+      const dy = (y % 32) - 16;
+      const d = Math.abs(dx) + Math.abs(dy);
+      const gap = 32 - d;
+      // Which medallion of the block this is, so alternate ones differ.
+      const cell = (Math.floor(x / 32) + Math.floor(y / 32)) % 2;
+      if (d === 15) w.px(dx + dy < 0 ? ribLit : rib, x, y);
+      else if (d === 14) w.px(rib, x, y, 1, 1, 0.35);
+      else if (d === 8) w.px(cell ? tealLo : rib, x, y, 1, 1, 0.85);
+      else if (d === 7 && (dx === 0 || dy === 0)) w.px(cell ? teal : ribLit, x, y);
+      else if (d <= 2) w.px(cell ? teal : gold, x, y);
+      else if (d === 3 && (dx === 0 || dy === 0)) w.px(cell ? tealLo : ribLit, x, y);
+      else if (gap <= 1) w.px(cell ? gold : teal, x, y, 1, 1, 0.85);
+      else if (gap <= 3 && (dx === 0 || dy === 0 || Math.abs(dx) === Math.abs(dy))) {
+        w.px(rib, x, y, 1, 1, 0.5);
+      }
+    }
+  }
 }
 
 function drawFeltTile(g) {
   const w = makeWriter(g);
-  w.px(0x0a4828, 0, 0, 16, 16);
-  ditherWeave(w, 1, 1, 14, 14, 0x0e5830, 0x0c5030);
-  w.px(0x128840, 2, 2, 12, 12);
-  w.px(0x18a050, 3, 3, 10, 10);
-  // Gold rail
-  w.px(0xc8a030, 0, 0, 16, 1);
-  w.px(0xe8c547, 0, 1, 16, 1);
-  w.px(0xc8a030, 0, 14, 16, 2);
-  w.px(0xe8c547, 0, 0, 1, 16);
-  w.px(0xe8c547, 15, 0, 1, 16);
-  w.px(0xffe890, 1, 1, 1, 1);
-  // Betting circle
-  w.px(0xffffff, 4, 7, 8, 1);
-  w.px(0xffffff, 7, 4, 1, 8);
-  w.px(0xffffff, 5, 5, 1, 1);
-  w.px(0xffffff, 10, 5, 1, 1);
-  w.px(0xffffff, 5, 10, 1, 1);
-  w.px(0xffffff, 10, 10, 1, 1);
-  w.px(0x40e080, 6, 6, 4, 4);
-  w.px(0x60ffa0, 7, 7, 2, 2);
-  w.px(0xffffff, 7, 7, 1, 1, 0.5);
+  // Baize. Every tile used to carry its own gold rail and its own white betting
+  // circle, so a pit came out as a wall of framed coasters instead of a table.
+  // The rail moved to EDGE_DRAWERS and the circle went altogether: this is the
+  // cloth, and nothing else. Nap only, at a contrast you read as texture rather
+  // than as pattern.
+  w.px(0x115c33, 0, 0, 16, 16);
+  ditherWeave(w, 0, 0, 16, 16, 0x13633a, 0x105830);
+  // Nap, at four flecks a tile. A wash across part of the tile would band the
+  // whole pit at 32px intervals, which is the mistake the rail already made.
+  w.px(0x18754a, 3, 2, 2, 1, 0.3);
+  w.px(0x0b431f, 11, 6, 2, 1, 0.25);
+  w.px(0x18754a, 6, 11, 2, 1, 0.28);
+  w.px(0x0b431f, 1, 14, 2, 1, 0.2);
 }
 
 function drawWallTile(g) {
@@ -193,24 +269,27 @@ function drawWallTile(g) {
   w.px(0x8a6018, 0, 15, 16, 1);
 }
 
-function drawPathTile(g) {
-  const w = makeWriter(g);
-  w.px(0x7a5010, 0, 0, 16, 16);
-  w.px(0xa87820, 1, 1, 14, 14);
-  w.px(0xc8a030, 2, 2, 12, 12);
-  w.px(0xe8c547, 3, 3, 10, 10);
-  w.px(0xffe890, 4, 4, 8, 8);
-  // Diamond inlay
-  w.px(0xfff0b0, 5, 5, 6, 6);
-  w.px(0xe8c547, 6, 6, 4, 4);
-  w.px(0xffe890, 7, 7, 2, 2);
-  w.px(0xffffff, 7, 7, 1, 1, 0.6);
-  // Brushed metal streaks
-  w.px(0xffe890, 2, 3, 4, 1, 0.4);
-  w.px(0xffe890, 9, 10, 5, 1, 0.35);
-  w.px(0x684010, 7, 0, 2, 16);
-  w.px(0x684010, 0, 7, 16, 2);
-  w.px(0x8a6018, 7, 7, 2, 2);
+/**
+ * The gold runner that connects the wings, drawn four tiles at a time.
+ *
+ * It was five concentric squares ending in a near-white centre, which at a
+ * hundred tiles a room read as stacked bullion rather than as a floor you walk
+ * down. It is a woven runner now: one warm gold under a fine weft, worn lighter
+ * where the drift says the traffic goes, and the kerb only where it ends.
+ */
+function drawPathPatch(w) {
+  driftFill(w, [0x9c7a2a, 0xa5822e, 0xad8a33, 0xb59239, 0xbd9a40]);
+  for (let y = 1; y < 64; y += 3) {
+    for (let x = 0; x < 64; x += 1) {
+      w.px(0xc9a44a, x, y, 1, 1, 0.28);
+      w.px(0x8e6d24, x, y + 1, 1, 1, 0.22);
+    }
+  }
+  for (let y = 0; y < 64; y += 1) {
+    for (let x = 0; x < 64; x += 1) {
+      if (blockDrift(x, y) > 0.75) w.px(0xd8b869, x, y, 1, 1, 0.3);
+    }
+  }
 }
 
 function drawTrimTile(g) {
@@ -231,74 +310,88 @@ function drawTrimTile(g) {
   w.px(0x2a1820, 0, 15, 16, 1);
 }
 
-function drawWaterTile(g) {
-  const w = makeWriter(g);
-  w.px(0x0c3050, 0, 0, 16, 16);
-  w.px(0x104060, 1, 1, 14, 14);
-  w.px(0x186880, 2, 2, 12, 12);
-  // Depth bands
-  w.px(0x1a5878, 0, 6, 16, 4);
-  w.px(0x145068, 0, 11, 16, 5);
-  // Caustic highlights
-  w.px(0x39c5cf, 2, 3, 4, 1);
-  w.px(0x6ae8f0, 3, 3, 2, 1);
-  w.px(0x4ad4de, 8, 2, 5, 1);
-  w.px(0x6ae8f0, 9, 2, 2, 1);
-  w.px(0x39c5cf, 4, 9, 6, 1);
-  w.px(0x6ae8f0, 5, 9, 3, 1);
-  w.px(0x4ad4de, 11, 7, 3, 1);
-  w.px(0x80f8ff, 6, 4, 1, 1, 0.7);
-  w.px(0x80f8ff, 12, 8, 1, 1, 0.5);
-  // Surface ripple
-  w.px(0x2a90a8, 1, 5, 14, 1, 0.5);
-  w.px(0x2a90a8, 2, 12, 12, 1, 0.4);
-}
-
-function drawVipTile(g) {
-  const w = makeWriter(g);
-  // Black marble with gold inlay. Every tile used to carry a full bright-gold
-  // rectangle inset from its own edge, which hung a picture frame around each
-  // of the nine hundred slabs in the salon. The inlay now runs along two edges
-  // only, so a slab shares each line with its neighbour and the floor reads as
-  // one grid of stone rather than a wall of frames. The stone itself was near
-  // black, which read as a hole; it is charcoal now, and the veins run off the
-  // edges so they carry into the next slab.
-  w.px(0x14111c, 0, 0, 16, 16);
-  ditherWeave(w, 0, 0, 16, 16, 0x181422, 0x121018);
-  w.px(0x5f4a12, 0, 4, 6, 1);
-  w.px(0x8a6c18, 2, 4, 3, 1);
-  w.px(0x5f4a12, 6, 4, 1, 5);
-  w.px(0x5f4a12, 6, 9, 10, 1);
-  w.px(0x8a6c18, 9, 9, 3, 1);
-  w.px(0x5f4a12, 11, 9, 1, 7);
-  w.px(0x221d2e, 1, 1, 4, 2, 0.7);
-  w.px(0x0d0b14, 12, 12, 3, 3, 0.5);
-  w.px(0x6a5214, 0, 0, 16, 1);
-  w.px(0x6a5214, 0, 0, 1, 16);
-  w.px(0x9c7628, 0, 0, 3, 1);
-  w.px(0x9c7628, 0, 0, 1, 3);
-  w.px(0xc9a049, 0, 0, 1, 1);
-}
-
-function drawAquaTile(g) {
-  const w = makeWriter(g);
-  w.px(0x0a1820, 0, 0, 16, 16);
-  // Pool deck mosaic
-  for (let y = 0; y < 16; y += 4) {
-    for (let x = 0; x < 16; x += 4) {
-      const tone = ((x + y) / 4) % 2 === 0 ? 0x1a3848 : 0x143040;
-      w.px(tone, x, y, 4, 4);
-      w.px(0x244858, x + 1, y + 1, 2, 2);
+/**
+ * Pool water, drawn four tiles at a time.
+ *
+ * The old tile put a depth band across its own middle and a caustic streak at
+ * its own top, so the lazy river came out corrugated. Caustics are the one
+ * thing here that has to be drawn as a field rather than as marks: these are
+ * the contour lines of the same drift the other floors use, which is exactly
+ * the shape light makes on the bottom of a pool.
+ */
+function drawWaterPatch(w) {
+  driftFill(w, [0x0e3c5c, 0x114668, 0x145174, 0x175c80, 0x1a678c]);
+  for (let y = 0; y < 64; y += 1) {
+    for (let x = 0; x < 64; x += 1) {
+      // Two drifts out of step, so the contours make an open net rather than a
+      // field of identical closed loops.
+      const d = blockDrift(x, y) + 0.7 * blockDriftB(x, y);
+      for (const level of [0.62, 0.05, -0.55]) {
+        const band = Math.abs(d - level);
+        if (band < 0.035) w.px(0x6ae8f0, x, y, 1, 1, 0.5);
+        else if (band < 0.09) w.px(0x39c5cf, x, y, 1, 1, 0.22);
+      }
+      if (d < -1.05) w.px(0x0a2f4a, x, y, 1, 1, 0.4);
     }
   }
-  groutGrid(w, 0x0c2030, 4);
-  // Shimmer water line
-  w.px(0x39c5cf, 0, 10, 16, 2);
-  w.px(0x6ae8f0, 2, 10, 4, 1);
-  w.px(0x4ad4de, 8, 11, 6, 1);
-  w.px(0x80f8ff, 12, 10, 2, 1, 0.6);
-  w.px(0x1a5060, 0, 12, 16, 4);
-  w.px(0x2a7080, 3, 13, 8, 1);
+}
+
+/**
+ * The high limit salon's marble, drawn four tiles at a time.
+ *
+ * Veins are the whole point of marble and they are longer than a tile. Fitting
+ * them into one meant a gold elbow in every slab, which tiled the salon into
+ * something between a maze and a circuit board. Across a 64px block a vein can
+ * actually wander; each one runs on a 45° diagonal with a sine wobble so it
+ * leaves the block exactly where it entered and the seam disappears.
+ */
+function drawVipPatch(w) {
+  driftFill(w, [0x100d18, 0x141120, 0x181425, 0x1c182b, 0x211c33]);
+
+  const vein = (slope, phase, amp, color, lit, alpha) => {
+    for (let t = 0; t < 64; t += 1) {
+      const x = t;
+      const y = (slope * t + phase + amp * Math.sin((2 * Math.PI * t) / 64) + 128) % 64;
+      w.px(color, x, Math.floor(y), 1, 1, alpha);
+      w.px(color, x, Math.floor(y) + 1, 1, 1, alpha * 0.5);
+      if (t % 7 < 3) w.px(lit, x, Math.floor(y), 1, 1, alpha * 0.8);
+    }
+  };
+  vein(1, 6, 7, 0x2e2740, 0x413859, 0.9);
+  vein(-1, 44, 9, 0x2a2338, 0x3a3350, 0.7);
+  vein(2, 20, 5, 0x241f31, 0x342d45, 0.55);
+  // One gold seam, because this is the room where that reads as money rather
+  // than as decoration.
+  vein(1, 38, 11, 0x6a5214, 0x9c7628, 0.65);
+}
+
+/**
+ * The aquarium's mosaic deck, drawn four tiles at a time.
+ *
+ * A shimmer line ran across the same two rows of every tile, which striped the
+ * exhibit hall end to end. The shimmer is now a wash that pools where the tank
+ * light falls, and the mosaic underneath it is a strict 4px grid — small enough
+ * that it reads as mosaic rather than as the tile grid it sits on.
+ */
+function drawAquaPatch(w) {
+  driftFill(w, [0x112c3a, 0x143342, 0x173a4c, 0x1a4155, 0x1e485e]);
+  for (let y = 0; y < 64; y += 4) {
+    for (let x = 0; x < 64; x += 4) {
+      const tone = ((x + y) / 4) % 2 === 0 ? 0x000000 : 0xffffff;
+      w.px(tone, x, y, 4, 4, 0.06);
+      w.px(0xffffff, x + 1, y + 1, 2, 1, 0.05);
+      w.px(0x0c2030, x + 3, y, 1, 4, 0.55);
+      w.px(0x0c2030, x, y + 3, 4, 1, 0.55);
+    }
+  }
+  // Tank light on the deck.
+  for (let y = 0; y < 64; y += 1) {
+    for (let x = 0; x < 64; x += 1) {
+      const d = blockDrift(x, y);
+      if (d > 0.55) w.px(0x39c5cf, x, y, 1, 1, 0.16);
+      else if (d > 0.3) w.px(0x39c5cf, x, y, 1, 1, 0.07);
+    }
+  }
 }
 
 function drawPlantTile(g) {
@@ -534,19 +627,40 @@ function drawRopeTile(g) {
   w.px(0xd05068, 13, 6, 2, 1, 0.6);
 }
 
+/**
+ * Floors whose pattern is bigger than one tile, and the block that draws it.
+ *
+ * `size` is the block's width and height in tiles; the drawer paints the whole
+ * block in its own coordinates and each tile bakes the window it owns.
+ */
+const PATCH_FLOORS = {
+  [TILE.LOBBY]: { size: 4, draw: drawLobbyPatch },
+  [TILE.CARPET]: { size: 4, draw: drawCarpetPatch },
+  [TILE.VIP]: { size: 4, draw: drawVipPatch },
+  [TILE.PATH]: { size: 4, draw: drawPathPatch },
+  [TILE.WATER]: { size: 4, draw: drawWaterPatch },
+  [TILE.AQUA]: { size: 4, draw: drawAquaPatch },
+};
+
+/** The drawer for one tile of a patch floor's block. */
+const patchCell = (tile, cx, cy) => (target) => {
+  const { draw } = PATCH_FLOORS[tile];
+  draw(patchWriter(makeWriter(target), cx * 16, cy * 16));
+};
+
 const TILE_DRAWERS = {
   [TILE.VOID]: drawVoidTile,
-  [TILE.LOBBY]: drawLobbyTile,
-  [TILE.CARPET]: drawCarpetTile,
+  [TILE.LOBBY]: patchCell(TILE.LOBBY, 0, 0),
+  [TILE.CARPET]: patchCell(TILE.CARPET, 0, 0),
   [TILE.FELT]: drawFeltTile,
   [TILE.PLANT]: drawPlantTile,
-  [TILE.WATER]: drawWaterTile,
+  [TILE.WATER]: patchCell(TILE.WATER, 0, 0),
   [TILE.WALL]: drawWallTile,
   [TILE.BAR]: drawBarTile,
   [TILE.SLOT]: drawSlotTile,
   [TILE.SCREEN]: drawScreenTile,
-  [TILE.VIP]: drawVipTile,
-  [TILE.AQUA]: drawAquaTile,
+  [TILE.VIP]: patchCell(TILE.VIP, 0, 0),
+  [TILE.AQUA]: patchCell(TILE.AQUA, 0, 0),
   [TILE.ROAD]: drawRoadTile,
   [TILE.SAND]: drawSandTile,
   [TILE.STAGE]: drawStageTile,
@@ -554,7 +668,7 @@ const TILE_DRAWERS = {
   [TILE.GLASS]: drawGlassTile,
   [TILE.ROPE]: drawRopeTile,
   [TILE.ICE]: drawIceTile,
-  [TILE.PATH]: drawPathTile,
+  [TILE.PATH]: patchCell(TILE.PATH, 0, 0),
   [TILE.TRIM]: drawTrimTile,
 };
 
@@ -565,8 +679,7 @@ const TILE_DRAWERS = {
  * hide the grid across a ballroom.
  */
 const SCUFFED_FLOORS = new Set([
-  TILE.LOBBY, TILE.CARPET, TILE.FELT, TILE.VIP,
-  TILE.ROAD, TILE.SAND, TILE.SPA, TILE.PATH, TILE.ICE,
+  TILE.FELT, TILE.ROAD, TILE.SAND, TILE.SPA, TILE.ICE,
 ]);
 
 const SCUFFS = [
@@ -590,12 +703,6 @@ function scuff(g, variant) {
  * in five rather than everywhere.
  */
 const FLOOR_ACCENTS = {
-  // Gold inlay medallion set into the marble.
-  [TILE.LOBBY]: (w) => {
-    w.px(0xf0e8d8, 6, 6, 4, 4);
-    w.px(0xe8c878, 7, 7, 2, 2);
-    w.px(0xffe890, 7, 7, 1, 1);
-  },
   // Tar seams sealing a crack, and nothing louder. Accents land on roughly one
   // tile in five, which is often enough that anything with a recognisable
   // shape — the storm drain and the lane paint that lived here before — lines
@@ -628,19 +735,144 @@ const FLOOR_ACCENTS = {
 
 const variantCount = (tile) => SCUFFS.length + (FLOOR_ACCENTS[tile] ? 1 : 0);
 
-/** Every ground texture key createGameTextures() will register. */
-export function groundTextureKeys() {
-  const keys = [];
-  for (const id of Object.keys(TILE_DRAWERS)) {
-    keys.push(`tile_${id}`);
-    if (!SCUFFED_FLOORS.has(Number(id))) continue;
-    for (let v = 0; v < variantCount(Number(id)); v += 1) keys.push(`tile_${id}_s${v}`);
-  }
-  return keys;
+/**
+ * Floors that are a bordered surface rather than a repeating material.
+ *
+ * A table pit and a walkway both have an edge in the world, and drawing that
+ * edge into every tile — a gold rail around each square of felt, a kerb around
+ * each square of runner — turns one twelve-metre table into a hundred and
+ * thirty-two coasters. These floors draw their border only on the sides that
+ * actually face something else, so a region reads as one object.
+ */
+const EDGE_DRAWERS = {
+  [TILE.FELT]: (w, side) => {
+    const rail = 0x8a6018;
+    const lit = 0xe8c547;
+    const shade = 0x073a20;
+    if (side === "n") {
+      w.px(rail, 0, 0, 16, 2);
+      w.px(lit, 0, 0, 16, 1);
+      w.px(shade, 0, 2, 16, 1, 0.45);
+    } else if (side === "s") {
+      w.px(rail, 0, 14, 16, 2);
+      w.px(lit, 0, 14, 16, 1);
+      w.px(shade, 0, 13, 16, 1, 0.3);
+    } else if (side === "w") {
+      w.px(rail, 0, 0, 2, 16);
+      w.px(lit, 0, 0, 1, 16);
+      w.px(shade, 2, 0, 1, 16, 0.45);
+    } else {
+      w.px(rail, 14, 0, 2, 16);
+      w.px(lit, 14, 0, 1, 16);
+      w.px(shade, 13, 0, 1, 16, 0.3);
+    }
+  },
+  [TILE.PATH]: (w, side) => {
+    const kerb = 0x7c5e1c;
+    const lit = 0xd9b552;
+    if (side === "n") {
+      w.px(kerb, 0, 0, 16, 1);
+      w.px(lit, 0, 1, 16, 1);
+    } else if (side === "s") {
+      w.px(kerb, 0, 15, 16, 1);
+      w.px(lit, 0, 14, 16, 1);
+    } else if (side === "w") {
+      w.px(kerb, 0, 0, 1, 16);
+      w.px(lit, 1, 0, 1, 16);
+    } else {
+      w.px(kerb, 15, 0, 1, 16);
+      w.px(lit, 14, 0, 1, 16);
+    }
+  },
+};
+
+const SIDES = ["n", "e", "s", "w"];
+const SIDE_STEP = { n: [0, -1], e: [1, 0], s: [0, 1], w: [-1, 0] };
+
+/**
+ * Which sides of this tile face something that is not the same floor.
+ *
+ * Off the edge of the map counts as facing out, so a region that runs to the
+ * border is still closed off.
+ */
+export function edgeMask(ground, tile, x, y) {
+  let mask = 0;
+  SIDES.forEach((side, bit) => {
+    const [dx, dy] = SIDE_STEP[side];
+    if (ground?.[y + dy]?.[x + dx] !== tile) mask |= 1 << bit;
+  });
+  return mask;
 }
 
-/** Texture key for a ground tile at a map position, spreading the variants. */
-export function groundTileKey(tile, x, y) {
+/**
+ * Every ground texture key and the drawer that paints it.
+ *
+ * Built once at module load so the scene, the previews and the headless checks
+ * all work from the same list — a variant that is registered but never keyed,
+ * or keyed but never registered, is the failure this table rules out.
+ */
+const GROUND_DRAWERS = (() => {
+  const out = {};
+  for (const [id, drawer] of Object.entries(TILE_DRAWERS)) {
+    const tile = Number(id);
+    out[`tile_${id}`] = drawer;
+    const patch = PATCH_FLOORS[tile];
+    if (patch) {
+      for (let cell = 1; cell < patch.size * patch.size; cell += 1) {
+        out[`tile_${id}_p${cell}`] = patchCell(tile, cell % patch.size, Math.floor(cell / patch.size));
+      }
+    }
+    const edge = EDGE_DRAWERS[tile];
+    if (edge) {
+      for (let mask = 1; mask < 16; mask += 1) {
+        out[`tile_${id}_e${mask}`] = (target) => {
+          drawer(target);
+          const w = makeWriter(target);
+          SIDES.forEach((side, bit) => {
+            if (mask & (1 << bit)) edge(w, side);
+          });
+        };
+      }
+    }
+    if (!SCUFFED_FLOORS.has(tile)) continue;
+    SCUFFS.forEach((_, variant) => {
+      out[`tile_${id}_s${variant}`] = (target) => {
+        drawer(target);
+        scuff(target, variant);
+      };
+    });
+    const accent = FLOOR_ACCENTS[tile];
+    if (accent) {
+      out[`tile_${id}_s${SCUFFS.length}`] = (target) => {
+        drawer(target);
+        accent(makeWriter(target));
+      };
+    }
+  }
+  return out;
+})();
+
+/** Every ground texture key createGameTextures() will register. */
+export function groundTextureKeys() {
+  return Object.keys(GROUND_DRAWERS);
+}
+
+/**
+ * Texture key for a ground tile at a map position.
+ *
+ * Interior tiles spread the scuff variants so a wide floor does not read as
+ * wallpaper; a bordered floor picks the variant carrying the sides it needs.
+ */
+export function groundTileKey(tile, x, y, ground = null) {
+  if (EDGE_DRAWERS[tile] && ground) {
+    const mask = edgeMask(ground, tile, x, y);
+    if (mask) return `tile_${tile}_e${mask}`;
+  }
+  const patch = PATCH_FLOORS[tile];
+  if (patch) {
+    const cell = (y % patch.size) * patch.size + (x % patch.size);
+    return cell === 0 ? `tile_${tile}` : `tile_${tile}_p${cell}`;
+  }
   if (!SCUFFED_FLOORS.has(tile)) return `tile_${tile}`;
   const variant = (x * 5 + y * 3 + ((x * y) % 7)) % (variantCount(tile) + 1);
   return variant === 0 ? `tile_${tile}` : `tile_${tile}_s${variant - 1}`;
@@ -971,10 +1203,7 @@ export const NPC_PROPS = {
 
 /** Every art key the overworld registers at boot. */
 export function artKeys() {
-  return [
-    ...Object.keys(TILE_DRAWERS).map((id) => `tile_${id}`),
-    ...Object.keys(SPRITE_DRAWERS),
-  ];
+  return [...groundTextureKeys(), ...Object.keys(SPRITE_DRAWERS)];
 }
 
 /**
@@ -984,9 +1213,7 @@ export function artKeys() {
  * canvas, for previews, portraits and headless checks.
  */
 export function drawArtToCanvas(canvas, key, pixelScale = SCALE) {
-  const drawer = key.startsWith("tile_")
-    ? TILE_DRAWERS[key.slice("tile_".length)]
-    : SPRITE_DRAWERS[key];
+  const drawer = GROUND_DRAWERS[key] ?? SPRITE_DRAWERS[key];
   if (!drawer) throw new Error(`unknown art key "${key}"`);
   const ctx = canvas.getContext("2d");
   canvas.width = ART_UNIT * pixelScale;
@@ -1002,23 +1229,8 @@ export function drawArtToCanvas(canvas, key, pixelScale = SCALE) {
 }
 
 export function createGameTextures(scene) {
-  for (const [id, drawer] of Object.entries(TILE_DRAWERS)) {
-    makeTex(scene, `tile_${id}`, drawer);
-    const tile = Number(id);
-    if (!SCUFFED_FLOORS.has(tile)) continue;
-    SCUFFS.forEach((_, variant) => {
-      makeTex(scene, `tile_${id}_s${variant}`, (g) => {
-        drawer(g);
-        scuff(g, variant);
-      });
-    });
-    const accent = FLOOR_ACCENTS[tile];
-    if (accent) {
-      makeTex(scene, `tile_${id}_s${SCUFFS.length}`, (g) => {
-        drawer(g);
-        accent(makeWriter(g));
-      });
-    }
+  for (const [key, drawer] of Object.entries(GROUND_DRAWERS)) {
+    makeTex(scene, key, drawer);
   }
 
   for (const [key, drawer] of Object.entries(SPRITE_DRAWERS)) {

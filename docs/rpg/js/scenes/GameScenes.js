@@ -172,7 +172,7 @@ export class OverworldScene extends Phaser.Scene {
         const groundImg = this.add.image(
           x * TILE_SIZE + TILE_SIZE / 2,
           y * TILE_SIZE + TILE_SIZE / 2,
-          groundTileKey(tile, x, y)
+          groundTileKey(tile, x, y, ground)
         );
         groundImg.setDepth(0);
         this.groundLayer.add(groundImg);

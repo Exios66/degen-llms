@@ -4,6 +4,11 @@
  */
 
 import { resolveLine, meetsRequirements, buildDialogueContext } from "./phone-rapport.js";
+import {
+  CALL_TREES, FALLBACK_CALL_TREE, WRONG_NUMBER_CALL_TREE,
+} from "./phone-call-trees.js";
+
+export { CALL_TREES, FALLBACK_CALL_TREE, WRONG_NUMBER_CALL_TREE };
 
 /** @typedef {{ label: string, next?: string, rapport?: number, egg?: string, requires?: object, end?: boolean }} TreeChoice */
 /** @typedef {{ text: string|Function, choices?: TreeChoice[], end?: boolean }} TreeNode */
@@ -583,10 +588,22 @@ export const DIALOGUE_TREES = {
           { label: "8-leg (delusional)", next: "eight", rapport: 3, egg: "pete_parlay8" },
           { label: "Same game parlay", next: "sgp", rapport: 2 },
           { label: "I only bet locks", next: "locks", rapport: 1, requires: { minRapport: 15 } },
+          { label: "Live bet spiral", next: "live", rapport: 3, requires: { minRapport: 30 } },
         ],
       },
       two: {
         text: "Two legs? Cute. Vegas allows hope at that dosage.",
+        choices: [
+          { label: "Add a third?", next: "third", rapport: 2 },
+          { label: "Stop while ahead (narratively)", next: "stop", rapport: 1, end: true },
+        ],
+      },
+      third: {
+        text: "Third leg is where hope becomes a hobby. Line: caution -110.",
+        end: true,
+      },
+      stop: {
+        text: "Rare restraint. Frame it. Pete's proud. Reluctantly.",
         end: true,
       },
       eight: {
@@ -599,6 +616,10 @@ export const DIALOGUE_TREES = {
       },
       locks: {
         text: "Mandalay Bay to remain standing. Lock of the millennium. -10000.",
+        end: true,
+      },
+      live: {
+        text: "Live bets move faster than Tina. Hedge with dignity or don't. I can't watch.",
         end: true,
       },
     },
@@ -622,6 +643,213 @@ export const DIALOGUE_TREES = {
       },
       spread: {
         text: "Spread is… points. Or vibes between teams. Ask sober Pete. He'll still be vague.",
+        end: true,
+      },
+    },
+  },
+
+  clerk_carmen: {
+    front_desk: {
+      start: {
+        text: "Front desk SMS — Carmen. Elevators lying again?",
+        choices: [
+          { label: "Elevator gaslighting", next: "elevator", rapport: 2 },
+          { label: "Room confirmation", next: "conf", rapport: 2 },
+          { label: "Late checkout?", next: "late", rapport: 3, requires: { minTierIdx: 2 } },
+          { label: "Host upgrade pending?", next: "host", rapport: 3, requires: { minTierIdx: 3 } },
+        ],
+      },
+      elevator: {
+        text: "Floor 14 is real. The elevator disagrees for sport. Stairs build character (and calves).",
+        choices: [
+          { label: "Taking stairs", next: "stairs", rapport: 2, end: true },
+          { label: "Negotiate with buttons", next: "buttons", rapport: 3, egg: "carmen_buttons" },
+        ],
+      },
+      stairs: {
+        text: "Wise. Text when you arrive. If you arrive.",
+        end: true,
+      },
+      buttons: {
+        text: "Softly threaten Floor 14. Works 40% of the time, every time.",
+        end: true,
+      },
+      conf: {
+        text: (ctx) => `Spelling '${ctx.playerName}' into the system… again. Keys metaphorically located.`,
+        end: true,
+      },
+      late: {
+        text: "Late checkout noted pending narrative approval. Don't tell the elevator.",
+        end: true,
+      },
+      host: {
+        text: "Alexandra's note received. I'm smiling harder. Progress is a vibe.",
+        end: true,
+      },
+    },
+  },
+
+  lifeguard_lou: {
+    wave_check: {
+      start: {
+        text: "Lou here — Wave Pool dispatch. You dry?",
+        choices: [
+          { label: "Pool status?", next: "status", rapport: 2 },
+          { label: "Lost sandal protocol", next: "sandal", rapport: 3, egg: "lou_sandal" },
+          { label: "Wave tips", next: "tips", rapport: 2 },
+          { label: "Is Tina in the pool?", next: "tina", rapport: 2, requires: { minRapport: 10 } },
+        ],
+      },
+      status: {
+        text: "Open, honest waves, dishonest tourists. Stay between the ropes.",
+        choices: [
+          { label: "Copy", next: "copy", rapport: 1, end: true },
+          { label: "Any riptides of FOMO?", next: "fomo", rapport: 3 },
+        ],
+      },
+      copy: {
+        text: "Lou out. Whistle means me — or Steve. Assume Steve.",
+        end: true,
+      },
+      fomo: {
+        text: "Beach rave current is strong after sunset. SPF still mandatory. Hydrate.",
+        end: true,
+      },
+      sandal: {
+        text: "Check the filter grate, then accept destiny. Vegas keeps trophies.",
+        end: true,
+      },
+      tips: {
+        text: "Ride the middle. Edges are for people who enjoy eating water.",
+        end: true,
+      },
+      tina: {
+        text: "If she's in the pool, she's lost in the pool. Escort gently. Don't splash Steve.",
+        end: true,
+      },
+    },
+  },
+
+  shark_reef_guide: {
+    reef_tour: {
+      start: {
+        text: "Reef Guide — tunnel texts only. No tapping the glass.",
+        choices: [
+          { label: "Shark mood?", next: "mood", rapport: 2 },
+          { label: "Photo spot?", next: "photo", rapport: 2 },
+          { label: "After-hours line?", next: "after", rapport: 3, egg: "reef_sms_afterhours" },
+          { label: "Tina sighting?", next: "tina", rapport: 2 },
+        ],
+      },
+      mood: {
+        text: "Sand tiger judging equally. Rays approving patience. You: don't tap.",
+        choices: [
+          { label: "I won't tap", next: "notap", rapport: 2, end: true },
+          { label: "Can I whisper?", next: "whisper", rapport: 3 },
+        ],
+      },
+      notap: {
+        text: "Good guest. The glass thanks you silently.",
+        end: true,
+      },
+      whisper: {
+        text: "Whispering allowed. Motivational speeches to sharks: discouraged.",
+        end: true,
+      },
+      photo: {
+        text: "Mid-tunnel curve, lights low, no flash. Patience photographs better.",
+        end: true,
+      },
+      after: {
+        text: "If you dialed 555-0199, the sand tiger remembers. Daytime line only, please.",
+        end: true,
+      },
+      tina: {
+        text: "She was near the rays, asking for the exit that is also an entrance. Classic.",
+        end: true,
+      },
+    },
+  },
+
+  beach_dj: {
+    beach_set: {
+      start: {
+        text: "Beach DJ texts — keep it short, the drop waits for no SMS.",
+        choices: [
+          { label: "What's the vibe?", next: "vibe", rapport: 2 },
+          { label: "Track request", next: "request", rapport: 2 },
+          { label: "Rave survival tips", next: "tips", rapport: 3 },
+          { label: "Sunset set?", next: "sunset", rapport: 3, requires: { minRapport: 15 } },
+        ],
+      },
+      vibe: {
+        text: "Kick drum, zero financial advice. Dance first, bet later.",
+        choices: [
+          { label: "On my way", next: "way", rapport: 2, end: true },
+          { label: "Casino-flavored drop?", next: "casino", rapport: 3, egg: "dj_casino_drop" },
+        ],
+      },
+      way: {
+        text: "Booth sees you when you arrive. Don't throw chips. Metaphorical ones only.",
+        end: true,
+      },
+      casino: {
+        text: "Casino drop locked. Still metaphorical. The house already won the playlist.",
+        end: true,
+      },
+      request: {
+        text: "Requests accepted if they slap. No yacht rock after midnight.",
+        end: true,
+      },
+      tips: {
+        text: "SPF, water, friends who know exits. Tina is not an exit strategy.",
+        end: true,
+      },
+      sunset: {
+        text: "Sunset is softer. Midnight is not. Choose your ears wisely.",
+        end: true,
+      },
+    },
+  },
+
+  pavilion_paula: {
+    paddock_wire: {
+      start: {
+        text: "Paula — paddock wire. Ponies moody. Speak.",
+        choices: [
+          { label: "Long shot of the day", next: "long", rapport: 2 },
+          { label: "Card timing", next: "card", rapport: 2 },
+          { label: "Jockey silk read", next: "silk", rapport: 3, requires: { minRapport: 20 } },
+          { label: "Steve at the pavilion?", next: "steve", rapport: 2 },
+        ],
+      },
+      long: {
+        text: "Gate 4 attitude — not a stat, still a vibe. You're welcome / I'm sorry.",
+        choices: [
+          { label: "Taking Gate 4", next: "gate4", rapport: 2, end: true },
+          { label: "Give me the anti-pick", next: "anti", rapport: 3 },
+        ],
+      },
+      gate4: {
+        text: "Bold. Text me when attitude wins or ghosts you. Both are content.",
+        end: true,
+      },
+      anti: {
+        text: "Avoid whatever Steve surveys. Correlation is entertainment.",
+        end: true,
+      },
+      card: {
+        text: (ctx) => ctx.playHours >= 3
+          ? "Late card — superstition peaks. Magic optional, math not."
+          : "Early card — optimism and sunscreen.",
+        end: true,
+      },
+      silk: {
+        text: "Watch silks, ignore my last three picks. Accountants want consistency. We want drama.",
+        end: true,
+      },
+      steve: {
+        text: "He's loud near the stretch. Volume ≠ odds. Mute accordingly.",
         end: true,
       },
     },
@@ -709,23 +937,146 @@ function intoxTextOptions(contactId, ctx) {
   return opts.filter((opt) => meetsRequirements(opt.requires, ctx));
 }
 
-/** Extra drunk call choices merged when buzzed. */
+/** Extra drunk call choices merged when buzzed into the active call hello node. */
 export function getIntoxCallChoices(contactId, ctx) {
   if (!ctx.isBuzzed) return [];
   const choices = [];
   if (contactId === "barkeep_betty") {
-    choices.push({ label: "🥴 One more (secret)", response: "Pouring one more. Narrator: it was three more. Hydrate.", egg: "betty_drunk_call", rapport: 3, effect: { drink: "welcome_cocktail" } });
+    choices.push({
+      label: "🥴 One more (secret)",
+      next: "intox_betty",
+      egg: "betty_drunk_call",
+      rapport: 3,
+      effect: { drink: "welcome_cocktail" },
+    });
   }
   if (contactId === "steve_harvey") {
-    choices.push({ label: "🥴 Survey says I'm invincible", response: "Survey says… INCORRECT. But charismatic. Sit down.", egg: "steve_drunk_call", rapport: 3 });
+    choices.push({
+      label: "🥴 Survey says I'm invincible",
+      next: "intox_steve",
+      egg: "steve_drunk_call",
+      rapport: 3,
+    });
   }
   if (contactId === "attorney_brief") {
-    choices.push({ label: "🥴 Drunk objection", response: "SUSTAINED. Go to bed. Case closed.", egg: "legal_drunk_call", rapport: 4 });
+    choices.push({
+      label: "🥴 Drunk objection",
+      next: "intox_legal",
+      egg: "legal_drunk_call",
+      rapport: 4,
+    });
   }
   if (contactId === "chip_chandler") {
-    choices.push({ label: "🥴 Talk me out of it", response: "I cannot. I can narrate your legend. Badly.", rapport: 3 });
+    choices.push({
+      label: "🥴 Talk me out of it",
+      next: "intox_chip",
+      rapport: 3,
+    });
   }
   return choices.filter((c) => meetsRequirements(c.requires, ctx));
+}
+
+/** Terminal intox call replies grafted onto trees at runtime. */
+const INTOX_CALL_NODES = {
+  intox_betty: {
+    text: "Pouring one more. Narrator: it was three more. Hydrate.",
+    end: true,
+  },
+  intox_steve: {
+    text: "Survey says… INCORRECT. But charismatic. Sit down.",
+    end: true,
+  },
+  intox_legal: {
+    text: "SUSTAINED. Go to bed. Case closed.",
+    end: true,
+  },
+  intox_chip: {
+    text: "I cannot. I can narrate your legend. Badly.",
+    end: true,
+  },
+};
+
+/**
+ * Resolve a call dialogue node (multi-turn voice trees).
+ * @param {string} contactId
+ * @param {string} treeId
+ * @param {string} nodeId
+ * @param {object} ctx
+ */
+export function getCallNode(contactId, treeId, nodeId, ctx) {
+  const tree = treeId === "wrong_number"
+    ? WRONG_NUMBER_CALL_TREE.voice
+    : (CALL_TREES[contactId]?.[treeId] ?? FALLBACK_CALL_TREE[treeId]);
+  if (!tree) return null;
+  const node = tree[nodeId] ?? INTOX_CALL_NODES[nodeId] ?? null;
+  if (!node) return null;
+  const text = resolveLine(node.text, ctx);
+  let choices = (node.choices ?? [])
+    .filter((c) => meetsRequirements(c.requires, ctx))
+    .map((c) => ({ ...c, label: resolveLine(c.label, ctx) }));
+
+  // Graft intox secret choices onto the greeting node.
+  if (nodeId === "hello" && treeId === "voice") {
+    const intox = getIntoxCallChoices(contactId, ctx).map((c) => ({
+      ...c,
+      label: resolveLine(c.label, ctx),
+    }));
+    choices = [...choices, ...intox];
+  }
+
+  const ended = Boolean(node.end) || choices.length === 0;
+  return { text, choices, end: ended };
+}
+
+/**
+ * Compatibility adapter: flatten the first call node into the legacy script shape
+ * used by older smoke tests (`opening` / `lines` / `choices` with `response`).
+ * @param {string} contactId
+ * @param {object} ctx
+ */
+export function getDynamicCallScript(contactId, ctx) {
+  const node = getCallNode(contactId, "voice", "hello", ctx);
+  if (!node) {
+    return {
+      opening: "You've reached the Mandalay Bay mobile desk.",
+      lines: ["Leave a text — calls cost extra personality."],
+      choices: [{ label: "Wrong number?", response: "Wrong numbers are right numbers in Vegas. Goodbye!", egg: "wrong_number" }],
+    };
+  }
+  return {
+    opening: node.text,
+    lines: ["(Live call — keep talking or hang up.)"],
+    choices: (node.choices ?? []).map((c) => {
+      const nextNode = c.next ? getCallNode(contactId, "voice", c.next, ctx) : null;
+      return {
+        label: c.label,
+        response: nextNode?.text ?? "…Call dropped.",
+        egg: c.egg ?? null,
+        rapport: c.rapport,
+        effect: c.effect,
+        requires: c.requires,
+        next: c.next,
+      };
+    }),
+  };
+}
+
+/**
+ * @param {string} contactId
+ * @param {string} treeId
+ * @param {string} nodeId
+ * @param {object} ctx
+ */
+export function getDialogueNode(contactId, treeId, nodeId, ctx) {
+  const tree = DIALOGUE_TREES[contactId]?.[treeId];
+  if (!tree) return null;
+  const node = tree[nodeId];
+  if (!node) return null;
+  const text = resolveLine(node.text, ctx);
+  const choices = (node.choices ?? [])
+    .filter((c) => meetsRequirements(c.requires, ctx))
+    .map((c) => ({ ...c, label: resolveLine(c.label, ctx) }));
+  return { text, choices, end: Boolean(node.end) };
 }
 
 /** Tier rank-up congratulation texts per contact subset */
@@ -897,6 +1248,7 @@ function baseTextOptions(contactId, ctx) {
 
   if (contactId === "pavilion_paula") {
     push({ key: "odds", label: "Long shot of the day?", reply: "Gate 4 has 'attitude' — that's not a stat but it's a vibe.", rapport: 2 });
+    push({ key: "paddock_tree", label: "🏇 Paddock wire", reply: null, startTree: { treeId: "paddock_wire", nodeId: "start" }, rapport: 3 });
     push({ key: "mood", label: "Paddock mood?", reply: playHours >= 3 ? "Late card — ponies tired, crowd superstitious. Perfect." : "Early card — optimism and sunscreen.", rapport: 1 });
     push({ key: "insider_paula", label: "Insider angle?", reply: "Watch the jockey silks, ignore my last three picks. Consistency is for accountants.",
       requires: { minRapport: 30 }, rapport: 4 });
@@ -904,9 +1256,28 @@ function baseTextOptions(contactId, ctx) {
 
   if (contactId === "clerk_carmen") {
     push({ key: "conf", label: "Elevator gaslighting?", reply: "Floor 14 is real. The elevator disagrees for sport. Use stairs or charm.", rapport: 2 });
+    push({ key: "desk_tree", label: "🏨 Front desk mode", reply: null, startTree: { treeId: "front_desk", nodeId: "start" }, rapport: 3 });
     push({ key: "room", label: "Room status?", reply: tier.id === "platinum" || tier.id === "noir" || tier.id === "chairman"
       ? `${tier.label} — I'll see what narrative upgrade Alexandra queued. Keys still with me.`
       : "Reservation's in the system. Somewhere. Try spelling your name slower.", rapport: 1 });
+  }
+
+  if (contactId === "lifeguard_lou") {
+    push({ key: "wave_tree", label: "🛟 Wave check", reply: null, startTree: { treeId: "wave_check", nodeId: "start" }, rapport: 3 });
+    push({ key: "safe", label: "Pool safe?", reply: "Open, honest waves, dishonest tourists. Stay between the ropes.", rapport: 2 });
+    push({ key: "sandal", label: "Lost a sandal", reply: "Filter grate, then destiny. Vegas keeps trophies.", egg: "lou_text_sandal", rapport: 2 });
+  }
+
+  if (contactId === "shark_reef_guide") {
+    push({ key: "reef_tree", label: "🦈 Reef tour text", reply: null, startTree: { treeId: "reef_tour", nodeId: "start" }, rapport: 3 });
+    push({ key: "sharks", label: "Shark mood?", reply: "Sand tiger judging equally. Don't tap the glass.", rapport: 2 });
+    push({ key: "photo", label: "Photo tip?", reply: "Mid-tunnel curve, no flash. Patience photographs better.", rapport: 1 });
+  }
+
+  if (contactId === "beach_dj") {
+    push({ key: "dj_tree", label: "🎧 Beach set", reply: null, startTree: { treeId: "beach_set", nodeId: "start" }, rapport: 3 });
+    push({ key: "vibe", label: "What's playing?", reply: "Kick drum and zero financial advice. Dance first.", rapport: 2 });
+    push({ key: "request", label: "Track request", reply: "If it slaps. No yacht rock after midnight.", rapport: 1 });
   }
 
   // Dealer / NPC default fallbacks
@@ -962,180 +1333,6 @@ export function getDynamicIntro(contactId, ctx) {
     host_representative: `Alexandra Vale — MGM Host Services. ${ctx.tier.label} welcome. Text COMPAINT (yes, one P) and I'll escalate with a smile.`,
   };
   return intros[contactId] ?? null;
-}
-
-/** @param {string} contactId @param {object} ctx */
-export function getDynamicCallScript(contactId, ctx) {
-  const { band, tier, playHours } = ctx;
-  const scripts = {
-    attorney_brief: {
-      opening: playHours >= 4
-        ? `Harvey Brief, Esq. ${playHours}h on property — I'm billing in metaphors today.`
-        : "Harvey Brief, Esq. Billable minute #1 starting… now.",
-      lines: [
-        "Before you speak: I am not licensed in your jurisdiction, this call, or the astral plane.",
-        band.id === "insider"
-          ? "You've earned insider counsel — I still can't help you win, but I can object louder."
-          : "That said — how can I theatrically assist?",
-      ],
-      choices: [
-        { label: "The casino took my chips", response: ctx.isDownBad
-          ? "Voluntary transfer defense PLUS emotional distress. Have you tried winning them back with dignity? Or Betty's bar?"
-          : "Ah, the classic 'voluntary transfer' defense. Have you tried winning them back with dignity?", egg: null, rapport: 1 },
-        { label: "Objection!", response: "SUSTAINED. The house looks guilty. Legally meaningless. Emotionally satisfying.", egg: "call_objection", rapport: 3 },
-        { label: "Start courtroom mode", response: "Court convened telephonically. Text COURTROOM when we hang up — docket continues.", egg: "call_courtroom", rapport: 4 },
-        { label: "Retainer?", response: `My retainer is 500 chips or one buffet comp. ${tier.label} tier gets 10% off theater.`, egg: "call_retainer", rapport: 2, effect: { chips: -500, chipReason: "Harvey Brief call retainer" } },
-      ],
-    },
-    steve_harvey: {
-      opening: "Steve Harvey on the line! Survey says… you called ME for once.",
-      lines: [
-        band.id === "regular"
-          ? "Regular! I remember regulars. Survey says… loyalty pays in charisma."
-          : "Listen, I spun wheels, hosted Feud, boxed a little — this call is still peak excitement.",
-        "You need betting advice? Survey says… the number four. Or don't. I'm a host, not a prophet.",
-      ],
-      choices: [
-        { label: "Any Feud stories?", response: "Once a contestant guessed 'Steve Harvey' for every answer. Survey said… correct.", egg: "call_feud", rapport: 2 },
-        { label: "Horse racing tips?", response: "Royal Flush in the stretch! Place your bets — wrong sport, great energy.", egg: "call_horse", rapport: 2 },
-        { label: "Chairman pep talk", response: "Survey says… you're built different. Act like it at the table.", egg: null, rapport: 3, requires: { minTierIdx: 5 } },
-        { label: "Goodbye", response: "Survey says… hang up and go win something!", egg: null, rapport: 1 },
-      ],
-    },
-    host_representative: {
-      opening: `Alexandra Vale, MGM Host Representative. ${tier.label} privileges are… loading… loaded.`,
-      lines: [
-        "I can comp, escalate, or pretend the minibar prices are a typo.",
-        playHours >= 3 ? `You've been here ${playHours}h — can I offer a narrative wellness check?` : "What do you need, member?",
-      ],
-      choices: [
-        { label: "Room upgrade?", response: "I've queued the upgrade with Carmen's desk — check Room on your phone if the keys shifted.", egg: null, rapport: 2, effect: { upgradeRoom: "suite" } },
-        { label: "I'm upset", response: "I'm so sorry — on a scale of 1 to Steve Harvey, how loud was the incident?", egg: "host_upset", rapport: 2, effect: { chips: 25, chipReason: "Host apology marker" } },
-        { label: "Secret Chairman perk?", response: "…You didn't hear this from me. Text WHALE on my line after midnight. (It's still a metaphor.)", egg: "chairman_secret", rapport: 4, requires: { minTierIdx: 4 }, effect: { chips: 100, chipReason: "Chairman whisper perk" } },
-        { label: "Compliment staff", response: "I'll note that in your file. Genuine praise is rarer than a royal flush.", egg: null, rapport: 5 },
-      ],
-    },
-    chip_chandler: {
-      opening: band.id === "insider" ? "Chip here — insider line. Pits are talking." : "Chip here. You rang the floor hotline.",
-      lines: [`Pits are alive. Roulette's hot, Hold'em's chatty, Tina's lost again.${playHours >= 2 ? " Long session crew tonight." : ""}`],
-      choices: [
-        { label: "Best table?", response: "Wherever your bankroll feels brave. Or stupid. Same thing after midnight.", egg: null, rapport: 2 },
-        { label: "Insider table?", response: "High-limit after 2am. Bring chips or confidence. Preferably both.", egg: "chip_insider_call", rapport: 4, requires: { band: "insider" } },
-        { label: "Thanks", response: "Save my number. The house always has my number anyway.", egg: null, rapport: 1 },
-      ],
-    },
-    barkeep_betty: {
-      opening: "Betty's Bar — talk fast, I'm pouring.",
-      lines: [band.id === "regular" ? "Your usual judgmental glance is ready." : "Comp status checks take two seconds and one judgmental glance."],
-      choices: [
-        { label: "Strongest drink?", response: "The 'Walk of Shame' — tastes like regret, looks like tourism.", egg: "betty_drink", rapport: 2, effect: { drink: "welcome_cocktail" } },
-        { label: "Gossip?", response: "Steve called a photo finish at slots. Meryl quoted Shakespeare at blackjack. Normal.", egg: null, rapport: 2 },
-        { label: "Rough session", response: "Sympathy pour incoming. Don't make me cut you off with love.", egg: null, rapport: 3, requires: { minRapport: 10 }, effect: { drink: "welcome_cocktail" } },
-      ],
-    },
-    pete_bookie: {
-      opening: "Pete the Bookie. Speak fast — lines move when I breathe.",
-      lines: ["Everything I say is entertainment, not financial advice. Or good advice."],
-      choices: [
-        { label: "Lock of the day?", response: "Mandalay Bay remains upright. Heavy favorite. Bet the house metaphorically.", egg: "pete_call_lock", rapport: 2 },
-        { label: "Fix my parlay", response: "I can't fix prayer. Try fewer legs and more dignity. Here's a sympathy marker for the attempt.", egg: null, rapport: 1, effect: { chips: 15, chipReason: "Pete parlay sympathy" } },
-        { label: "Parlay therapy", response: "Text PARLAY THERAPY when we hang up. Session continues on the record.", egg: null, rapport: 3 },
-      ],
-    },
-    tourist_tina: {
-      opening: "Tina here!! I was literally about to text YOU!",
-      lines: [band.id === "confidant" ? "Bestie!! I'm still lost but I found YOU." : "I'm lost again but emotionally available."],
-      choices: [
-        { label: "Where am I?", response: "Same!! Try the gold carpet by the plants. Or don't. Adventure!", egg: "tina_call_lost", rapport: 2 },
-        { label: "Friend check", response: "We're totally friends!! I saved you as 'Direction Person Maybe'!", egg: null, rapport: 3, requires: { minRapport: 20 } },
-      ],
-    },
-    pavilion_paula: {
-      opening: "Paula at the paddock. The ponies are moody. I'm moodier.",
-      lines: ["Text ODDS for my long-shot. Call me for drama."],
-      choices: [
-        { label: "Long shot?", response: "Gate 4 has 'attitude' — that's not a stat but it's a vibe.", egg: "paula_longshot", rapport: 2 },
-        { label: "Late card?", response: playHours >= 3 ? "Night card superstition peaks at 2am. You're late enough for magic." : "Early card — optimism and bad math.", egg: null, rapport: 2 },
-      ],
-    },
-    meryl_screech: {
-      opening: "Meryl Screech — method dealing division. Curtain up.",
-      lines: ["The pit boss is the audience. You are the protagonist. Try not to fold in Act I."],
-      choices: [
-        { label: "Oscar tips?", response: "Whisper to the ace. The pit hates it. The crowd loves it.", egg: "meryl_call_oscar", rapport: 2 },
-        { label: "Shakespeare?", response: "To hit, or not to hit — whether 'tis nobler to split eights…", egg: null, rapport: 3 },
-        { label: "Drama level?", response: playHours >= 3 ? "Act III energy. Standing room at my table." : "Act I — establish character. Tip accordingly.", egg: null, rapport: 2 },
-      ],
-    },
-    judi_bench: {
-      opening: "Judi Bench. Hold'em pit. Speak with British restraint.",
-      lines: ["Bond. James Bond. Blinds."],
-      choices: [
-        { label: "River complaint", response: "The river giveth. Occasionally it taketh. Regroup with poise.", egg: null, rapport: 2 },
-        { label: "Read my tell", response: ctx.isDownBad ? "You sigh before the turn. Hydrate." : "Patient play. I approve quietly.", egg: null, rapport: 3, requires: { minRapport: 20 } },
-        { label: "All in?", response: "Only when you mean it. I fold on bad jokes.", egg: null, rapport: 2 },
-      ],
-    },
-    jennifer_lawless: {
-      opening: "Jennifer Lawless! Relatable dealer hotline — I didn't trip getting to the phone.",
-      lines: ["Minimum bet, maximum vibes. How can I help?"],
-      choices: [
-        { label: "Pep talk", response: "You got this! I believe in you more than gravity believes in me.", egg: null, rapport: 2 },
-        { label: "Hot table?", response: "Meryl's dramatic, I'm surgical — pick your adventure.", egg: null, rapport: 2 },
-        { label: "Trip story", response: "I tripped on the felt Tuesday. Shoe fine. Ego bruised. You'll survive.", egg: "jennifer_call_trip", rapport: 3 },
-      ],
-    },
-    sofia_volume: {
-      opening: "¡SOFIA VOLUME! The wheel called — you answered!",
-      lines: ["Dale, amigo! Place your bets with PASSION!"],
-      choices: [
-        { label: "Lucky number?", response: "17! Or 4! Or whatever your heart screams!", egg: "sofia_call_number", rapport: 2 },
-        { label: "More volume!", response: "MAXIMUM VOLUME! Pit boss asked me to whisper. I LAUGHED.", egg: "sofia_call_volume", rapport: 3 },
-      ],
-    },
-    octavia_spectacular: {
-      opening: "Octavia Spectacular, honey. The table's warm.",
-      lines: ["The house always wins — but you look good trying."],
-      choices: [
-        { label: "Pep talk", response: "Honey, you're a star tonight. Act like it at the cashier.", egg: null, rapport: 2 },
-        { label: "Sweetheart secret", response: "Compliment pit boss shoes. Third Tuesday magic.", egg: "octavia_call_secret", rapport: 4, requires: { band: "insider" } },
-      ],
-    },
-    nicole_widechart: {
-      opening: "Nicole Widechart. The chips are whispering.",
-      lines: ["Precision. Poise. Patience. Also: how may I assist?"],
-      choices: [
-        { label: "Chart the night", response: ctx.isUp ? "Ascending trend. Maintain composure." : "Corrective phase. Poise intact.", egg: null, rapport: 2 },
-        { label: "Roulette poise", response: "Bet with elegance. Lose with dignity. Tip discreetly.", egg: null, rapport: 2 },
-      ],
-    },
-  };
-
-  const script = scripts[contactId];
-  if (!script) return null;
-  const intoxChoices = getIntoxCallChoices(contactId, ctx);
-  return {
-    ...script,
-    choices: [...script.choices, ...intoxChoices].filter((c) => meetsRequirements(c.requires, ctx)),
-  };
-}
-
-/**
- * @param {string} contactId
- * @param {string} treeId
- * @param {string} nodeId
- * @param {object} ctx
- */
-export function getDialogueNode(contactId, treeId, nodeId, ctx) {
-  const tree = DIALOGUE_TREES[contactId]?.[treeId];
-  if (!tree) return null;
-  const node = tree[nodeId];
-  if (!node) return null;
-  const text = resolveLine(node.text, ctx);
-  const choices = (node.choices ?? [])
-    .filter((c) => meetsRequirements(c.requires, ctx))
-    .map((c) => ({ ...c, label: resolveLine(c.label, ctx) }));
-  return { text, choices, end: Boolean(node.end) };
 }
 
 /** Proactive texts after big session wins/losses. */

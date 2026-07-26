@@ -1,0 +1,260 @@
+/**
+ * Strip limo destination themes + exclusive slot cabinet skins.
+ * Applied via html[data-destination] / .dest-* on documentElement.
+ */
+
+/* ── Destination shell tokens (also set inline by applyDestinationTheme) ── */
+
+html.dest-luxor,
+html[data-destination="luxor"] {
+  --bg: #0a0806;
+  --felt: #1a1208;
+  --gold: #e6b422;
+}
+
+html.dest-excalibur,
+html[data-destination="excalibur"] {
+  --bg: #12080c;
+  --felt: #3a0f18;
+  --gold: #d4af37;
+}
+
+html.dest-bellagio,
+html[data-destination="bellagio"] {
+  --bg: #0c1018;
+  --felt: #0e2a24;
+  --gold: #b8a46a;
+}
+
+html.dest-circa,
+html[data-destination="circa"] {
+  --bg: #08081a;
+  --felt: #0d1a3a;
+  --gold: #ff2bd6;
+}
+
+body.strip-away .banner h1 {
+  letter-spacing: 0.04em;
+}
+
+/* ── Table / video machine destination themes ── */
+
+.video-machine.table-theme-luxor {
+  --machine-accent: #d4a017;
+  --machine-felt: #2a1a0a;
+  box-shadow: 0 0 28px rgba(230, 180, 34, 0.25);
+}
+.video-machine.table-theme-luxor .machine-marquee {
+  background: linear-gradient(90deg, #1a1005, #3d2a0a, #1a1005);
+  color: #f0d060;
+}
+.video-machine.table-theme-luxor .machine-brand {
+  color: #c9a227;
+  font-style: italic;
+}
+
+.video-machine.table-theme-excalibur {
+  --machine-accent: #b22222;
+  --machine-felt: #4a1520;
+  box-shadow: 0 0 28px rgba(178, 34, 34, 0.3);
+}
+.video-machine.table-theme-excalibur .machine-marquee {
+  background: linear-gradient(90deg, #2a0a10, #5a1520, #2a0a10);
+  color: #f0d080;
+}
+.video-machine.table-theme-excalibur .machine-brand {
+  color: #e8c060;
+}
+
+.video-machine.table-theme-bellagio {
+  --machine-accent: #8eb8c8;
+  --machine-felt: #123830;
+  box-shadow: 0 0 28px rgba(142, 184, 200, 0.28);
+}
+.video-machine.table-theme-bellagio .machine-marquee {
+  background: linear-gradient(90deg, #0c1820, #1a3840, #0c1820);
+  color: #d8e8f0;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  letter-spacing: 0.08em;
+}
+.video-machine.table-theme-bellagio .machine-brand {
+  color: #b8a46a;
+}
+
+.video-machine.table-theme-circa {
+  --machine-accent: #00e5ff;
+  --machine-felt: #122048;
+  box-shadow: 0 0 32px rgba(255, 43, 214, 0.28), 0 0 16px rgba(0, 229, 255, 0.2);
+}
+.video-machine.table-theme-circa .machine-marquee {
+  background: linear-gradient(90deg, #120028, #001a40, #120028);
+  color: #00e5ff;
+  text-shadow: 0 0 8px rgba(255, 43, 214, 0.6);
+}
+.video-machine.table-theme-circa .machine-brand {
+  color: #ff2bd6;
+}
+
+/* ── Exclusive slot cabinets ── */
+
+.slot-theme-luxor-obelisk {
+  --slot-accent: #e6b422;
+  --slot-panel: #1a1208;
+  border-color: #c9a227;
+}
+.slot-cabinet.slot-theme-luxor-obelisk {
+  background: linear-gradient(160deg, #1a1005, #0a0806 55%, #2a1a08);
+  box-shadow: inset 0 0 40px rgba(230, 180, 34, 0.15);
+}
+
+.slot-theme-sphinx {
+  --slot-accent: #d4a017;
+  --slot-panel: #221508;
+}
+.slot-cabinet.slot-theme-sphinx {
+  background: linear-gradient(180deg, #2a1a0a, #0a0806);
+  border: 1px solid #e6b422;
+}
+
+.slot-theme-castle {
+  --slot-accent: #b22222;
+  --slot-panel: #2a0c12;
+}
+.slot-cabinet.slot-theme-castle {
+  background: linear-gradient(160deg, #3a1018, #12080c 60%, #4a1520);
+  box-shadow: inset 0 0 30px rgba(178, 34, 34, 0.2);
+}
+
+.slot-theme-joust {
+  --slot-accent: #d4af37;
+  --slot-panel: #3a0f18;
+}
+.slot-cabinet.slot-theme-joust {
+  background: linear-gradient(180deg, #4a1520, #12080c);
+  border: 1px solid #b22222;
+}
+
+.slot-theme-fountain {
+  --slot-accent: #8eb8c8;
+  --slot-panel: #0e2430;
+}
+.slot-cabinet.slot-theme-fountain {
+  background: linear-gradient(160deg, #102830, #0c1018 55%, #143838);
+  box-shadow: inset 0 0 36px rgba(142, 184, 200, 0.18);
+}
+
+.slot-theme-conservatory {
+  --slot-accent: #b8a46a;
+  --slot-panel: #123028;
+}
+.slot-cabinet.slot-theme-conservatory {
+  background: linear-gradient(180deg, #1a3830, #0c1018);
+  border: 1px solid #8eb8c8;
+}
+
+.slot-theme-neon-stadium {
+  --slot-accent: #00e5ff;
+  --slot-panel: #101040;
+}
+.slot-cabinet.slot-theme-neon-stadium {
+  background: linear-gradient(160deg, #1a0040, #08081a 50%, #002040);
+  box-shadow: 0 0 24px rgba(0, 229, 255, 0.25), inset 0 0 30px rgba(255, 43, 214, 0.12);
+}
+
+.slot-theme-fremont {
+  --slot-accent: #ff2bd6;
+  --slot-panel: #0a1040;
+}
+.slot-cabinet.slot-theme-fremont {
+  background: linear-gradient(180deg, #200040, #08081a);
+  border: 1px solid #00e5ff;
+  box-shadow: 0 0 20px rgba(255, 43, 214, 0.3);
+}
+
+/* ── Limo dispatch UI ── */
+
+.strip-limo-panel {
+  position: relative;
+  overflow: hidden;
+}
+
+.strip-limo-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(120deg, transparent 40%, rgba(201, 162, 39, 0.06)),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 40px,
+      rgba(255, 255, 255, 0.02) 40px,
+      rgba(255, 255, 255, 0.02) 41px
+    );
+  pointer-events: none;
+}
+
+.strip-dest-card {
+  display: block;
+  width: 100%;
+  text-align: left;
+  margin: 6px 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(201, 162, 39, 0.35);
+  background: rgba(0, 0, 0, 0.35);
+  color: inherit;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.strip-dest-card:hover {
+  border-color: var(--gold, #c9a227);
+  background: rgba(201, 162, 39, 0.1);
+}
+
+.strip-dest-card .strip-dest-name {
+  font-weight: 700;
+  display: block;
+}
+
+.strip-dest-card .strip-dest-tag {
+  font-size: 0.85em;
+  opacity: 0.85;
+  display: block;
+  margin-top: 2px;
+}
+
+.strip-dest-card .strip-dest-fare {
+  font-size: 0.8em;
+  color: var(--gold, #c9a227);
+  margin-top: 4px;
+  display: block;
+}
+
+.strip-dest-card.strip-dest-card--luxor {
+  border-color: rgba(230, 180, 34, 0.5);
+}
+.strip-dest-card.strip-dest-card--excalibur {
+  border-color: rgba(178, 34, 34, 0.5);
+}
+.strip-dest-card.strip-dest-card--bellagio {
+  border-color: rgba(142, 184, 200, 0.5);
+}
+.strip-dest-card.strip-dest-card--circa {
+  border-color: rgba(0, 229, 255, 0.5);
+}
+.strip-dest-card.strip-dest-card--mandalay_bay {
+  border-color: rgba(15, 61, 46, 0.7);
+}
+
+.strip-away-badge {
+  display: inline-block;
+  margin: 4px 0 8px;
+  padding: 2px 8px;
+  font-size: 0.75em;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 1px solid var(--gold, #c9a227);
+  color: var(--gold, #c9a227);
+}

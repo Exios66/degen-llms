@@ -10,6 +10,7 @@ import { attachIntoxicationToSession } from "./intoxication-effects.js";
 import { attachDiningToSession } from "./dining.js";
 import { attachBarToSession } from "./bar.js";
 import { attachBalconySmokeToSession } from "./balcony-smoke.js";
+import { attachStripTravelToSession } from "./strip-destinations.js";
 import {
   getActiveSlotId,
   mirrorLibraryToCache,
@@ -362,6 +363,7 @@ export class PlayerSession {
     if (this.intoxication) payload.intoxication = this.intoxication;
     if (this.dining) payload.dining = this.dining;
     if (this.balconySmoke) payload.balconySmoke = this.balconySmoke;
+    if (this.stripTravel) payload.stripTravel = this.stripTravel;
     return payload;
   }
 
@@ -396,6 +398,7 @@ export class PlayerSession {
     attachDiningToSession(s, data);
     attachBarToSession(s, data);
     attachBalconySmokeToSession(s, data);
+    attachStripTravelToSession(s, data);
     s.casinoTimeMs = data.casinoTimeMs ?? 0;
     return s;
   }

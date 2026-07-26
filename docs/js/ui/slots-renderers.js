@@ -3,6 +3,9 @@ import { ACTIVITIES, fmtChips, signedChips } from "../core.js";
 import { applyTierSpeedCss, getActivityTiming } from "../rewards-perks.js";
 import { SLOT_CATEGORIES, getMachineUI, paytableEntries } from "../slots-ui.js";
 import { isSalonOnlySlot, isSalonVenue } from "../salon-exclusives.js";
+import {
+  casinoDisplayName, filterMachinesForDestination, getCurrentDestination, isAwayFromHome,
+} from "../strip-destinations.js";
 import { MACHINES, calculatePayout, contributeToProgressive, displaySymbol, progressivePool, randomSymbol, spinReels, tryJackpot } from "../slots.js";
 import { effectiveSlotStakes, getTier, getTierPayoutBoost } from "../stakes.js";
 
@@ -223,31 +226,38 @@ export function buildSlotsRenderers(ctx) {
     persist();
     const tier = runtime.slots.tier ?? runtime.stakeTier;
     const salon = isSalonVenue(runtime) || runtime.slots?.salonOnly;
+    const dest = getCurrentDestination(ctx.session);
+    const propertyName = casinoDisplayName(ctx.session);
 
     const floor = el("div", { className: "slot-floor" }, [
-      banner(salon ? "High Limit Salon — Exclusive Slots" : "Slot Machines — Mandalay Bay"),
+      banner(salon ? "High Limit Salon — Exclusive Slots" : `Slot Machines — ${propertyName}`),
       el("p", {
         className: "dim",
         textContent: salon
           ? "Velvet-rope cabinets — these reels never see the main floor."
-          : (tier ? `${tier.name}: ${tier.description}` : "Penny slots to high-limit progressives — pick your machine."),
+          : (tier ? `${tier.name}: ${tier.description}` : dest.floorBlurb),
       }),
       chipLine(),
       el("p", {
         className: "slot-floor-intro",
         textContent: salon
           ? "Obsidian Vault, Whale Watch, and Chairman Vault — salon stake limits apply."
-          : "Penny slots to high-limit progressives — each machine has its own cabinet theme and playstyle.",
+          : (isAwayFromHome(ctx.session)
+            ? `${dest.gameFlavor.slots} Shared classics still run; exclusive cabinets are property-only.`
+            : "Penny slots to high-limit progressives — each machine has its own cabinet theme and playstyle."),
       }),
     ]);
 
     for (const cat of SLOT_CATEGORIES) {
       if (salon && cat.id !== "Salon Exclusive" && cat.id !== "High Limit") continue;
       if (!salon && cat.id === "Salon Exclusive") continue;
+      if (!salon && cat.id === "Strip Exclusive" && !isAwayFromHome(ctx.session)) continue;
+      if (salon && cat.id === "Strip Exclusive") continue;
       const machines = MACHINES.filter((m) => {
         if (getMachineUI(m).category !== cat.id) return false;
         if (salon) return isSalonOnlySlot(m) || cat.id === "High Limit";
-        return !isSalonOnlySlot(m) && !m.salonOnly;
+        if (isSalonOnlySlot(m) || m.salonOnly) return false;
+        return filterMachinesForDestination(ctx.session, [m]).length > 0;
       });
       if (!machines.length) continue;
       const section = el("div", { className: "slot-category" }, [

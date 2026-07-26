@@ -1,7 +1,7 @@
 import Phaser from "phaser";
 import {
   CHAR_METRICS, FOOT_DROP, createGameTextures, ensurePlayerTextures,
-  groundTileKey, playerAnimKey, playerTextureKey,
+  fringeTextureKey, groundTileKey, playerAnimKey, playerTextureKey, WATER_FRAMES,
 } from "../systems/TextureFactory.js";
 import { normalizeAppearance } from "../systems/CharacterAppearance.js";
 import {
@@ -73,7 +73,41 @@ const DECOR_KEYS = {
   [TILE.SCREEN]: "decor_screen",
   [TILE.GLASS]: "decor_glass",
   [TILE.ROPE]: "decor_rope",
+  [TILE.FLOWER]: "decor_flower",
+  [TILE.ROCK]: "decor_rock",
+  [TILE.LANTERN]: "decor_lantern",
 };
+
+/** Props that cast a soft ground shadow (reference lived-in density). */
+const SHADOW_DECOR = new Set([
+  TILE.PLANT, TILE.BAR, TILE.SLOT, TILE.SCREEN, TILE.ROPE,
+  TILE.ROCK, TILE.LANTERN, TILE.GLASS,
+]);
+
+/** Neon / lamp props that gently pulse for atmospheric life. */
+const GLOW_DECOR = new Set([TILE.SLOT, TILE.SCREEN, TILE.LANTERN]);
+
+/**
+ * When `tile` meets `neighbor`, stamp this fringe kind on the shared edge.
+ * Ordered pairs keep sand↔water foam on the water side and wet sand on shore.
+ */
+const FRINGE_RULES = [
+  { tile: TILE.WATER, neighbor: TILE.SAND, kind: "foam" },
+  { tile: TILE.WATER, neighbor: TILE.AQUA, kind: "foam" },
+  { tile: TILE.SAND, neighbor: TILE.WATER, kind: "wet" },
+  { tile: TILE.AQUA, neighbor: TILE.WATER, kind: "pool" },
+  { tile: TILE.CARPET, neighbor: TILE.PATH, kind: "path" },
+  { tile: TILE.LOBBY, neighbor: TILE.PATH, kind: "path" },
+  { tile: TILE.PATH, neighbor: TILE.CARPET, kind: "path" },
+  { tile: TILE.PATH, neighbor: TILE.LOBBY, kind: "path" },
+];
+
+const FRINGE_DIRS = [
+  { dx: 0, dy: -1, dir: "n" },
+  { dx: 0, dy: 1, dir: "s" },
+  { dx: -1, dy: 0, dir: "w" },
+  { dx: 1, dy: 0, dir: "e" },
+];
 
 /** Sub-line under the room placard: which wing you are in, and when. */
 const placardSub = (mapDef, phaseLabel) =>
@@ -136,30 +170,43 @@ export class OverworldScene extends Phaser.Scene {
     }
 
     this.groundLayer = this.add.group();
+    this._waterSprites = [];
+    this._waterFrame = 0;
+    this._glowSprites = [];
     for (let y = 0; y < MAP_HEIGHT; y++) {
       for (let x = 0; x < MAP_WIDTH; x++) {
         const tile = ground[y][x];
         if (tile === 0) continue;
-        const groundImg = this.add.image(
-          x * TILE_SIZE + TILE_SIZE / 2,
-          y * TILE_SIZE + TILE_SIZE / 2,
-          groundTileKey(tile, x, y)
-        );
+        const cx = x * TILE_SIZE + TILE_SIZE / 2;
+        const cy = y * TILE_SIZE + TILE_SIZE / 2;
+        const groundImg = this.add.image(cx, cy, groundTileKey(tile, x, y, 0));
         groundImg.setDepth(0);
         this.groundLayer.add(groundImg);
+        if (tile === TILE.WATER) {
+          groundImg.setData("wx", x);
+          groundImg.setData("wy", y);
+          this._waterSprites.push(groundImg);
+        }
+        this._placeFringes(ground, x, y, cx, cy);
         if (decor[y][x]) {
-          const decorKey = DECOR_KEYS[decor[y][x]] ?? "decor_plant";
-          const decorImg = this.add.image(
-            x * TILE_SIZE + TILE_SIZE / 2,
-            y * TILE_SIZE + TILE_SIZE / 2,
-            decorKey
-          );
+          const prop = decor[y][x];
+          const decorKey = DECOR_KEYS[prop] ?? "decor_plant";
+          if (SHADOW_DECOR.has(prop)) {
+            const shadow = this.add.image(cx, cy + TILE_SIZE * 0.22, "shadow_blob");
+            shadow.setDepth(1);
+            shadow.setAlpha(0.75);
+            shadow.setScale(0.95, 0.5);
+            this.groundLayer.add(shadow);
+          }
+          const decorImg = this.add.image(cx, cy, decorKey);
           decorImg.setDepth(2);
           this.groundLayer.add(decorImg);
+          if (GLOW_DECOR.has(prop)) this._glowSprites.push(decorImg);
         }
       }
     }
     this._createZoneSigns(mapId);
+    this._startAtmosphere();
 
     const spawn = this.saveAdapter.rpg;
     const mapDef = getMapDefinition(mapId);
@@ -178,6 +225,10 @@ export class OverworldScene extends Phaser.Scene {
     const feet = CHAR_METRICS.feet;
     this.player.body.setSize(feet.w * CHAR_METRICS.scale, feet.h * CHAR_METRICS.scale);
     this.player.body.setOffset(feet.x * CHAR_METRICS.scale, feet.y * CHAR_METRICS.scale);
+    this.playerShadow = this.add.image(this.player.x, this.player.y + FOOT_DROP + 2, "shadow_blob");
+    this.playerShadow.setDepth(9);
+    this.playerShadow.setAlpha(0.7);
+    this.playerShadow.setScale(0.8, 0.4);
 
     this.physics.world.setBounds(0, 0, MAP_WIDTH * TILE_SIZE, MAP_HEIGHT * TILE_SIZE);
 
@@ -196,6 +247,11 @@ export class OverworldScene extends Phaser.Scene {
     });
     for (const npc of this.currentNpcs) {
       const at = tileToSprite(npc.x, npc.y);
+      const shadow = this.add.image(at.x, at.y + FOOT_DROP + 2, "shadow_blob");
+      shadow.setDepth(9);
+      shadow.setAlpha(0.65);
+      shadow.setScale(0.75, 0.38);
+      this.groundLayer.add(shadow);
       const spriteKey = npc.zone
         ? this._dealerForZone(npc.zone).sprite
         : npc.sprite;
@@ -439,6 +495,55 @@ export class OverworldScene extends Phaser.Scene {
     const cart = rpg.flags.comped_golf_cart ? GOLF_CART_BONUS : 0;
     this.walkSpeed = TILE_SIZE * 5.5 + idx * SPEED_PER_TIER;
     this.runSpeed = TILE_SIZE * 8.125 + idx * SPEED_PER_TIER * 2 + cart;
+  }
+
+  /**
+   * Stamp transparent edge fringes where two floor types meet — sand↔water foam,
+   * wet shoreline, gold path into carpet, pool-deck caustic. Keeps the grid from
+   * reading as wallpaper seams.
+   */
+  _placeFringes(ground, x, y, cx, cy) {
+    const tile = ground[y][x];
+    for (const { dx, dy, dir } of FRINGE_DIRS) {
+      const nx = x + dx;
+      const ny = y + dy;
+      if (nx < 0 || ny < 0 || nx >= MAP_WIDTH || ny >= MAP_HEIGHT) continue;
+      const neighbor = ground[ny][nx];
+      for (const rule of FRINGE_RULES) {
+        if (tile !== rule.tile || neighbor !== rule.neighbor) continue;
+        const fringe = this.add.image(cx, cy, fringeTextureKey(rule.kind, dir));
+        fringe.setDepth(0.5);
+        this.groundLayer.add(fringe);
+        break;
+      }
+    }
+  }
+
+  /** Water frame cycling + soft neon/lamp pulse — the world stays alive at rest. */
+  _startAtmosphere() {
+    this._waterFrame = 0;
+    for (const sprite of this._glowSprites) {
+      this.tweens.add({
+        targets: sprite,
+        alpha: { from: 1, to: 0.78 },
+        duration: 700 + Math.floor(Math.random() * 500),
+        yoyo: true,
+        repeat: -1,
+        ease: "Sine.easeInOut",
+      });
+    }
+  }
+
+  _tickWaterAnim(time) {
+    if (!this._waterSprites?.length) return;
+    const frame = Math.floor(time / 380) % WATER_FRAMES;
+    if (frame === this._waterFrame) return;
+    this._waterFrame = frame;
+    for (const img of this._waterSprites) {
+      const wx = img.getData("wx");
+      const wy = img.getData("wy");
+      img.setTexture(groundTileKey(TILE.WATER, wx, wy, frame));
+    }
   }
 
   _createZoneSigns(mapId) {
@@ -730,6 +835,11 @@ export class OverworldScene extends Phaser.Scene {
 
   update(_time, delta) {
     if (!this.player?.body) return;
+
+    this._tickWaterAnim(_time);
+    if (this.playerShadow) {
+      this.playerShadow.setPosition(this.player.x, this.player.y + FOOT_DROP + 2);
+    }
 
     // Physics runs after update(), so this is how far the last frame got us.
     this._lastFrameTravel = Math.hypot(

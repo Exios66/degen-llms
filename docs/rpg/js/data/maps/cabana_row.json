@@ -75,6 +75,36 @@
       ]
     }
   ],
+  "scatter": [
+    {
+      "tile": "PLANT",
+      "mod": 11,
+      "on": [
+        "SAND"
+      ]
+    },
+    {
+      "tile": "FLOWER",
+      "mod": 8,
+      "on": [
+        "SAND"
+      ]
+    },
+    {
+      "tile": "ROCK",
+      "mod": 19,
+      "on": [
+        "SAND"
+      ]
+    },
+    {
+      "tile": "LANTERN",
+      "mod": 21,
+      "on": [
+        "SAND"
+      ]
+    }
+  ],
   "clear": [
     {
       "tile": "SAND",

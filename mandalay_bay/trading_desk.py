@@ -8,10 +8,15 @@ from typing import Any
 from blackjack.rng import SECURE_RANDOM
 
 _CATALOG: dict[str, Any] | None = None
+_SYMBOLS: dict[str, Any] | None = None
 
 
 def catalog_path() -> Path:
     return Path(__file__).resolve().parent / "data" / "trading_catalog.json"
+
+
+def market_symbols_path() -> Path:
+    return Path(__file__).resolve().parent / "data" / "market_symbols.json"
 
 
 def load_catalog() -> dict[str, Any]:
@@ -21,6 +26,20 @@ def load_catalog() -> dict[str, Any]:
     with catalog_path().open(encoding="utf-8") as f:
         _CATALOG = json.load(f)
     return _CATALOG
+
+
+def load_market_symbols() -> dict[str, Any]:
+    """Underlying symbol database with 1d/1w performance series."""
+    global _SYMBOLS
+    if _SYMBOLS is not None:
+        return _SYMBOLS
+    path = market_symbols_path()
+    if not path.exists():
+        _SYMBOLS = {"version": 0, "symbols": []}
+        return _SYMBOLS
+    with path.open(encoding="utf-8") as f:
+        _SYMBOLS = json.load(f)
+    return _SYMBOLS
 
 
 def filter_contracts(
@@ -38,9 +57,15 @@ def filter_contracts(
     return out
 
 
-def underlyings_from_catalog(catalog: dict[str, Any] | None = None) -> list[dict[str, Any]]:
-    """Unique underlyings with spot ≈ futures mark (for ticker / CLI quotes)."""
+def underlyings_from_catalog(
+    catalog: dict[str, Any] | None = None,
+    *,
+    asset_class: str = "all",
+) -> list[dict[str, Any]]:
+    """Unique underlyings with spot ≈ futures mark, enriched from symbol DB."""
     catalog = catalog or load_catalog()
+    symbol_db = load_market_symbols()
+    by_sym = {row["symbol"]: row for row in symbol_db.get("symbols") or []}
     best: dict[str, dict[str, Any]] = {}
     for c in catalog.get("contracts") or []:
         if c.get("instrument") != "future":
@@ -49,13 +74,22 @@ def underlyings_from_catalog(catalog: dict[str, Any] | None = None) -> list[dict
         mark = float(c.get("markPrice") or 0)
         prev = best.get(sym)
         if prev is None or mark > float(prev["spot"]):
+            meta = by_sym.get(sym) or {}
             best[sym] = {
                 "symbol": sym,
                 "underlying": c.get("underlying", sym),
                 "assetClass": c.get("assetClass", "nyse"),
                 "spot": mark,
+                "perf1dPct": float(meta.get("perf1dPct") or 0),
+                "perf1wPct": float(meta.get("perf1wPct") or 0),
+                "sector": meta.get("sector") or c.get("assetClass", "nyse"),
+                "series1d": list(meta.get("series1d") or [mark]),
+                "series1w": list(meta.get("series1w") or [mark]),
             }
-    return sorted(best.values(), key=lambda q: (q["assetClass"], q["symbol"]))
+    rows = sorted(best.values(), key=lambda q: (q["assetClass"], q["symbol"]))
+    if asset_class != "all":
+        rows = [q for q in rows if q["assetClass"] == asset_class]
+    return rows
 
 
 def entry_cost_chips(contract: dict[str, Any], qty: int = 1) -> int:

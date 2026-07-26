@@ -115,22 +115,32 @@ export function buildTradingDeskRenderers(ctx) {
       }
     }
 
+    const assetFilter = runtime.tradingDesk.assetFilter || "all";
     const tickerHost = el("div", { className: "market-ticker-host" });
-    // Remount ticker after DOM attach so canvas has layout size
+    // Remount ticker after DOM attach so canvas has layout size.
+    // Tape + chart isolate to the selected asset category (full book when All).
     queueMicrotask(() => {
       stopTicker();
       if (tickerHost.isConnected) {
-        runtime.marketTicker = mountMarketTicker(tickerHost, runtime.tradingDesk.catalog, { el });
+        runtime.marketTicker = mountMarketTicker(tickerHost, runtime.tradingDesk.catalog, {
+          el,
+          assetClass: assetFilter,
+        });
       }
     });
+
+    const scopeHint = assetFilter === "all"
+      ? "Tape scrolls the full symbol book — pick a category to isolate underlyings before you trade."
+      : `Tape & charts isolated to ${assetFilter.toUpperCase()} underlyings — review 1D/1W activity, then buy.`;
 
     return el("div", { className: "panel" }, [
       banner("Trading Floor — Mandalay Markets"),
       chipLine(),
+      assetChips,
+      el("p", { className: "dim market-ticker-scope-hint", textContent: scopeHint }),
       tickerHost,
       tier ? el("p", { className: "dim", textContent: `${tier.name}: ${formatStakeRange(stakes.minBet, stakes.maxBet, { noCap: true })}` }) : null,
       el("p", { className: "dim", textContent: `NYSE · Commodities · Crypto — futures & call/put options · ${total} contracts in filter · ${runtime.tradingDesk.catalog.contracts.length} in book` }),
-      assetChips,
       instChips,
       el("p", { className: "subtitle", textContent: "Contract board" }),
       board,
@@ -140,7 +150,7 @@ export function buildTradingDeskRenderers(ctx) {
         "Trading Floor:",
         (choice) => {
           if (choice === 0) { stopTicker(); goBack(); return; }
-          if (choice === 1) { stopTicker(); pushView("trading-buy"); }
+          if (choice === 1) { pushView("trading-buy"); }
           else if (choice === 2) { stopTicker(); pushView("trading-settle"); }
           else if (choice === 3) {
             runtime.tradingDesk.nextPage();
@@ -163,6 +173,7 @@ export function buildTradingDeskRenderers(ctx) {
       ? effectiveTableStakes(tier, ctx.session.wallet.balance, act.minBet)
       : { minBet: act.minBet, maxBet: ctx.session.wallet.balance };
     const page = runtime.tradingDesk.visibleContracts(40);
+    const assetFilter = runtime.tradingDesk.assetFilter || "all";
     const select = el("select", {}, page.map((c, i) =>
       el("option", {
         value: String(i),
@@ -171,21 +182,51 @@ export function buildTradingDeskRenderers(ctx) {
     ));
     const qtyInput = el("input", { type: "number", min: "1", max: "20", value: "1" });
     const hint = el("p", { className: "dim", textContent: "" });
+    const tickerHost = el("div", { className: "market-ticker-host market-ticker-host--pretrade" });
+
+    function selectedContract() {
+      return page[parseInt(select.value, 10)] || null;
+    }
+
+    function remountFocusTicker() {
+      const c = selectedContract();
+      stopTicker();
+      if (!tickerHost.isConnected || !c) return;
+      runtime.marketTicker = mountMarketTicker(tickerHost, runtime.tradingDesk.catalog, {
+        el,
+        assetClass: assetFilter === "all" ? c.assetClass : assetFilter,
+        focusSymbol: c.symbol,
+        compact: true,
+      });
+    }
 
     function refresh() {
-      const c = page[parseInt(select.value, 10)];
+      const c = selectedContract();
       const qty = Math.max(1, parseInt(qtyInput.value, 10) || 1);
       if (!c) return;
-      hint.textContent = `Cost ${entryCostChips(c, qty).toLocaleString()} chips · mark ${c.markPrice} · ${c.underlying}`;
+      hint.textContent = `Cost ${entryCostChips(c, qty).toLocaleString()} chips · mark ${c.markPrice} · ${c.underlying} · review tape before you send`;
+      remountFocusTicker();
     }
     select.onchange = refresh;
-    qtyInput.oninput = refresh;
-    refresh();
+    qtyInput.oninput = () => {
+      const c = selectedContract();
+      const qty = Math.max(1, parseInt(qtyInput.value, 10) || 1);
+      if (!c) return;
+      hint.textContent = `Cost ${entryCostChips(c, qty).toLocaleString()} chips · mark ${c.markPrice} · ${c.underlying} · review tape before you send`;
+    };
+
+    queueMicrotask(() => {
+      if (tickerHost.isConnected) refresh();
+    });
 
     return el("div", { className: "panel" }, [
       banner("Buy Contract"),
       chipLine(),
-      el("p", { className: "dim", textContent: "Long only — futures (margin) or call/put premium. No naked shorts." }),
+      el("p", {
+        className: "dim",
+        textContent: "Long only — futures (margin) or call/put premium. No naked shorts. Live 1D/1W activity for the selected underlying stays on screen while you size the ticket.",
+      }),
+      tickerHost,
       el("div", { className: "form-row" }, [el("label", { textContent: "Contract" }), select]),
       el("div", { className: "form-row" }, [el("label", { textContent: "Quantity" }), qtyInput]),
       hint,
@@ -194,7 +235,7 @@ export function buildTradingDeskRenderers(ctx) {
           className: "btn primary",
           textContent: "Buy",
           onclick: () => {
-            const c = page[parseInt(select.value, 10)];
+            const c = selectedContract();
             const qty = Math.max(1, parseInt(qtyInput.value, 10) || 1);
             const cost = entryCostChips(c, qty);
             if (cost > stakes.maxBet) { alert(`Cost exceeds stake max (${stakes.maxBet}).`); return; }
@@ -204,11 +245,16 @@ export function buildTradingDeskRenderers(ctx) {
             runtime.tradingDesk.openPosition(c, qty);
             persist();
             showStatus(`Opened ${qty}× ${c.instrument} ${c.symbol}.`);
+            stopTicker();
             popView();
             render();
           },
         }),
-        el("button", { className: "btn", textContent: "Back", onclick: () => { popView(); render(); } }),
+        el("button", {
+          className: "btn",
+          textContent: "Back",
+          onclick: () => { stopTicker(); popView(); render(); },
+        }),
       ]),
     ]);
   }

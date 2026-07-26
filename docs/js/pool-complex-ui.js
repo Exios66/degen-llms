@@ -29,14 +29,17 @@ export function buildPoolRenderers(ctx) {
 
   function openOverlay(zoneId) {
     if (typeof ctx.openPoolComplexVisual === "function" && !ctx.poolOverlay?.active) {
-      return ctx.openPoolComplexVisual(zoneId);
+      return ctx.openPoolComplexVisual(zoneId, { returnView: "hotel-lobby" });
     }
     const overlay = typeof ctx.ensurePoolOverlay === "function"
       ? ctx.ensurePoolOverlay()
       : ctx.poolOverlay;
     if (!overlay) return false;
     overlay.setSession(session);
+    overlay.returnView = "hotel-lobby";
+    // Keep the active zone on re-render; only open or switch when needed.
     if (!overlay.active) overlay.open(zoneId);
+    else if (zoneId && zoneId !== "hub" && overlay.zoneId !== zoneId) overlay.openZone(zoneId);
     return true;
   }
 
@@ -270,8 +273,13 @@ export function buildPoolRenderers(ctx) {
           menuBtn("Enter / show pass ($75 first visit)", () => {
             runAction(log, enterBeachClub(session), { refresh: true });
           }),
-          menuBtn("Pool bar — frozen cocktail ($18)", () => {
-            runAction(log, beachClubAction(session, "bar"), { refresh: true });
+          menuBtn("Pool bar — first-person at the rail", () => {
+            if (ctx.barOverlay) {
+              ctx.barOverlay.setSession(session);
+              ctx.barOverlay.open("pool_beach_club");
+            } else {
+              runAction(log, beachClubAction(session, "bar"), { refresh: true });
+            }
           }),
           menuBtn("Claim a sun deck lounger", () => {
             runAction(log, beachClubAction(session, "sun_deck"));

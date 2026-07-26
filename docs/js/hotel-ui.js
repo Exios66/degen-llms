@@ -915,7 +915,7 @@ export function buildHotelRenderers(ctx) {
   function openPoolComplex(zoneId = "hub") {
     if (typeof ctx.openPoolComplexVisual === "function") {
       const wasActive = ctx.poolOverlay?.active;
-      const opened = ctx.openPoolComplexVisual(zoneId);
+      const opened = ctx.openPoolComplexVisual(zoneId, { returnView: "hotel-lobby" });
       if (opened && !wasActive) pushView("pool-complex");
       else if (!opened) pushView("pool-complex");
       return;
@@ -929,6 +929,7 @@ export function buildHotelRenderers(ctx) {
       return;
     }
     overlay.setSession(session);
+    overlay.returnView = "hotel-lobby";
     const target = zoneId || "hub";
     if (!overlay.active) {
       pushView("pool-complex");

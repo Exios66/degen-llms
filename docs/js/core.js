@@ -8,6 +8,7 @@ import { attachBankToSession } from "./bank-account.js";
 import { attachStaffOverridesToSession } from "./staff-manifest.js";
 import { attachIntoxicationToSession } from "./intoxication-effects.js";
 import { attachDiningToSession } from "./dining.js";
+import { attachBarToSession } from "./bar.js";
 import { attachBalconySmokeToSession } from "./balcony-smoke.js";
 import {
   getActiveSlotId,
@@ -393,6 +394,7 @@ export class PlayerSession {
     attachStaffOverridesToSession(s, data);
     attachIntoxicationToSession(s, data);
     attachDiningToSession(s, data);
+    attachBarToSession(s, data);
     attachBalconySmokeToSession(s, data);
     s.casinoTimeMs = data.casinoTimeMs ?? 0;
     return s;

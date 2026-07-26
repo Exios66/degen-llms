@@ -32,6 +32,7 @@ import { buildTradingDeskRenderers } from "./ui/trading-desk-renderers.js";
 import { buildArcadeRenderers } from "./ui/arcade-renderers.js";
 import { ArcadeCabinetOverlay } from "./arcade/ArcadeCabinetOverlay.js";
 import { DiningOverlay } from "./DiningOverlay.js";
+import { BarOverlay } from "./BarOverlay.js";
 import { PoolComplexOverlay } from "./PoolComplexOverlay.js";
 import { BalconySmokeOverlay } from "./BalconySmokeOverlay.js";
 import { buildRacingRenderers } from "./ui/racing-renderers.js";
@@ -48,6 +49,7 @@ let session = new PlayerSession();
 let rewardsPhone = null;
 let arcadeOverlay = null;
 let diningOverlay = null;
+let barOverlay = null;
 let poolOverlay = null;
 let balconySmokeOverlay = null;
 let casinoTimeTicker = null;
@@ -64,6 +66,7 @@ const ctx = {
   get rewardsPhone() { return rewardsPhone; },
   get arcadeOverlay() { return arcadeOverlay; },
   get diningOverlay() { return diningOverlay; },
+  get barOverlay() { return barOverlay; },
   get poolOverlay() { return poolOverlay; },
   get balconySmokeOverlay() { return balconySmokeOverlay; },
   runtime,
@@ -184,6 +187,25 @@ function mountDiningOverlay() {
   diningOverlay.setSession(session);
 }
 
+function mountBarOverlay() {
+  const root = document.getElementById("bar-overlay");
+  if (!root) return;
+  barOverlay = new BarOverlay(root, {
+    onPersist: () => persist(),
+    onStatus: (msg, kind) => showStatus(msg, kind),
+    onClosed: () => render(),
+    onChipDelta: () => {
+      const line = document.querySelector(".chip-line");
+      if (line) {
+        line.classList.remove("chip-pulse--up", "chip-pulse--down");
+        void line.offsetWidth;
+        line.classList.add("chip-pulse", "chip-pulse--down");
+      }
+    },
+  });
+  barOverlay.setSession(session);
+}
+
 const POOL_LAUNCH_ZONES = {
   "pool-complex": "hub",
   "pool-wave": "wave_pool",
@@ -195,13 +217,31 @@ const POOL_LAUNCH_ZONES = {
   "pool-events": "events",
 };
 
+function poolOverlayReturnView() {
+  const name = viewStack.at(-1)?.name ?? "hub";
+  if (name.startsWith("pool") || name.startsWith("hotel")) return "hotel-lobby";
+  return null;
+}
+
+function handlePoolOverlayClosed() {
+  const ret = poolOverlay?.returnView ?? poolOverlayReturnView();
+  if (poolOverlay) poolOverlay.returnView = null;
+  if (ret === "hotel-lobby") {
+    ensureHotel(session);
+    navigateTo("hotel-lobby");
+    return;
+  }
+  render();
+}
+
 function mountPoolOverlay() {
   const root = document.getElementById("pool-overlay");
   if (!root) return null;
   poolOverlay = new PoolComplexOverlay(root, {
     onPersist: () => persist(),
     onStatus: (msg, kind) => showStatus(msg, kind),
-    onClosed: () => render(),
+    onClosed: () => handlePoolOverlayClosed(),
+    get barOverlay() { return barOverlay; },
     onChipDelta: () => {
       const line = document.querySelector(".chip-line");
       if (line) {
@@ -225,14 +265,16 @@ function ensurePoolOverlay() {
 }
 
 /** Open the Mandalay Beach graphic overlay from any casino entry point. */
-function openPoolComplexVisual(zoneId = "hub") {
+function openPoolComplexVisual(zoneId = "hub", opts = {}) {
   const overlay = ensurePoolOverlay();
   if (!overlay) {
     showStatus("Pool overlay not ready — try Hotel Lobby → Pool Complex.", "error");
     return false;
   }
   overlay.setSession(session);
+  overlay.returnView = opts.returnView ?? poolOverlayReturnView();
   const target = zoneId || "hub";
+  // Avoid re-open/reset on every render() while the beach deck is already up.
   if (!overlay.active) overlay.open(target);
   else if (target !== "hub" && overlay.zoneId !== target) overlay.openZone(target);
   return true;
@@ -274,6 +316,7 @@ function enterCasino(nextSession) {
   mountRewardsPhone();
   mountArcadeOverlay();
   mountDiningOverlay();
+  mountBarOverlay();
   mountPoolOverlay();
   mountBalconySmokeOverlay();
   syncContactIntros(nextSession);
@@ -288,6 +331,7 @@ function returnToSavePicker() {
   rewardsPhone?.close();
   arcadeOverlay?.close();
   diningOverlay?.close();
+  barOverlay?.close();
   poolOverlay?.close();
   balconySmokeOverlay?.close();
   runtime.sportsbook = new SportsbookState();
@@ -825,6 +869,7 @@ function render() {
     window.setTimeout(() => app.classList.remove("view-transition"), 240);
   }
   diningOverlay?.setSession(session);
+  barOverlay?.setSession(session);
   poolOverlay?.setSession(session);
   arcadeOverlay?.setSession(session);
   balconySmokeOverlay?.setSession(session);
@@ -835,7 +880,7 @@ function applyDeepView(deepView) {
   if (!deepView) return;
   const poolZone = POOL_LAUNCH_ZONES[deepView];
   if (poolZone) {
-    if (openPoolComplexVisual(poolZone)) return;
+    if (openPoolComplexVisual(poolZone, { returnView: "hotel-lobby" })) return;
     if (RENDERERS[deepView]) pushView(deepView);
     return;
   }

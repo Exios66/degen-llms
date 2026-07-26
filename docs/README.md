@@ -29,6 +29,7 @@ These Markdown guides are the Quarto source for the Posit Connect docs site. The
 | [Lottery Counter](lottery.md) | Pick 3/4, Mega, scratchers |
 | [Sports Book](sportsbook.md) | Scenario DBs, parlays/futures, prediction markets |
 | [Trading Floor](trading-floor.md) | Futures & call/put options (NYSE, commodities, crypto) |
+| [Arcade Alley](arcade.md) | CRT cabinet overlays — Frogger, Invaders, Breakout, rhythm |
 | [Racing and Equestrian](racing.md) | Thoroughbred racing, dressage, show jumping |
 
 ## Developer documentation

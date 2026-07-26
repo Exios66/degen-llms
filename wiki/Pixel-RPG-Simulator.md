@@ -60,6 +60,14 @@ preview. The Trainer Card's wardrobe reopens the same creator mid-game.
 | **T** | Trainer Card (quests, reputation, wardrobe) |
 | **P** | MGM Rewards phone |
 
+### On a phone
+
+The canvas fills the screen and a thumb pad mounts in the bottom corners: a
+d-pad on the left, **B** to run, **A** to talk, **☰** for the START menu. It
+hides itself whenever a conversation or a panel is up. The pad is optional —
+tap a tile to walk there (`Pathfinder.js` routes around the furniture), tap a
+person to walk over and talk, and tap anywhere to advance dialogue.
+
 Gold walkways connect every door, dark trim borders each zone, and floating
 signs name the room you're in — follow the gold and you can't get lost.
 
@@ -362,10 +370,24 @@ erases pixel progress.
 
 ### Art pipeline
 
-Layouts are data (`js/data/maps/*.json`). Ground and decor textures are vendored
-PNGs mapped to the existing `TILE` enum — map JSON did not need to change.
-FX icons (glows, interact marker) remain small procedural textures in
-`TextureFactory.js`.
+There is no sprite sheet required — `TextureFactory.js` draws everything at
+boot on a 16-pixel grid and blits it at 2×, so a tile is 32 screen pixels and one
+art pixel is always exactly two. Tiles light from the top left without exception,
+and the wide floors register three faintly scuffed variants that `groundTileKey()`
+spreads across the map so a ballroom stops reading as wallpaper.
+
+Characters are authored pixel grids: arrays of 16-character strings, one
+character per pixel, resolved through a palette legend. The head and torso are a
+separate block from the legs, which is how a three-frame walk cycle swaps only
+the legs and drops the body a pixel. Right-facing is the left grid mirrored.
+Editing a sprite means editing the strings; the smoke test rejects a row that is
+not 16 characters or uses a letter outside the legend.
+
+Layouts are already data (`js/data/maps/*.json`). Optional vendored ground/decor
+PNGs under `assets/tiles/` (via `EnvironmentTextures.js`) and staff sheets under
+`assets/characters/` (via `CharacterSprites.js`) map onto the same `TILE` enum
+and NPC roster without changing map JSON. FX icons (glows, interact marker)
+remain small procedural textures in `TextureFactory.js`.
 
 ---
 

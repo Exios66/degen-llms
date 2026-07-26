@@ -12,8 +12,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
   <!-- Terminal styles come first so the RPG's pixel skin overrides them. -->
-  <link rel="stylesheet" href="../css/casino.css?v=card-sprites-1">
-  <link rel="stylesheet" href="css/rpg.css?v=card-sprites-1">
+  <link rel="stylesheet" href="../css/casino.css?v=pr89-main-1">
+  <link rel="stylesheet" href="css/rpg.css?v=pr89-main-1">
   <link rel="stylesheet" href="../css/intoxication-effects.css">
   <link rel="stylesheet" href="../css/rewards-phone.css">
   <script type="importmap">
@@ -30,6 +30,7 @@
     <div id="hud" aria-live="polite"></div>
     <div id="map-banner" hidden aria-live="polite"></div>
     <div id="touch-hint" class="touch-hint" aria-hidden="true">Tap to move · Tap to talk</div>
+    <div id="touch-pad" class="touch-pad" hidden></div>
     <div id="rewards-phone" aria-live="polite"></div>
     <div id="trainer-card" hidden aria-live="polite"></div>
     <div id="dialogue-overlay" hidden aria-live="polite"></div>
@@ -48,7 +49,7 @@
       </div>
     </div>
   </div>
-  <script type="module" src="js/main.js?v=card-sprites-1"></script>
+  <script type="module" src="js/main.js?v=pr89-main-1"></script>
   <script>
     // Surface module-load failures that would otherwise leave a blank title.
     window.addEventListener("error", (event) => {

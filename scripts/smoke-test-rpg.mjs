@@ -23,6 +23,14 @@ const { HOSTED_ENCOUNTERS, TABLE_STAKE_ACTIVITIES } = await import(
   join(rpgRoot, "js/systems/HostedEncounters.js"));
 const { RPG_ITEMS } = await import(join(rpgRoot, "js/systems/Inventory.js"));
 const { DEX_REGISTRY } = await import(join(rpgRoot, "js/systems/Dex.js"));
+const { ART_UNIT } = await import(join(rpgRoot, "js/systems/MapTiles.js"));
+const { findPath, nearestReachable } = await import(join(rpgRoot, "js/systems/Pathfinder.js"));
+const { artKeys, characterGrids, drawArtToCanvas, drawCharacterToCanvas } = await import(
+  join(rpgRoot, "js/systems/TextureFactory.js"));
+const {
+  HAIR_COLORS, OUTFIT_COLORS, SKIN_TONES, SPEAKER_PORTRAITS,
+  defaultAppearance, resolvePalette, resolveSpeakerPortrait,
+} = await import(join(rpgRoot, "js/systems/CharacterAppearance.js"));
 const { DEALER_ROSTER } = await import(join(here, "..", "docs", "js", "dealers.js"));
 const { PlayerSession, RPG_START_MAP, SAVE_VERSION, defaultRpgState } = await import(
   join(here, "..", "docs", "js", "core.js"));
@@ -397,6 +405,143 @@ for (const [collection, entries] of Object.entries(DEX_REGISTRY)) {
 for (const [id, spec] of Object.entries(HOSTED_ENCOUNTERS)) {
   check(Boolean(spec.view), `hosted ${id}: missing view`);
   check(Boolean(spec.title), `hosted ${id}: missing title`);
+}
+
+// ── Tap-to-walk routing ───────────────────────────────────────────────────
+// Touch players never press a direction, so every tap has to produce a route
+// that only steps on walkable tiles — or an honest refusal.
+for (const mapId of MAP_IDS) {
+  const grid = layers.get(mapId).collision;
+  const spawn = getMapDefinition(mapId).spawn;
+  const reachedTiles = [...reachedFrom.get(mapId)].map((k) => {
+    const [x, y] = k.split(",").map(Number);
+    return { x, y };
+  });
+  // Farthest walkable tile from the spawn is the hardest route on the map.
+  const far = reachedTiles.reduce((best, t) => {
+    const d = Math.abs(t.x - spawn.x) + Math.abs(t.y - spawn.y);
+    return d > best.d ? { t, d } : best;
+  }, { t: spawn, d: -1 }).t;
+
+  const path = findPath(grid, spawn, far);
+  const at = `route ${mapId} (${spawn.x},${spawn.y})->(${far.x},${far.y})`;
+  check(far === spawn || path.length > 0, `${at}: no route to the farthest walkable tile`);
+  let prev = spawn;
+  for (const step of path) {
+    check(Math.abs(step.x - prev.x) + Math.abs(step.y - prev.y) === 1,
+      `${at}: step (${step.x},${step.y}) is not adjacent to the one before it`);
+    check(walkable(mapId, step.x, step.y),
+      `${at}: routes over solid tile (${step.x},${step.y})`);
+    prev = step;
+  }
+  if (path.length) {
+    check(prev.x === far.x && prev.y === far.y, `${at}: route stops short of the target`);
+  }
+
+  // Tapping a wall should land you beside it rather than doing nothing.
+  const wall = [];
+  for (let y = 0; y < MAP_HEIGHT && wall.length < 1; y += 1) {
+    for (let x = 0; x < MAP_WIDTH; x += 1) {
+      if (walkable(mapId, x, y) || !adjacentToWalk(mapId, x, y, connected)) continue;
+      wall.push({ x, y });
+      break;
+    }
+  }
+  for (const target of wall) {
+    const spot = nearestReachable(grid, spawn, target);
+    check(spot != null && walkable(mapId, spot.x, spot.y),
+      `${mapId}: tapping solid tile (${target.x},${target.y}) found nowhere to stand`);
+  }
+}
+
+// ── Art ───────────────────────────────────────────────────────────────────
+// The drawers run at boot on the main thread, so a single bad palette lookup
+// takes the whole overworld down. Draw every one of them here, off the wire.
+{
+  /** A 2D context that records rectangles instead of painting them. */
+  const recorder = () => {
+    const rects = [];
+    const ctx = {
+      imageSmoothingEnabled: true,
+      fillStyle: "",
+      clearRect() {},
+      fillRect(x, y, w, h) { rects.push({ x, y, w, h, style: ctx.fillStyle }); },
+    };
+    return { width: 0, height: 0, getContext: () => ctx, rects };
+  };
+
+  const drawn = (label, draw) => {
+    const canvas = recorder();
+    try {
+      draw(canvas);
+    } catch (err) {
+      fail(`art ${label}: threw ${err.message}`);
+      return null;
+    }
+    check(canvas.rects.length >= 4, `art ${label}: drew almost nothing`);
+    return canvas;
+  };
+
+  // Grids are hand-typed strings, so a dropped character silently shears the
+  // sprite one pixel sideways for the rest of the row.
+  {
+    const grids = characterGrids();
+    const legend = new Set([...grids.legend, "."]);
+    const shape = (label, rows, expected) => {
+      check(rows.length === expected,
+        `art ${label}: ${rows.length} rows, expected ${expected}`);
+      rows.forEach((row, index) => {
+        check(row.length === grids.rowWidth,
+          `art ${label} row ${index}: ${row.length} pixels, expected ${grids.rowWidth}`);
+        const stray = [...row].find((ch) => !legend.has(ch));
+        check(stray === undefined,
+          `art ${label} row ${index}: "${stray}" is not in the palette legend`);
+      });
+    };
+    for (const [dir, rows] of Object.entries(grids.body)) shape(`body ${dir}`, rows, grids.bodyRows);
+    grids.legs.forEach((rows, frame) => shape(`legs #${frame}`, rows, grids.legRows));
+  }
+
+  // Every archetype's default look, plus one sweep of each wardrobe axis.
+  const base = defaultAppearance("weekend_warrior");
+  const samples = [
+    ...["weekend_warrior", "high_roller", "convention_goer", "local"].map(defaultAppearance),
+    ...SKIN_TONES.map((s) => ({ ...base, skin: s.id })),
+    ...HAIR_COLORS.map((h) => ({ ...base, hair: h.id })),
+    ...OUTFIT_COLORS.map((o) => ({ ...base, outfit: o.id })),
+  ];
+
+  for (const appearance of samples) {
+    const palette = resolvePalette(appearance);
+    const label = `${appearance.skin}/${appearance.hair}/${appearance.outfit}`;
+    for (const dir of ["down", "up", "left", "right"]) {
+      for (const frame of [0, 1, 2]) {
+        drawn(`player ${label} ${dir}#${frame}`,
+          (c) => drawCharacterToCanvas(c, palette, dir, frame));
+      }
+    }
+  }
+  for (const speaker of Object.keys(SPEAKER_PORTRAITS)) {
+    drawn(`portrait ${speaker}`,
+      (c) => drawCharacterToCanvas(c, resolveSpeakerPortrait(speaker)));
+  }
+
+  for (const key of artKeys()) {
+    const canvas = drawn(`sprite ${key}`, (c) => drawArtToCanvas(c, key));
+    if (!canvas || !key.startsWith("tile_")) continue;
+    // A floor tile with a hole in it shows the void through the map.
+    const cell = canvas.width / ART_UNIT;
+    const covered = new Set();
+    for (const r of canvas.rects) {
+      if (r.style.startsWith("rgba")) continue;
+      for (let y = r.y / cell; y < (r.y + r.h) / cell; y += 1) {
+        for (let x = r.x / cell; x < (r.x + r.w) / cell; x += 1) covered.add(`${x},${y}`);
+      }
+    }
+    check(covered.size === ART_UNIT * ART_UNIT,
+      `art ${key}: ${ART_UNIT * ART_UNIT - covered.size} of ${ART_UNIT * ART_UNIT} pixels ` +
+      "are transparent — ground tiles must be fully opaque");
+  }
 }
 
 if (failures.length) {

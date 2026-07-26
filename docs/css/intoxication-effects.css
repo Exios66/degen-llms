@@ -13,6 +13,8 @@
 #app,
 #game-shell {
   position: relative;
+  /* Soft landing when max intoxication settles back to sober. */
+  transition: filter 0.7s ease;
 }
 
 .intox-overlay {

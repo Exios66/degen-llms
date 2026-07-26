@@ -1,14 +1,19 @@
 """Tests for intoxication tracking across liquor, beer, and contraband."""
 
+from datetime import datetime, timedelta, timezone
+
 from mandalay_bay.casino_amenities import ensure_amenities, order_bar_drink
 from mandalay_bay.chips import ChipWallet
 from mandalay_bay.hotel import ensure_hotel
 from mandalay_bay.intoxication import (
     CONSUMABLE_POTENCY,
     INTOXICATION_MAX,
+    INTOX_MAX_SETTLE_SECONDS,
     attach_intoxication_to_session,
     get_intoxication_level,
+    maybe_settle_max_intoxication,
     record_consumption,
+    settle_intoxication,
 )
 from mandalay_bay.pool_complex import beach_club_action, book_cabana, cabana_service, ensure_pool_complex
 from mandalay_bay.room_amenities import purchase_minibar_item
@@ -75,3 +80,49 @@ def test_migrate_level_from_bar_history() -> None:
     attach_intoxication_to_session(session, {})
     expected = CONSUMABLE_POTENCY["mini_vodka"]["potency"] + CONSUMABLE_POTENCY["rr_craft_beer"]["potency"]
     assert get_intoxication_level(session) == expected
+
+
+def test_max_intoxication_settles_after_window() -> None:
+    session = _session()
+    for _ in range(30):
+        record_consumption(session, "foundation_edible", source="test")
+    assert get_intoxication_level(session) == INTOXICATION_MAX
+
+    started = datetime.now(timezone.utc) - timedelta(seconds=INTOX_MAX_SETTLE_SECONDS + 5)
+    session.intoxication.last_consumed_at = started.isoformat()
+    assert maybe_settle_max_intoxication(session) is True
+    assert get_intoxication_level(session) == 0
+
+
+def test_max_intoxication_does_not_settle_early() -> None:
+    session = _session()
+    for _ in range(30):
+        record_consumption(session, "foundation_edible", source="test")
+    now = datetime.now(timezone.utc)
+    session.intoxication.last_consumed_at = now.isoformat()
+    assert maybe_settle_max_intoxication(session, now=now + timedelta(seconds=60)) is False
+    assert get_intoxication_level(session) == INTOXICATION_MAX
+
+
+def test_settle_intoxication_clears_level() -> None:
+    session = _session()
+    record_consumption(session, "mini_vodka", source="test")
+    assert settle_intoxication(session) is True
+    assert get_intoxication_level(session) == 0
+
+
+def test_attach_settles_stale_max_intoxication() -> None:
+    session = _session()
+    stale = (datetime.now(timezone.utc) - timedelta(minutes=10)).isoformat()
+    attach_intoxication_to_session(
+        session,
+        {
+            "intoxication": {
+                "level": INTOXICATION_MAX,
+                "total_doses": 20,
+                "last_consumed_at": stale,
+                "history": [],
+            }
+        },
+    )
+    assert get_intoxication_level(session) == 0

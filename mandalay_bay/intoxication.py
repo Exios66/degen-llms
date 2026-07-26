@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from typing import Literal
 
 IntoxCategory = Literal["liquor", "beer", "contraband"]
 
 INTOXICATION_MAX = 100
+# How long max-level intoxication may last before settling to sober (seconds).
+INTOX_MAX_SETTLE_SECONDS = 3 * 60
 
 CONSUMABLE_POTENCY: dict[str, dict[str, object]] = {
     "eyecandy_mandalay_mule": {"category": "liquor", "potency": 2},
@@ -26,23 +29,10 @@ CONSUMABLE_POTENCY: dict[str, dict[str, object]] = {
     "champagne_split": {"category": "liquor", "potency": 2},
     "noir_herb_preroll": {"category": "contraband", "potency": 4},
     "foundation_edible": {"category": "contraband", "potency": 5},
-    "balcony_suite_joint": {"category": "contraband", "potency": 3},
     "pool_beach_club_bar": {"category": "liquor", "potency": 2},
     "pool_cabana_bottle": {"category": "liquor", "potency": 3},
     "welcome_cocktail": {"category": "liquor", "potency": 2},
-    "dining_aureole_cab": {"category": "liquor", "potency": 2},
-    "dining_aureole_krug": {"category": "liquor", "potency": 3},
-    "dining_border_marg": {"category": "liquor", "potency": 2},
-    "dining_border_mezcal": {"category": "liquor", "potency": 3},
-    "dining_border_bottomless": {"category": "liquor", "potency": 2},
-    "dining_strip_of": {"category": "liquor", "potency": 3},
-    "dining_strip_martini": {"category": "liquor", "potency": 2},
-    "dining_chase_shot": {"category": "liquor", "potency": 2},
-    "dining_encounter_pour": {"category": "liquor", "potency": 2},
 }
-
-INTOX_BUZZED_MIN_LEVEL = 10
-INTOX_BUZZED_MIN_DOSES = 4
 
 POOL_CONSUMABLE_IDS = {
     "bar": "pool_beach_club_bar",
@@ -103,6 +93,52 @@ def _compute_level_from_session_history(session: object) -> int:
     return min(INTOXICATION_MAX, level)
 
 
+def _parse_consumed_at(iso: str | None) -> datetime | None:
+    if not iso:
+        return None
+    try:
+        dt = datetime.fromisoformat(iso.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt
+
+
+def settle_intoxication(session: object) -> bool:
+    """Reset intoxication level to sober. Returns True if a reset occurred."""
+    state = ensure_intoxication(session)
+    if state.level <= 0:
+        return False
+    state.level = 0
+    return True
+
+
+def maybe_settle_max_intoxication(
+    session: object,
+    *,
+    now: datetime | None = None,
+) -> bool:
+    """
+    If the guest has been at max intoxication for INTOX_MAX_SETTLE_SECONDS,
+    settle to sober. Returns True when a settle happened.
+    """
+    state = ensure_intoxication(session)
+    if state.level < INTOXICATION_MAX:
+        return False
+    current = now or datetime.now(timezone.utc)
+    if current.tzinfo is None:
+        current = current.replace(tzinfo=timezone.utc)
+    started = _parse_consumed_at(state.last_consumed_at)
+    if started is None:
+        state.last_consumed_at = current.isoformat()
+        return False
+    elapsed = (current - started).total_seconds()
+    if elapsed >= INTOX_MAX_SETTLE_SECONDS:
+        return settle_intoxication(session)
+    return False
+
+
 def attach_intoxication_to_session(session: object, data: dict | None = None) -> IntoxicationState:
     raw = (data or {}).get("intoxication") or {}
     if raw.get("level") is not None or raw.get("total_doses") is not None or raw.get("totalDoses") is not None:
@@ -114,6 +150,7 @@ def attach_intoxication_to_session(session: object, data: dict | None = None) ->
         )
     else:
         session.intoxication = default_intoxication_state(level=_compute_level_from_session_history(session))
+    maybe_settle_max_intoxication(session)
     return session.intoxication
 
 
@@ -122,8 +159,6 @@ def record_consumption(session: object, item_id: str, *, source: str = "unknown"
     if spec is None:
         state = ensure_intoxication(session)
         return {"ok": False, "level": state.level, "added": 0}
-
-    from datetime import datetime, timezone
 
     state = ensure_intoxication(session)
     added = int(spec["potency"])
@@ -145,21 +180,8 @@ def record_consumption(session: object, item_id: str, *, source: str = "unknown"
 
 
 def get_intoxication_level(session: object) -> int:
+    maybe_settle_max_intoxication(session)
     return ensure_intoxication(session).level
-
-
-def is_heightened_intoxication(session: object) -> bool:
-    state = ensure_intoxication(session)
-    level = state.level
-    total_doses = state.total_doses
-    contraband = sum(1 for e in state.history if e.get("category") == "contraband")
-    if level >= 16:
-        return True
-    if total_doses >= INTOX_BUZZED_MIN_DOSES and level >= INTOX_BUZZED_MIN_LEVEL:
-        return True
-    if total_doses >= 3 and level >= 12 and contraband > 0:
-        return True
-    return False
 
 
 def is_consumable_item(item_id: str) -> bool:

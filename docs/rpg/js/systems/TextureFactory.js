@@ -68,6 +68,77 @@ function makeWriter(target, scale = SCALE) {
   };
 }
 
+// ─── Fine-detail rendering ─────────────────────────────────────────────────
+/**
+ * Everything above draws on the 16-unit art grid at 2×. The helpers below
+ * write at true output resolution (1 unit = 1 screen pixel) so grain, glow,
+ * and gradients read as continuous texture instead of blown-up blocks — the
+ * difference between a photographed felt swatch and a green rectangle.
+ *
+ * Every helper here is alpha-blended (never opaque) so it layers over the
+ * macro shapes above without disturbing the opacity contract ground tiles
+ * must keep (see smoke-test-rpg.mjs's per-tile coverage check).
+ */
+
+/** A fine writer for a TILE_SIZE-square texture: coordinates are real pixels. */
+function fineWriter(target) {
+  return makeWriter(target, 1);
+}
+
+/** Deterministic pseudo-random 0..1 — stable across reloads, no runtime jitter. */
+function hash(x, y, seed = 0) {
+  let h = (x * 374761393 + y * 668265263 + seed * 2246822519) >>> 0;
+  h = Math.imul(h ^ (h >>> 13), 1274126177) >>> 0;
+  h ^= h >>> 16;
+  return (h >>> 0) / 4294967295;
+}
+
+/**
+ * Per-pixel speckle across a region — wood grain, felt nap, sand grit, marble
+ * fleck, asphalt aggregate. `tones` is a list of [color, alpha] pairs; each
+ * struck pixel picks one deterministically so the pattern never flickers.
+ */
+function speckle(fine, x0, y0, w0, h0, tones, coverage = 0.16, seed = 0) {
+  for (let y = y0; y < y0 + h0; y++) {
+    for (let x = x0; x < x0 + w0; x++) {
+      const r = hash(x, y, seed);
+      if (r >= coverage) continue;
+      const [color, alpha] = tones[Math.floor((r / coverage) * tones.length) % tones.length];
+      fine.px(color, x, y, 1, 1, Math.min(alpha, 0.92));
+    }
+  }
+}
+
+/**
+ * Soft ambient light: brighter along the top-left, a faint cool shadow toward
+ * the bottom-right — the same rule the flat edge-highlights already followed,
+ * rendered as a smooth multi-band gradient instead of a 1px line.
+ */
+function ambientLight(fine, w0, h0, { bands = 5, lift = 0.075, drop = 0.06 } = {}) {
+  for (let i = 0; i < bands; i++) {
+    const t = i / bands;
+    const band = h0 / bands;
+    fine.px(0xffffff, 0, i * band, w0, band + 1, lift * (1 - t) * (1 - t));
+  }
+  for (let i = 0; i < bands; i++) {
+    const t = i / bands;
+    const band = h0 / bands;
+    fine.px(0x000000, 0, h0 - (i + 1) * band, w0, band + 1, drop * (1 - t) * (1 - t));
+  }
+}
+
+/** Soft radial bloom for neon, gold, and glass — concentric fading squares. */
+function glow(fine, cx, cy, rings, color) {
+  for (const { r, alpha } of rings) {
+    fine.px(color, cx - r, cy - r, r * 2, r * 2, Math.min(alpha, 0.92));
+  }
+}
+
+/** Scattered fixed highlight points, e.g. gold flecks or water sparkle. */
+function sparkle(fine, points, color, alpha = 0.6) {
+  for (const [x, y] of points) fine.px(color, x, y, 1, 1, Math.min(alpha, 0.92));
+}
+
 function tileFrame(w, base, light, dark, highlight = null) {
   w.px(base, 0, 0, 16, 16);
   w.px(light, 0, 0, 15, 1);
@@ -120,28 +191,56 @@ function makeTex(scene, key, draw, w = TILE_SIZE, h = TILE_SIZE) {
 
 function drawLobbyTile(g) {
   const w = makeWriter(g);
+  const fine = fineWriter(g);
+  // Polished cream marble with denser vein network + gold medallion inlay.
   marbleVeins(w, 0xe8e0d0, 0xc8b8a0, 0xd8c8b0);
+  w.px(0xb8a890, 5, 6, 4, 1);
+  w.px(0xd8c8b0, 6, 6, 2, 1);
+  w.px(0xc8b8a0, 12, 11, 1, 3);
+  w.px(0xd8c8b0, 13, 12, 1, 1);
   groutGrid(w, 0xb8a890, 8);
-  w.px(0xfff8f0, 3, 3, 3, 2);
-  w.px(0xfff8f0, 10, 10, 3, 2);
+  w.px(0xfff8f0, 2, 2, 3, 2);
+  w.px(0xfff8f0, 10, 9, 3, 2);
   w.px(0xf0e8d8, 6, 6, 4, 4);
   w.px(0xe8c878, 7, 7, 2, 2);
   w.px(0xffe890, 7, 7, 1, 1);
+  w.px(0xffffff, 7, 7, 1, 1, 0.45);
   w.px(0xd0c0a8, 0, 0, 16, 1);
   w.px(0xd0c0a8, 0, 0, 1, 16);
+  w.px(0xa89478, 15, 0, 1, 16);
+  w.px(0xa89478, 0, 15, 16, 1);
+  sparkle(fine, [[6, 5], [20, 8], [14, 18]], 0xffffff, 0.5);
+  speckle(fine, 0, 0, TILE_SIZE, TILE_SIZE, [
+    [0xf8f0e0, 0.38], [0xa89478, 0.3], [0xffffff, 0.42], [0xc8b898, 0.2],
+  ], 0.26, 11);
+  ambientLight(fine, TILE_SIZE, TILE_SIZE, { lift: 0.11, drop: 0.05 });
+  glow(fine, 15, 15, [{ r: 7, alpha: 0.09 }, { r: 3, alpha: 0.16 }], 0xfff6dc);
 }
 
 function drawCarpetTile(g) {
   const w = makeWriter(g);
+  const fine = fineWriter(g);
+  // Ornate casino carpet: plush maroon field, gold scrollwork, cut-pile nap.
   tileFrame(w, 0x4a0828, 0x6a1840, 0x2a0418);
   ditherWeave(w, 1, 1, 14, 14, 0x6a1038, 0x5a0c30);
   w.px(0x801848, 2, 2, 12, 12);
+  // Scroll rings around the medallion (busy floral read without cluttering UI).
+  w.px(0x982058, 3, 3, 10, 10);
+  w.px(0x801848, 4, 4, 8, 8);
+  w.px(0xc8a030, 3, 5, 1, 6);
+  w.px(0xc8a030, 12, 5, 1, 6);
+  w.px(0xc8a030, 5, 3, 6, 1);
+  w.px(0xc8a030, 5, 12, 6, 1);
+  w.px(0xe8c547, 4, 4, 1, 1);
+  w.px(0xe8c547, 11, 4, 1, 1);
+  w.px(0xe8c547, 4, 11, 1, 1);
+  w.px(0xe8c547, 11, 11, 1, 1);
   // Ornate medallion
-  w.px(0xc8a030, 4, 4, 8, 8);
-  w.px(0xe8c547, 5, 5, 6, 6);
-  w.px(0xffe890, 6, 6, 4, 4);
-  w.px(0xfff0b0, 7, 7, 2, 2);
+  w.px(0xc8a030, 5, 5, 6, 6);
+  w.px(0xe8c547, 6, 6, 4, 4);
+  w.px(0xffe890, 7, 7, 2, 2);
   w.px(0x982058, 7, 7, 2, 2);
+  w.px(0xfff0b0, 7, 7, 1, 1);
   // Corner flourishes
   w.px(0xc8a030, 2, 2, 2, 2);
   w.px(0xc8a030, 12, 2, 2, 2);
@@ -149,25 +248,34 @@ function drawCarpetTile(g) {
   w.px(0xc8a030, 12, 12, 2, 2);
   w.px(0xffe890, 3, 3, 1, 1);
   w.px(0xffe890, 13, 13, 1, 1);
-  // Fringe
   w.px(0x3a0618, 0, 0, 16, 1);
   w.px(0x3a0618, 0, 15, 16, 1);
+  speckle(fine, 2, 2, 28, 28, [
+    [0x9a2860, 0.32], [0x5c0a30, 0.34], [0xb84878, 0.2], [0xe8c547, 0.1],
+  ], 0.24, 23);
+  glow(fine, 16, 16, [{ r: 9, alpha: 0.09 }, { r: 5, alpha: 0.14 }, { r: 2, alpha: 0.2 }], 0xffe890);
+  ambientLight(fine, TILE_SIZE, TILE_SIZE, { lift: 0.07, drop: 0.07 });
 }
 
 function drawFeltTile(g) {
   const w = makeWriter(g);
+  const fine = fineWriter(g);
+  // Casino baize: multi-tone green nap, gold rail, crisp betting oval.
   w.px(0x0a4828, 0, 0, 16, 16);
   ditherWeave(w, 1, 1, 14, 14, 0x0e5830, 0x0c5030);
   w.px(0x128840, 2, 2, 12, 12);
   w.px(0x18a050, 3, 3, 10, 10);
-  // Gold rail
+  w.px(0x20b058, 5, 4, 6, 3);
+  w.px(0x0e6838, 4, 10, 8, 2);
+  // Gold rail with highlight edge
   w.px(0xc8a030, 0, 0, 16, 1);
   w.px(0xe8c547, 0, 1, 16, 1);
+  w.px(0xffe890, 1, 0, 14, 1, 0.5);
   w.px(0xc8a030, 0, 14, 16, 2);
   w.px(0xe8c547, 0, 0, 1, 16);
   w.px(0xe8c547, 15, 0, 1, 16);
   w.px(0xffe890, 1, 1, 1, 1);
-  // Betting circle
+  // Betting circle — clearer oval structure
   w.px(0xffffff, 4, 7, 8, 1);
   w.px(0xffffff, 7, 4, 1, 8);
   w.px(0xffffff, 5, 5, 1, 1);
@@ -176,11 +284,17 @@ function drawFeltTile(g) {
   w.px(0xffffff, 10, 10, 1, 1);
   w.px(0x40e080, 6, 6, 4, 4);
   w.px(0x60ffa0, 7, 7, 2, 2);
-  w.px(0xffffff, 7, 7, 1, 1, 0.5);
+  w.px(0xffffff, 7, 7, 1, 1, 0.55);
+  speckle(fine, 2, 2, 28, 24, [
+    [0x0e6838, 0.32], [0x1cb058, 0.24], [0x083c20, 0.32], [0x40e080, 0.12],
+  ], 0.28, 41);
+  glow(fine, 16, 16, [{ r: 8, alpha: 0.09 }, { r: 4, alpha: 0.14 }], 0x8affc0);
+  ambientLight(fine, TILE_SIZE, TILE_SIZE, { lift: 0.08, drop: 0.06 });
 }
 
 function drawWallTile(g) {
   const w = makeWriter(g);
+  const fine = fineWriter(g);
   w.px(0x0c1018, 0, 0, 16, 16);
   w.px(0x141c28, 1, 1, 14, 14);
   // Crown molding
@@ -201,10 +315,16 @@ function drawWallTile(g) {
   w.px(0xffe890, 6, 6, 4, 2, 0.15);
   w.px(0xc8a030, 0, 14, 16, 2);
   w.px(0x8a6018, 0, 15, 16, 1);
+  // Brushed-plaster grain plus a real bloom under the sconce instead of a
+  // flat translucent rectangle.
+  speckle(fine, 2, 6, 28, 20, [[0x1c2638, 0.25], [0x0a0e16, 0.28]], 0.16, 5);
+  glow(fine, 15, 11, [{ r: 8, alpha: 0.1 }, { r: 5, alpha: 0.16 }, { r: 2, alpha: 0.3 }], 0xffe890);
+  ambientLight(fine, TILE_SIZE, TILE_SIZE, { lift: 0.05, drop: 0.08 });
 }
 
 function drawPathTile(g) {
   const w = makeWriter(g);
+  const fine = fineWriter(g);
   w.px(0x7a5010, 0, 0, 16, 16);
   w.px(0xa87820, 1, 1, 14, 14);
   w.px(0xc8a030, 2, 2, 12, 12);
@@ -221,10 +341,16 @@ function drawPathTile(g) {
   w.px(0x684010, 7, 0, 2, 16);
   w.px(0x684010, 0, 7, 16, 2);
   w.px(0x8a6018, 7, 7, 2, 2);
+  // Brushed-metal grain running with the streaks, plus a mirror-polish glow
+  // pooling on the gold diamond.
+  speckle(fine, 4, 4, 24, 24, [[0xfff4c8, 0.28], [0x8a6018, 0.22]], 0.14, 63);
+  glow(fine, 16, 16, [{ r: 10, alpha: 0.06 }, { r: 6, alpha: 0.1 }, { r: 3, alpha: 0.18 }], 0xfff8dc);
+  ambientLight(fine, TILE_SIZE, TILE_SIZE, { lift: 0.1, drop: 0.05 });
 }
 
 function drawTrimTile(g) {
   const w = makeWriter(g);
+  const fine = fineWriter(g);
   w.px(0x140c10, 0, 0, 16, 16);
   w.px(0x241418, 1, 1, 14, 14);
   w.px(0x3a2028, 2, 2, 12, 12);
@@ -239,33 +365,55 @@ function drawTrimTile(g) {
   w.px(0xffe890, 7, 7, 1, 1);
   w.px(0x2a1820, 0, 0, 16, 1);
   w.px(0x2a1820, 0, 15, 16, 1);
+  // Mahogany grain streaking with the wood, plus a soft French-polish sheen.
+  speckle(fine, 6, 6, 20, 20, [[0xb08858, 0.3], [0x4a260f, 0.3]], 0.2, 71);
+  glow(fine, 15, 15, [{ r: 6, alpha: 0.1 }, { r: 3, alpha: 0.18 }], 0xffe890);
+  ambientLight(fine, TILE_SIZE, TILE_SIZE, { lift: 0.06, drop: 0.07 });
 }
 
 function drawWaterTile(g) {
   const w = makeWriter(g);
-  w.px(0x0c3050, 0, 0, 16, 16);
-  w.px(0x104060, 1, 1, 14, 14);
-  w.px(0x186880, 2, 2, 12, 12);
-  // Depth bands
-  w.px(0x1a5878, 0, 6, 16, 4);
-  w.px(0x145068, 0, 11, 16, 5);
-  // Caustic highlights
-  w.px(0x39c5cf, 2, 3, 4, 1);
-  w.px(0x6ae8f0, 3, 3, 2, 1);
-  w.px(0x4ad4de, 8, 2, 5, 1);
-  w.px(0x6ae8f0, 9, 2, 2, 1);
-  w.px(0x39c5cf, 4, 9, 6, 1);
-  w.px(0x6ae8f0, 5, 9, 3, 1);
-  w.px(0x4ad4de, 11, 7, 3, 1);
-  w.px(0x80f8ff, 6, 4, 1, 1, 0.7);
-  w.px(0x80f8ff, 12, 8, 1, 1, 0.5);
-  // Surface ripple
-  w.px(0x2a90a8, 1, 5, 14, 1, 0.5);
-  w.px(0x2a90a8, 2, 12, 12, 1, 0.4);
+  const fine = fineWriter(g);
+  // Deep lagoon base with layered depth — dark floor, mid-water, sunlit surface.
+  w.px(0x0a2840, 0, 0, 16, 16);
+  w.px(0x0e3858, 0, 0, 16, 5);
+  w.px(0x145878, 0, 4, 16, 5);
+  w.px(0x186888, 0, 8, 16, 4);
+  w.px(0x124868, 0, 12, 16, 4);
+  // Scaly ripple lattice (reference-style wave cells).
+  for (let y = 1; y < 15; y += 3) {
+    for (let x = (y % 6 === 1 ? 0 : 2); x <= 13; x += 4) {
+      w.px(0x1a7090, x, y, 3, 1);
+      w.px(0x2a98b0, x + 1, y, 1, 1);
+    }
+  }
+  // Bright caustic streaks + foam sparkles.
+  w.px(0x4ad4de, 1, 2, 5, 1);
+  w.px(0x80f8ff, 2, 2, 2, 1);
+  w.px(0x39c5cf, 8, 1, 6, 1);
+  w.px(0x6ae8f0, 9, 1, 3, 1);
+  w.px(0x4ad4de, 3, 7, 7, 1);
+  w.px(0x80f8ff, 5, 7, 2, 1);
+  w.px(0x39c5cf, 10, 10, 5, 1);
+  w.px(0x6ae8f0, 11, 10, 2, 1);
+  w.px(0x2a90a8, 0, 5, 16, 1, 0.45);
+  w.px(0x2a90a8, 1, 13, 14, 1, 0.4);
+  // Shoreline foam edge along the bottom (reads when abutting sand/deck).
+  w.px(0xa8f0f8, 0, 15, 16, 1, 0.35);
+  w.px(0x6ae8f0, 2, 14, 3, 1, 0.5);
+  w.px(0x6ae8f0, 9, 14, 4, 1, 0.45);
+  sparkle(fine, [[6, 5], [14, 3], [22, 9], [10, 15], [26, 19], [4, 22]], 0xffffff, 0.65);
+  speckle(fine, 0, 0, TILE_SIZE, TILE_SIZE, [
+    [0x8af0ff, 0.28], [0x082030, 0.32], [0x4ad4de, 0.22], [0xffffff, 0.2],
+  ], 0.18, 29);
+  glow(fine, 10, 6, [{ r: 8, alpha: 0.09 }, { r: 4, alpha: 0.16 }], 0x9ef6ff);
+  glow(fine, 24, 20, [{ r: 7, alpha: 0.08 }, { r: 3, alpha: 0.14 }], 0x9ef6ff);
+  ambientLight(fine, TILE_SIZE, TILE_SIZE, { lift: 0.1, drop: 0.05 });
 }
 
 function drawVipTile(g) {
   const w = makeWriter(g);
+  const fine = fineWriter(g);
   w.px(0x060408, 0, 0, 16, 16);
   w.px(0x0c0810, 1, 1, 14, 14);
   w.px(0x121018, 2, 2, 12, 12);
@@ -285,50 +433,91 @@ function drawVipTile(g) {
   w.px(0xffe890, 7, 7, 2, 2);
   w.px(0xfff0b0, 7, 7, 1, 1);
   w.px(0x1a1520, 5, 5, 6, 6);
+  // Black-marble fleck plus a gold-dust shimmer along every vein — the
+  // detail that separates painted stone from lacquered slab.
+  speckle(fine, 4, 4, 24, 24, [[0x241f30, 0.32], [0x080610, 0.3]], 0.16, 83);
+  sparkle(fine, [[5, 7], [17, 5], [9, 19], [23, 15], [13, 9]], 0xffe890, 0.5);
+  glow(fine, 15, 15, [{ r: 7, alpha: 0.09 }, { r: 4, alpha: 0.16 }], 0xf4dc84);
+  ambientLight(fine, TILE_SIZE, TILE_SIZE, { lift: 0.05, drop: 0.08 });
 }
 
 function drawAquaTile(g) {
   const w = makeWriter(g);
+  const fine = fineWriter(g);
+  // Pool-deck travertine: warm-cool stone checkers with per-tile edge bevels.
   w.px(0x0a1820, 0, 0, 16, 16);
-  // Pool deck mosaic
   for (let y = 0; y < 16; y += 4) {
     for (let x = 0; x < 16; x += 4) {
-      const tone = ((x + y) / 4) % 2 === 0 ? 0x1a3848 : 0x143040;
-      w.px(tone, x, y, 4, 4);
-      w.px(0x244858, x + 1, y + 1, 2, 2);
+      const warm = ((x + y) / 4) % 2 === 0;
+      w.px(warm ? 0x2a4858 : 0x1a3444, x, y, 4, 4);
+      w.px(warm ? 0x3a6070 : 0x284858, x, y, 3, 1);
+      w.px(warm ? 0x3a6070 : 0x284858, x, y, 1, 3);
+      w.px(warm ? 0x142838 : 0x0e2030, x + 3, y, 1, 4);
+      w.px(warm ? 0x142838 : 0x0e2030, x, y + 3, 4, 1);
+      w.px(warm ? 0x4a7888 : 0x386878, x + 1, y + 1, 1, 1);
     }
   }
   groutGrid(w, 0x0c2030, 4);
-  // Shimmer water line
+  // Wet band where deck meets pool water — foam + caustic.
+  w.px(0x1a5060, 0, 11, 16, 5);
   w.px(0x39c5cf, 0, 10, 16, 2);
-  w.px(0x6ae8f0, 2, 10, 4, 1);
-  w.px(0x4ad4de, 8, 11, 6, 1);
-  w.px(0x80f8ff, 12, 10, 2, 1, 0.6);
-  w.px(0x1a5060, 0, 12, 16, 4);
-  w.px(0x2a7080, 3, 13, 8, 1);
+  w.px(0x6ae8f0, 1, 10, 4, 1);
+  w.px(0x80f8ff, 3, 10, 1, 1);
+  w.px(0x4ad4de, 7, 11, 6, 1);
+  w.px(0x80f8ff, 12, 10, 3, 1, 0.7);
+  w.px(0x2a7080, 2, 13, 5, 1);
+  w.px(0x2a7080, 10, 14, 4, 1);
+  sparkle(fine, [[8, 20], [18, 21], [26, 20]], 0xffffff, 0.55);
+  speckle(fine, 0, 0, TILE_SIZE, 20, [
+    [0x4a7888, 0.28], [0x0a1c28, 0.3], [0xc8a878, 0.12],
+  ], 0.2, 97);
+  speckle(fine, 0, 20, TILE_SIZE, 12, [
+    [0x8af0ff, 0.3], [0x123844, 0.28], [0xffffff, 0.18],
+  ], 0.18, 101);
+  glow(fine, 16, 21, [{ r: 9, alpha: 0.09 }, { r: 5, alpha: 0.14 }], 0x9ef6ff);
+  ambientLight(fine, TILE_SIZE, TILE_SIZE, { lift: 0.09, drop: 0.05 });
 }
 
 function drawPlantTile(g) {
   const w = makeWriter(g);
+  const fine = fineWriter(g);
+  // Resort landscaping: warm flagstone under dappled tropical canopy.
   tileFrame(w, 0x283028, 0x384838, 0x182018);
   w.px(0x304030, 2, 2, 12, 12);
-  // Flagstone
-  w.px(0x485848, 2, 2, 5, 5);
-  w.px(0x586858, 8, 2, 6, 5);
-  w.px(0x485848, 2, 8, 6, 6);
-  w.px(0x586858, 9, 8, 5, 6);
-  w.px(0x688868, 3, 3, 3, 3);
-  w.px(0x688868, 9, 3, 4, 3);
-  // Scattered leaves
-  w.px(0x2d8a48, 4, 5, 2, 1);
-  w.px(0x4acc68, 5, 4, 1, 1);
-  w.px(0x2d8a48, 11, 9, 2, 1);
-  w.px(0x4acc68, 12, 8, 1, 1);
-  w.px(0x1a5a30, 7, 11, 2, 1);
+  // Irregular flagstones with individual bevels.
+  const stones = [
+    [2, 2, 6, 5, 0x4a5a40], [8, 2, 6, 4, 0x586848],
+    [2, 7, 5, 7, 0x425438], [7, 6, 7, 8, 0x506040],
+  ];
+  for (const [sx, sy, sw, sh, tone] of stones) {
+    w.px(tone, sx, sy, sw, sh);
+    w.px(mix(tone, 0xffffff, 0.18), sx, sy, sw - 1, 1);
+    w.px(mix(tone, 0xffffff, 0.12), sx, sy, 1, sh - 1);
+    w.px(shade(tone, 0.7), sx + sw - 1, sy, 1, sh);
+    w.px(shade(tone, 0.7), sx, sy + sh - 1, sw, 1);
+  }
+  // Leaf litter + moss tufts (cozy greenery clutter).
+  w.px(0x1a5a30, 3, 4, 2, 1);
+  w.px(0x2d8a48, 4, 3, 2, 1);
+  w.px(0x4acc68, 5, 3, 1, 1);
+  w.px(0x70f090, 5, 2, 1, 1);
+  w.px(0x1a5a30, 10, 8, 3, 1);
+  w.px(0x2d8a48, 11, 7, 2, 1);
+  w.px(0x4acc68, 12, 7, 1, 1);
+  w.px(0x186028, 6, 11, 3, 1);
+  w.px(0x2d8a48, 7, 10, 2, 1);
+  w.px(0xc8a848, 9, 5, 1, 1); // warm Nevada litter fleck
+  w.px(0xe8c878, 14, 12, 1, 1);
+  speckle(fine, 2, 2, 28, 28, [
+    [0x789878, 0.28], [0x304430, 0.3], [0x4acc68, 0.16], [0xd8b868, 0.1],
+  ], 0.22, 109);
+  glow(fine, 10, 8, [{ r: 7, alpha: 0.08 }, { r: 3, alpha: 0.14 }], 0xc8f0c0);
+  ambientLight(fine, TILE_SIZE, TILE_SIZE, { lift: 0.08, drop: 0.06 });
 }
 
 function drawBarTile(g) {
   const w = makeWriter(g);
+  const fine = fineWriter(g);
   w.px(0x2a1810, 0, 0, 16, 16);
   // Dark hardwood parquet
   w.px(0x3a2418, 0, 0, 8, 8);
@@ -344,10 +533,17 @@ function drawBarTile(g) {
   w.px(0xc4a070, 3, 3, 1, 1, 0.5);
   w.px(0x1a1008, 7, 0, 2, 16);
   w.px(0x1a1008, 0, 7, 16, 2);
+  // Parquet grain running with each plank, plus a lacquer sheen.
+  speckle(fine, 2, 2, 12, 12, [[0xb0885a, 0.24], [0x2a180e, 0.28]], 0.16, 113);
+  speckle(fine, 18, 2, 12, 12, [[0xb0885a, 0.24], [0x2a180e, 0.28]], 0.16, 127);
+  speckle(fine, 2, 18, 12, 12, [[0xb0885a, 0.24], [0x2a180e, 0.28]], 0.16, 131);
+  speckle(fine, 18, 18, 12, 12, [[0xb0885a, 0.24], [0x2a180e, 0.28]], 0.16, 137);
+  ambientLight(fine, TILE_SIZE, TILE_SIZE, { lift: 0.07, drop: 0.07 });
 }
 
 function drawSlotTile(g) {
   const w = makeWriter(g);
+  const fine = fineWriter(g);
   tileFrame(w, 0x1a0818, 0x2a1028, 0x0c040c);
   ditherWeave(w, 1, 1, 14, 14, 0x220c20, 0x1a0818);
   // Neon strip accents
@@ -359,10 +555,18 @@ function drawSlotTile(g) {
   w.px(0xffe890, 7, 4, 2, 1, 0.6);
   w.px(0xffe890, 7, 10, 2, 1, 0.6);
   w.px(0x3a1838, 3, 4, 10, 8);
+  // Real neon bloom instead of a flat tint strip, plus carpet grain so the
+  // aisle floor doesn't read as a single dark rectangle.
+  speckle(fine, 2, 2, 28, 28, [[0x3a1838, 0.28], [0x1a0818, 0.3]], 0.16, 139);
+  glow(fine, 16, 2, [{ r: 8, alpha: 0.07 }], 0xff4a60);
+  glow(fine, 16, 30, [{ r: 8, alpha: 0.07 }], 0x48d8e8);
+  glow(fine, 15, 15, [{ r: 6, alpha: 0.08 }, { r: 3, alpha: 0.15 }], 0xffe890);
+  ambientLight(fine, TILE_SIZE, TILE_SIZE, { lift: 0.05, drop: 0.08 });
 }
 
 function drawScreenTile(g) {
   const w = makeWriter(g);
+  const fine = fineWriter(g);
   tileFrame(w, 0x1a1028, 0x2a1838, 0x0c0818);
   ditherWeave(w, 1, 1, 14, 14, 0x221430, 0x1a1028);
   // TV glow spill on carpet
@@ -372,59 +576,89 @@ function drawScreenTile(g) {
   w.px(0x50e8a0, 5, 9, 6, 2, 0.15);
   w.px(0x304060, 3, 2, 10, 1);
   w.px(0x405080, 4, 3, 8, 1);
+  // Soft screen-glow bloom that actually falls off, plus carpet grain.
+  speckle(fine, 2, 2, 28, 28, [[0x2a1838, 0.26], [0x140a1e, 0.3]], 0.14, 149);
+  glow(fine, 16, 14, [{ r: 10, alpha: 0.06 }, { r: 6, alpha: 0.11 }], 0x6ae8f0);
+  ambientLight(fine, TILE_SIZE, TILE_SIZE, { lift: 0.05, drop: 0.07 });
 }
 
 function drawVoidTile(g) {
   const w = makeWriter(g);
+  const fine = fineWriter(g);
   // Off-map filler: near-black with a faint weave so it reads as depth, not a hole.
   w.px(0x040308, 0, 0, 16, 16);
   ditherWeave(w, 0, 0, 16, 16, 0x070510, 0x040308);
   w.px(0x0a0818, 4, 4, 8, 8);
   w.px(0x100c20, 7, 7, 2, 2);
+  speckle(fine, 0, 0, TILE_SIZE, TILE_SIZE, [[0x0c0a18, 0.2], [0x020208, 0.24]], 0.08, 3);
 }
 
 function drawRoadTile(g) {
   const w = makeWriter(g);
-  // Porte-cochère asphalt: coarse aggregate, oil sheen, worn lane paint.
-  w.px(0x22212a, 0, 0, 16, 16);
-  ditherWeave(w, 0, 0, 16, 16, 0x2a2933, 0x24232d);
-  w.px(0x33323d, 1, 1, 6, 3);
-  w.px(0x2e2d38, 9, 5, 6, 4);
-  w.px(0x1a1922, 3, 6, 4, 1);
-  w.px(0x1a1922, 9, 11, 5, 1);
-  w.px(0x15141c, 4, 13, 3, 1);
-  w.px(0x3d3c48, 12, 2, 2, 1);
-  w.px(0x3d3c48, 2, 10, 2, 1);
-  // Lane stripe, sun-bleached and chipped
-  w.px(0x8a8770, 0, 7, 16, 2);
-  w.px(0xa8a58c, 0, 7, 16, 1);
-  w.px(0x6a6752, 5, 7, 2, 2);
-  w.px(0x6a6752, 12, 8, 3, 1);
-  w.px(0x2a2933, 8, 7, 1, 2);
-  w.px(0x4a4956, 0, 15, 16, 1);
+  const fine = fineWriter(g);
+  // Strip asphalt under Nevada sun: warm-grey aggregate, heat shimmer, bleached paint.
+  w.px(0x2a2824, 0, 0, 16, 16);
+  ditherWeave(w, 0, 0, 16, 16, 0x34322e, 0x2c2a26);
+  w.px(0x3e3a34, 1, 1, 6, 3);
+  w.px(0x36322e, 9, 5, 6, 4);
+  w.px(0x1e1c18, 3, 6, 4, 1);
+  w.px(0x1e1c18, 9, 11, 5, 1);
+  w.px(0x181610, 4, 13, 3, 1);
+  w.px(0x4a463e, 12, 2, 2, 1);
+  w.px(0x4a463e, 2, 10, 2, 1);
+  // Sun-baked lane stripe
+  w.px(0x9a8e60, 0, 7, 16, 2);
+  w.px(0xc0b480, 0, 7, 16, 1);
+  w.px(0x7a6e48, 5, 7, 2, 2);
+  w.px(0x7a6e48, 12, 8, 3, 1);
+  w.px(0x2c2a26, 8, 7, 1, 2);
+  w.px(0x5a5448, 0, 15, 16, 1);
+  // Warm heat-haze flecks + aggregate grit.
+  speckle(fine, 0, 0, TILE_SIZE, TILE_SIZE, [
+    [0x524e44, 0.3], [0x181610, 0.32], [0x6a6458, 0.16], [0xe8c878, 0.08],
+  ], 0.24, 151);
+  glow(fine, 16, 4, [{ r: 8, alpha: 0.05 }], 0xffd080);
+  ambientLight(fine, TILE_SIZE, TILE_SIZE, { lift: 0.1, drop: 0.05 });
 }
 
 function drawSandTile(g) {
   const w = makeWriter(g);
-  // Beach club sand: warm base, wind ripples, a few shell flecks.
-  w.px(0xc9ad72, 0, 0, 16, 16);
-  ditherWeave(w, 0, 0, 16, 16, 0xd8bd83, 0xceb379);
-  w.px(0xe6cf9c, 0, 0, 16, 1);
-  w.px(0xb89a5e, 0, 15, 16, 1);
+  const fine = fineWriter(g);
+  // Nevada heat: sun-bleached ochre sand with wind ripples and warm glare.
+  w.px(0xc4a060, 0, 0, 16, 16);
+  ditherWeave(w, 0, 0, 16, 16, 0xd8b878, 0xc8a868);
+  // Hot-spot bands — brighter toward the sunlit top.
+  w.px(0xe8d090, 0, 0, 16, 3, 0.45);
+  w.px(0xf0dc9c, 0, 0, 16, 1, 0.5);
+  w.px(0xa88848, 0, 14, 16, 2);
+  w.px(0x987838, 0, 15, 16, 1);
+  // Wind-carved ripples (organic, not grid-aligned).
   for (let i = 0; i < 16; i += 1) {
-    const wave = 3 + Math.round(Math.sin(i / 2.4) * 2);
-    w.px(0xbfa268, i, wave + 2, 1, 1);
-    w.px(0xe6cf9c, i, wave + 3, 1, 1);
-    w.px(0xbfa268, i, wave + 9, 1, 1);
+    const wave = 2 + Math.round(Math.sin(i / 2.2) * 2.2);
+    w.px(0xb89450, i, wave + 2, 1, 1);
+    w.px(0xe8d090, i, wave + 3, 1, 1);
+    w.px(0xb89450, i, wave + 8, 1, 1);
+    w.px(0xe0c888, i, wave + 9, 1, 1);
   }
-  w.px(0xfff0c8, 4, 6, 1, 1);
-  w.px(0xfff0c8, 11, 12, 1, 1);
-  w.px(0xa88c50, 7, 9, 2, 1);
+  // Shell flecks + darker grit pockets.
+  w.px(0xfff0c8, 3, 5, 1, 1);
+  w.px(0xfff8e0, 4, 5, 1, 1);
+  w.px(0xfff0c8, 11, 11, 1, 1);
+  w.px(0xa07838, 7, 8, 2, 1);
+  w.px(0x886828, 8, 13, 2, 1);
   w.px(0xf0e0b8, 13, 3, 2, 1);
+  w.px(0xd8a858, 1, 10, 1, 1);
+  // Dense grain + desert heat haze lift.
+  speckle(fine, 0, 0, TILE_SIZE, TILE_SIZE, [
+    [0xfff4cc, 0.42], [0x9a7438, 0.32], [0xe8d090, 0.24], [0xffffff, 0.18],
+  ], 0.32, 157);
+  glow(fine, 8, 4, [{ r: 10, alpha: 0.06 }], 0xffe8a0);
+  ambientLight(fine, TILE_SIZE, TILE_SIZE, { lift: 0.14, drop: 0.04 });
 }
 
 function drawStageTile(g) {
   const w = makeWriter(g);
+  const fine = fineWriter(g);
   // House of Blues boards: black lacquer catching magenta and cyan wash.
   w.px(0x14101c, 0, 0, 16, 16);
   w.px(0x1e1828, 0, 0, 16, 7);
@@ -443,11 +677,17 @@ function drawStageTile(g) {
   w.px(0x48a0b8, 10, 11, 3, 1, 0.45);
   w.px(0xffe890, 13, 3, 2, 1, 0.3);
   w.px(0xffffff, 3, 5, 1, 1, 0.35);
+  // Lacquer grain plus a real rig-light bloom instead of flat washes.
+  speckle(fine, 0, 0, TILE_SIZE, TILE_SIZE, [[0x241c30, 0.24], [0x0a0810, 0.28]], 0.14, 163);
+  glow(fine, 6, 6, [{ r: 7, alpha: 0.09 }], 0x9a58c8);
+  glow(fine, 22, 24, [{ r: 6, alpha: 0.08 }], 0x58c0d8);
+  ambientLight(fine, TILE_SIZE, TILE_SIZE, { lift: 0.05, drop: 0.06 });
 }
 
 function drawSpaTile(g) {
   const w = makeWriter(g);
-  // Bathhouse: honed stone squares, grout, a wet-looking highlight.
+  const fine = fineWriter(g);
+  // Bathhouse / pool-adjacent honed stone: wet sheen, cool mist tones.
   w.px(0x3a4a50, 0, 0, 16, 16);
   const stones = [[1, 1], [9, 1], [1, 9], [9, 9]];
   for (const [sx, sy] of stones) {
@@ -457,37 +697,55 @@ function drawSpaTile(g) {
     w.px(0x4a5a60, sx + 5, sy, 1, 6);
     w.px(0x4a5a60, sx, sy + 5, 6, 1);
     w.px(0x82949a, sx + 1, sy + 1, 2, 1);
+    w.px(0x9ab0b8, sx + 1, sy + 2, 1, 1);
   }
   groutGrid(w, 0x2e3c42, 8);
   w.px(0x2e3c42, 0, 0, 16, 1);
   w.px(0x2e3c42, 0, 0, 1, 16);
-  w.px(0xa8c0c8, 3, 3, 1, 1, 0.5);
-  w.px(0xa8c0c8, 11, 11, 1, 1, 0.4);
-  w.px(0x9ab8c8, 12, 4, 2, 1, 0.3);
+  w.px(0xa8c0c8, 3, 3, 1, 1, 0.55);
+  w.px(0xa8c0c8, 11, 11, 1, 1, 0.45);
+  w.px(0x9ab8c8, 12, 4, 2, 1, 0.35);
+  w.px(0xc0d8e0, 4, 10, 2, 1, 0.3);
+  sparkle(fine, [[7, 7], [23, 23], [9, 22]], 0xffffff, 0.45);
+  speckle(fine, 2, 2, 28, 28, [[0x7a929a, 0.26], [0x2c3a40, 0.28], [0xc0d8e0, 0.14]], 0.2, 167);
+  glow(fine, 8, 8, [{ r: 6, alpha: 0.09 }], 0xd0e8ec);
+  glow(fine, 22, 22, [{ r: 6, alpha: 0.09 }], 0xd0e8ec);
+  ambientLight(fine, TILE_SIZE, TILE_SIZE, { lift: 0.08, drop: 0.05 });
 }
 
 function drawGlassTile(g) {
   const w = makeWriter(g);
-  // Shark Reef acrylic: lit water behind a mullion, with a specular streak.
+  const fine = fineWriter(g);
+  // Shark Reef acrylic: lit turquoise water behind a mullion, with caustic swim.
   w.px(0x18303c, 0, 0, 16, 16);
   w.px(0x24485a, 1, 1, 14, 14);
   w.px(0x2a94a4, 1, 1, 6, 14);
   w.px(0x39c5cf, 1, 3, 6, 9);
+  w.px(0x4ad4de, 2, 5, 4, 4);
   w.px(0x2a94a4, 9, 1, 6, 14);
   w.px(0x2f9fb0, 9, 4, 6, 8);
+  w.px(0x39c5cf, 10, 6, 4, 4);
   w.px(0x6ae8f0, 2, 4, 2, 6, 0.7);
   w.px(0xa8e8f0, 2, 4, 1, 6);
   w.px(0x80f8ff, 11, 6, 1, 4, 0.6);
+  w.px(0xffffff, 3, 6, 1, 2, 0.4);
   // Mullion and frame
   w.px(0x0e1c24, 7, 0, 2, 16);
   w.px(0x1e3a48, 7, 0, 1, 16);
   w.px(0x0e1c24, 0, 0, 16, 1);
   w.px(0x0e1c24, 0, 15, 16, 1);
   w.px(0x3a6878, 0, 1, 16, 1, 0.6);
+  sparkle(fine, [[5, 10], [6, 14], [22, 12], [24, 18]], 0xffffff, 0.55);
+  speckle(fine, 2, 2, 12, 28, [[0x8af0ff, 0.28], [0x123844, 0.26], [0xffffff, 0.14]], 0.2, 173);
+  speckle(fine, 18, 2, 12, 28, [[0x8af0ff, 0.28], [0x123844, 0.26], [0xffffff, 0.14]], 0.2, 179);
+  glow(fine, 5, 12, [{ r: 7, alpha: 0.11 }], 0xa8e8f0);
+  glow(fine, 24, 16, [{ r: 6, alpha: 0.09 }], 0xa8e8f0);
+  ambientLight(fine, TILE_SIZE, TILE_SIZE, { lift: 0.09, drop: 0.05 });
 }
 
 function drawRopeTile(g) {
   const w = makeWriter(g);
+  const fine = fineWriter(g);
   // Velvet rope stanchion on the carpet it guards.
   tileFrame(w, 0x2a2010, 0x3a2a14, 0x1a1408);
   ditherWeave(w, 1, 1, 14, 14, 0x3a2a14, 0x342410);
@@ -512,6 +770,11 @@ function drawRopeTile(g) {
   w.px(0xb03048, 10, 6, 6, 1);
   w.px(0xd05068, 1, 6, 2, 1, 0.6);
   w.px(0xd05068, 13, 6, 2, 1, 0.6);
+  // Velvet nap on the swags and a brass gleam running down the post.
+  speckle(fine, 0, 10, 12, 8, [[0xa03858, 0.26], [0x4a0818, 0.28]], 0.2, 191);
+  speckle(fine, 20, 10, 12, 8, [[0xa03858, 0.26], [0x4a0818, 0.28]], 0.2, 197);
+  glow(fine, 16, 8, [{ r: 6, alpha: 0.08 }], 0xffe890);
+  ambientLight(fine, TILE_SIZE, TILE_SIZE, { lift: 0.06, drop: 0.06 });
 }
 
 const TILE_DRAWERS = {
@@ -546,6 +809,7 @@ const TILE_DRAWERS = {
 const SCUFFED_FLOORS = new Set([
   TILE.LOBBY, TILE.CARPET, TILE.FELT, TILE.VIP,
   TILE.ROAD, TILE.SAND, TILE.SPA, TILE.PATH,
+  TILE.AQUA, TILE.WATER, TILE.PLANT, TILE.BAR, TILE.STAGE, TILE.TRIM,
 ]);
 
 const SCUFFS = [
@@ -646,14 +910,14 @@ const CHAR_BODY = {
     "......OWMRRRwwwwRRRMWO..........",
     ".....OWBBBRRwwwwRRBBBWO.........",
     "....OWBBBBBRwwwwRBBBBBWO........",
-    "....OBBBBBBRwwwwRBBBBBBO........",
-    "....OBBBBBBRwuuwRBBBBBBO........",
+    "....OWBBBMBRwwwwRMBBBBWO........",
+    "....OBBBBMBRwuuwRMBBBBBO........",
+    "...OoWBBBBBBwLLwBBBBBBWoO.......",
     "...OoBBBBBBBwLLwBBBBBBBoO.......",
-    "...OoBBBBBBBwLLwBBBBBBBoO.......",
-    "...OoBBBBBBBBwwBBBBBBBBoO.......",
+    "...OoBBBBMBBBwwBBBMBBBBoO.......",
     "...OSBBBBBBBBwwBBBBBBBBSO.......",
     "....OBBBBBBBBwwBBBBBBBBO........",
-    "....OBBBBBBBBwwBBBBBBBBO........",
+    "....OBBBBBDBBBuBBDBBBBBO........",
     "....OBBBBBBBBBuBBBBBBBBO........",
     "....ObbbbbbbbbbbbbbbbbO.........",
     ".....ObbbbbbbbbbbbbbbO..........",
@@ -677,14 +941,14 @@ const CHAR_BODY = {
     "......OWMRRRRRRRRRRMWO..........",
     ".....OWBBBRRRRRRRRBBBWO.........",
     "....OWBBBBBRRRRRRBBBBBWO........",
-    "....OBBBBBBBBBBBBBBBBBBO........",
-    "....OBBBBBBBBBBBBBBBBBBO........",
+    "....OWBBBMBBBBBBBMBBBBWO........",
+    "....OBBBBMBBBBBBBMBBBBBO........",
+    "...OoWBBBBBBBBBBBBBBBBWoO.......",
     "...OoBBBBBBBBBBBBBBBBBBoO.......",
-    "...OoBBBBBBBBBBBBBBBBBBoO.......",
-    "...OoBBBBBBBBBBBBBBBBBBoO.......",
+    "...OoBBBBMBBBBBBMBBBBBBoO.......",
     "...OSBBBBBBBBBBBBBBBBBBSO.......",
     "....OBBBBBBBBBBBBBBBBBBO........",
-    "....OBBBBBBBBBBBBBBBBBBO........",
+    "....OBBBBBDBBBBBBDBBBBBO........",
     "....OBBBBBBBBBBBBBBBBBBO........",
     "....ObbbbbbbbbbbbbbbbbO.........",
     ".....ObbbbbbbbbbbbbbbO..........",
@@ -708,14 +972,14 @@ const CHAR_BODY = {
     "......OWMRRRwwwwRMO.............",
     ".....OWBBBRwwwwRRBO.............",
     "....OWBBBBRwwwwRBBO.............",
-    "....OBBBBBRwuuwRBBO.............",
-    "....OBBBBBBwLLwBBBO.............",
-    "...OoBBBBBBwLLwBBBoO............",
-    "...OoBBBBBBBwwBBBBoO............",
+    "....OWBBBMBRwuuwRBO.............",
+    "....OWBBBBBwLLwBBBO.............",
+    "...OoWBBBBBwLLwBBBoO............",
+    "...OoBBBBBMBBwwBBBoO............",
     "...OoBBBBBBBwwBBBBoO............",
     "...OSBBBBBBBwwBBBBSO............",
     "....OBBBBBBBwwBBBBO.............",
-    "....OBBBBBBBuBBBBBO.............",
+    "....OBBBBBBBuBBDBBO.............",
     "....OBBBBBBBBBBBBBO.............",
     "....ObbbbbbbbbbbbO..............",
     ".....ObbbbbbbbbbO...............",
@@ -734,7 +998,7 @@ const CHAR_LEGS = [
     "......OnnnnOOnnnO...............",
     "......OnnnnOOnnnO...............",
     "......OnnnnOOnnnO...............",
-    "......OKkkkOOKkkO...............",
+    "......OKKkkOOKKkO...............",
     "......OKkkkOOKkkO...............",
     ".....,OOOOO,,OOOO,..............",
     ".....,OOOO,,,,OOOO,.............",
@@ -747,10 +1011,10 @@ const CHAR_LEGS = [
     "......ONNNAAAnnnO...............",
     "......ONNNnOOnnnO...............",
     "......ONNNnOOnnnO...............",
-    "......OKkkkOOnnnO...............",
+    "......OKKkkOOnnnO...............",
     "......OKkkkOOnnnO...............",
     "............OnnnO...............",
-    "............OKkkO...............",
+    "............OKKkO...............",
     "............OKkkO...............",
     ".....,,,,,,OOOOOO,..............",
     ".....,,,,,OOOOOOO,..............",
@@ -763,10 +1027,10 @@ const CHAR_LEGS = [
     "......ONNNAAAnnnO...............",
     "......ONNNnOOnnnO...............",
     "......ONNNnOOnnnO...............",
-    "......OnnnnOOKkkO...............",
+    "......OnnnnOOKKkO...............",
     "......OnnnnOOKkkO...............",
     "......OnnnO.....................",
-    "......OKkkO.....................",
+    "......OKKkO.....................",
     "......OKkkO.....................",
     ".....,OOOOOO,,,,,,..............",
     ".....,OOOOOOO,,,,,..............",
@@ -800,15 +1064,56 @@ function paintGrid(w, rows, legend, top) {
   });
 }
 
-function drawCharacterPixels(w, palette, dir, frame) {
+/**
+ * Soft graded contact shadow beneath the feet — a falloff blob instead of the
+ * two flat bars the raw legend can express, the same trick the tile glows use.
+ */
+function paintContactShadow(w) {
+  glow(w, CHAR_W / 2, LEGS_TOP + 12, [
+    { r: 11, alpha: 0.05 },
+    { r: 8, alpha: 0.08 },
+    { r: 5, alpha: 0.12 },
+  ], 0x000000);
+}
+
+/** A few hand-placed highlights that read as life without touching the legend grid. */
+function paintFrontDetail(w, palette) {
+  // Eye glint and a hair-shine fleck, both inside the "down" silhouette.
+  sparkle(w, [[11, 9], [17, 9]], 0xffffff, 0.55);
+  sparkle(w, [[12, 4]], mix(palette.hair, 0xffffff, 0.5), 0.6);
+}
+
+/** Polished shoe-cap highlight — shared by every direction's leg frame. */
+function paintShoeShine(w) {
+  sparkle(w, [[8, LEGS_TOP + 8], [14, LEGS_TOP + 8]], 0x6a6a78, 0.5);
+}
+
+/**
+ * A small gold pin on the right lapel — the detail that reads as "on shift"
+ * at a glance and separates casino staff from a guest in the same tuxedo.
+ */
+function paintStaffBadge(w) {
+  const y = BODY_TOP + 17;
+  w.px(OUTLINE, 19, y, 2, 2);
+  w.px(0xe8c547, 19, y, 2, 1);
+  w.px(0xffe890, 19, y, 1, 1);
+}
+
+function drawCharacterPixels(w, palette, dir, frame, opts = {}) {
   const legend = CHAR_LEGEND(palette);
   const legs = CHAR_LEGS[frame] ?? CHAR_LEGS[0];
   const body = CHAR_BODY_BY_DIR[dir] ?? CHAR_BODY_BY_DIR.down;
   // Frames 1 and 2 lift a foot, so the upper body rides a pixel higher. The leg
   // block always starts at LEGS_TOP, which keeps the waist joined either way.
   const bob = frame === 0 ? 0 : -1;
+  paintContactShadow(w);
   paintGrid(w, legs, legend, LEGS_TOP);
   paintGrid(w, body, legend, BODY_TOP + bob);
+  paintShoeShine(w);
+  if (dir === "down" && frame === 0) {
+    paintFrontDetail(w, palette);
+    if (opts.badge) paintStaffBadge(w);
+  }
 }
 
 /** The authored grids, so tests can assert their shape and legend coverage. */
@@ -823,15 +1128,15 @@ export function characterGrids() {
   };
 }
 
-function drawCharacter(g, palette, dir, frame) {
+function drawCharacter(g, palette, dir, frame, opts) {
   // Characters use CHAR_SCALE (1), not the tile SCALE (2). Drawing at tile
   // scale painted a 64×88 sprite into a 32×44 texture — only the top-left
   // quarter was visible in the overworld.
-  drawCharacterPixels(makeWriter(g, CHAR_SCALE), palette, dir, frame);
+  drawCharacterPixels(makeWriter(g, CHAR_SCALE), palette, dir, frame, opts);
 }
 
 /** Draw character to a 2D canvas (for previews and dialogue portraits). */
-export function drawCharacterToCanvas(canvas, palette, dir = "down", frame = 0, pixelScale = 2) {
+export function drawCharacterToCanvas(canvas, palette, dir = "down", frame = 0, pixelScale = 2, opts) {
   const ctx = canvas.getContext("2d");
   const w = CHAR_W * pixelScale;
   const h = CHAR_H * pixelScale;
@@ -839,7 +1144,7 @@ export function drawCharacterToCanvas(canvas, palette, dir = "down", frame = 0, 
   canvas.height = h;
   ctx.imageSmoothingEnabled = false;
   ctx.clearRect(0, 0, w, h);
-  drawCharacterPixels(makeWriter(canvas, pixelScale), palette, dir, frame);
+  drawCharacterPixels(makeWriter(canvas, pixelScale), palette, dir, frame, opts);
 }
 
 function createPlayerAnims(scene, base) {
@@ -912,6 +1217,7 @@ const INTERACT_GRID = [
 
 function drawInteractIcon(g) {
   const w = makeWriter(g);
+  const fine = fineWriter(g);
   const legend = {
     O: [OUTLINE, 1],
     W: [0xfff6e0, 1],
@@ -923,10 +1229,13 @@ function drawInteractIcon(g) {
   w.px(0xffffff, 3, 2, 4, 1);
   w.px(0xe4d6b8, 2, 10, 3, 1);
   w.px(0xe4d6b8, 11, 8, 3, 1);
+  glow(fine, 16, 10, [{ r: 6, alpha: 0.1 }, { r: 3, alpha: 0.18 }], 0xffe890);
+  sparkle(fine, [[10, 5], [20, 6]], 0xffffff, 0.5);
 }
 
 function drawBarDecor(g) {
   const w = makeWriter(g);
+  const fine = fineWriter(g);
   // Back bar + mirror
   w.px(OUTLINE, 0, 2, 16, 14);
   w.px(0x3a2010, 1, 3, 14, 13);
@@ -958,37 +1267,57 @@ function drawBarDecor(g) {
   w.px(0xff4a60, 4, 0, 8, 2);
   w.px(0xff8090, 5, 0, 6, 1, 0.6);
   w.px(OUTLINE, 5, 0, 6, 2);
+  // Bottle-glass glints, a mirror sheen, and a real neon-sign halo.
+  sparkle(fine, [[6, 16], [12, 16], [18, 16], [24, 16]], 0xffffff, 0.7);
+  glow(fine, 16, 12, [{ r: 6, alpha: 0.1 }, { r: 3, alpha: 0.18 }], 0x9ec8e0);
+  glow(fine, 16, 1, [{ r: 9, alpha: 0.1 }, { r: 5, alpha: 0.18 }], 0xff4a60);
+  ambientLight(fine, TILE_SIZE, TILE_SIZE, { lift: 0.06, drop: 0.06 });
 }
 
 function drawPlantDecor(g) {
   const w = makeWriter(g);
-  // Ceramic pot
+  const fine = fineWriter(g);
+  // Tropical planter: terracotta pot + layered palm canopy (resort greenery).
   w.px(OUTLINE, 3, 10, 10, 6);
   w.px(0x5c3a1a, 4, 11, 8, 5);
   w.px(0x7a5030, 4, 10, 8, 2);
   w.px(0x9a7040, 5, 10, 6, 1);
   w.px(0xc4a070, 5, 10, 3, 1, 0.6);
   w.px(0x3a2410, 6, 12, 4, 3);
-  // Trunk
+  w.px(0xd8a060, 5, 11, 2, 1, 0.4); // pot glaze fleck
+  // Trunk with bark shading
   w.px(OUTLINE, 7, 7, 2, 4);
   w.px(0x4a3020, 7, 7, 2, 3);
-  // Fronds
+  w.px(0x6a4828, 7, 7, 1, 2);
+  // Frond clusters — deep shadow under, bright tip on top (reference canopy).
   w.px(OUTLINE, 2, 2, 12, 9);
-  w.px(0x1a5a30, 3, 3, 10, 8);
-  w.px(0x2d8a48, 4, 2, 8, 7);
-  w.px(0x4acc68, 5, 1, 6, 6);
-  w.px(0x70f090, 6, 0, 4, 5);
+  w.px(0x145028, 3, 4, 10, 7);
+  w.px(0x1a5a30, 3, 3, 10, 6);
+  w.px(0x2d8a48, 4, 2, 8, 6);
+  w.px(0x4acc68, 5, 1, 6, 5);
+  w.px(0x70f090, 6, 0, 4, 4);
   w.px(0x90ffb0, 7, 0, 2, 3);
   w.px(0xb0ffc8, 7, 0, 1, 1);
-  w.px(0x2d8a48, 2, 4, 2, 3);
-  w.px(0x4acc68, 1, 3, 2, 2);
-  w.px(0x2d8a48, 12, 4, 2, 3);
-  w.px(0x4acc68, 13, 3, 2, 2);
-  w.px(0x1a5a30, 5, 7, 6, 2);
+  w.px(0xc8ffe0, 8, 0, 1, 1);
+  // Side fronds
+  w.px(0x1a5a30, 1, 5, 3, 3);
+  w.px(0x2d8a48, 1, 4, 2, 2);
+  w.px(0x4acc68, 0, 3, 2, 2);
+  w.px(0x70f090, 0, 3, 1, 1);
+  w.px(0x1a5a30, 12, 5, 3, 3);
+  w.px(0x2d8a48, 13, 4, 2, 2);
+  w.px(0x4acc68, 14, 3, 2, 2);
+  w.px(0x70f090, 15, 3, 1, 1);
+  w.px(0x145028, 5, 8, 6, 2);
+  sparkle(fine, [[13, 3], [15, 6], [11, 1], [17, 8], [21, 4], [6, 8]], 0xc8ffd0, 0.55);
+  glow(fine, 16, 6, [{ r: 7, alpha: 0.07 }], 0xa0f0b0);
+  glow(fine, 10, 22, [{ r: 4, alpha: 0.14 }], 0xf0dcb0);
+  ambientLight(fine, TILE_SIZE, TILE_SIZE, { lift: 0.08, drop: 0.05 });
 }
 
 function drawSlotDecor(g) {
   const w = makeWriter(g);
+  const fine = fineWriter(g);
   w.px(OUTLINE, 0, 0, 16, 16);
   w.px(0x120810, 1, 1, 14, 15);
   w.px(0x2a1830, 2, 2, 12, 13);
@@ -1019,10 +1348,18 @@ function drawSlotDecor(g) {
   w.px(0x383848, 4, 13, 8, 2);
   w.px(0x585868, 5, 13, 6, 1);
   w.px(0xffffff, 5, 1, 6, 1);
+  // Marquee bloom and chrome glints instead of flat lit rectangles.
+  speckle(fine, 4, 4, 24, 24, [[0x3a1838, 0.22], [0x120810, 0.24]], 0.12, 201);
+  glow(fine, 16, 8, [{ r: 8, alpha: 0.09 }, { r: 5, alpha: 0.15 }], 0xffe890);
+  glow(fine, 8, 20, [{ r: 4, alpha: 0.14 }], 0xff4a60);
+  glow(fine, 18, 20, [{ r: 4, alpha: 0.14 }], 0x50e8a0);
+  sparkle(fine, [[6, 3], [24, 3], [4, 22]], 0xffffff, 0.6);
+  ambientLight(fine, TILE_SIZE, TILE_SIZE, { lift: 0.05, drop: 0.06 });
 }
 
 function drawScreenDecor(g) {
   const w = makeWriter(g);
+  const fine = fineWriter(g);
   // Wall mount
   w.px(OUTLINE, 0, 1, 16, 13);
   w.px(0x0a1018, 1, 2, 14, 11);
@@ -1051,6 +1388,11 @@ function drawScreenDecor(g) {
   w.px(0x304050, 5, 14, 6, 1);
   // Ambient glow
   w.px(0x48d8e8, 1, 10, 14, 2, 0.12);
+  // Genuine screen-light bloom spilling off the bezel onto the wall.
+  speckle(fine, 4, 6, 24, 20, [[0x2a1838, 0.2], [0x0a1018, 0.24]], 0.1, 211);
+  glow(fine, 16, 14, [{ r: 10, alpha: 0.07 }, { r: 6, alpha: 0.12 }], 0x6ae8f0);
+  sparkle(fine, [[10, 10], [22, 10]], 0xffffff, 0.5);
+  ambientLight(fine, TILE_SIZE, TILE_SIZE, { lift: 0.05, drop: 0.06 });
 }
 
 /** Standalone sprites, keyed by the texture name the scene looks them up by. */
@@ -1115,7 +1457,7 @@ export function createGameTextures(scene) {
       body, mid, shade, hair, hairShade,
       skinLight: 0xffe8d0, skinMid: 0xffd8b8, skinShade: 0xffc8a8,
     };
-    makeTex(scene, key, (g) => drawCharacter(g, palette, "down", 0), TEX_CHAR_W, TEX_CHAR_H);
+    makeTex(scene, key, (g) => drawCharacter(g, palette, "down", 0, { badge: true }), TEX_CHAR_W, TEX_CHAR_H);
   }
 
   makeTex(scene, "decor_bar", drawBarDecor);

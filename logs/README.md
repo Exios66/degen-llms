@@ -53,8 +53,8 @@ timestamp=2026-07-05T07:28:38Z | outcome=success | code=GBP-000 | debug=GBP-SYNC
 | `GBP-SYNC-002` | Docs synced and pushed to `gh-pages` |
 | `GBP-SYNC-003` | Partial fetch (`gh-pages` ref unavailable) |
 | `GBP-VERIFY-001` | `index.html` HTTP 200 |
-| `GBP-VERIFY-002` | `js/app.js` HTTP 200 and contains horse paddock code |
-| `GBP-VERIFY-003` | `js/horse-sprites.js` HTTP 200 |
+| `GBP-VERIFY-002` | `js/app.js` HTTP 200 and contains shell/racing renderer wiring |
+| `GBP-VERIFY-003` | `js/horse-sprites.js` HTTP 200 with sprite roster / canvas helper |
 | `GBP-VERIFY-004` | Cache-bust query param present on assets |
 | `GBP-VERIFY-005` | No merge-conflict markers in `app.js` |
 | `GBP-VERIFY-006` | `css/casino.css` HTTP 200 |

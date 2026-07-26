@@ -18,6 +18,7 @@
 | `Lottery-Counter.md` | `docs/lottery.md` |
 | `Sports-Book-and-Prediction-Markets.md` | `docs/sportsbook.md` |
 | `Trading-Floor.md` | `docs/trading-floor.md` |
+| `Arcade-Alley.md` | `docs/arcade.md` |
 | `Racing-and-Equestrian.md` | `docs/racing.md` |
 | `Resort-Hotel.md` | `docs/hotel.md` |
 | `Resort-Dining.md` | `docs/dining.md` |
@@ -34,7 +35,7 @@
 
 Authoritative source: `mandalay_bay/activities/registry.py` (`FLOOR_ORDER`, `ALL_ACTIVITIES`).
 
-Seven floors, eleven activities, one chip wallet:
+Eight floors, twelve activities, one chip wallet:
 
 | Floor | Activities | Min bet |
 |-------|------------|---------|
@@ -43,6 +44,7 @@ Seven floors, eleven activities, one chip wallet:
 | Lottery Counter | Pick 3, Pick 4, Mega draw, scratchers | Varies |
 | Sports Book | Scenario board, parlays/futures + prediction markets | 10 |
 | Trading Floor | Futures & call/put options (NYSE, commodities, crypto) | 25 |
+| Arcade Alley | CRT cabinets — Strip Cross, Neon Invaders, Breakout, Showgirl Beat | 5 |
 | Racing Pavilion | Mandalay Racing (thoroughbred) | 5 |
 | Equestrian Arena | Dressage, show jumping | 10 |
 
@@ -61,7 +63,7 @@ These should not appear as *current* guidance (About may keep historical “Phas
 | Phrase / claim | Replace with |
 |----------------|--------------|
 | digital casino CLI (as sole identity) | digital resort simulator (CLI + web + RPG) |
-| Five floors, eight activities / Six floors, ten activities | Seven floors, eleven activities (incl. Trading Floor) |
+| Five/six/seven-floor catalogs that omit Arcade Alley | Eight floors, twelve activities (match `FLOOR_ORDER`) |
 | Phase 1 pixel RPG (as current GDD label) | Phases 1–6 complete / overworld design |
 | 16-bit JRPG–style | Pokémon-style pixel overworld |
 | EnvironmentTextures / assets/tiles live path | TextureFactory.js procedural boot path |

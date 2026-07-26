@@ -88,7 +88,7 @@ Mandalay Markets — long-only futures and call/put options on NYSE equities, co
 
 Vegas-styled classic arcade cabinets in a fullscreen CRT overlay — skill play for chips and redeemable tickets, without entering the pixel RPG.
 
-→ [Arcade Alley](arcade.md)
+→ [[Arcade-Alley]]
 
 ## Racing Pavilion
 
@@ -114,16 +114,17 @@ Thoroughbred sim with win/place/show wagering. Real horse names, strength-based 
 | **Casino Floor — shopping & bars** | Mandalay Place sky bridge, three bars, intoxication |
 | **Resort Dining** | Aureole, Border Grill, Stripsteak — capacity minigame + drink-scaled encounters |
 | **Staff Manifest** | Editable dealer roster with session overrides |
-| **High Limit salon** | Chip-gated VIP tables (web) |
-| **Foundation Room** | Tier-gated lounge (web + RPG) |
+| **High Limit salon** | Chip-gated VIP venue (web + RPG) — private shoe tables, salon-only slots, whale sports desk |
+| **Foundation Room** | Noir+ lounge (web + RPG) — host whisper, Foundation edible |
+| **Gentleman's Club** | Velvet Ledger (web + RPG + CLI) — make it rain, encounters, stocked bar, Tip Cascade / Bottle Memory / Felt Flip; Gold+, suite key, or club phone line |
 
-→ [[Resort-Dining|Resort Dining]]
+→ [[Resort-Dining|Resort Dining]] · [[Resort-Hotel|Resort Hotel]]
 
 ## Resort (off the floor)
 
 | Zone | Highlights |
 |------|------------|
-| **Hotel** | Front desk, hallway mini-game, 17 room vignettes, dining overlay entry |
+| **Hotel** | Front desk, hallway mini-game, 17 room vignettes, dining overlay, suite balcony Strip POV smoke-break, Velvet Ledger |
 | **Pool complex** | Wave pool, cabanas, Shark Reef, beach club |
 | **MGM Rewards** | Tier progression, comps, phone hotline |
 

@@ -18,6 +18,7 @@ project:
     - docs/lottery.md
     - docs/sportsbook.md
     - docs/trading-floor.md
+    - docs/arcade.md
     - docs/racing.md
     - docs/hotel.md
     - docs/dining.md
@@ -87,6 +88,8 @@ website:
             text: Sports Book
           - href: docs/trading-floor.md
             text: Trading Floor
+          - href: docs/arcade.md
+            text: Arcade Alley
           - href: docs/racing.md
             text: Racing & Equestrian
           - href: docs/dining.md
@@ -159,6 +162,7 @@ website:
           - docs/lottery.md
           - docs/sportsbook.md
           - docs/trading-floor.md
+          - docs/arcade.md
           - docs/racing.md
           - docs/dining.md
       - section: "Developer Docs"

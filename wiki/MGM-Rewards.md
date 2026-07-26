@@ -31,6 +31,7 @@ Comps can cover hotel upgrades, room nights, and late checkout.
 | Perk | Gated by |
 |------|----------|
 | TV channels (House of Blues, etc.) | Gold+ |
+| Gentleman's Club / Velvet Ledger | Gold+ (or suite key / club phone line) |
 | Foundation Room phone line | Noir+ |
 | Express checkout | Pearl+ |
 | Resort fee reduction | Platinum+ |

@@ -11,8 +11,9 @@ import {
   HoldemOverlay,
   RhythmOverlay,
   VegasStripDriveOverlay,
-} from "./systems/EncounterBridge.js?v=tuxedo-pixel-1";
+} from "./systems/EncounterBridge.js?v=strip-drive-road-2";
 import { TerminalHostOverlay } from "./systems/TerminalHostOverlay.js";
+import { DiningOverlay } from "../../js/DiningOverlay.js";
 import { QuestManager } from "./systems/QuestManager.js";
 import { MenuOverlay } from "./systems/MenuOverlay.js";
 import { loadEggRegistry, syncEggsFromFlags, discoverEgg, eggForFlag } from "./systems/EasterEggs.js";
@@ -192,16 +193,24 @@ async function startOverworld(activeSession) {
     ),
   };
 
+  const diningOverlay = new DiningOverlay(document.getElementById("dining-overlay"), {
+    onPersist: () => persistAll(),
+    onStatus: (msg) => console.info("[dining]", msg),
+  });
+  diningOverlay.setSession(session);
+
   terminalHost = new TerminalHostOverlay(document.getElementById("terminal-overlay"), session, {
     ...hooks,
     onPersist: () => persistAll(),
     rewardsPhone,
+    diningOverlay,
   });
 
   encounters = new EncounterBridge({
     session,
     overlays,
     terminalHost,
+    diningOverlay,
     onPersist: () => persistAll(),
     questManager,
     onEncounterEnd: (encounterId, result) => {

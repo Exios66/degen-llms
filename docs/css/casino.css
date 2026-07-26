@@ -771,6 +771,26 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
+  transition: border-color 160ms ease, transform 160ms ease;
+}
+
+.dining-card:hover {
+  border-color: rgba(57, 197, 207, 0.45);
+  transform: translateY(-1px);
+}
+
+.dining-card .action-bar {
+  margin-top: 0.35rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dining-card {
+    transition: none;
+  }
+
+  .dining-card:hover {
+    transform: none;
+  }
 }
 
 .dining-card-header {
@@ -4731,11 +4751,13 @@ body.arcade-overlay-active {
   border-radius: 10px;
   border: 3px solid #8a8f98;
   background:
-    linear-gradient(180deg, #2a2e36 0%, #15181e 40%, #0c0e12 100%);
+    linear-gradient(145deg, rgba(255, 215, 0, 0.08), transparent 42%),
+    linear-gradient(180deg, #323640 0%, #1a1e26 38%, #0c0e12 100%);
   box-shadow:
-    0 0 0 2px rgba(255, 215, 0, 0.25),
+    0 0 0 2px rgba(255, 215, 0, 0.28),
     0 20px 60px rgba(0, 0, 0, 0.65),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.35);
   padding: 0.55rem 0.65rem 0.7rem;
 }
 
@@ -4798,11 +4820,15 @@ body.arcade-overlay-active {
 
 .arcade-overlay__crt {
   position: relative;
-  background: #020806;
-  border: 4px solid #3a3f48;
+  background:
+    radial-gradient(ellipse at 50% 20%, rgba(40, 20, 60, 0.35), transparent 55%),
+    #020806;
+  border: 4px solid #4a5160;
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.85);
+  box-shadow:
+    inset 0 0 48px rgba(0, 0, 0, 0.88),
+    inset 0 0 2px rgba(255, 215, 0, 0.18);
   aspect-ratio: 360 / 420;
 }
 
@@ -4819,6 +4845,7 @@ body.arcade-overlay-active {
   width: 100%;
   height: 100%;
   image-rendering: pixelated;
+  image-rendering: crisp-edges;
 }
 
 .arcade-overlay__scanlines,
@@ -4832,10 +4859,11 @@ body.arcade-overlay-active {
 .arcade-overlay__scanlines {
   background: repeating-linear-gradient(
     to bottom,
-    rgba(255, 255, 255, 0.04) 0 1px,
+    rgba(255, 255, 255, 0.055) 0 1px,
     transparent 1px 3px
   );
   mix-blend-mode: overlay;
+  opacity: 0.9;
   animation: arcade-scan 6s linear infinite;
 }
 
@@ -4845,7 +4873,7 @@ body.arcade-overlay-active {
 }
 
 .arcade-overlay__vignette {
-  background: radial-gradient(ellipse at center, transparent 45%, rgba(0, 0, 0, 0.55) 100%);
+  background: radial-gradient(ellipse at center, transparent 42%, rgba(0, 0, 0, 0.62) 100%);
 }
 
 .arcade-overlay__coin-flash {

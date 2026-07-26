@@ -345,9 +345,13 @@ Exit the casino floor to the **hotel lobby** (web: hub menu or RPG HUD link; dee
 ### Hotel flow
 
 1. **MGM Rewards (P)** → Reservation — locate your tower and floor
-2. **Front desk** — confirm at the desk on the days that require it; your key activates the moment the day's requirement is met, from either the phone or the desk
-3. **Hallway mini-game** — three beats of directional choices (wrong turns are comedic)
+2. **Front desk** — confirm at the desk on the days that require it; your key activates the moment the day's requirement is met, from either the phone or the desk; **Resort dining** opens the restaurant overlay
+3. **Hallway mini-game** — three beats of directional choices (wrong turns are comedic; food coma from dining forces one miss)
 4. **Your room** — TV, minibar, phone, decisions, unlockable Vegas vignettes
+
+### Resort dining
+
+From the front desk or **Casino Floor → Resort dining**, open Aureole, Border Grill, or Stripsteak. Order courses with pacing (pace / clean plate / chase shots). Drinks raise encounter odds — strangers, celebrities, satirical escort gags, and staff drop-ins. See [Resort Dining](dining.md).
 
 ### In-room amenities
 

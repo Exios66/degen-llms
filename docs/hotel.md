@@ -20,10 +20,16 @@ MGM Rewards tier comps can cover upgrades and room nights. See [MGM Rewards](mgm
 
 ## Hotel flow
 
-1. **Front desk (Clerk Carmen)** — locate reservation, settle overdue charges, upgrade rooms, review folios, checkout
+1. **Front desk (Clerk Carmen)** — locate reservation, settle overdue charges, upgrade rooms, review folios, checkout, **resort dining**
 2. **Room key** — activates as soon as the day's check-in requirement is satisfied, whether the phone or the desk finished it; the desk then offers your hallway or your door directly
-3. **Hallway mini-game** — three beats of directional choices to reach your door (wrong turns are comedic)
+3. **Hallway mini-game** — three beats of directional choices to reach your door (wrong turns are comedic; a dining food coma forces one zig)
 4. **Your room** — TV, minibar, phone, balcony decisions, unlockable Vegas vignettes
+
+## Resort dining
+
+Carmen books the three tables that matter: **Aureole**, **Border Grill**, and **Stripsteak**. Opening dining launches the capacity overlay — order courses, pace yourself, and risk drink-scaled encounters (strangers, celebrities, satirical escort gags, wine angels).
+
+→ [Resort Dining](dining.md)
 
 ## In-room amenities
 
@@ -78,6 +84,7 @@ The hotel lobby and in-room hub show progress:
 
 - Room vignettes unlocked
 - Pool vignettes visited
+- Dining encounter eggs
 - TV channels sampled
 - Guest book signed
 

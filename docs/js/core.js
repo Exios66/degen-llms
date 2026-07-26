@@ -6,6 +6,7 @@ import { attachWorldCycleToSession } from "./world-cycle.js";
 import { attachBankToSession } from "./bank-account.js";
 import { attachStaffOverridesToSession } from "./staff-manifest.js";
 import { attachIntoxicationToSession } from "./intoxication-effects.js";
+import { attachDiningToSession } from "./dining.js";
 import {
   getActiveSlotId,
   mirrorLibraryToCache,
@@ -293,6 +294,7 @@ export class PlayerSession {
     this.poolComplex = null;
     this.worldCycle = null;
     this.intoxication = null;
+    this.dining = null;
     this.progressivePools = {};
     this.horseRacingCustomNames = null;
     this.horseRacingNameOffset = 0;
@@ -352,6 +354,7 @@ export class PlayerSession {
     if (this.poolComplex) payload.poolComplex = this.poolComplex;
     if (this.worldCycle) payload.worldCycle = this.worldCycle;
     if (this.intoxication) payload.intoxication = this.intoxication;
+    if (this.dining) payload.dining = this.dining;
     return payload;
   }
 
@@ -382,6 +385,7 @@ export class PlayerSession {
     attachBankToSession(s, data);
     attachStaffOverridesToSession(s, data);
     attachIntoxicationToSession(s, data);
+    attachDiningToSession(s, data);
     s.casinoTimeMs = data.casinoTimeMs ?? 0;
     return s;
   }

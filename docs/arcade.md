@@ -15,6 +15,8 @@ Vegas-styled **classic arcade** cabinets on the web terminal — skill minigames
 
 Selecting a cabinet opens a fixed **CRT arcade overlay** (chrome bezel, neon marquee, scanlines, coin insert, LED footer). Keyboard or on-screen controls; **ESC** / EXIT returns to the alley.
 
+Playfields render at **720×840** (2× the CRT aspect) with procedural pixel sprites, multi-frame animations, dithered surfaces, neon shading, and lightweight particle FX — no external image assets. Canvas sampling is nearest-neighbor so the CRT upscale stays crisp.
+
 ## Economy
 
 - Play debit counts as a wager (MGM Rewards handle).
@@ -29,5 +31,6 @@ Tickets, high scores, and redeem flags save in `session.arcade` / `arcadeData`.
 
 - Overlay: `docs/js/arcade/ArcadeCabinetOverlay.js`
 - Games: `docs/js/arcade/games/*.js`
+- Shared gfx kit: `docs/js/arcade/gfx/` (`display`, `pixel`, `anim`, `fx`, `sprites`)
 - Floor UI: `docs/js/ui/arcade-renderers.js`
 - CLI: lists cabinets only (`mandalay_bay/activities/arcade.py`)

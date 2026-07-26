@@ -1,6 +1,6 @@
 # Pixel RPG Simulator
 
-Walk **The Mandalay Bay** in a **16-bit JRPG–style overworld** built with Phaser 3. Inspired by [Operation Epic Furious](https://www.epicfurious.com/).
+Walk **The Mandalay Bay** in a **Pokémon-style pixel overworld** built with Phaser 3. Inspired by [Operation Epic Furious](https://www.epicfurious.com/).
 
 ![Pixel RPG overworld — casino carpet, NPCs, and chip HUD](images/pixel-rpg-overworld.png)
 

@@ -65,6 +65,6 @@ The project began as a digital blackjack CLI and grew into a multi-surface resor
 
 ## See also
 
-- [[Casino-Offerings]] — Full activity catalog
-- [[Pixel-RPG-Simulator]] — Overworld design
-- [[Architecture]] — Technical overview
+- [Casino Offerings](casino-offerings.md) — Full activity catalog
+- [Pixel RPG](pixel-rpg.md) — Overworld design
+- [Architecture](architecture.md) — Technical overview

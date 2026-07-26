@@ -71,6 +71,11 @@ The reference feel is Pokémon — a top-down overworld, a START menu that holds
 your whole life, line-of-sight challengers, a collection dex, and secrets that
 pay in flavor rather than chips.
 
+Tiles, props, and guest sprites are drawn at boot by **`TextureFactory.js`**
+(no vendored `assets/tiles/` loader on the live path). Characters are 32×44
+tuxedo-style pixel grids with a three-frame stride; the wardrobe recolors skin,
+hair, and outfit.
+
 ```{python}
 #| label: tbl-scale
 #| tbl-cap: "World size at render time, read from the authored JSON"

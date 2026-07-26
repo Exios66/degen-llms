@@ -11,6 +11,7 @@ Every way to play or read about **The Mandalay Bay**.
 | **CLI** | `python3 -m mandalay_bay` | `~/.mandalay_bay/saves/` |
 | **Standalone blackjack** | `python3 -m blackjack` | Internal bankroll only |
 | **Quarto docs** | https://019f9a67-d5c9-226b-b6b1-a86d1655be69.share.connect.posit.cloud/ | N/A (documentation) |
+| **GitHub Wiki** | https://github.com/Exios66/degen-llms/wiki | N/A (documentation) |
 
 ## Web terminal deep links
 
@@ -43,15 +44,15 @@ python3 -m blackjack                     # Standalone blackjack
 
 | Location | Content |
 |----------|---------|
-| **This wiki** (`wiki/` in repo) | Player guides, architecture, RPG design |
-| **`docs/` in repo** | Markdown guides (source for Quarto; full topic parity with this wiki) |
+| **GitHub Wiki** (`wiki/` in repo) | Player guides, architecture, RPG design |
+| **`docs/` in repo** | Markdown guides (source for Quarto + this site) |
 | **Posit Connect Cloud** | Rendered Quarto website |
 | **In-game Casino Guide** | Quick rules reference from the lobby |
 
 ## Deployment
 
-- **GitHub Pages:** `main/docs/` → `gh-pages` branch `/docs`. Pages source: **Deploy from branch → `gh-pages` → `/docs`**. Automatic push/schedule is disabled; publish with `bash .cursor/skills/gh-pages-deploy-loop/scripts/run-manual.sh` or Actions `workflow_dispatch`.
-- **Posit Connect Cloud:** `quarto render` + `scripts/publish_posit_degen_llms.py`
-- **This wiki:** `bash scripts/sync-github-wiki.sh` (manual; no Actions)
+- **GitHub Pages (interactive game):** `main/docs/` is mirrored to the **`gh-pages`** branch `/docs` folder. Pages source must be **Deploy from branch → `gh-pages` → `/docs`**. Automatic push/schedule deploy is **disabled** (billing limits); publish with the `gh-pages-deploy-loop` skill or optional Actions `workflow_dispatch`.
+- **Posit Connect Cloud (docs site):** `quarto render` + `scripts/publish_posit_degen_llms.py`
+- **GitHub Wiki:** `wiki/` → sync with `bash scripts/sync-github-wiki.sh` (manual; no Actions)
 
-See [[Developer-Guide]] for maintainer workflows.
+See [Adding Activities](adding-activities.md) and [CONTRIBUTING-POSIT.md](../CONTRIBUTING-POSIT.md) for maintainer workflows.

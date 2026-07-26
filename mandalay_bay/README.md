@@ -2,7 +2,7 @@
 
 **The Mandalay Bay** — satirical digital resort simulator CLI.
 
-Play blackjack, Texas Hold'em, roulette, craps, slots, sports book, horse racing, and equestrian events on a unified chip wallet. Exit the casino floor for hotel check-in, pool complex, MGM Rewards tiers, and resort amenities.
+Play blackjack, Texas Hold'em, roulette, craps, slots, lottery, sports book, horse racing, and equestrian events on a unified chip wallet. Exit the casino floor for hotel check-in, pool complex, MGM Rewards tiers, and resort amenities.
 
 ## Install
 

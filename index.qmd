@@ -11,11 +11,12 @@ date: last-modified
 abstract: |
   **The Mandalay Bay** (`degen-llms`) is a full-stack digital resort simulator spanning a
   Python CLI, a browser terminal on GitHub Pages, and a Phaser 3 pixel RPG overworld.
-  Players share one chip wallet across blackjack, Texas Hold'em, roulette, fourteen slot
-  machines, a sports book with prediction markets, thoroughbred racing, and equestrian
-  events — then leave the floor for hotel check-in, an eleven-acre pool complex, and
-  MGM Rewards tier progression. This Quarto site documents the product surfaces, economy,
-  save system, architecture, and expansion roadmap using the live repository packages.
+  Players share one chip wallet across blackjack, Texas Hold'em, roulette, craps, fourteen
+  slot machines, lottery tickets, a sports book with prediction markets, thoroughbred
+  racing, and equestrian events — then leave the floor for hotel check-in, an eleven-acre
+  pool complex, and MGM Rewards tier progression. This Quarto site documents the product
+  surfaces, economy, save system, architecture, and expansion roadmap using the live
+  repository packages.
 keywords:
   - Mandalay Bay
   - casino simulation
@@ -78,7 +79,7 @@ This deployment is a **new** JackJBurleson Posit Connect Cloud content item for 
 
 | Zone | Highlights |
 |------|------------|
-| **Casino floor** | Blackjack, Hold'em, roulette, 14 slots, sports book, racing, dressage & jumping |
+| **Casino floor** | Blackjack, Hold'em, roulette, craps, 14 slots, lottery, sports book, racing, dressage & jumping |
 | **Cashier & bank** | Buy/cash chips, ledger, off-strip bank account |
 | **Hotel** | Clerk Carmen, hallway mini-game, in-room amenities, guest directory |
 | **Pool complex** | Wave pool, cabanas, Shark Reef collection, beach club |
@@ -237,15 +238,23 @@ Developer deep-dives:
 | [Getting Started](docs/getting-started.md) | Install, launch, CLI flags |
 | [Player Guide](docs/player-guide.md) | Every menu, dialog, and shortcut |
 | [Chip Economy](docs/chip-economy.md) | Wallet, ledger, buy-ins, cash-outs |
+| [About](docs/about.md) | Vision, design pillars, history |
+| [Casino Offerings](docs/casino-offerings.md) | Full floor catalog |
 | [Save Slots](docs/saves.md) | Library, migration, RPG fields |
 | [Blackjack](docs/blackjack.md) | Table rules and modes |
+| [Table Games](docs/table-games.md) | Hold'em, roulette, craps |
 | [Slot Machines](docs/slots.md) | Machines, paytables, progressives |
-| [Sports Book](docs/sportsbook.md) | Moneyline, spread, settlement |
+| [Lottery](docs/lottery.md) | Pick 3/4, Mega, scratchers |
+| [Sports Book](docs/sportsbook.md) | Moneyline, spread, prediction markets |
+| [Racing](docs/racing.md) | Thoroughbred + equestrian |
+| [Hotel](docs/hotel.md) / [Pool](docs/pool-complex.md) / [Rewards](docs/mgm-rewards.md) | Resort off the floor |
+| [RNG](docs/rng.md) | CSPRNG guarantees |
+| [Pixel RPG](docs/pixel-rpg.md) | Overworld overview |
 
 # RNG and legitimacy
 
-All random outcomes use OS-backed CSPRNG (`secrets.SystemRandom()` in Python, `crypto.getRandomValues()` in the browser). Tests inject seeded RNGs for determinism; production play never does.
+All random outcomes use OS-backed CSPRNG (`secrets.SystemRandom()` in Python, `crypto.getRandomValues()` in the browser). Tests inject seeded RNGs for determinism; production play never does. See [RNG and Fairness](docs/rng.md).
 
 # License and deploy
 
-MIT licensed — see `LICENSE` in the repository. GitHub Pages continues to host the interactive web terminal and RPG from the `docs/` tree. This Quarto website is published separately to Posit Connect Cloud under the JackJBurleson account as its own content instance ([deploy notes](CONTRIBUTING-POSIT.md)).
+MIT licensed — see `LICENSE` in the repository. GitHub Pages hosts the interactive web terminal and RPG from the `gh-pages` branch `/docs` folder (mirrored from `main/docs/` via the `gh-pages-deploy-loop` skill; automatic push/schedule is disabled). This Quarto website is published separately to Posit Connect Cloud under the JackJBurleson account as its own content instance ([deploy notes](CONTRIBUTING-POSIT.md)).

@@ -3,6 +3,7 @@
 import { CASINO_NAME, fmtChips } from "../core.js";
 import { ensureBank } from "../bank-account.js";
 import { getSessionDealer, pickQuip } from "../dealers.js";
+import { createPlayingCardEl, createCardSpriteRow } from "./card-sprites.js";
 
 export function el(tag, attrs = {}, children = []) {
   const node = document.createElement(tag);
@@ -215,32 +216,12 @@ export function createShell(ctx) {
     return label;
   }
 
-  function cardTile(card, { hidden = false, empty = false } = {}) {
-    if (empty) {
-      return el("div", { className: "card-chip card-chip--empty", textContent: "·" });
-    }
-    if (!card || hidden) {
-      return el("div", {
-        className: "card-chip card-chip--hidden",
-        textContent: ctx.session.useUnicode ? "?" : "??",
-      });
-    }
-    const isRed = ctx.session.useColor && card.isRed();
-    return el("div", {
-      className: `card-chip ${isRed ? "card-chip--red" : "card-chip--black"}`,
-      innerHTML: formatCardLabel(card),
-    });
+  function cardTile(card, { hidden = false, empty = false, deal = true, flip = false, delayMs = 0 } = {}) {
+    return createPlayingCardEl(card, { hidden, empty, deal, flip, delayMs });
   }
 
-  function cardRow(cards, { hiddenMask = null, slots = null } = {}) {
-    const row = el("div", { className: "card-row" });
-    const count = slots ?? cards.length;
-    for (let i = 0; i < count; i++) {
-      const card = cards[i];
-      const hidden = hiddenMask ? hiddenMask(i, card) : !card;
-      row.appendChild(cardTile(card, { hidden: hidden || !card, empty: !card && slots != null }));
-    }
-    return row;
+  function cardRow(cards, { hiddenMask = null, slots = null, rowId = "table", animate = true } = {}) {
+    return createCardSpriteRow(cards, { hiddenMask, slots, rowId, animate });
   }
 
   return {

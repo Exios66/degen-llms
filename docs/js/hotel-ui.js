@@ -139,7 +139,7 @@ export function buildHotelRenderers(ctx) {
           menuBtn("Front Desk — Clerk Carmen", () => pushView("hotel-front-desk")),
           menuBtn("Guest Directory — lobby guest book", () => pushView("hotel-guest-directory")),
           menuBtn("Find my room (hallway)", () => pushView("hotel-hallway")),
-          menuBtn("Pool Complex — 11-acre expansion pack", () => pushView("pool-complex")),
+          menuBtn("Pool Complex — 11-acre expansion pack", () => openPoolComplex("hub")),
           menuBtn("Horse Stables — meet the residents", () => pushView("horse-stables")),
           hotel.reachedRoom ? menuBtn("Enter your room", () => pushView("hotel-room")) : null,
           canAccessHotelRoom(session) && hotel.reachedRoom ? null
@@ -717,6 +717,17 @@ export function buildHotelRenderers(ctx) {
     }
     overlay.setSession(session);
     overlay.open(venueId);
+  }
+
+  function openPoolComplex(zoneId = "hub") {
+    const overlay = ctx.poolOverlay;
+    if (!overlay) {
+      showStatus("Pool overlay not ready.", "error");
+      pushView("pool-complex");
+      return;
+    }
+    overlay.setSession(session);
+    overlay.open(zoneId);
   }
 
   return {

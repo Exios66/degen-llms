@@ -14,6 +14,7 @@ import {
 } from "./systems/EncounterBridge.js?v=strip-drive-road-2";
 import { TerminalHostOverlay } from "./systems/TerminalHostOverlay.js";
 import { DiningOverlay } from "../../js/DiningOverlay.js";
+import { PoolComplexOverlay } from "../../js/PoolComplexOverlay.js";
 import { QuestManager } from "./systems/QuestManager.js";
 import { MenuOverlay } from "./systems/MenuOverlay.js";
 import { loadEggRegistry, syncEggsFromFlags, discoverEgg, eggForFlag } from "./systems/EasterEggs.js";
@@ -199,11 +200,18 @@ async function startOverworld(activeSession) {
   });
   diningOverlay.setSession(session);
 
+  const poolOverlay = new PoolComplexOverlay(document.getElementById("pool-overlay"), {
+    onPersist: () => persistAll(),
+    onStatus: (msg) => console.info("[pool]", msg),
+  });
+  poolOverlay.setSession(session);
+
   terminalHost = new TerminalHostOverlay(document.getElementById("terminal-overlay"), session, {
     ...hooks,
     onPersist: () => persistAll(),
     rewardsPhone,
     diningOverlay,
+    poolOverlay,
   });
 
   encounters = new EncounterBridge({
@@ -211,6 +219,7 @@ async function startOverworld(activeSession) {
     overlays,
     terminalHost,
     diningOverlay,
+    poolOverlay,
     onPersist: () => persistAll(),
     questManager,
     onEncounterEnd: (encounterId, result) => {

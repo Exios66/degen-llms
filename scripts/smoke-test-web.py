@@ -52,7 +52,7 @@ TERMINAL_FLOWS = [
     ("horse-racing", "horse-racing", [".menu-list li:nth-child(1) .menu-btn"]),
     ("cashier", "cashier", [".menu-list li:nth-child(1) .menu-btn", ".btn.primary"]),
     ("hotel", "hotel-front-desk", [".menu-list li:nth-child(1) .menu-btn"]),
-    ("pool", "pool-complex", [".menu-list li:nth-child(1) .menu-btn"]),
+    ("pool", "pool-complex", [".pool-zone-card, .menu-list li:nth-child(1) .menu-btn"]),
     ("amenities", "casino-floor", [".menu-list li:nth-child(1) .menu-btn"]),
     ("dining", "hotel-dining", [".dining-card .btn.primary, .menu-list li:nth-child(1) .menu-btn"]),
     ("stake-tier", "floor", [".menu-list li:nth-child(1) .menu-btn", ".menu-list li:nth-child(2) .menu-btn"]),

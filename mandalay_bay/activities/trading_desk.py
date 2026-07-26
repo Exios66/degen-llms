@@ -46,12 +46,18 @@ class TradingDeskActivity(Activity):
                 f"{len(contracts)} contracts · filter {asset_filter}/{instrument_filter} · "
                 f"{len(positions)} open"
             )
-            quotes = underlyings_from_catalog(catalog)
+            quotes = underlyings_from_catalog(catalog, asset_class=asset_filter)
             if quotes:
                 tape = "  |  ".join(
-                    f"{q['symbol']} {q['spot']:.4g}" for q in quotes[:12]
+                    f"{q['symbol']} {q['spot']:.4g} "
+                    f"(1D {q.get('perf1dPct', 0):+.2f}% / 1W {q.get('perf1wPct', 0):+.2f}%)"
+                    for q in quotes[:10]
                 )
-                ui.print(f"LIVE TAPE  {tape}{' …' if len(quotes) > 12 else ''}")
+                scope = "ALL" if asset_filter == "all" else asset_filter.upper()
+                ui.print(
+                    f"LIVE TAPE [{scope} · {len(quotes)} symbols]  "
+                    f"{tape}{' …' if len(quotes) > 10 else ''}"
+                )
             choice = ui.menu_choice(
                 [
                     "Browse / buy contracts",
@@ -128,12 +134,14 @@ class TradingDeskActivity(Activity):
                 ui.dim(f"Page cursor → {cursor}")
                 ui.pause()
             elif choice == 6:
-                ui.print("\n--- Underlying spots (futures marks) ---")
-                for q in underlyings_from_catalog(catalog):
+                scope = "ALL" if asset_filter == "all" else asset_filter.upper()
+                ui.print(f"\n--- Underlying spots [{scope}] (1D / 1W performance) ---")
+                for q in underlyings_from_catalog(catalog, asset_class=asset_filter):
                     drifted = drift_spot(float(q["spot"]))
                     ui.info(
                         f"{q['symbol']:6} {q['assetClass']:12} "
-                        f"{drifted:>12.4g}  — {q['underlying']}"
+                        f"{drifted:>12.4g}  1D {q.get('perf1dPct', 0):+6.2f}%  "
+                        f"1W {q.get('perf1wPct', 0):+6.2f}%  — {q['underlying']}"
                     )
                 ui.pause()
 

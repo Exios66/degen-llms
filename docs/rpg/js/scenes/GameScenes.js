@@ -268,7 +268,9 @@ export class OverworldScene extends Phaser.Scene {
     this.facing = "down";
     this.canMove = true;
     this.nearbyNpc = null;
-    this._lastDoorTile = null;
+    // Ignore the tile we spawn on so a warp never immediately re-fires an exit
+    // door if the landing tile and a doorway happen to overlap.
+    this._lastDoorTile = `${Math.floor(this.player.x / TILE_SIZE)},${Math.floor(this.player.y / TILE_SIZE)}`;
     this._lastTriggerId = null;
     this._footTimer = 0;
     this._konami = [];

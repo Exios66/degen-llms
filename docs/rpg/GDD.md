@@ -68,7 +68,7 @@ flowchart TB
 | Tile vocabulary | `js/systems/MapTiles.js` |
 | JSON → tile layers | `js/systems/MapLoader.js` |
 | Map/NPC/door accessors + procedural fallback | `js/systems/MapData.js` |
-| Procedural sprites and tiles (16px art grids) | `js/systems/TextureFactory.js` |
+| Procedural tiles (16px) + tuxedo characters (32×44) | `js/systems/TextureFactory.js` |
 | Vendored tiles + procedural FX | `js/systems/EnvironmentTextures.js` |
 | Character / staff sprite sheets | `js/systems/CharacterSprites.js` |
 | Dialogue graph | `js/systems/DialogueManager.js` |
@@ -95,16 +95,18 @@ also map vendored PNGs under `assets/tiles/` onto the same `TILE` enum without
 changing map JSON.
 
 Characters are **authored pixel grids**, not stacked rectangles: `CHAR_BODY` and
-`CHAR_LEGS` in `TextureFactory.js` are arrays of 16-character strings, one
-character per pixel, resolved through a palette legend (`O` outline, `H` hair,
-`S` skin, `B` outfit, `N` denim, and so on). The upper body and the legs are
-separate blocks, which is what lets a three-frame walk cycle swap only the legs
-and drop the torso a pixel. Right-facing is the left grid mirrored.
+`CHAR_LEGS` in `TextureFactory.js` are arrays of **32-character** strings
+(32×44 art), one character per pixel, resolved through a palette legend
+(`O` outline, `H` hair, `S` skin, `B` jacket, `R` satin lapel, `w` dress shirt,
+`Y` bow tie, `N`/`A` tuxedo trousers with stripe, and so on). The default outfit
+is a black-tie **tuxedo**. The upper body and the legs are separate blocks,
+which is what lets a three-frame walk cycle swap only the legs and drop the
+torso a pixel. Right-facing is the left grid mirrored.
 `CharacterSprites.js` loads optional staff/dealer sheets from
 `assets/characters/` for named NPCs.
 
 To change how a character looks, edit the strings. `scripts/smoke-test-rpg.mjs`
-asserts every row is exactly 16 characters and every character is in the legend,
+asserts every row is exactly 32 characters and every character is in the legend,
 then renders all twelve frames of every wardrobe combination headlessly, because
 a bad palette lookup at boot takes the whole overworld down.
 

@@ -43,6 +43,7 @@ const STAFF = {
 };
 
 const OUTFIT_TINT = {
+  tuxedo: 0xffffff,
   teal: 0xb8f0ff,
   gold: 0xffe8a0,
   purple: 0xddbbff,

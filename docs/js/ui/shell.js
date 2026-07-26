@@ -250,6 +250,7 @@ export function createRuntime(overrides = {}) {
     sportsbook: null,
     tradingDesk: null,
     marketTicker: null,
+    arcade: { sessionNet: 0, plays: 0 },
     blackjackGame: null,
     blackjackSessionNet: 0,
     slots: { machine: null, sessionNet: 0, spins: 0, tier: null, lastBet: null },

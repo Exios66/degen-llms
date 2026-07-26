@@ -1,15 +1,18 @@
 /** Strip Cross — Frogger across Las Vegas Blvd. */
 
-export function createStripCross(canvas, api) {
-  const ctx = canvas.getContext("2d");
-  const W = 360;
-  const H = 420;
-  canvas.width = W;
-  canvas.height = H;
+import { ARCADE_W as W, ARCADE_H as H, setupArcadeCanvas } from "../gfx/display.js";
+import { fillDither, fillStripeShade, withAlpha } from "../gfx/pixel.js";
+import { frameAt, pulse01 } from "../gfx/anim.js";
+import { createParticlePool } from "../gfx/fx.js";
+import { drawTourist, drawVehicle } from "../gfx/sprites.js";
 
-  const LANE_H = 36;
+export function createStripCross(canvas, api) {
+  const ctx = setupArcadeCanvas(canvas);
+  const fx = createParticlePool(100);
+
+  const LANE_H = 72;
   const ROWS = 10;
-  let player = { c: 4, r: ROWS - 1 };
+  let player = { c: 4, r: ROWS - 1, dir: "up", anim: 0, hop: 0 };
   let hazards = [];
   let score = 0;
   let lives = 3;
@@ -18,16 +21,18 @@ export function createStripCross(canvas, api) {
   let last = 0;
   let won = false;
   let deadFlash = 0;
+  let time = 0;
+  let marqueePhase = 0;
 
   function resetHazards() {
     hazards = [];
     const kinds = [
-      { r: 8, speed: 70, w: 42, color: "#ffd700", gap: 110 },
-      { r: 7, speed: -90, w: 50, color: "#ff5ec8", gap: 130 },
-      { r: 6, speed: 110, w: 36, color: "#6ec6ff", gap: 100 },
-      { r: 4, speed: -75, w: 58, color: "#3dcc8c", gap: 140 },
-      { r: 3, speed: 95, w: 40, color: "#ff9f43", gap: 115 },
-      { r: 2, speed: -120, w: 34, color: "#ff6b6b", gap: 95 },
+      { r: 8, speed: 140, w: 84, color: "#ffd700", gap: 220 },
+      { r: 7, speed: -180, w: 100, color: "#ff5ec8", gap: 260 },
+      { r: 6, speed: 220, w: 72, color: "#6ec6ff", gap: 200 },
+      { r: 4, speed: -150, w: 116, color: "#3dcc8c", gap: 280 },
+      { r: 3, speed: 190, w: 80, color: "#ff9f43", gap: 230 },
+      { r: 2, speed: -240, w: 68, color: "#ff6b6b", gap: 190 },
     ];
     for (const k of kinds) {
       let x = Math.random() * W;
@@ -42,7 +47,7 @@ export function createStripCross(canvas, api) {
   }
 
   function spawn() {
-    player = { c: 4, r: ROWS - 1 };
+    player = { c: 4, r: ROWS - 1, dir: "up", anim: 0, hop: 0 };
     deadFlash = 0;
   }
 
@@ -63,6 +68,11 @@ export function createStripCross(canvas, api) {
   }
 
   function die() {
+    const { cw, ch } = cellSize();
+    const px = player.c * cw + cw / 2;
+    const py = player.r * ch + ch / 2;
+    fx.burst(px, py, "#ff6b6b");
+    fx.spawn(px, py, { count: 10, color: "#fff8e7", speed: 100, life: 0.4, size: 2 });
     lives -= 1;
     deadFlash = 0.4;
     api.onHud?.({ score, lives, message: lives > 0 ? "Splat! Watch the limos." : "GAME OVER" });
@@ -76,6 +86,7 @@ export function createStripCross(canvas, api) {
   function end(cleared) {
     running = false;
     cancelAnimationFrame(raf);
+    if (cleared) fx.confetti(W / 2, 40);
     const mult = cleared ? 2.5 : Math.min(2, score / 400);
     api.onEnded?.({
       won: cleared || score >= 200,
@@ -85,66 +96,109 @@ export function createStripCross(canvas, api) {
     });
   }
 
-  function draw() {
-    const { cw, ch } = cellSize();
+  function drawBackground() {
+    const { ch } = cellSize();
     ctx.fillStyle = "#0a1210";
     ctx.fillRect(0, 0, W, H);
 
-    // Goal / sidewalks
     for (let r = 0; r < ROWS; r += 1) {
-      if (r === 0) ctx.fillStyle = "#2a1a40";
-      else if (r === ROWS - 1 || r === 5) ctx.fillStyle = "#1a2420";
-      else ctx.fillStyle = r % 2 ? "#121a18" : "#0e1614";
-      ctx.fillRect(0, r * ch, W, ch);
-      if (r > 0 && r < ROWS - 1 && r !== 5) {
-        ctx.strokeStyle = "rgba(255,215,0,0.15)";
-        ctx.setLineDash([8, 10]);
+      const y = r * ch;
+      if (r === 0) {
+        // Neon marquee zone
+        fillDither(ctx, 0, y, W, ch, "#2a1a40", "#3d2860", 3, 0.18);
+        const shimmer = 0.55 + pulse01(marqueePhase, 1) * 0.45;
+        ctx.fillStyle = withAlpha("#ff5ec8", shimmer);
+        ctx.font = "bold 22px JetBrains Mono, monospace";
+        ctx.textAlign = "center";
+        const letters = "★ NEON MARQUEE ★";
+        const wave = Math.sin(marqueePhase * 4) * 2;
+        ctx.fillText(letters, W / 2, y + 28 + wave);
+        ctx.fillStyle = withAlpha("#ffd700", shimmer * 0.85);
+        ctx.font = "bold 14px JetBrains Mono, monospace";
+        ctx.fillText("· VEGAS STRIP ·", W / 2, y + 50);
+        ctx.textAlign = "left";
+        // Marquee bulbs
+        for (let i = 0; i < 18; i += 1) {
+          const on = (frameAt(marqueePhase + i * 0.05, 8, 2) === (i % 2));
+          ctx.fillStyle = on ? "#ffd700" : "#5a4020";
+          ctx.fillRect(16 + i * 38, y + 8, 6, 6);
+        }
+      } else if (r === ROWS - 1 || r === 5) {
+        fillDither(ctx, 0, y, W, ch, "#1a2420", "#2a3830", r + 7, 0.14);
+        // Sidewalk cracks
+        ctx.strokeStyle = "rgba(255,255,255,0.06)";
         ctx.beginPath();
-        ctx.moveTo(0, r * ch + ch / 2);
-        ctx.lineTo(W, r * ch + ch / 2);
+        ctx.moveTo(0, y + ch * 0.5);
+        ctx.lineTo(W, y + ch * 0.5);
+        ctx.stroke();
+      } else {
+        fillStripeShade(ctx, 0, y, W, ch, r % 2 ? "#121a18" : "#0e1614", "rgba(0,0,0,0.15)");
+        // Asphalt grit
+        fillDither(ctx, 0, y, W, ch, "rgba(0,0,0,0)", "#1a2824", r * 13, 0.1);
+        // Lane dashes with slight parallax shimmer
+        const dashOff = (time * 40 * (r % 2 ? 1 : -1)) % 36;
+        ctx.strokeStyle = withAlpha("#ffd700", 0.22 + pulse01(time + r, 0.5) * 0.08);
+        ctx.setLineDash([16, 20]);
+        ctx.lineDashOffset = -dashOff;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, y + ch / 2);
+        ctx.lineTo(W, y + ch / 2);
         ctx.stroke();
         ctx.setLineDash([]);
+        ctx.lineDashOffset = 0;
+        ctx.lineWidth = 1;
       }
     }
+  }
 
-    ctx.fillStyle = "#ff5ec8";
-    ctx.font = "bold 11px JetBrains Mono, monospace";
-    ctx.fillText("★ NEON MARQUEE ★", 100, 22);
+  function draw() {
+    const { cw, ch } = cellSize();
+    drawBackground();
 
     for (const h of hazards) {
       const x = ((h.x % (W + h.w)) + (W + h.w)) % (W + h.w) - h.w * 0.2;
-      ctx.fillStyle = h.color;
-      ctx.fillRect(x, h.r * ch + 6, h.w, ch - 12);
-      ctx.fillStyle = "rgba(0,0,0,0.35)";
-      ctx.fillRect(x + 4, h.r * ch + 10, 10, 8);
+      drawVehicle(ctx, x, h.r * ch + 10, h.w, ch - 20, h.color, time, h.speed > 0);
     }
 
     // Player tourist
-    const px = player.c * cw + 4;
-    const py = player.r * ch + 4;
-    ctx.fillStyle = deadFlash > 0 ? "#ff6b6b" : "#fff8e7";
-    ctx.fillRect(px, py, cw - 8, ch - 8);
-    ctx.fillStyle = "#ffd700";
-    ctx.fillRect(px + 6, py + 2, cw - 20, 6);
+    const hopY = player.hop > 0 ? -Math.sin(player.hop * Math.PI) * 10 : 0;
+    const px = player.c * cw + (cw - 16) / 2;
+    const py = player.r * ch + (ch - 18) / 2 + hopY;
+    drawTourist(ctx, px, py, {
+      dir: player.dir,
+      t: player.anim,
+      scale: 2,
+      flash: deadFlash > 0,
+    });
 
-    ctx.fillStyle = "rgba(255,255,255,0.55)";
-    ctx.font = "10px JetBrains Mono, monospace";
-    ctx.fillText(`SCORE ${score}   LIVES ${lives}`, 8, H - 8);
+    fx.draw(ctx);
+
+    ctx.fillStyle = "rgba(255,255,255,0.65)";
+    ctx.font = "14px JetBrains Mono, monospace";
+    ctx.textAlign = "left";
+    ctx.fillText(`SCORE ${score}   LIVES ${lives}`, 12, H - 12);
   }
 
   function tick(ts) {
     if (!running) return;
     const dt = Math.min(0.05, (ts - last) / 1000 || 0.016);
     last = ts;
+    time += dt;
+    marqueePhase += dt;
     if (deadFlash > 0) deadFlash -= dt;
+    if (player.hop > 0) player.hop = Math.max(0, player.hop - dt * 4);
+    player.anim += dt;
 
     for (const h of hazards) h.x += h.speed * dt;
+    fx.update(dt);
 
     if (hitTest() && deadFlash <= 0) die();
 
     if (player.r === 0 && !won) {
       won = true;
       score += 250;
+      fx.confetti(W / 2, 36);
       api.onHud?.({ score, lives, message: "Made the marquee!" });
       end(true);
       return;
@@ -158,12 +212,30 @@ export function createStripCross(canvas, api) {
     if (!running || deadFlash > 0) return;
     const k = e.key;
     let moved = false;
-    if (k === "ArrowLeft" || k === "a") { player.c = Math.max(0, player.c - 1); moved = true; }
-    if (k === "ArrowRight" || k === "d") { player.c = Math.min(8, player.c + 1); moved = true; }
-    if (k === "ArrowUp" || k === "w") { player.r = Math.max(0, player.r - 1); moved = true; score += 10; }
-    if (k === "ArrowDown" || k === "s") { player.r = Math.min(ROWS - 1, player.r + 1); moved = true; }
+    if (k === "ArrowLeft" || k === "a") {
+      player.c = Math.max(0, player.c - 1);
+      player.dir = "left";
+      moved = true;
+    }
+    if (k === "ArrowRight" || k === "d") {
+      player.c = Math.min(8, player.c + 1);
+      player.dir = "right";
+      moved = true;
+    }
+    if (k === "ArrowUp" || k === "w") {
+      player.r = Math.max(0, player.r - 1);
+      player.dir = "up";
+      moved = true;
+      score += 10;
+    }
+    if (k === "ArrowDown" || k === "s") {
+      player.r = Math.min(ROWS - 1, player.r + 1);
+      player.dir = "down";
+      moved = true;
+    }
     if (moved) {
       e.preventDefault();
+      player.hop = 1;
       api.onHud?.({ score, lives, message: "Cross the Strip…" });
     }
   }
@@ -173,6 +245,8 @@ export function createStripCross(canvas, api) {
       score = 0;
       lives = 3;
       won = false;
+      time = 0;
+      fx.clear();
       resetHazards();
       spawn();
       running = true;
@@ -186,6 +260,7 @@ export function createStripCross(canvas, api) {
       running = false;
       cancelAnimationFrame(raf);
       window.removeEventListener("keydown", onKey);
+      fx.clear();
     },
     input(dir) {
       if (!running) return;

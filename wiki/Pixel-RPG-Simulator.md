@@ -365,29 +365,30 @@ erases pixel progress.
 | **SFX** | Footsteps by tile type, blackjack natural 21 shake, slot reel stops |
 | **Cabinet bezel** | CSS arcade frame around `#game-shell` |
 | **Konami code** | Secret room Easter egg |
-| **Vendored tiles** | Online pixel tilesets under `assets/tiles/` (LPC floors, Jephed casino props, Kenney outdoor) loaded by `EnvironmentTextures.js` |
-| **Character sheets** | Fry hero + Jephed unique dealer/staff sheets under `assets/characters/` |
+| **Procedural tiles** | Ground, decor, fringe, and water FX baked by `TextureFactory.js` |
+| **Procedural characters** | 32×44 tuxedo sprites from `TextureFactory.js` + wardrobe palettes in `CharacterAppearance.js` |
+| **Staff sheets (kept)** | Jephed dealer/staff PNGs under `assets/characters/staff/` with metadata in `CharacterSprites.js` |
 
 ### Art pipeline
 
-There is no sprite sheet required — `TextureFactory.js` draws everything at
-boot on a 16-pixel grid and blits it at 2×, so a tile is 32 screen pixels and one
-art pixel is always exactly two. Tiles light from the top left without exception,
-and the wide floors register three faintly scuffed variants that `groundTileKey()`
-spreads across the map so a ballroom stops reading as wallpaper.
+There is no vendored tile sheet on the live boot path — `TextureFactory.js`
+draws ground, decor, fringe, and characters at boot on a 16-pixel grid and
+blits tiles at 2×, so a tile is 32 screen pixels and one art pixel is always
+exactly two. Tiles light from the top left without exception, and the wide
+floors register three faintly scuffed variants that `groundTileKey()` spreads
+across the map so a ballroom stops reading as wallpaper.
 
-Characters are authored pixel grids: arrays of 16-character strings, one
-character per pixel, resolved through a palette legend. The head and torso are a
-separate block from the legs, which is how a three-frame walk cycle swaps only
-the legs and drops the body a pixel. Right-facing is the left grid mirrored.
-Editing a sprite means editing the strings; the smoke test rejects a row that is
-not 16 characters or uses a letter outside the legend.
+Characters are authored pixel grids: arrays of strings, one character per
+pixel, resolved through a palette legend. The head and torso are a separate
+block from the legs, which is how a three-frame walk cycle swaps only the legs
+and drops the body a pixel. Right-facing is the left grid mirrored. Editing a
+sprite means editing the strings; the smoke test rejects a row that uses a
+letter outside the legend.
 
-Layouts are already data (`js/data/maps/*.json`). Optional vendored ground/decor
-PNGs under `assets/tiles/` (via `EnvironmentTextures.js`) and staff sheets under
-`assets/characters/` (via `CharacterSprites.js`) map onto the same `TILE` enum
-and NPC roster without changing map JSON. FX icons (glows, interact marker)
-remain small procedural textures in `TextureFactory.js`.
+Layouts are already data (`js/data/maps/*.json`). Staff sheets under
+`assets/characters/staff/` remain available for sheet-based tooling via
+`CharacterSprites.js`; FX icons (glows, interact marker) stay as small
+procedural textures in `TextureFactory.js`.
 
 ---
 

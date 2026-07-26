@@ -571,25 +571,6 @@ export function formatSaveTime(iso) {
   }
 }
 
-/** @deprecated use saveSlot(session) */
-export function saveSession(session) {
-  saveSlot(session);
-}
-
-/** @deprecated */
-export function loadSession() {
-  const recent = recentSlots();
-  if (recent.length) return loadSlot(recent[0].slotId);
-  return null;
-}
-
-/** @deprecated */
-export function clearSession() {
-  const lib = loadLibrary();
-  localStorage.removeItem(LIBRARY_KEY);
-  return lib;
-}
-
 export function createGuestSession({ playerName = "Guest", chips = 1000, useColor = true, useUnicode = true } = {}) {
   return new PlayerSession({
     playerName,

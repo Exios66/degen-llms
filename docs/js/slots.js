@@ -535,7 +535,3 @@ export function formatMachineLabel(machine, session, tier = null) {
   }
   return `${machine.name} (${range})`;
 }
-
-/** @deprecated use formatPaytableText(machine) */
-export const PAYTABLE_TEXT =
-  "Paytable: 7-7-7 = 100x | 💎💎💎 = 50x | 🔔🔔🔔 = 25x | BAR×3 = 15x | Two cherries = 2x | One cherry = bet returned";

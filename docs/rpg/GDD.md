@@ -68,9 +68,8 @@ flowchart TB
 | Tile vocabulary | `js/systems/MapTiles.js` |
 | JSON → tile layers | `js/systems/MapLoader.js` |
 | Map/NPC/door accessors + procedural fallback | `js/systems/MapData.js` |
-| Procedural ground / decor / fringe textures (16px → 2×) | `js/systems/TextureFactory.js` |
-| Vendored tiles + procedural FX | `js/systems/EnvironmentTextures.js` |
-| Character sheets + palette repaint | `js/systems/CharacterSprites.js`, `js/data/character-sheets.js` |
+| Procedural ground / decor / fringe / character textures (16px → 2×) | `js/systems/TextureFactory.js` |
+| Sheet metadata + palette ramps (staff PNGs under `assets/characters/staff/`) | `js/systems/CharacterSprites.js`, `js/data/character-sheets.js` |
 | Dialogue graph | `js/systems/DialogueManager.js` |
 | Encounter routing | `js/systems/EncounterBridge.js`, `js/systems/HostedEncounters.js` |
 | Mounting terminal screens | `js/systems/TerminalHostOverlay.js` |
@@ -94,18 +93,15 @@ the map so a ballroom does not read as wallpaper. Water registers three animated
 frames; the overworld cycles them. Neighbor-edge fringe overlays (foam, wet sand,
 path, pool) soften tile seams. Decor and characters cast soft contact shadows;
 slots, screens, and lanterns pulse. Walkable `FLOWER` clutter plus blocking
-`ROCK` / `LANTERN` props densify outdoor maps. `EnvironmentTextures.js` can also
-map vendored PNGs under `assets/tiles/` onto the same `TILE` enum without
-changing map JSON.
+`ROCK` / `LANTERN` props densify outdoor maps. Ground and decor are always
+procedural — there is no vendored `assets/tiles/` loader on the live boot path.
 
-Characters come from **vendored sprite sheets** under `assets/characters/`,
-repainted at runtime by `CharacterSprites.js`. Each sheet's palette is sorted
-into skin / hair / outfit / legwear ramps (see `js/data/character-sheets.js`);
-a look maps those ramps onto wardrobe colours while preserving relative
-luminance, so highlights and shadows stay intact. Collision boxes hug the feet
-via `CHAR_METRICS` / `FOOT_DROP` so the taller sheet art still stands on the
-tile centre. `scripts/smoke-test-rpg.mjs` checks every sheet's claimed ramp
-colours against the PNG pixels and that every wardrobe combination resolves.
+Overworld characters are also baked by `TextureFactory.js` (32×44 tuxedo
+sprites with wardrobe palettes from `CharacterAppearance.js`). Collision boxes
+hug the feet via `CHAR_METRICS` / `FOOT_DROP`. Jephed staff sheets under
+`assets/characters/staff/` plus `CharacterSprites.js` / `character-sheets.js`
+remain in-tree for sheet-based tooling and smoke checks; they are not required
+to boot the overworld.
 
 ---
 

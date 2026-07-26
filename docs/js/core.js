@@ -284,6 +284,7 @@ export class PlayerSession {
     this.slotId = slotId;
     this.slotLabel = slotLabel;
     this.sportsbookData = null;
+    this.tradingDeskData = null;
     this.rpg = null;
     this.rewards = null;
     this.hotel = null;
@@ -333,6 +334,7 @@ export class PlayerSession {
       useUnicode: this.useUnicode,
       activityStats: this.activityStats,
       sportsbook: this.sportsbookData ?? null,
+      tradingDesk: this.tradingDeskData ?? null,
       progressivePools: this.progressivePools ?? {},
       horseRacingCustomNames: this.horseRacingCustomNames ?? null,
       horseRacingNameOffset: this.horseRacingNameOffset ?? 0,
@@ -363,6 +365,7 @@ export class PlayerSession {
     s.wallet = ChipWallet.fromJSON(data.wallet ?? { balance: 1000, transactions: [] });
     s.activityStats = data.activityStats ?? {};
     s.sportsbookData = data.sportsbook ?? null;
+    s.tradingDeskData = data.tradingDesk ?? null;
     s.progressivePools = data.progressivePools ?? {};
     s.horseRacingCustomNames = data.horseRacingCustomNames ?? null;
     s.horseRacingNameOffset = data.horseRacingNameOffset ?? 0;
@@ -630,7 +633,14 @@ export const ACTIVITIES = {
     name: "Mandalay Sports Book",
     floor: "Sports Book",
     minBet: 10,
-    description: "Sports wagering and prediction markets — history desk, headlines, and easter-egg YES/NO contracts.",
+    description: "125+ stored sports scenarios and prediction markets — ML, spread, totals, props, parlays, futures.",
+  },
+  trading_desk: {
+    id: "trading_desk",
+    name: "Mandalay Markets",
+    floor: "Trading Floor",
+    minBet: 25,
+    description: "Futures and call/put options on NYSE equities, commodities, and crypto contracts.",
   },
   horse_racing: {
     id: "horse_racing",
@@ -660,6 +670,7 @@ export const FLOOR_ORDER = [
   "Slot Machines",
   "Lottery Counter",
   "Sports Book",
+  "Trading Floor",
   "Racing Pavilion",
   "Equestrian Arena",
 ];

@@ -2,14 +2,15 @@
 
 A complete catalog of everything on the Mandalay Bay casino floor and resort.
 
-Six floors, ten activities, one chip wallet:
+Seven floors, eleven activities, one chip wallet:
 
 | Floor | Activities | Min bet |
 |-------|------------|---------|
 | **Table Games** | Blackjack, Texas Hold'em, Mandalay Roulette, Craps | 10 chips |
 | **Slot Machines** | 14 machines incl. Megabucks & linked progressives | 1 chip |
 | **Lottery Counter** | Pick 3, Pick 4, Mega draw, scratchers | Varies |
-| **Sports Book** | Moneyline, spread, totals, props + prediction markets | 10 chips |
+| **Sports Book** | Scenario board, parlays/futures + prediction markets | 10 chips |
+| **Trading Floor** | Futures & call/put options (NYSE, commodities, crypto) | 25 chips |
 | **Racing Pavilion** | Mandalay Racing (thoroughbred sim) | 5 chips |
 | **Equestrian Arena** | Dressage competition, show jumping | 10 chips |
 
@@ -70,9 +71,15 @@ Fourteen machines from penny progressives to high-limit classics. Progressive ja
 
 ## Sports Book
 
-Simulated wagering across NFL, NBA, MLB, MLS, NHL, NCAA, UFC, tennis, and golf. Bet types: moneyline, spread, totals, props, outrights. Binary YES/NO prediction markets in Polymarket style.
+Stored scenario board (≥125 events) across NFL, NBA, MLB, MLS, NHL, NCAA, UFC, tennis, and golf. Bet types: moneyline, spread, totals, props, outrights, futures, and 2–4 leg parlays. Binary YES/NO prediction markets (≥125 scenarios) in Polymarket style.
 
 → [Sports Book](sportsbook.md)
+
+## Trading Floor
+
+Mandalay Markets — long-only futures and call/put options on NYSE equities, commodities, and crypto from a stored contract catalog.
+
+→ [Trading Floor](trading-floor.md)
 
 ## Racing Pavilion
 

@@ -8,6 +8,7 @@ import { formatVegasClockLabel } from "./vegas-time.js";
 import { onActivityVisit, syncContactIntros, onSessionSwing } from "./phone-contacts.js";
 import { applyIntoxicationEffects } from "./intoxication-effects.js";
 import { SportsbookState } from "./sportsbook.js";
+import { TradingDeskState } from "./tradingDesk.js";
 import { Action } from "./blackjack/game.js";
 import { loadBundledHorseNames } from "./horse_racing.js";
 import { RewardsPhone } from "./RewardsPhone.js";
@@ -23,6 +24,7 @@ import { buildTableRenderers } from "./ui/table-renderers.js";
 import { buildCrapsRenderers } from "./ui/craps-renderers.js";
 import { buildLotteryRenderers } from "./ui/lottery-renderers.js";
 import { buildSportsbookRenderers } from "./ui/sportsbook-renderers.js";
+import { buildTradingDeskRenderers } from "./ui/trading-desk-renderers.js";
 import { buildRacingRenderers } from "./ui/racing-renderers.js";
 import { buildVenueRenderers } from "./ui/venue-renderers.js";
 import { buildCashierRenderers } from "./ui/cashier-renderers.js";
@@ -36,7 +38,10 @@ let session = new PlayerSession();
 let rewardsPhone = null;
 let casinoTimeTicker = null;
 
-const runtime = createRuntime({ sportsbook: new SportsbookState() });
+const runtime = createRuntime({
+  sportsbook: new SportsbookState(),
+  tradingDesk: new TradingDeskState(),
+});
 
 /** Context handed to every shared renderer factory (terminal flavor). */
 const ctx = {
@@ -93,11 +98,13 @@ function stopCasinoTimeTicker() {
 function syncSportsbookToSession() {
   if (session.slotId != null) {
     session.sportsbookData = runtime.sportsbook.toJSON();
+    session.tradingDeskData = runtime.tradingDesk.toJSON();
   }
 }
 
 function resetSportsbookFromSession() {
   runtime.sportsbook = SportsbookState.fromJSON(session.sportsbookData);
+  runtime.tradingDesk = TradingDeskState.fromJSON(session.tradingDeskData);
 }
 
 function persist() {
@@ -156,6 +163,7 @@ function returnToSavePicker() {
   stopCasinoTimeTicker();
   rewardsPhone?.close();
   runtime.sportsbook = new SportsbookState();
+  runtime.tradingDesk = new TradingDeskState();
   runtime.blackjackGame = null;
   runtime.holdem = null;
   session = new PlayerSession();
@@ -557,6 +565,7 @@ function renderFloor({ floor }) {
     else if (act.id === "slots") pushView("stake-tier", { activityId: "slots", nextView: "slots-menu" });
     else if (act.id === "lottery") pushView("stake-tier", { activityId: "lottery", nextView: "lottery" });
     else if (act.id === "sportsbook") pushView("stake-tier", { activityId: "sportsbook", nextView: "sportsbook" });
+    else if (act.id === "trading_desk") pushView("stake-tier", { activityId: "trading_desk", nextView: "trading-desk" });
     else if (act.id === "horse_racing") pushView("stake-tier", { activityId: "horse_racing", nextView: "horse-racing" });
     else if (act.id === "dressage") pushView("stake-tier", { activityId: "dressage", nextView: "dressage" });
     else if (act.id === "jumper") pushView("stake-tier", { activityId: "jumper", nextView: "jumper" });
@@ -624,6 +633,7 @@ const stakesRenderers = buildStakesRenderers(ctx);
 const { clearSlotsSpinTimers, slotMachineCard, ...slotsRenderers } = buildSlotsRenderers(ctx);
 const { finishBlackjack, finishHoldem, startBlackjack, ...tableRenderers } = buildTableRenderers(ctx);
 const sportsbookRenderers = buildSportsbookRenderers(ctx);
+const tradingDeskRenderers = buildTradingDeskRenderers(ctx);
 const { renderHorsePaddock, ...racingRenderers } = buildRacingRenderers(ctx);
 const venueRenderers = buildVenueRenderers(ctx);
 const cashierRenderers = buildCashierRenderers(ctx);
@@ -651,6 +661,7 @@ const RENDERERS = {
   ...crapsRenderers,
   ...lotteryRenderers,
   ...sportsbookRenderers,
+  ...tradingDeskRenderers,
   ...racingRenderers,
   ...venueRenderers,
   ...cashierRenderers,

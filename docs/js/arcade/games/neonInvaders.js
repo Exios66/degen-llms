@@ -97,13 +97,13 @@ export function createNeonInvaders(canvas, api) {
     drawStarfield();
 
     for (const a of aliens) {
-      drawInvader(ctx, a.x, a.y, a.color, a.type, time, 2);
+      drawInvader(ctx, a.x, a.y, a.color, a.type, time, 3);
     }
 
     for (const b of bullets) drawBullet(ctx, b.x, b.y, false);
     for (const b of enemyShots) drawBullet(ctx, b.x, b.y, true);
 
-    drawCannon(ctx, shipX, H - 72, time, 2);
+    drawCannon(ctx, shipX, H - 80, time, 3);
 
     fx.draw(ctx);
 

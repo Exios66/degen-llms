@@ -143,6 +143,11 @@ for (const door of doors) {
     `${at}: door tile can't be walked to from the spawn point`);
   check(connected(door.targetMap, door.targetX, door.targetY),
     `${at}: lands somewhere unwalkable in ${door.targetMap} (${door.targetX},${door.targetY})`);
+  // Landing on another door tile causes an enter/exit ping-pong on scene restart.
+  const landDoor = doors.find((d) =>
+    d.mapId === door.targetMap && d.x === door.targetX && d.y === door.targetY);
+  check(!landDoor,
+    `${at}: lands on a door tile in ${door.targetMap} (${door.targetX},${door.targetY}) — bounce-back loop`);
   if (door.venueGate) {
     check(["high_limit_salon", "foundation_room"].includes(door.venueGate),
       `${at}: unknown venue gate "${door.venueGate}"`);

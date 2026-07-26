@@ -81,7 +81,8 @@ MAPS_SPEC: list[dict] = [
             rect("BAR", 11, 26, 4, 1),
         ],
         "doors": [
-            door(15, 3, "registration_lobby", 15, 27, "Through the gold doors — Mandalay Bay."),
+            # Land one tile inside the lobby — never on the reciprocal exit door.
+            door(15, 3, "registration_lobby", 15, 26, "Through the gold doors — Mandalay Bay."),
             door(2, 24, "valet_garage", 26, 15, "Valet ramp, level P1."),
         ],
     },
@@ -149,7 +150,7 @@ MAPS_SPEC: list[dict] = [
             door(15, 3, "main_resort", 15, 26, "Casino floor — north."),
             door(2, 15, "valet_garage", 15, 26, "Down to the garage."),
             door(27, 15, "hotel_tower", 15, 26, "Gold elevators to the tower."),
-            door(8, 3, "guest_corridor", 3, 15, "Guest elevators — 24th floor."),
+            door(8, 3, "guest_corridor", 4, 15, "Guest elevators — 24th floor."),
             door(21, 3, "guest_room", 15, 26, "Express lift — Room 24-118.",
                  requiresRoomKey=True),
         ],

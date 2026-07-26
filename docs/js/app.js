@@ -184,9 +184,20 @@ function mountDiningOverlay() {
   diningOverlay.setSession(session);
 }
 
+const POOL_LAUNCH_ZONES = {
+  "pool-complex": "hub",
+  "pool-wave": "wave_pool",
+  "pool-hot-tubs": "hot_tubs",
+  "pool-cabanas": "cabanas",
+  "pool-reef": "shark_reef",
+  "pool-beach-club": "beach_club",
+  "pool-rave": "beach_rave",
+  "pool-events": "events",
+};
+
 function mountPoolOverlay() {
   const root = document.getElementById("pool-overlay");
-  if (!root) return;
+  if (!root) return null;
   poolOverlay = new PoolComplexOverlay(root, {
     onPersist: () => persist(),
     onStatus: (msg, kind) => showStatus(msg, kind),
@@ -201,7 +212,31 @@ function mountPoolOverlay() {
     },
   });
   poolOverlay.setSession(session);
+  return poolOverlay;
 }
+
+/** Remount if the graphic beach deck was never attached (stale host / missing root race). */
+function ensurePoolOverlay() {
+  if (poolOverlay && typeof poolOverlay.open === "function") {
+    poolOverlay.setSession(session);
+    return poolOverlay;
+  }
+  return mountPoolOverlay();
+}
+
+/** Open the Mandalay Beach graphic overlay from any casino entry point. */
+function openPoolComplexVisual(zoneId = "hub") {
+  const overlay = ensurePoolOverlay();
+  if (!overlay) {
+    showStatus("Pool overlay not ready — try Hotel Lobby → Pool Complex.", "error");
+    return false;
+  }
+  overlay.setSession(session);
+  overlay.open(zoneId || "hub");
+  return true;
+}
+
+Object.assign(ctx, { ensurePoolOverlay, openPoolComplexVisual });
 
 function mountBalconySmokeOverlay() {
   const root = document.getElementById("balcony-smoke-overlay");
@@ -515,6 +550,7 @@ function renderHub() {
     "Player Stats",
     "Save Game",
     "Exit to Hotel",
+    "Pool Complex — Mandalay Beach",
     "Casino Amenities",
     "Explore Resort (RPG)",
     "Leave Casino",
@@ -600,8 +636,10 @@ function renderHub() {
       ensureHotel(session);
       pushView("hotel-lobby");
     } else if (choice === FLOOR_ORDER.length + 7) {
-      pushView("casino-floor");
+      if (!openPoolComplexVisual("hub")) pushView("pool-complex");
     } else if (choice === FLOOR_ORDER.length + 8) {
+      pushView("casino-floor");
+    } else if (choice === FLOOR_ORDER.length + 9) {
       persist();
       const rpgUrl = session.slotId != null
         ? `./rpg/?slot=${session.slotId}&skipIntro=1`
@@ -791,6 +829,17 @@ function render() {
   window.__casinoReady = true;
 }
 
+function applyDeepView(deepView) {
+  if (!deepView) return;
+  const poolZone = POOL_LAUNCH_ZONES[deepView];
+  if (poolZone) {
+    if (openPoolComplexVisual(poolZone)) return;
+    if (RENDERERS[deepView]) pushView(deepView);
+    return;
+  }
+  if (RENDERERS[deepView]) pushView(deepView);
+}
+
 function applyLaunchParams() {
   const params = new URLSearchParams(window.location.search);
   if (params.get("guest") === "1") {
@@ -798,8 +847,7 @@ function applyLaunchParams() {
       playerName: params.get("name") || "Guest",
       chips: Math.max(0, parseInt(params.get("chips") || "1000", 10)),
     }));
-    const deepView = params.get("view");
-    if (deepView && RENDERERS[deepView]) pushView(deepView);
+    applyDeepView(params.get("view"));
     return true;
   }
   const slotParam = params.get("slot");
@@ -813,8 +861,7 @@ function applyLaunchParams() {
       const loaded = loadSlot(slotId);
       if (loaded) {
         enterCasino(loaded);
-        const deepView = params.get("view");
-        if (deepView && RENDERERS[deepView]) pushView(deepView);
+        applyDeepView(params.get("view"));
         return true;
       }
       pushView("save-create", { slotId });

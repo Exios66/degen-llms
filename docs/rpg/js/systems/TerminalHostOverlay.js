@@ -59,6 +59,14 @@ export class TerminalHostOverlay {
       get diningOverlay() { return hooks.diningOverlay ?? null; },
       get poolOverlay() { return hooks.poolOverlay ?? null; },
       get balconySmokeOverlay() { return hooks.balconySmokeOverlay ?? null; },
+      ensurePoolOverlay: () => hooks.poolOverlay ?? null,
+      openPoolComplexVisual: (zoneId = "hub") => {
+        const overlay = hooks.poolOverlay;
+        if (!overlay) return false;
+        overlay.setSession(session);
+        overlay.open(zoneId || "hub");
+        return true;
+      },
       runtime: this.runtime,
       persist: () => this.persist(),
       render: () => this.render(),

@@ -913,7 +913,14 @@ export function buildHotelRenderers(ctx) {
   }
 
   function openPoolComplex(zoneId = "hub") {
-    const overlay = ctx.poolOverlay;
+    if (typeof ctx.openPoolComplexVisual === "function") {
+      if (ctx.openPoolComplexVisual(zoneId)) return;
+      pushView("pool-complex");
+      return;
+    }
+    const overlay = typeof ctx.ensurePoolOverlay === "function"
+      ? ctx.ensurePoolOverlay()
+      : ctx.poolOverlay;
     if (!overlay) {
       showStatus("Pool overlay not ready.", "error");
       pushView("pool-complex");

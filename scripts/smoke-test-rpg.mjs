@@ -24,7 +24,8 @@ const { HOSTED_ENCOUNTERS, TABLE_STAKE_ACTIVITIES } = await import(
 const { RPG_ITEMS } = await import(join(rpgRoot, "js/systems/Inventory.js"));
 const { DEX_REGISTRY } = await import(join(rpgRoot, "js/systems/Dex.js"));
 const { ART_UNIT } = await import(join(rpgRoot, "js/systems/MapTiles.js"));
-const { findPath, nearestReachable } = await import(join(rpgRoot, "js/systems/Pathfinder.js"));
+const { findPath, nearestReachable, smoothPath } = await import(
+  join(rpgRoot, "js/systems/Pathfinder.js"));
 const {
   artKeys, characterGrids, drawArtToCanvas, drawCharacterToCanvas,
   groundTextureKeys, groundTileKey,
@@ -439,6 +440,19 @@ for (const mapId of MAP_IDS) {
   }
   if (path.length) {
     check(prev.x === far.x && prev.y === far.y, `${at}: route stops short of the target`);
+  }
+
+  // The scene walks the smoothed route, not the raw one, so that is what has
+  // to stay on walkable ground and still finish where the player tapped.
+  const smoothed = smoothPath(grid, spawn, path);
+  check(smoothed.length <= path.length, `${at}: smoothing added waypoints`);
+  for (const step of smoothed) {
+    check(walkable(mapId, step.x, step.y),
+      `${at}: smoothed route stands on solid tile (${step.x},${step.y})`);
+  }
+  if (path.length) {
+    const end = smoothed[smoothed.length - 1];
+    check(end.x === far.x && end.y === far.y, `${at}: smoothing moved the destination`);
   }
 
   // Tapping a wall should land you beside it rather than doing nothing.

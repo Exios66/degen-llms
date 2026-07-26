@@ -18,7 +18,7 @@ import {
 import { tierForWagered } from "../../../js/rewards.js";
 import { tierIndex } from "../../../js/rewards-perks.js";
 import { recordDex } from "../systems/Dex.js";
-import { findPath, nearestReachable } from "../systems/Pathfinder.js";
+import { findPath, nearestReachable, smoothPath } from "../systems/Pathfinder.js";
 import { EGG_REGISTRY, discoverEgg, eggForFlag } from "../systems/EasterEggs.js";
 
 /** Fewest tiles the camera will ever show on an axis — a handheld-sized window. */
@@ -108,7 +108,7 @@ export class OverworldScene extends Phaser.Scene {
 
   /** The pad's A button: talk to whoever is in front of you, or open the menu. */
   touchInteract() {
-    if (!this.canMove || this.dialogue?.isActive()) return;
+    if (!this.canMove || this.dialogue?.isBlocking()) return;
     this._clearMovePath();
     this._tryInteract();
   }
@@ -547,7 +547,7 @@ export class OverworldScene extends Phaser.Scene {
     this.input.addPointer(2);
     this.input.on("pointerdown", (pointer) => {
       if (!pointer.wasTouch && pointer.button !== 0) return;
-      if (!this.canMove || this.dialogue.isActive() || this.encounters.isAnyActive?.()) return;
+      if (!this.canMove || this.dialogue.isBlocking() || this.encounters.isAnyActive?.()) return;
 
       const world = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
       const tileX = Math.floor(world.x / TILE_SIZE);
@@ -564,9 +564,20 @@ export class OverworldScene extends Phaser.Scene {
     });
   }
 
+  /**
+   * World position of the player's feet. Sprites are drawn with their feet on
+   * the tile centre, so the sprite origin sits FOOT_DROP px higher; anything
+   * measuring distance to a tile has to compare feet to feet or it reads half a
+   * tile off.
+   */
+  playerFoot() {
+    const at = this.player.body?.center;
+    return at ? { x: at.x, y: at.y } : { x: this.player.x, y: this.player.y + FOOT_DROP };
+  }
+
   /** Tile the player currently stands on, measured at the feet. */
   playerTile() {
-    const at = this.player.body?.center ?? this.player;
+    const at = this.playerFoot();
     return {
       x: Math.floor(at.x / TILE_SIZE),
       y: Math.floor(at.y / TILE_SIZE),
@@ -613,8 +624,9 @@ export class OverworldScene extends Phaser.Scene {
       if (npc) this._arriveAtNpc(npc);
       return true;
     }
-    this.movePath = findPath(this.collisionGrid, start, goal)
-      .map((t) => this._footTarget(t.x, t.y));
+    const route = smoothPath(
+      this.collisionGrid, start, findPath(this.collisionGrid, start, goal));
+    this.movePath = route.map((t) => this._footTarget(t.x, t.y));
     if (!this.movePath.length) {
       this.pendingTalk = null;
       return false;
@@ -675,8 +687,9 @@ export class OverworldScene extends Phaser.Scene {
   }
 
   _faceToward(wx, wy) {
-    const dx = wx - this.player.x;
-    const dy = wy - this.player.y;
+    const foot = this.playerFoot();
+    const dx = wx - foot.x;
+    const dy = wy - foot.y;
     if (Math.abs(dx) > Math.abs(dy)) this.facing = dx < 0 ? "left" : "right";
     else this.facing = dy < 0 ? "up" : "down";
     this._applyPlayerAnim(false);
@@ -737,7 +750,7 @@ export class OverworldScene extends Phaser.Scene {
     this._prevX = this.player.x;
     this._prevY = this.player.y;
 
-    if (!this.canMove || this.isMenuOpen?.() || this.dialogue.isActive()
+    if (!this.canMove || this.isMenuOpen?.() || this.dialogue.isBlocking()
         || this.encounters.isAnyActive?.() || this.encounters.blackjack?.isActive()) {
       this.player.body.setVelocity(0, 0);
       // Whatever just interrupted us outranks a tapped route, and owns the
@@ -768,34 +781,42 @@ export class OverworldScene extends Phaser.Scene {
     let { x: mx, y: my } = this._readMoveVector();
 
     if (mx === 0 && my === 0 && this.moveTarget) {
-      const dx = this.moveTarget.x - this.player.x;
-      const dy = this.moveTarget.y - this.player.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist < TILE_SIZE * 0.2) {
+      // Retire a waypoint once we are within a frame's travel of it. A fixed
+      // radius meant a fast frame could sail past the node and then swing back
+      // round to reach it, which reads as a wobble. Retiring several in one
+      // frame keeps a corner from costing a frame of standing still.
+      const reach = Math.max(TILE_SIZE * 0.2, (speed * delta) / 1000);
+      while (this.moveTarget) {
+        const dx = this.moveTarget.x - this.player.x;
+        const dy = this.moveTarget.y - this.player.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist >= reach) {
+          mx = dx / dist;
+          my = dy / dist;
+          if (Math.abs(mx) > Math.abs(my)) this.facing = mx < 0 ? "left" : "right";
+          else this.facing = my < 0 ? "up" : "down";
+          break;
+        }
         this.movePath?.shift();
         this.moveTarget = this.movePath?.[0] ?? null;
         if (!this.moveTarget) this._finishWalk();
-      } else {
-        mx = dx / dist;
-        my = dy / dist;
-        if (Math.abs(mx) > Math.abs(my)) this.facing = mx < 0 ? "left" : "right";
-        else this.facing = my < 0 ? "up" : "down";
       }
     } else if (mx !== 0 || my !== 0) {
       // Taking the keys back cancels the route.
       this._clearMovePath();
     }
 
-    let vx = mx * speed;
-    let vy = my * speed;
-    // Normalize diagonal so WASD/arrows feel even on diagonals
-    if (vx !== 0 && vy !== 0) {
-      const inv = Math.SQRT1_2;
-      vx *= inv;
-      vy *= inv;
+    // Clamp rather than scale: a thumbstick barely off centre should still walk
+    // slowly, but no input should ever beat the straight-ahead speed.
+    const mag = Math.hypot(mx, my);
+    if (mag > 1) {
+      mx /= mag;
+      my /= mag;
     }
-
-    this.player.body.setVelocity(vx, vy);
+    const assisted = this._cornerAssist(mx, my);
+    this.player.body.setVelocity(assisted.x * speed, assisted.y * speed);
+    const vx = assisted.x * speed;
+    const vy = assisted.y * speed;
 
     // A guest can wander into a planned route. Give up rather than shove.
     if (this.moveTarget) {
@@ -816,8 +837,7 @@ export class OverworldScene extends Phaser.Scene {
       if (this._footTimer > 200) {
         this._footTimer = 0;
         if (this.saveAdapter.rpg.options?.footsteps !== false) {
-          const tx = Math.floor(this.player.x / TILE_SIZE);
-          const ty = Math.floor(this.player.y / TILE_SIZE);
+          const { x: tx, y: ty } = this.playerTile();
           this.audio?.sfx?.(FOOTSTEP_SFX[this.groundGrid?.[ty]?.[tx]] ?? "foot_carpet");
         }
       }
@@ -856,6 +876,50 @@ export class OverworldScene extends Phaser.Scene {
       }
     }
     return false;
+  }
+
+  /**
+   * Slip past the edge of a doorway instead of stopping dead on it.
+   *
+   * Walking straight at a gap you are half a body off centre from used to park
+   * you against the jamb until you noticed and corrected. If the tile straight
+   * ahead is solid but the one you are already leaning towards is open, this
+   * adds a little sideways push so the player rounds the corner.
+   *
+   * @returns {{x: number, y: number}} the movement vector to actually use
+   */
+  _cornerAssist(mx, my) {
+    // Only for straight-line movement: on a diagonal the player is already
+    // steering, and on a route the pathfinder picked a line that fits.
+    if (!this.player?.body || this.moveTarget) return { x: mx, y: my };
+    if ((mx !== 0) === (my !== 0)) return { x: mx, y: my };
+
+    const { x: cx, y: cy } = this.player.body.center;
+    const tx = Math.floor(cx / TILE_SIZE);
+    const ty = Math.floor(cy / TILE_SIZE);
+    const PUSH = 0.6;
+    const DEADZONE = 3;
+
+    if (mx !== 0) {
+      const ahead = tx + Math.sign(mx);
+      if (!this._isBlocked(ahead, ty)) return { x: mx, y: my };
+      const off = cy - (ty * TILE_SIZE + TILE_SIZE / 2);
+      for (const dir of [-1, 1]) {
+        if (Math.sign(off) !== dir || Math.abs(off) < DEADZONE) continue;
+        if (this._isBlocked(tx, ty + dir) || this._isBlocked(ahead, ty + dir)) continue;
+        return { x: mx, y: dir * PUSH };
+      }
+    } else {
+      const ahead = ty + Math.sign(my);
+      if (!this._isBlocked(tx, ahead)) return { x: mx, y: my };
+      const off = cx - (tx * TILE_SIZE + TILE_SIZE / 2);
+      for (const dir of [-1, 1]) {
+        if (Math.sign(off) !== dir || Math.abs(off) < DEADZONE) continue;
+        if (this._isBlocked(tx + dir, ty) || this._isBlocked(tx + dir, ahead)) continue;
+        return { x: dir * PUSH, y: my };
+      }
+    }
+    return { x: mx, y: my };
   }
 
   /**
@@ -900,9 +964,10 @@ export class OverworldScene extends Phaser.Scene {
     let closest = null;
     let closestDist = 999;
 
+    const foot = this.playerFoot();
     for (const npc of this.currentNpcs ?? []) {
-      const dx = this.player.x - (npc.x * TILE_SIZE + TILE_SIZE / 2);
-      const dy = this.player.y - (npc.y * TILE_SIZE + TILE_SIZE / 2);
+      const dx = foot.x - (npc.x * TILE_SIZE + TILE_SIZE / 2);
+      const dy = foot.y - (npc.y * TILE_SIZE + TILE_SIZE / 2);
       const dist = Math.sqrt(dx * dx + dy * dy);
       if (dist < this._touchInteractRadius && this._isFacingNpc(npc)) {
         if (dist < closestDist) {
@@ -931,8 +996,7 @@ export class OverworldScene extends Phaser.Scene {
    */
   _checkChallengers() {
     if (this._challengeRunning) return;
-    const px = Math.floor(this.player.x / TILE_SIZE);
-    const py = Math.floor(this.player.y / TILE_SIZE);
+    const { x: px, y: py } = this.playerTile();
     for (const npc of this.currentNpcs ?? []) {
       if (!npc.sight) continue;
       if (this.saveAdapter.hasFlag(`challenged_${npc.id}`)) continue;
@@ -1009,8 +1073,7 @@ export class OverworldScene extends Phaser.Scene {
   }
 
   _isFacingNpc(npc) {
-    const px = this.player.x;
-    const py = this.player.y;
+    const { x: px, y: py } = this.playerFoot();
     const nx = npc.x * TILE_SIZE + TILE_SIZE / 2;
     const ny = npc.y * TILE_SIZE + TILE_SIZE / 2;
     const dx = nx - px;
@@ -1044,8 +1107,7 @@ export class OverworldScene extends Phaser.Scene {
 
   async _checkDoorTriggers() {
     if (this._gateBusy) return;
-    const tx = Math.floor(this.player.x / TILE_SIZE);
-    const ty = Math.floor(this.player.y / TILE_SIZE);
+    const { x: tx, y: ty } = this.playerTile();
     const key = `${tx},${ty}`;
     if (this._lastDoorTile === key) return;
     this._lastDoorTile = key;
@@ -1097,8 +1159,7 @@ export class OverworldScene extends Phaser.Scene {
   }
 
   _checkZoneTriggers() {
-    const tx = Math.floor(this.player.x / TILE_SIZE);
-    const ty = Math.floor(this.player.y / TILE_SIZE);
+    const { x: tx, y: ty } = this.playerTile();
     for (const t of this.triggers) {
       if (t.mapId && t.mapId !== this.currentMapId) continue;
       const w = t.width ?? 1;
@@ -1289,8 +1350,7 @@ export class OverworldScene extends Phaser.Scene {
     this._saveTimer += delta;
     if (this._saveTimer < 2000) return;
     this._saveTimer = 0;
-    const tx = Math.floor(this.player.x / TILE_SIZE);
-    const ty = Math.floor(this.player.y / TILE_SIZE);
+    const { x: tx, y: ty } = this.playerTile();
     this.saveAdapter.updatePosition(tx, ty);
     this.saveAdapter.persist();
   }

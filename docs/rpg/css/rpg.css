@@ -169,6 +169,17 @@ body {
   padding: 16px;
 }
 
+/* A system toast is informational, not a conversation: the player keeps
+   walking, so the overlay must not eat taps meant for the map underneath. */
+#dialogue-overlay.dialogue-overlay--toast {
+  pointer-events: none;
+}
+
+#dialogue-overlay.dialogue-overlay--toast .dialogue-box {
+  pointer-events: auto;
+  width: min(100%, 520px);
+}
+
 .encounter-overlay,
 #blackjack-overlay {
   position: absolute;
@@ -1249,6 +1260,11 @@ body {
 body.has-touch-pad .touch-hint {
   top: max(62px, calc(env(safe-area-inset-top) + 62px));
   bottom: auto;
+}
+
+/* Lift a non-blocking toast clear of the thumb pad it would otherwise cover. */
+body.has-touch-pad #dialogue-overlay.dialogue-overlay--toast {
+  padding-bottom: 190px;
 }
 
 body.has-touch-pad .rewards-phone-root {

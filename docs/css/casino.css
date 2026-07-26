@@ -3716,6 +3716,149 @@ body {
   border-left-color: #ff7eb6;
 }
 
+/* ── Trading Floor market ticker ── */
+
+.market-ticker-host {
+  margin: 0.55rem 0 0.85rem;
+}
+
+.market-ticker {
+  border: 1px solid rgba(255, 215, 0, 0.22);
+  background:
+    linear-gradient(180deg, rgba(12, 28, 22, 0.95), rgba(6, 14, 12, 0.98)),
+    repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.015) 0 2px,
+      transparent 2px 6px
+    );
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.35);
+}
+
+.market-ticker__header {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.35rem 0.65rem 0.15rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.market-ticker__live {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: #3dcc8c;
+  font-weight: 700;
+}
+
+.market-ticker__live::before {
+  content: "";
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: #3dcc8c;
+  box-shadow: 0 0 0 0 rgba(61, 204, 140, 0.7);
+  animation: market-ticker-pulse 1.4s ease-out infinite;
+}
+
+@keyframes market-ticker-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(61, 204, 140, 0.55); }
+  70% { box-shadow: 0 0 0 0.45rem rgba(61, 204, 140, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(61, 204, 140, 0); }
+}
+
+.market-ticker__tape {
+  overflow: hidden;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(0, 0, 0, 0.28);
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+
+.market-ticker__track {
+  display: inline-flex;
+  gap: 1.25rem;
+  padding: 0.4rem 0;
+  white-space: nowrap;
+  animation: market-ticker-scroll 55s linear infinite;
+  will-change: transform;
+}
+
+.market-ticker__track:hover {
+  animation-play-state: paused;
+}
+
+@keyframes market-ticker-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.market-ticker__item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.78rem;
+}
+
+.market-ticker__sym {
+  color: var(--gold, #ffd700);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.market-ticker__px {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.market-ticker__chg {
+  font-size: 0.7rem;
+}
+
+.market-ticker__chg.is-up,
+.market-ticker__chart-px.is-up,
+.market-ticker__item--up .market-ticker__px {
+  color: #3dcc8c;
+}
+
+.market-ticker__chg.is-down,
+.market-ticker__chart-px.is-down,
+.market-ticker__item--down .market-ticker__px {
+  color: #ff6b6b;
+}
+
+.market-ticker__chart-panel {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 0.2rem;
+  padding: 0.45rem 0.65rem 0.55rem;
+}
+
+.market-ticker__chart-meta {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.market-ticker__canvas {
+  width: 100%;
+  height: 72px;
+  display: block;
+}
+
+@media (max-width: 520px) {
+  .market-ticker__canvas {
+    height: 56px;
+  }
+
+  .market-ticker__item {
+    font-size: 0.7rem;
+  }
+}
+
 .prediction-blurb {
   font-size: 0.78rem;
   color: rgba(255, 255, 255, 0.55);

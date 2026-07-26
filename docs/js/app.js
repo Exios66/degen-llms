@@ -419,7 +419,7 @@ function renderHub() {
   const floors = [
     ...FLOOR_ORDER,
     "Cashier",
-    "Off-Strip Bank Account",
+    "Private Offshore Account",
     "Staff Manifest",
     "Player Stats",
     "Save Game",

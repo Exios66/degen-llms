@@ -12,11 +12,11 @@ abstract: |
   **The Mandalay Bay** (`degen-llms`) is a full-stack digital resort simulator spanning a
   Python CLI, a browser terminal on GitHub Pages, and a Phaser 3 pixel RPG overworld.
   Players share one chip wallet across blackjack, Texas Hold'em, roulette, craps, fourteen
-  slot machines, lottery tickets, a sports book with prediction markets, thoroughbred
-  racing, and equestrian events — then leave the floor for hotel check-in, an eleven-acre
-  pool complex, and MGM Rewards tier progression. This Quarto site documents the product
-  surfaces, economy, save system, architecture, and expansion roadmap using the live
-  repository packages.
+  slot machines, lottery tickets, a sports book with prediction markets, a trading floor
+  for futures and options, thoroughbred racing, and equestrian events — then leave the
+  floor for hotel check-in, an eleven-acre pool complex, and MGM Rewards tier progression.
+  This Quarto site documents the product surfaces, economy, save system, architecture, and
+  expansion roadmap using the live repository packages.
 keywords:
   - Mandalay Bay
   - casino simulation
@@ -79,7 +79,7 @@ This deployment is a **new** JackJBurleson Posit Connect Cloud content item for 
 
 | Zone | Highlights |
 |------|------------|
-| **Casino floor** | Blackjack, Hold'em, roulette, craps, 14 slots, lottery, sports book, racing, dressage & jumping |
+| **Casino floor** | Blackjack, Hold'em, roulette, craps, 14 slots, lottery, sports book, trading floor, racing, dressage & jumping |
 | **Cashier & bank** | Buy/cash chips, ledger, off-strip bank account |
 | **Hotel** | Clerk Carmen, hallway mini-game, in-room amenities, guest directory |
 | **Pool complex** | Wave pool, cabanas, Shark Reef collection, beach club |
@@ -245,7 +245,8 @@ Developer deep-dives:
 | [Table Games](docs/table-games.md) | Hold'em, roulette, craps |
 | [Slot Machines](docs/slots.md) | Machines, paytables, progressives |
 | [Lottery](docs/lottery.md) | Pick 3/4, Mega, scratchers |
-| [Sports Book](docs/sportsbook.md) | Moneyline, spread, prediction markets |
+| [Sports Book](docs/sportsbook.md) | Scenario board, parlays, prediction markets |
+| [Trading Floor](docs/trading-floor.md) | Futures & options |
 | [Racing](docs/racing.md) | Thoroughbred + equestrian |
 | [Hotel](docs/hotel.md) / [Pool](docs/pool-complex.md) / [Rewards](docs/mgm-rewards.md) | Resort off the floor |
 | [RNG](docs/rng.md) | CSPRNG guarantees |

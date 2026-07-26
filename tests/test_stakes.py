@@ -33,6 +33,14 @@ def test_effective_table_stakes_no_limit() -> None:
     assert max_bet == 50_000
 
 
+def test_effective_table_stakes_ignores_tier_max() -> None:
+    """Table games wager up to bankroll — stake-tier max applies to slots only."""
+    tier = get_tier("standard")
+    min_bet, max_bet = effective_table_stakes(tier, balance=50_000, activity_min=10)
+    assert min_bet == 10
+    assert max_bet == 50_000
+
+
 def test_effective_slot_stakes_401k_on_penny_machine() -> None:
     tier = get_tier("401k_contribution")
     min_bet, max_bet = effective_slot_stakes(1, 3, tier, balance=10_000)

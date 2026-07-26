@@ -323,8 +323,9 @@ In-game help with sections for every activity:
 4. Slot machine paytables
 5. Lottery tickets
 6. Sports book & prediction markets
-7. Racing & equestrian
-8. Chip economy
+7. Trading Floor
+8. Racing & equestrian
+9. Chip economy
 
 ---
 

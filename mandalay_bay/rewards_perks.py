@@ -44,7 +44,7 @@ TIER_EXPERIENCE: dict[str, TierExperience] = {
         label="Pearl",
         speed_multiplier=0.82,
         tagline="Express lanes unlock — still satirically overpriced.",
-        monthly_amortized_cost="$1,847/mo (waived with $500 lifetime handle)",
+        monthly_amortized_cost="$1,847/mo (waived with $10,000 lifetime handle)",
         perks=(
             "Pool cabana — 20% off ($890/day → $712/day)",
             "Priority slot-aisle foot traffic",

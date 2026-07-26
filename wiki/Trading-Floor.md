@@ -5,12 +5,8 @@
 ## Game flow
 
 ```
-Trading Floor → Live ticker + sparkline → Filter asset / instrument → Buy contracts → Settle / expire → Wallet updated
+Trading Floor → Filter asset / instrument → Buy contracts → Settle / expire → Wallet updated
 ```
-
-## Live underlying tape
-
-While on the Trading Floor, a **LIVE** scrolling ticker shows spot prices for every underlying (NYSE, commodities, crypto) derived from futures marks, plus a rotating sparkline chart. Quotes random-walk so you can see where the book is trading before you buy.
 
 ## Asset classes
 
@@ -40,9 +36,18 @@ Exit spot is the contract mark drifted by a small random move at settlement. No 
 
 25 chips.
 
+## Pixel RPG
+
+Trading Desk encounters mount the shared terminal renderers when present on the property maps.
+
 ## Implementation
 
-- Web: `docs/js/tradingDesk.js`, `docs/js/ui/trading-desk-renderers.js`
-- CLI: `mandalay_bay/trading_desk.py`, `mandalay_bay/activities/trading_desk.py`
-- Data: `docs/data/trading_catalog.json` / `mandalay_bay/data/trading_catalog.json`
-- Tests: `tests/test_market_scenarios.py`
+| Path | Role |
+|------|------|
+| `mandalay_bay/trading_desk.py` | Python engine |
+| `mandalay_bay/activities/trading_desk.py` | CLI activity |
+| `docs/js/tradingDesk.js` | Browser mirror |
+| `docs/js/ui/trading-desk-renderers.js` | Screens the RPG mounts too |
+| `docs/data/trading_catalog.json` | Shared catalog twin |
+
+See [[Casino-Offerings]] and [[Sports-Book-and-Prediction-Markets]].

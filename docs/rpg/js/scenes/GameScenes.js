@@ -181,8 +181,8 @@ export class OverworldScene extends Phaser.Scene {
           if (SHADOW_DECOR.has(prop)) {
             const shadow = this.add.image(cx, cy + TILE_SIZE * 0.22, "shadow_blob");
             shadow.setDepth(1);
-            shadow.setAlpha(0.55);
-            shadow.setScale(0.85, 0.45);
+            shadow.setAlpha(0.75);
+            shadow.setScale(0.95, 0.5);
             this.groundLayer.add(shadow);
           }
           const decorImg = this.add.image(cx, cy, decorKey);
@@ -211,8 +211,8 @@ export class OverworldScene extends Phaser.Scene {
     this.player.body.setOffset(TILE_SIZE * 0.1875, TILE_SIZE * 0.75);
     this.playerShadow = this.add.image(this.player.x, this.player.y + TILE_SIZE * 0.28, "shadow_blob");
     this.playerShadow.setDepth(9);
-    this.playerShadow.setAlpha(0.5);
-    this.playerShadow.setScale(0.7, 0.35);
+    this.playerShadow.setAlpha(0.7);
+    this.playerShadow.setScale(0.8, 0.4);
 
     this.physics.world.setBounds(0, 0, MAP_WIDTH * TILE_SIZE, MAP_HEIGHT * TILE_SIZE);
 
@@ -234,8 +234,8 @@ export class OverworldScene extends Phaser.Scene {
       const ny = npc.y * TILE_SIZE + TILE_SIZE / 2;
       const shadow = this.add.image(nx, ny + TILE_SIZE * 0.28, "shadow_blob");
       shadow.setDepth(9);
-      shadow.setAlpha(0.45);
-      shadow.setScale(0.65, 0.32);
+      shadow.setAlpha(0.65);
+      shadow.setScale(0.75, 0.38);
       this.groundLayer.add(shadow);
       const sprite = this.add.sprite(nx, ny, npc.sprite);
       sprite.setDepth(10);

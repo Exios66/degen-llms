@@ -1441,12 +1441,17 @@ function drawLanternDecor(g) {
 
 /** Soft elliptical contact shadow under decor / characters. */
 function drawShadowBlob(g) {
+  const w = makeWriter(g);
   const fine = fineWriter(g);
-  glow(fine, TILE_SIZE / 2, TILE_SIZE / 2 + 2, [
-    { r: 12, alpha: 0.1 },
-    { r: 9, alpha: 0.14 },
-    { r: 6, alpha: 0.2 },
-    { r: 3, alpha: 0.28 },
+  // Opaque core so the blob survives generateTexture + scene alpha/scale.
+  w.px(0x000000, 4, 10, 8, 4, 0.55);
+  w.px(0x000000, 5, 9, 6, 6, 0.4);
+  w.px(0x000000, 6, 11, 4, 2, 0.7);
+  glow(fine, TILE_SIZE / 2, TILE_SIZE / 2 + 4, [
+    { r: 14, alpha: 0.16 },
+    { r: 10, alpha: 0.22 },
+    { r: 6, alpha: 0.3 },
+    { r: 3, alpha: 0.4 },
   ], 0x000000);
 }
 

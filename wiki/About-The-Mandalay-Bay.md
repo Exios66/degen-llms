@@ -44,6 +44,7 @@ The project riffs on real Vegas mechanics:
 |------|------------|
 | **Casino floor** | Table games, slots, lottery, sports book, trading floor, racing, equestrian |
 | **Casino amenities** | Shoppes at Mandalay Place, three bars, intoxication tracking |
+| **Resort dining** | Aureole, Border Grill, Stripsteak — eat/drink capacity minigame + encounters |
 | **Hotel tower** | Front desk, hallway mini-game, in-room TV/phone/minibar |
 | **Pool complex** | Wave pool, hot tubs, cabanas, beach club, aquarium |
 | **VIP venues** | High Limit salon, Foundation Room (chip- and tier-gated) |
@@ -62,10 +63,11 @@ The project began as a digital blackjack CLI and grew into a multi-surface resor
 4. **Phase 4** — Pixel RPG overworld with full activity encounters
 5. **Phase 5** — Craps, lottery counter, no-limit Hold'em, prediction markets
 6. **Phase 6** — Trading Floor (Mandalay Markets), stored sports/prediction scenario DBs
-7. **Ongoing** — Art polish, new resort vignettes, and market catalog expansion
+7. **Phase 7** — Resort dining overlays (capacity minigame, drink-scaled encounters) with CLI/RPG parity
+8. **Ongoing** — Art polish, new resort vignettes, and market catalog expansion
 
 ## See also
 
-- [[Casino-Offerings]] — Full activity catalog
-- [[Pixel-RPG-Simulator]] — Overworld design
-- [[Architecture]] — Technical overview
+- [[Casino-Offerings|Casino Offerings]] — Full activity catalog
+- [[Pixel-RPG-Simulator|Pixel RPG]] — Overworld design
+- [Architecture](architecture.md) — Technical overview

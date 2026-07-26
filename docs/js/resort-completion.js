@@ -4,28 +4,33 @@ import { TV_CHANNELS, ROOM_EVENTS, ensureRoomAmenities } from "./room-amenities.
 import { POOL_EVENTS, ensurePoolComplex } from "./pool-complex.js";
 import { ensureHotel } from "./hotel.js";
 import { hasSigned } from "./guest-directory.js";
+import { DINING_EGGS, ensureDining } from "./dining.js";
 
 const TOTAL_ROOM_EVENTS = Object.keys(ROOM_EVENTS).length;
 const TOTAL_POOL_EVENTS = Object.keys(POOL_EVENTS).length;
 const TOTAL_TV_CHANNELS = Object.keys(TV_CHANNELS).length;
+const TOTAL_DINING_EGGS = Object.keys(DINING_EGGS).length;
 
 /** @param {import("./core.js").PlayerSession} session */
 export function getResortCompletion(session) {
   const hotel = ensureHotel(session);
   const ra = ensureRoomAmenities(hotel);
   const pc = ensurePoolComplex(session);
+  const dining = ensureDining(session);
   const playerName = session.playerName?.trim() || "Guest";
 
   const roomEvents = ra.unlockedEvents.length;
   const poolEvents = pc.unlockedEvents.length;
   const channelsWatched = ra.channelsWatched.length;
   const guestBookSigned = hasSigned(playerName);
+  const diningEggs = dining.unlockedEggs.length;
 
   const items = [
     { id: "room_events", label: "Room vignettes", current: roomEvents, total: TOTAL_ROOM_EVENTS },
     { id: "pool_events", label: "Pool vignettes", current: poolEvents, total: TOTAL_POOL_EVENTS },
     { id: "tv_channels", label: "TV channels sampled", current: channelsWatched, total: TOTAL_TV_CHANNELS },
     { id: "guest_book", label: "Guest directory signed", current: guestBookSigned ? 1 : 0, total: 1 },
+    { id: "dining_eggs", label: "Dining encounter eggs", current: diningEggs, total: TOTAL_DINING_EGGS },
   ];
 
   const earned = items.reduce((sum, i) => sum + Math.min(i.current, i.total), 0);

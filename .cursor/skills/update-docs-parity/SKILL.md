@@ -38,14 +38,14 @@ Use these unless code proves otherwise:
 
 1. **Identity:** Full **resort simulator** (CLI + web terminal + pixel RPG) — never “digital casino CLI only.”
 2. **Casino floor:** Match [`mandalay_bay/activities/registry.py`](../../../mandalay_bay/activities/registry.py) `FLOOR_ORDER` / `ALL_ACTIVITIES`. Current: **seven floors, eleven activities** — Table Games (blackjack, Hold'em, roulette, craps), slots, lottery, sports book (+ prediction markets), **Trading Floor**, racing, equestrian.
-3. **Off-floor:** Hotel, pool complex, MGM Rewards, amenities/bars, VIP venues.
+3. **Off-floor:** Hotel, resort dining (capacity overlay), pool complex, MGM Rewards, amenities/bars, VIP venues.
 4. **RPG branding:** **Pokémon-style** pixel overworld (not “16-bit JRPG”).
 5. **RPG art boot path:** Procedural via `TextureFactory.js` — **no** vendored `assets/tiles/` on the live path; tuxedo-style guest sprites + wardrobe.
 6. **GitHub Pages:** Source = **Deploy from branch → `gh-pages` → `/docs`**. Automatic push/schedule is **disabled**. Prefer [`gh-pages-deploy-loop`](../gh-pages-deploy-loop/); `sync-gh-pages` is legacy.
 7. **Wiki publish:** Manual only — [`sync-github-wiki`](../sync-github-wiki/).
 8. **Posit:** Separate docs manuscript — [`posit-connect-publish`](../posit-connect-publish/). Never overwrite PSYCH 755 id `019f9a10-ebb9-d1d5-839f-97e794bfd0ca`.
 9. **Tests:** Prefer “200+” (count `def test_` in `tests/` if unsure).
-10. **History:** Craps, lottery, Hold'em, prediction markets, and Trading Floor are **shipped** (Phases 5–6+). “Ongoing” must not list shipped games.
+10. **History:** Craps, lottery, Hold'em, prediction markets, Trading Floor, and resort dining are **shipped** (Phases 5–7+). “Ongoing” must not list shipped games.
 
 ## Workflow
 

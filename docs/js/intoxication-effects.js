@@ -35,6 +35,16 @@ export const CONSUMABLE_POTENCY = {
   pool_cabana_bottle: { category: "liquor", potency: 3, label: "Cabana champagne" },
   // RPG / comps
   welcome_cocktail: { category: "liquor", potency: 2, label: "Welcome cocktail" },
+  // Resort dining overlay
+  dining_aureole_cab: { category: "liquor", potency: 2, label: "Aureole Cabernet" },
+  dining_aureole_krug: { category: "liquor", potency: 3, label: "Krug Grande Cuvée" },
+  dining_border_marg: { category: "liquor", potency: 2, label: "Border Grill margarita" },
+  dining_border_mezcal: { category: "liquor", potency: 3, label: "Border mezcal flight" },
+  dining_border_bottomless: { category: "liquor", potency: 2, label: "Bottomless brunch pour" },
+  dining_strip_of: { category: "liquor", potency: 3, label: "Stripsteak old fashioned" },
+  dining_strip_martini: { category: "liquor", potency: 2, label: "Stripsteak martini" },
+  dining_chase_shot: { category: "liquor", potency: 2, label: "Chase shot" },
+  dining_encounter_pour: { category: "liquor", potency: 2, label: "Unexpected pour" },
 };
 
 /** Virtual ids for pool services (not in item catalogs). */

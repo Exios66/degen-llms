@@ -20,6 +20,7 @@
 | `Trading-Floor.md` | `docs/trading-floor.md` |
 | `Racing-and-Equestrian.md` | `docs/racing.md` |
 | `Resort-Hotel.md` | `docs/hotel.md` |
+| `Resort-Dining.md` | `docs/dining.md` |
 | `Pool-Complex.md` | `docs/pool-complex.md` |
 | `MGM-Rewards.md` | `docs/mgm-rewards.md` |
 | `Pixel-RPG-Simulator.md` | `docs/pixel-rpg.md` + `docs/rpg/GDD.md` + `rpg.qmd` |

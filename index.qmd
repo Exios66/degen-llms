@@ -82,6 +82,7 @@ This deployment is a **new** JackJBurleson Posit Connect Cloud content item for 
 | **Casino floor** | Blackjack, Hold'em, roulette, craps, 14 slots, lottery, sports book, trading floor, racing, dressage & jumping |
 | **Cashier & bank** | Buy/cash chips, ledger, off-strip bank account |
 | **Hotel** | Clerk Carmen, hallway mini-game, in-room amenities, guest directory |
+| **Resort dining** | Aureole, Border Grill, Stripsteak — capacity minigame + drink-scaled encounters |
 | **Pool complex** | Wave pool, cabanas, Shark Reef collection, beach club |
 | **MGM Rewards** | Sapphire → Chairman tiers, comps, phone (press **P** on web) |
 | **Pixel RPG** | 28 walkable rooms, 61 NPCs, quests, and a dex — see [Pixel RPG](rpg.qmd) |
@@ -160,6 +161,8 @@ Full player-facing detail: [Chip Economy](docs/chip-economy.md).
 ## Hotel experience
 
 Exit the casino floor to the **Mandalay Bay Hotel Experience**: reservation locate with Clerk Carmen, hallway navigation, room upgrades (Deluxe King → Panorama Suite → Chairman Penthouse), folio settlement, and in-room amenities (TV channels, minibar, foreign calls, balcony decisions, unlockable Vegas vignettes). A real-time day/night cycle drives daily charges and rotating check-in requirements.
+
+**Resort dining** opens Aureole, Border Grill, and Stripsteak as a capacity overlay — pace courses, stack drinks, and risk satirical encounters that escalate with every pour. See [Resort Dining](docs/dining.md).
 
 ## Pool complex
 
@@ -248,7 +251,7 @@ Developer deep-dives:
 | [Sports Book](docs/sportsbook.md) | Scenario board, parlays, prediction markets |
 | [Trading Floor](docs/trading-floor.md) | Futures & options |
 | [Racing](docs/racing.md) | Thoroughbred + equestrian |
-| [Hotel](docs/hotel.md) / [Pool](docs/pool-complex.md) / [Rewards](docs/mgm-rewards.md) | Resort off the floor |
+| [Hotel](docs/hotel.md) / [Dining](docs/dining.md) / [Pool](docs/pool-complex.md) / [Rewards](docs/mgm-rewards.md) | Resort off the floor |
 | [RNG](docs/rng.md) | CSPRNG guarantees |
 | [Pixel RPG](docs/pixel-rpg.md) | Overworld overview |
 

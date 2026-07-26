@@ -771,6 +771,26 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
+  transition: border-color 160ms ease, transform 160ms ease;
+}
+
+.dining-card:hover {
+  border-color: rgba(57, 197, 207, 0.45);
+  transform: translateY(-1px);
+}
+
+.dining-card .action-bar {
+  margin-top: 0.35rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dining-card {
+    transition: none;
+  }
+
+  .dining-card:hover {
+    transform: none;
+  }
 }
 
 .dining-card-header {

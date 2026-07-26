@@ -54,6 +54,7 @@ Stake tiers run from penny slots through **401K Contribution** ($542–$6,500) a
 Beyond the gaming pits:
 
 - **Casino Floor — shopping & bars** — The Shoppes at Mandalay Place sky bridge, three full-service bars, intoxication tracking
+- **Resort dining** — Aureole, Border Grill, Stripsteak capacity overlay with drink-scaled encounters
 - **Cashier** — Buy chips, cash out to your off-strip bank account, view the floor ledger
 - **Off-Strip Bank Account** — Park winnings outside the cage; fund trips from outside income
 - **Staff Manifest** — Editable dealer roster with session overrides
@@ -63,7 +64,7 @@ Beyond the gaming pits:
 
 Exit the casino floor to the **Mandalay Bay Hotel Experience**:
 
-- **Clerk Carmen** at the front desk — locate reservations, settle overdue charges, upgrade rooms, review folios, checkout
+- **Clerk Carmen** at the front desk — locate reservations, settle overdue charges, upgrade rooms, review folios, checkout, resort dining
 - **Hallway mini-game** — three beats of directional choices to reach your door
 - **In-room amenities** — TV (Shark Reef ch. 47, wave pool cam), sensor-enabled minibar, unlimited foreign calls, balcony decisions, 17 unlockable Vegas vignettes
 - **Guest Directory** — leather-bound lobby guest book with persistent signatures

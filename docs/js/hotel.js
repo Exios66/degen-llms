@@ -1,6 +1,7 @@
 import { secureRandomInt, fmtChips } from "./core.js";
 import { defaultRewardsState } from "./rewards.js";
 import { getSessionTierIndex } from "./resort-bridge.js";
+import { consumeFoodComaFlag } from "./dining.js";
 import {
   syncWorldCycle,
   locateReservationViaPhone,
@@ -225,6 +226,14 @@ export function hallwayChoice(session, choiceIndex) {
   const pick = choices[choiceIndex];
   if (!pick) return { success: false, quip: "Pick a direction." };
   hotel.hallwayLog.push(pick.label);
+  // Food coma from resort dining: zig when you should've zagged, once.
+  if (consumeFoodComaFlag(session)) {
+    return {
+      success: false,
+      quip: pick.quip
+        ?? "Food coma detour — you zig toward ice machines and existential dread. Try again.",
+    };
+  }
   if (pick.wing === hotel.wing && !pick.quip) {
     hotel.hallwayProgress += 1;
     if (hotel.hallwayProgress >= HALLWAY_BEATS.length) {

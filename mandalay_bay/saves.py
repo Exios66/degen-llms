@@ -15,6 +15,7 @@ from mandalay_bay.world_cycle import WorldCycleState, ensure_world_cycle
 from mandalay_bay.bank_account import BankAccount, BankTransaction, BankTransactionKind, ensure_bank
 from mandalay_bay.staff_manifest import set_staff_overrides
 from mandalay_bay.intoxication import attach_intoxication_to_session
+from mandalay_bay.dining import attach_dining_to_session, ensure_dining
 from mandalay_bay.rewards import RewardsState, SAVE_VERSION_WITH_REWARDS, ensure_rewards, migrate_session_rewards
 from mandalay_bay.session import ActivityStats, PlayerSession
 from mandalay_bay.casino_time import flush_casino_time, format_save_slot_play_times
@@ -269,6 +270,8 @@ def session_to_dict(session: PlayerSession) -> dict:
         payload["staff_overrides"] = session.staff_overrides
     if hasattr(session, "intoxication") and session.intoxication is not None:
         payload["intoxication"] = asdict(session.intoxication)
+    if hasattr(session, "dining") and session.dining is not None:
+        payload["dining"] = asdict(session.dining)
     payload.update(getattr(session, "web_only_state", None) or {})
     return payload
 
@@ -359,6 +362,10 @@ def session_from_dict(data: dict) -> PlayerSession:
     if "staff_overrides" in data:
         set_staff_overrides(session, data["staff_overrides"])
     attach_intoxication_to_session(session, data)
+    if "dining" in data:
+        attach_dining_to_session(session, data)
+    else:
+        ensure_dining(session)
     session.web_only_state = {
         key: value for key, value in data.items() if key in WEB_ONLY_SAVE_KEYS
     }

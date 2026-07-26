@@ -12,6 +12,7 @@ These Markdown guides are the Quarto source for the Posit Connect docs site. The
 | [Access Points](access-points.md) | Every playable surface and docs mirror |
 | [Casino Offerings](casino-offerings.md) | Full floor catalog, stake tiers, amenities |
 | [Resort Hotel](hotel.md) | Check-in, rooms, amenities, day/night cycle |
+| [Resort Dining](dining.md) | Restaurant overlay, capacity minigame, encounters |
 | [Pool Complex](pool-complex.md) | Wave pool, cabanas, Shark Reef, beach club |
 | [MGM Rewards](mgm-rewards.md) | Tier progression, comps, phone |
 
@@ -31,6 +32,7 @@ These Markdown guides are the Quarto source for the Posit Connect docs site. The
 | [Trading Floor](trading-floor.md) | Futures & call/put options (NYSE, commodities, crypto) |
 | [Arcade Alley](arcade.md) | CRT cabinet overlays — Frogger, Invaders, Breakout, rhythm |
 | [Racing and Equestrian](racing.md) | Thoroughbred racing, dressage, show jumping |
+| [Resort Dining](dining.md) | Aureole / Border Grill / Stripsteak capacity challenge |
 
 ## Developer documentation
 

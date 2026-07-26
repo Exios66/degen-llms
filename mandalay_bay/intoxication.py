@@ -29,7 +29,19 @@ CONSUMABLE_POTENCY: dict[str, dict[str, object]] = {
     "pool_beach_club_bar": {"category": "liquor", "potency": 2},
     "pool_cabana_bottle": {"category": "liquor", "potency": 3},
     "welcome_cocktail": {"category": "liquor", "potency": 2},
+    "dining_aureole_cab": {"category": "liquor", "potency": 2},
+    "dining_aureole_krug": {"category": "liquor", "potency": 3},
+    "dining_border_marg": {"category": "liquor", "potency": 2},
+    "dining_border_mezcal": {"category": "liquor", "potency": 3},
+    "dining_border_bottomless": {"category": "liquor", "potency": 2},
+    "dining_strip_of": {"category": "liquor", "potency": 3},
+    "dining_strip_martini": {"category": "liquor", "potency": 2},
+    "dining_chase_shot": {"category": "liquor", "potency": 2},
+    "dining_encounter_pour": {"category": "liquor", "potency": 2},
 }
+
+INTOX_BUZZED_MIN_LEVEL = 10
+INTOX_BUZZED_MIN_DOSES = 4
 
 POOL_CONSUMABLE_IDS = {
     "bar": "pool_beach_club_bar",
@@ -133,6 +145,20 @@ def record_consumption(session: object, item_id: str, *, source: str = "unknown"
 
 def get_intoxication_level(session: object) -> int:
     return ensure_intoxication(session).level
+
+
+def is_heightened_intoxication(session: object) -> bool:
+    state = ensure_intoxication(session)
+    level = state.level
+    total_doses = state.total_doses
+    contraband = sum(1 for e in state.history if e.get("category") == "contraband")
+    if level >= 16:
+        return True
+    if total_doses >= INTOX_BUZZED_MIN_DOSES and level >= INTOX_BUZZED_MIN_LEVEL:
+        return True
+    if total_doses >= 3 and level >= 12 and contraband > 0:
+        return True
+    return False
 
 
 def is_consumable_item(item_id: str) -> bool:

@@ -95,6 +95,23 @@ html.intox-active body {
   animation: intox-view-shake calc(0.8s - var(--intox-norm, 0) * 0.55s) steps(2) infinite;
 }
 
+/* Tier art direction: buzzed warmth → drunk neon → blackout crush */
+.intox-tier-1.intox-active#app,
+.intox-tier-1.intox-active#game-shell {
+  filter:
+    blur(calc(var(--intox-blur, 0) * 0.2px))
+    sepia(calc(var(--intox-norm, 0) * 0.18))
+    saturate(calc(1 + var(--intox-norm, 0) * 0.2));
+}
+
+.intox-tier-2.intox-active#app,
+.intox-tier-2.intox-active#game-shell {
+  filter:
+    blur(calc(var(--intox-blur, 0) * 0.3px))
+    hue-rotate(calc(var(--intox-hue, 0) * 0.7deg))
+    saturate(calc(1 + var(--intox-norm, 0) * 0.3));
+}
+
 .intox-tier-3.intox-active#app,
 .intox-tier-3.intox-active#game-shell,
 .intox-tier-4.intox-active#app,
@@ -106,13 +123,22 @@ html.intox-active body {
     intox-view-glitch calc(4s - var(--intox-norm, 0) * 3s) steps(1) infinite;
 }
 
+.intox-tier-4.intox-active > .intox-overlay {
+  background: radial-gradient(ellipse at 50% 40%, rgba(80, 20, 90, 0.12), transparent 70%);
+}
+
 .intox-tier-5.intox-active#app,
 .intox-tier-5.intox-active#game-shell {
   filter:
     blur(calc(var(--intox-blur, 0) * 0.55px))
     hue-rotate(calc(var(--intox-hue, 0) * 1.4deg))
     saturate(calc(1 + var(--intox-norm, 0) * 0.55))
-    contrast(calc(1 + var(--intox-norm, 0) * 0.15));
+    contrast(calc(1 + var(--intox-norm, 0) * 0.15))
+    brightness(calc(1 - var(--intox-norm, 0) * 0.12));
+}
+
+.intox-tier-5.intox-active > .intox-overlay {
+  background: radial-gradient(ellipse at 50% 50%, rgba(0, 0, 0, 0.05), rgba(20, 0, 30, 0.35));
 }
 
 @keyframes intox-view-shake {

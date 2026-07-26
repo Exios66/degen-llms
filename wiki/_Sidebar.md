@@ -13,6 +13,7 @@
 - [[Casino-Offerings]]
 - [[MGM-Rewards]]
 - [[Resort-Hotel]]
+- [[Resort-Dining]]
 - [[Pool-Complex]]
 
 ### 🎮 Players

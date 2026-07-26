@@ -1,6 +1,8 @@
 import { TransactionKind, secureRandomInt } from "./core.js";
 import { getTierExperience } from "./rewards-perks.js";
 import { onTierRankUp } from "./phone-contacts.js";
+import { recordConsumption } from "./intoxication-effects.js";
+import { ensureDining } from "./dining.js";
 
 export const SAVE_VERSION_WITH_REWARDS = 3;
 
@@ -24,19 +26,19 @@ export const COMP_CATALOG = {
   slot_freeplay: {
     id: "slot_freeplay",
     title: "$10 Slot Free-Play",
-    body: "Pearl tier voucher — flavor credit for the slot aisle.",
+    body: "Pearl tier voucher — $10 chip credit for the slot aisle.",
     redeemFlag: "redeemed_slot_freeplay",
   },
   buffet_comp: {
     id: "buffet_comp",
     title: "Buffet Comp",
-    body: "Gold tier — the line moves faster when you're comped.",
+    body: "Gold tier — one dining course on the house at resort restaurants.",
     redeemFlag: "redeemed_buffet_comp",
   },
   room_night: {
     id: "room_night",
     title: "Standard Room Night",
-    body: "Platinum tier — one night on the house (narrative comp).",
+    body: "Platinum tier — one night on the house (extends your stay).",
     redeemFlag: "redeemed_room_night",
   },
   suite_upgrade: {
@@ -185,29 +187,52 @@ export class RewardsTracker {
     for (const n of this.ensureRewards().notifications) n.read = true;
   }
 
+  /**
+   * Mark a comp redeemed and apply real resort effects (drink, chips, dining credit).
+   * Room upgrades / stay extensions are handled by hotel helpers that call this.
+   * @returns {false | { ok: true, effectNote?: string }}
+   */
   redeemComp(compId) {
     const rewards = this.ensureRewards();
     if (!rewards.unlockedComps.includes(compId)) return false;
     if (rewards.redeemedComps.includes(compId)) return false;
     rewards.redeemedComps.push(compId);
     const meta = COMP_CATALOG[compId];
-    if (meta?.redeemFlag && this.session.rpg) {
+    if (meta?.redeemFlag) {
+      this.session.rpg = this.session.rpg ?? {};
       this.session.rpg.flags = this.session.rpg.flags ?? {};
       this.session.rpg.flags[meta.redeemFlag] = true;
       if (compId === "welcome_drink") {
         delete this.session.rpg.flags.has_welcome_drink_comp;
       }
     }
+
+    let effectNote = "";
+    if (compId === "welcome_drink") {
+      const drink = recordConsumption(this.session, "welcome_cocktail", { source: "comp" });
+      effectNote = drink.ok
+        ? ` Welcome cocktail poured (intox +${drink.added}).`
+        : " Welcome cocktail noted.";
+    } else if (compId === "slot_freeplay") {
+      const amount = 10;
+      this.session.wallet?.credit?.(amount, "rewards", "Pearl slot free-play");
+      effectNote = ` +${amount} chips credited for the slot aisle.`;
+    } else if (compId === "buffet_comp") {
+      const dining = ensureDining(this.session);
+      dining.buffetCompCredits = (dining.buffetCompCredits ?? 0) + 1;
+      effectNote = " One dining course credit unlocked — order at a resort restaurant.";
+    }
+
     const note = {
       id: `redeem_${compId}_${Date.now()}`,
       title: "Comp Redeemed",
-      body: `${meta?.title ?? compId} — enjoy, member.`,
+      body: `${meta?.title ?? compId} — enjoy, member.${effectNote}`,
       read: false,
       timestamp: nowIso(),
     };
     rewards.notifications.unshift(note);
     this.onNotify?.(note);
-    return true;
+    return { ok: true, effectNote };
   }
 
   pushNotification(title, body, id = null) {

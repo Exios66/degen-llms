@@ -19,7 +19,7 @@ export const DIALOGUE_TREES = {
         choices: [
           { label: "Objection!", next: "objection", rapport: 2 },
           { label: "Cross-examine the dealer", next: "cross", rapport: 3, requires: { minRapport: 10 } },
-          { label: "File a motion to comp", next: "motion_comp", rapport: 2 },
+          { label: "File a motion to comp", next: "motion_comp", rapport: 2, effect: { drink: "welcome_cocktail" } },
           { label: "Opening statement", next: "opening", rapport: 4, requires: { minRapport: 25 } },
         ],
       },
@@ -35,7 +35,7 @@ export const DIALOGUE_TREES = {
         text: (ctx) => `SUSTAINED. The pit boss may not testify that you were 'due.' `
           + `${ctx.tier.label} tier noted for the record. Emotionally satisfying; legally decorative.`,
         choices: [
-          { label: "Request sidebar with Betty", next: "sidebar_betty", rapport: 3, requires: { minRapport: 20 } },
+          { label: "Request sidebar with Betty", next: "sidebar_betty", rapport: 3, requires: { minRapport: 20 }, effect: { drink: "welcome_cocktail" } },
           { label: "Rest my case", next: "rest", rapport: 1, end: true },
         ],
       },
@@ -111,8 +111,8 @@ export const DIALOGUE_TREES = {
       start: {
         text: "Retainer negotiation — my favorite billable fiction.",
         choices: [
-          { label: "Pay in chips", next: "chips", rapport: 2 },
-          { label: "Pay in comps", next: "comps", rapport: 2 },
+          { label: "Pay in chips", next: "chips", rapport: 2, effect: { chips: -500, chipReason: "Harvey Brief retainer" } },
+          { label: "Pay in comps", next: "comps", rapport: 2, effect: { buffetCredit: 1 } },
           { label: "Pro bono?", next: "probono", rapport: 1 },
         ],
       },
@@ -362,7 +362,7 @@ export const DIALOGUE_TREES = {
         choices: [
           { label: "Bad beat at blackjack", next: "blackjack", rapport: 2 },
           { label: "Minibar prices", next: "minibar", rapport: 2 },
-          { label: "I deserve Chairman perks", next: "chairman", rapport: 3, requires: { minTierIdx: 4 } },
+          { label: "I deserve Chairman perks", next: "chairman", rapport: 3, requires: { minTierIdx: 4 }, effect: { chips: 75, chipReason: "Host Chairman perk marker" } },
           { label: "Compliment the staff", next: "praise", rapport: 5, requires: { minRapport: 25 } },
         ],
       },
@@ -714,7 +714,7 @@ export function getIntoxCallChoices(contactId, ctx) {
   if (!ctx.isBuzzed) return [];
   const choices = [];
   if (contactId === "barkeep_betty") {
-    choices.push({ label: "🥴 One more (secret)", response: "Pouring one more. Narrator: it was three more. Hydrate.", egg: "betty_drunk_call", rapport: 3 });
+    choices.push({ label: "🥴 One more (secret)", response: "Pouring one more. Narrator: it was three more. Hydrate.", egg: "betty_drunk_call", rapport: 3, effect: { drink: "welcome_cocktail" } });
   }
   if (contactId === "steve_harvey") {
     choices.push({ label: "🥴 Survey says I'm invincible", response: "Survey says… INCORRECT. But charismatic. Sit down.", egg: "steve_drunk_call", rapport: 3 });
@@ -811,7 +811,7 @@ function baseTextOptions(contactId, ctx) {
 
   if (contactId === "barkeep_betty") {
     push({ key: "comp", label: "Comp drink?", reply: `Pour incoming — ${tier.label} tier. Sapphire gets sympathy; Gold gets gin; Chairman gets whatever you want and no questions.`,
-      rapport: 2 });
+      rapport: 2, effect: { drink: "welcome_cocktail" } });
     push({ key: "gossip_tree", label: "🍸 Gossip chain", reply: null, startTree: { treeId: "gossip_chain", nodeId: "start" }, rapport: 3 });
     push({ key: "gossip", label: "Quick gossip?", reply: "Tina saw a whale cry at penny slots. Steve called a photo finish at roulette. Normal Tuesday.", egg: "betty_gossip", rapport: 1 });
     push({ key: "drink_rec", label: "Drink recommendation?", reply: band.id === "insider"
@@ -984,7 +984,7 @@ export function getDynamicCallScript(contactId, ctx) {
           : "Ah, the classic 'voluntary transfer' defense. Have you tried winning them back with dignity?", egg: null, rapport: 1 },
         { label: "Objection!", response: "SUSTAINED. The house looks guilty. Legally meaningless. Emotionally satisfying.", egg: "call_objection", rapport: 3 },
         { label: "Start courtroom mode", response: "Court convened telephonically. Text COURTROOM when we hang up — docket continues.", egg: "call_courtroom", rapport: 4 },
-        { label: "Retainer?", response: `My retainer is 500 chips or one buffet comp. ${tier.label} tier gets 10% off theater.`, egg: "call_retainer", rapport: 2 },
+        { label: "Retainer?", response: `My retainer is 500 chips or one buffet comp. ${tier.label} tier gets 10% off theater.`, egg: "call_retainer", rapport: 2, effect: { chips: -500, chipReason: "Harvey Brief call retainer" } },
       ],
     },
     steve_harvey: {
@@ -1009,9 +1009,9 @@ export function getDynamicCallScript(contactId, ctx) {
         playHours >= 3 ? `You've been here ${playHours}h — can I offer a narrative wellness check?` : "What do you need, member?",
       ],
       choices: [
-        { label: "Room upgrade?", response: "Narrative upgrade queued. Actual keys remain with Carmen — I make vibes happen.", egg: null, rapport: 2 },
-        { label: "I'm upset", response: "I'm so sorry — on a scale of 1 to Steve Harvey, how loud was the incident?", egg: "host_upset", rapport: 2 },
-        { label: "Secret Chairman perk?", response: "…You didn't hear this from me. Text WHALE on my line after midnight. (It's still a metaphor.)", egg: "chairman_secret", rapport: 4, requires: { minTierIdx: 4 } },
+        { label: "Room upgrade?", response: "I've queued the upgrade with Carmen's desk — check Room on your phone if the keys shifted.", egg: null, rapport: 2, effect: { upgradeRoom: "suite" } },
+        { label: "I'm upset", response: "I'm so sorry — on a scale of 1 to Steve Harvey, how loud was the incident?", egg: "host_upset", rapport: 2, effect: { chips: 25, chipReason: "Host apology marker" } },
+        { label: "Secret Chairman perk?", response: "…You didn't hear this from me. Text WHALE on my line after midnight. (It's still a metaphor.)", egg: "chairman_secret", rapport: 4, requires: { minTierIdx: 4 }, effect: { chips: 100, chipReason: "Chairman whisper perk" } },
         { label: "Compliment staff", response: "I'll note that in your file. Genuine praise is rarer than a royal flush.", egg: null, rapport: 5 },
       ],
     },
@@ -1028,9 +1028,9 @@ export function getDynamicCallScript(contactId, ctx) {
       opening: "Betty's Bar — talk fast, I'm pouring.",
       lines: [band.id === "regular" ? "Your usual judgmental glance is ready." : "Comp status checks take two seconds and one judgmental glance."],
       choices: [
-        { label: "Strongest drink?", response: "The 'Walk of Shame' — tastes like regret, looks like tourism.", egg: "betty_drink", rapport: 2 },
+        { label: "Strongest drink?", response: "The 'Walk of Shame' — tastes like regret, looks like tourism.", egg: "betty_drink", rapport: 2, effect: { drink: "welcome_cocktail" } },
         { label: "Gossip?", response: "Steve called a photo finish at slots. Meryl quoted Shakespeare at blackjack. Normal.", egg: null, rapport: 2 },
-        { label: "Rough session", response: "Sympathy pour incoming. Don't make me cut you off with love.", egg: null, rapport: 3, requires: { minRapport: 10 } },
+        { label: "Rough session", response: "Sympathy pour incoming. Don't make me cut you off with love.", egg: null, rapport: 3, requires: { minRapport: 10 }, effect: { drink: "welcome_cocktail" } },
       ],
     },
     pete_bookie: {
@@ -1038,7 +1038,7 @@ export function getDynamicCallScript(contactId, ctx) {
       lines: ["Everything I say is entertainment, not financial advice. Or good advice."],
       choices: [
         { label: "Lock of the day?", response: "Mandalay Bay remains upright. Heavy favorite. Bet the house metaphorically.", egg: "pete_call_lock", rapport: 2 },
-        { label: "Fix my parlay", response: "I can't fix prayer. Try fewer legs and more dignity.", egg: null, rapport: 1 },
+        { label: "Fix my parlay", response: "I can't fix prayer. Try fewer legs and more dignity. Here's a sympathy marker for the attempt.", egg: null, rapport: 1, effect: { chips: 15, chipReason: "Pete parlay sympathy" } },
         { label: "Parlay therapy", response: "Text PARLAY THERAPY when we hang up. Session continues on the record.", egg: null, rapport: 3 },
       ],
     },

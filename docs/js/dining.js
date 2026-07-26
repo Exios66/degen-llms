@@ -274,6 +274,7 @@ export function defaultDiningState(overrides = {}) {
     venueHighScores: { ...(overrides.venueHighScores ?? {}) },
     unlockedEggs: [...(overrides.unlockedEggs ?? [])],
     foodComaHallway: Boolean(overrides.foodComaHallway),
+    buffetCompCredits: overrides.buffetCompCredits ?? 0,
   };
 }
 
@@ -287,6 +288,7 @@ export function ensureDining(session) {
   d.lifetimeCourses = d.lifetimeCourses ?? 0;
   d.lifetimeDrinks = d.lifetimeDrinks ?? 0;
   d.foodComaHallway = Boolean(d.foodComaHallway);
+  d.buffetCompCredits = d.buffetCompCredits ?? 0;
   return d;
 }
 
@@ -300,6 +302,7 @@ export function attachDiningToSession(session, data = {}) {
     venueHighScores: raw.venueHighScores ?? raw.venue_high_scores ?? {},
     unlockedEggs: raw.unlockedEggs ?? raw.unlocked_eggs ?? [],
     foodComaHallway: raw.foodComaHallway ?? raw.food_coma_hallway ?? false,
+    buffetCompCredits: raw.buffetCompCredits ?? raw.buffet_comp_credits ?? 0,
   });
   return session.dining;
 }
@@ -426,11 +429,15 @@ export function orderAndConsume(session, sitting, itemId, pace = "pace", rng = M
     return { ok: false, message: "That isn't on tonight's menu." };
   }
   const item = entry.item;
-  if (!session.wallet.debit(item.price, "dining", `${item.name} @ ${getVenueById(sitting.venueId).name}`)) {
+  const diningState = ensureDining(session);
+  const useBuffetComp = (diningState.buffetCompCredits ?? 0) > 0 && item.kind === "food";
+  if (useBuffetComp) {
+    diningState.buffetCompCredits -= 1;
+  } else if (!session.wallet.debit(item.price, "dining", `${item.name} @ ${getVenueById(sitting.venueId).name}`)) {
     return { ok: false, message: `Insufficient chips — ${item.name} is $${item.price.toLocaleString()}.` };
   }
 
-  sitting.tab += item.price;
+  sitting.tab += useBuffetComp ? 0 : item.price;
   sitting.orderedIds.push(itemId);
 
   let satiation = item.satiation ?? 8;
@@ -441,19 +448,25 @@ export function orderAndConsume(session, sitting, itemId, pace = "pace", rng = M
   if (pace === "pace") {
     satiation = Math.round(satiation * 0.7);
     composureDelta = 5;
-    message = `You pace yourself through ${item.name}.`;
+    message = useBuffetComp
+      ? `Buffet comp covers ${item.name}. You pace yourself — the line still respects you.`
+      : `You pace yourself through ${item.name}.`;
   } else if (pace === "clean_plate") {
     satiation = Math.round(satiation * 1.05);
     scoreGain += (item.prestige ?? 1) * 2;
     composureDelta = -3;
-    message = `You clean the plate — ${item.name} doesn't stand a chance.`;
+    message = useBuffetComp
+      ? `Buffet comp covers ${item.name}. You clean the plate like a Whale.`
+      : `You clean the plate — ${item.name} doesn't stand a chance.`;
   } else if (pace === "chase_shots") {
     satiation = Math.round(satiation * 0.55);
     composureDelta = -10;
     scoreGain += 5;
     sitting.drinksThisSitting += 1;
     recordConsumption(session, "dining_chase_shot", { source: "dining" });
-    message = `You chase ${item.name} with something stronger.`;
+    message = useBuffetComp
+      ? `Buffet comp covers ${item.name}. You still chase it with something stronger.`
+      : `You chase ${item.name} with something stronger.`;
   }
 
   sitting.fullness = Math.min(FULLNESS_MAX, sitting.fullness + satiation);

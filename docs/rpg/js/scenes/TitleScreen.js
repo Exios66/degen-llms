@@ -16,7 +16,7 @@ import { getWorldCycleState } from "../../../js/world-cycle.js";
 import { SaveAdapter, initSessionRpg } from "../systems/SaveAdapter.js";
 import { renderCharacterCreator } from "../systems/CharacterCreator.js";
 import { archetypeLabel, normalizeAppearance, resolvePalette } from "../systems/CharacterAppearance.js";
-import { drawCharacterToCanvas } from "../systems/TextureFactory.js";
+import { drawCharacterToCanvas } from "../systems/CharacterSprites.js";
 import { prefersTouchControls } from "../systems/TouchControls.js";
 
 const INTRO_AUTO_MS = 3200;
@@ -500,7 +500,7 @@ export function renderTrainerCard(root, saveAdapter, questManager, hooks = {}) {
   root.innerHTML = `
     <div class="trainer-card-panel">
       <div class="trainer-card__header">
-        <canvas class="trainer-card__portrait" id="trainer-portrait" width="64" height="88" aria-hidden="true"></canvas><!-- 32×44 @ 2× -->
+        <canvas class="trainer-card__portrait" id="trainer-portrait" width="60" height="96" aria-hidden="true"></canvas><!-- 20×32 @ 3× -->
         <div>
           <h2>Trainer Card</h2>
           <p>${saveAdapter.session.playerName}</p>
@@ -517,7 +517,7 @@ export function renderTrainerCard(root, saveAdapter, questManager, hooks = {}) {
   `;
   const portrait = root.querySelector("#trainer-portrait");
   if (portrait) {
-    drawCharacterToCanvas(portrait, resolvePalette(appearance), "down", 0, 2);
+    drawCharacterToCanvas(portrait, resolvePalette(appearance), "down", 0, 3);
   }
   root.querySelector("#trainer-wardrobe")?.addEventListener("click", () => {
     root.dataset.wardrobe = "1";

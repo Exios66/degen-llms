@@ -26,6 +26,8 @@ export const TILE = {
   PATH: 18,
   /** Dark border trim that separates one floor type from the next. */
   TRIM: 19,
+  /** Carved ice — Minus5 / cold-attraction floors. */
+  ICE: 20,
 };
 
 export const TILE_SIZE = 32;

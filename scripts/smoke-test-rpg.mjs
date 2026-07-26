@@ -7,9 +7,10 @@
  * route, warp targets land on walkable tiles, NPCs stand on walkable tiles,
  * and every spawn point is reachable. Run with: node scripts/smoke-test-rpg.mjs
  */
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { pngColors } from "./lib/png-colors.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const rpgRoot = join(here, "..", "docs", "rpg");
@@ -25,12 +26,16 @@ const { RPG_ITEMS } = await import(join(rpgRoot, "js/systems/Inventory.js"));
 const { DEX_REGISTRY } = await import(join(rpgRoot, "js/systems/Dex.js"));
 const { ART_UNIT } = await import(join(rpgRoot, "js/systems/MapTiles.js"));
 const { findPath, nearestReachable } = await import(join(rpgRoot, "js/systems/Pathfinder.js"));
-const { artKeys, characterGrids, drawArtToCanvas, drawCharacterToCanvas } = await import(
+const { artKeys, drawArtToCanvas, groundTextureKeys, groundTileKey } = await import(
   join(rpgRoot, "js/systems/TextureFactory.js"));
 const {
-  HAIR_COLORS, OUTFIT_COLORS, SKIN_TONES, SPEAKER_PORTRAITS,
-  defaultAppearance, resolvePalette, resolveSpeakerPortrait,
+  BODIES, HAIR_COLORS, LEG_COLORS, OUTFIT_COLORS, SKIN_TONES, SPEAKER_LOOKS,
+  defaultAppearance, indexSpeakerLooks, resolveDealerLook, resolveNpcLook,
+  resolvePalette, resolveSpeakerLook,
 } = await import(join(rpgRoot, "js/systems/CharacterAppearance.js"));
+const { CHARACTER_SHEETS } = await import(join(rpgRoot, "js/data/character-sheets.js"));
+const { CHAR_METRICS, FOOT_DROP, lookKey } = await import(
+  join(rpgRoot, "js/systems/CharacterSprites.js"));
 const { DEALER_ROSTER } = await import(join(here, "..", "docs", "js", "dealers.js"));
 const { PlayerSession, RPG_START_MAP, SAVE_VERSION, defaultRpgState,
   bootstrapSessionForRpg, hasCasinoProfileProgress, isCasinoOnlyProfile } = await import(
@@ -512,50 +517,6 @@ for (const mapId of MAP_IDS) {
     return canvas;
   };
 
-  // Grids are hand-typed strings, so a dropped character silently shears the
-  // sprite one pixel sideways for the rest of the row.
-  {
-    const grids = characterGrids();
-    const legend = new Set([...grids.legend, "."]);
-    const shape = (label, rows, expected) => {
-      check(rows.length === expected,
-        `art ${label}: ${rows.length} rows, expected ${expected}`);
-      rows.forEach((row, index) => {
-        check(row.length === grids.rowWidth,
-          `art ${label} row ${index}: ${row.length} pixels, expected ${grids.rowWidth}`);
-        const stray = [...row].find((ch) => !legend.has(ch));
-        check(stray === undefined,
-          `art ${label} row ${index}: "${stray}" is not in the palette legend`);
-      });
-    };
-    for (const [dir, rows] of Object.entries(grids.body)) shape(`body ${dir}`, rows, grids.bodyRows);
-    grids.legs.forEach((rows, frame) => shape(`legs #${frame}`, rows, grids.legRows));
-  }
-
-  // Every archetype's default look, plus one sweep of each wardrobe axis.
-  const base = defaultAppearance("weekend_warrior");
-  const samples = [
-    ...["weekend_warrior", "high_roller", "convention_goer", "local"].map(defaultAppearance),
-    ...SKIN_TONES.map((s) => ({ ...base, skin: s.id })),
-    ...HAIR_COLORS.map((h) => ({ ...base, hair: h.id })),
-    ...OUTFIT_COLORS.map((o) => ({ ...base, outfit: o.id })),
-  ];
-
-  for (const appearance of samples) {
-    const palette = resolvePalette(appearance);
-    const label = `${appearance.skin}/${appearance.hair}/${appearance.outfit}`;
-    for (const dir of ["down", "up", "left", "right"]) {
-      for (const frame of [0, 1, 2]) {
-        drawn(`player ${label} ${dir}#${frame}`,
-          (c) => drawCharacterToCanvas(c, palette, dir, frame));
-      }
-    }
-  }
-  for (const speaker of Object.keys(SPEAKER_PORTRAITS)) {
-    drawn(`portrait ${speaker}`,
-      (c) => drawCharacterToCanvas(c, resolveSpeakerPortrait(speaker)));
-  }
-
   for (const key of artKeys()) {
     const canvas = drawn(`sprite ${key}`, (c) => drawArtToCanvas(c, key));
     if (!canvas || !key.startsWith("tile_")) continue;
@@ -572,6 +533,117 @@ for (const mapId of MAP_IDS) {
       `art ${key}: ${ART_UNIT * ART_UNIT - covered.size} of ${ART_UNIT * ART_UNIT} pixels ` +
       "are transparent — ground tiles must be fully opaque");
   }
+}
+
+// ── Characters ────────────────────────────────────────────────────────────
+// Sprites are vendored sheets repainted at runtime. A ramp that names a colour
+// the art does not use leaves that part of the character in its original
+// palette, which reads as a costume glitch rather than an error, so the
+// manifest is checked against the PNGs it claims to describe.
+{
+  const REGIONS = ["skin", "hair", "outfit", "legs"];
+  const sheets = Object.entries(CHARACTER_SHEETS.sheets);
+  check(sheets.length >= 7, `only ${sheets.length} character sheets`);
+
+  const artColors = new Map();
+  for (const [id, sheet] of sheets) {
+    const file = join(rpgRoot, "assets/characters", sheet.file);
+    if (!existsSync(file)) {
+      fail(`sheet ${id}: missing art ${sheet.file}`);
+      continue;
+    }
+    artColors.set(id, new Set(pngColors(file)));
+  }
+
+  for (const [id, sheet] of sheets) {
+    const palette = artColors.get(id);
+    if (!palette) continue;
+    const claimed = new Map();
+    for (const region of REGIONS) {
+      for (const hex of sheet[region] ?? []) {
+        check(/^#[0-9a-f]{6}$/.test(hex), `sheet ${id}.${region}: "${hex}" is not a hex colour`);
+        check(palette.has(hex), `sheet ${id}.${region}: ${hex} is not used in ${sheet.file}`);
+        check(!claimed.has(hex),
+          `sheet ${id}: ${hex} is in both ${claimed.get(hex)} and ${region}`);
+        claimed.set(hex, region);
+      }
+    }
+    // Hair may legitimately be empty (a shaved head), the rest may not.
+    for (const region of ["skin", "outfit"]) {
+      check((sheet[region] ?? []).length >= 2,
+        `sheet ${id}.${region}: needs at least two stops to shade with`);
+    }
+  }
+
+  const sheetIds = new Set(sheets.map(([id]) => id));
+  check(BODIES.length >= 4, `wardrobe offers only ${BODIES.length} bodies`);
+  for (const body of BODIES) {
+    check(sheetIds.has(body.id), `wardrobe body ${body.id} has no sheet`);
+  }
+
+  // Every wardrobe combination has to resolve to a complete, drawable look.
+  const base = defaultAppearance("weekend_warrior");
+  const looks = [
+    ...["weekend_warrior", "high_roller", "convention_goer", "local"].map(defaultAppearance),
+    ...BODIES.map((b) => ({ ...base, body: b.id })),
+    ...SKIN_TONES.map((s) => ({ ...base, skin: s.id })),
+    ...HAIR_COLORS.map((h) => ({ ...base, hair: h.id })),
+    ...OUTFIT_COLORS.map((o) => ({ ...base, outfit: o.id })),
+    ...LEG_COLORS.map((l) => ({ ...base, legs: l.id })),
+  ];
+  for (const appearance of looks) {
+    const look = resolvePalette(appearance);
+    const label = Object.values(appearance).join("/");
+    check(sheetIds.has(look.sheet), `look ${label}: unknown sheet ${look.sheet}`);
+    for (const region of REGIONS) {
+      check(Array.isArray(look[region]) && look[region].length >= 2,
+        `look ${label}: ${region} ramp is too short to shade with`);
+      const bad = (look[region] ?? []).find((hex) => !/^#[0-9a-f]{6}$/.test(hex));
+      check(bad === undefined, `look ${label}: ${region} has bad stop "${bad}"`);
+    }
+  }
+  // A save that predates the body and legwear options still has to load.
+  const legacy = resolvePalette({ skin: "fair", hair: "teal", outfit: "teal" });
+  check(sheetIds.has(legacy.sheet), "a pre-wardrobe save resolves to no body");
+
+  // Guests used to share seven palette keys between 75 people. Each one should
+  // now be recognisably themselves.
+  indexSpeakerLooks(world.npcs);
+  const npcLooks = new Set();
+  for (const [mapId, npcs] of Object.entries(world.npcs)) {
+    for (const npc of npcs) {
+      const look = resolveNpcLook(npc.sprite, npc.id);
+      check(sheetIds.has(look.sheet),
+        `${mapId}/${npc.id}: unknown sheet ${look.sheet}`);
+      for (const region of REGIONS) {
+        check((look[region] ?? []).length >= 2,
+          `${mapId}/${npc.id}: ${region} ramp is too short`);
+      }
+      npcLooks.add(lookKey(look));
+    }
+  }
+  check(npcLooks.size >= npcIds.size * 0.9,
+    `only ${npcLooks.size} distinct looks across ${npcIds.size} NPCs`);
+
+  // Portraits are looked up by speaker name, so a name the index misses would
+  // silently fall back to a stranger's face.
+  for (const speaker of Object.keys(SPEAKER_LOOKS)) {
+    check(sheetIds.has(resolveSpeakerLook(speaker).sheet),
+      `speaker ${speaker}: portrait resolves to no sheet`);
+  }
+  for (const dealer of DEALER_ROSTER) {
+    const look = resolveDealerLook(dealer.id, dealer.sprite);
+    check(sheetIds.has(look.sheet), `dealer ${dealer.id}: no sheet`);
+  }
+  const dealerSheets = new Set(DEALER_ROSTER.map((d) => resolveDealerLook(d.id, d.sprite).sheet));
+  check(dealerSheets.size === DEALER_ROSTER.length,
+    `${DEALER_ROSTER.length} dealers share only ${dealerSheets.size} sheets`);
+
+  // Sprites stand a tile and a half tall, so the scene has to offset them or
+  // everyone floats north of the square they occupy.
+  check(FOOT_DROP > 0, "FOOT_DROP must lift sprites so their feet land on the tile");
+  check(CHAR_METRICS.feet.y + CHAR_METRICS.feet.h <= CHAR_METRICS.height,
+    "the collision box for the feet falls outside the frame");
 }
 
 if (failures.length) {

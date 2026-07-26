@@ -561,7 +561,15 @@ body.balcony-smoke-overlay-active {
   display: grid;
   grid-template-rows: auto auto 1fr auto auto auto;
   align-content: start;
-  padding: clamp(1rem, 3vw, 2rem);
+  padding:
+    max(clamp(1rem, 3vw, 2rem), var(--safe-top, 0px))
+    max(clamp(1rem, 3vw, 2rem), var(--safe-right, 0px))
+    max(clamp(1rem, 3vw, 2rem), var(--safe-bottom, 0px))
+    max(clamp(1rem, 3vw, 2rem), var(--safe-left, 0px));
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   pointer-events: none;
   background:
     linear-gradient(180deg, rgba(5, 10, 18, 0.55) 0%, transparent 28%),
@@ -720,6 +728,30 @@ body.balcony-smoke-overlay-active {
   .balcony-btn { width: 100%; }
   .balcony-strip__skyline { height: 36%; bottom: 30%; }
   .balcony-railing { height: 38%; }
+}
+
+@media (max-height: 500px), (orientation: landscape) and (max-height: 500px) {
+  .balcony-hud {
+    padding: 0.55rem 0.85rem;
+    grid-template-rows: auto auto auto auto auto auto;
+    gap: 0.15rem;
+  }
+
+  .balcony-hud__title {
+    font-size: clamp(1.35rem, 5vh, 2.1rem);
+  }
+
+  .balcony-hud__meta,
+  .balcony-hud__tagline,
+  .balcony-hud__status,
+  .balcony-hud__hint {
+    font-size: 0.8rem;
+    margin-top: 0.15rem;
+  }
+
+  .balcony-hud__status {
+    margin-bottom: 0.35rem;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

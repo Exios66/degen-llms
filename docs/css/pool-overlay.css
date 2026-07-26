@@ -43,7 +43,11 @@ body.pool-overlay-active {
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding: 0.85rem;
+  padding:
+    max(0.85rem, var(--safe-top, 0px))
+    max(0.85rem, var(--safe-right, 0px))
+    max(0.85rem, var(--safe-bottom, 0px))
+    max(0.85rem, var(--safe-left, 0px));
   overflow-x: hidden;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
@@ -379,8 +383,8 @@ body.pool-overlay-active {
   display: flex;
   flex-direction: column;
   width: min(1100px, 100%);
-  max-height: min(calc(100dvh - 1.7rem), 100%);
-  min-height: min(420px, calc(100dvh - 1.7rem));
+  max-height: min(var(--overlay-max-h, calc(100dvh - 1.7rem)), 100%);
+  min-height: min(280px, var(--overlay-max-h, calc(100dvh - 1.7rem)));
   overflow: hidden;
   margin: auto;
   padding: 1.15rem 1.25rem 1rem;

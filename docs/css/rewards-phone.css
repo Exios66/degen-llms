@@ -4,13 +4,13 @@
   position: fixed;
   z-index: 1200;
   pointer-events: none;
-  bottom: 16px;
-  right: 16px;
+  bottom: max(16px, var(--safe-bottom, 0px));
+  right: max(16px, var(--safe-right, 0px));
 }
 
 .rewards-phone-root.compact {
-  bottom: 12px;
-  right: 12px;
+  bottom: max(12px, var(--safe-bottom, 0px));
+  right: max(12px, var(--safe-right, 0px));
 }
 
 .rewards-phone-root * {
@@ -82,14 +82,19 @@
 
 .rewards-phone-shell {
   width: 148px;
+  max-height: calc(var(--app-vh, 100dvh) - var(--safe-bottom, 0px) - 5rem);
   padding: 8px 6px 12px;
   background: linear-gradient(160deg, #d8d8e0 0%, #909098 55%, #686870 100%);
   border-radius: 14px 14px 18px 18px;
   border: 2px solid #505058;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .rewards-phone-hinge {
+  flex-shrink: 0;
   width: 28px;
   height: 4px;
   margin: 0 auto 6px;
@@ -102,8 +107,9 @@
   border: 2px inset #0d2818;
   border-radius: 4px;
   padding: 6px;
-  min-height: 200px;
-  max-height: 280px;
+  flex: 1 1 auto;
+  min-height: clamp(120px, 26vh, 200px);
+  max-height: min(280px, calc(var(--app-vh, 100dvh) - var(--safe-bottom, 0px) - 10rem));
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -443,14 +449,25 @@
 /* Responsive: keep the FAB reachable on narrow screens */
 @media (max-width: 480px) {
   .rewards-phone-root {
-    bottom: 10px;
-    right: 10px;
+    bottom: max(10px, var(--safe-bottom, 0px));
+    right: max(10px, var(--safe-right, 0px));
   }
 
   .rewards-phone-fab {
     width: 44px;
     height: 44px;
     font-size: 18px;
+  }
+}
+
+@media (max-height: 500px), (orientation: landscape) and (max-height: 500px) {
+  .rewards-phone-shell {
+    max-height: calc(var(--app-vh, 100dvh) - var(--safe-bottom, 0px) - 3.5rem);
+  }
+
+  .rewards-lcd {
+    min-height: 100px;
+    max-height: min(220px, calc(var(--app-vh, 100dvh) - var(--safe-bottom, 0px) - 7rem));
   }
 }
 
@@ -473,8 +490,8 @@
 
   body:not(.has-touch-pad) .rewards-lcd {
     padding: 8px;
-    min-height: 320px;
-    max-height: 420px;
+    min-height: clamp(180px, 34vh, 320px);
+    max-height: min(420px, calc(var(--app-vh, 100dvh) - var(--safe-bottom, 0px) - 10rem));
     font-size: 9px;
     line-height: 1.65;
   }
@@ -552,8 +569,8 @@
   }
 
   body:not(.has-touch-pad) .rewards-lcd {
-    min-height: 360px;
-    max-height: 480px;
+    min-height: clamp(220px, 38vh, 360px);
+    max-height: min(480px, calc(var(--app-vh, 100dvh) - var(--safe-bottom, 0px) - 10rem));
     font-size: 10px;
   }
 

@@ -24,8 +24,22 @@ const VIEW_TO_ZONE = {
  */
 export function buildPoolRenderers(ctx) {
   const {
-    session, pushView, goBack, navigateTo, persist, render, el, banner, chipLine, statusBanner, showStatus,
+    pushView,
+    goBack,
+    navigateTo,
+    persist,
+    render,
+    el,
+    banner,
+    chipLine,
+    statusBanner,
+    showStatus,
   } = ctx;
+
+  function session() {
+    return ctx.session;
+  }
+
 
   function openOverlay(zoneId) {
     if (typeof ctx.openPoolComplexVisual === "function" && !ctx.poolOverlay?.active) {
@@ -35,7 +49,7 @@ export function buildPoolRenderers(ctx) {
       ? ctx.ensurePoolOverlay()
       : ctx.poolOverlay;
     if (!overlay) return false;
-    overlay.setSession(session);
+    overlay.setSession(session());
     overlay.returnView = "hotel-lobby";
     // Keep the active zone on re-render; only open or switch when needed.
     if (!overlay.active) overlay.open(zoneId);
@@ -84,12 +98,12 @@ export function buildPoolRenderers(ctx) {
   }
 
   function renderPoolComplexHub() {
-    ensurePoolComplex(session);
+    ensurePoolComplex(session());
     const gated = overlayGateway("pool-complex");
     if (gated) return gated;
 
-    const summary = getPoolSummary(session);
-    const unlocked = getUnlockedPoolEvents(session);
+    const summary = getPoolSummary(session());
+    const unlocked = getUnlockedPoolEvents(session());
 
     return el("div", {}, [
       statusBanner(),
@@ -121,7 +135,7 @@ export function buildPoolRenderers(ctx) {
     if (gated) return gated;
 
     const log = el("div", { className: "log-area hotel-log" });
-    enterZone(session, "wave_pool");
+    enterZone(session(), "wave_pool");
     persist();
 
     return el("div", {}, [
@@ -133,20 +147,20 @@ export function buildPoolRenderers(ctx) {
         log,
         el("p", { className: "dim", textContent: "Catch the wave — pick your timing:" }),
         el("ul", { className: "menu-list" }, [
-          menuBtn("Jump early", () => { runAction(log, playCatchWave(session, 0)); }),
-          menuBtn("Ride the crest", () => { runAction(log, playCatchWave(session, 1), { refresh: true }); }),
-          menuBtn("Bail late", () => { runAction(log, playCatchWave(session, 2), { refresh: true }); }),
+          menuBtn("Jump early", () => { runAction(log, playCatchWave(session(), 0)); }),
+          menuBtn("Ride the crest", () => { runAction(log, playCatchWave(session(), 1), { refresh: true }); }),
+          menuBtn("Bail late", () => { runAction(log, playCatchWave(session(), 2), { refresh: true }); }),
         ]),
         el("p", { className: "dim", textContent: "Ring toss — $10 minimum:" }),
         el("ul", { className: "menu-list" }, [
           menuBtn("Toss at inner tube ($25)", () => {
-            runAction(log, playRingToss(session, 25, 0), { refresh: true });
+            runAction(log, playRingToss(session(), 25, 0), { refresh: true });
           }),
           menuBtn("Toss at lifeguard tower ($50)", () => {
-            runAction(log, playRingToss(session, 50, 1), { refresh: true });
+            runAction(log, playRingToss(session(), 50, 1), { refresh: true });
           }),
           menuBtn("Toss at cabana post ($100)", () => {
-            runAction(log, playRingToss(session, 100, 2), { refresh: true });
+            runAction(log, playRingToss(session(), 100, 2), { refresh: true });
           }),
           menuBtn("Back to pool complex", () => navigateTo("pool-complex"), true),
         ]),
@@ -159,7 +173,7 @@ export function buildPoolRenderers(ctx) {
     if (gated) return gated;
 
     const log = el("div", { className: "log-area hotel-log" });
-    enterZone(session, "hot_tubs");
+    enterZone(session(), "hot_tubs");
     persist();
 
     return el("div", {}, [
@@ -171,13 +185,13 @@ export function buildPoolRenderers(ctx) {
         log,
         el("ul", { className: "menu-list" }, [
           menuBtn("Overhear gossip — Steve Harvey at the reef?", () => {
-            runAction(log, soakHotTub(session, "gossip"), { refresh: true });
+            runAction(log, soakHotTub(session(), "gossip"), { refresh: true });
           }),
           menuBtn("Relax & soak", () => {
-            runAction(log, soakHotTub(session, "relax"));
+            runAction(log, soakHotTub(session(), "relax"));
           }),
           menuBtn("Odds-checking challenge", () => {
-            runAction(log, soakHotTub(session, "challenge"));
+            runAction(log, soakHotTub(session(), "challenge"));
           }),
           menuBtn("Back to pool complex", () => navigateTo("pool-complex"), true),
         ]),
@@ -190,7 +204,7 @@ export function buildPoolRenderers(ctx) {
     if (gated) return gated;
 
     const log = el("div", { className: "log-area hotel-log" });
-    const pc = ensurePoolComplex(session);
+    const pc = ensurePoolComplex(session());
 
     return el("div", {}, [
       statusBanner(),
@@ -204,16 +218,16 @@ export function buildPoolRenderers(ctx) {
         log,
         el("ul", { className: "menu-list" }, [
           menuBtn("Book cabana ($200)", () => {
-            runAction(log, bookCabana(session), { refresh: true });
+            runAction(log, bookCabana(session()), { refresh: true });
           }),
           menuBtn("Bottle service ($85)", () => {
-            runAction(log, cabanaService(session, "bottle"), { refresh: true });
+            runAction(log, cabanaService(session(), "bottle"), { refresh: true });
           }),
           menuBtn("Afternoon nap", () => {
-            runAction(log, cabanaService(session, "nap"));
+            runAction(log, cabanaService(session(), "nap"));
           }),
           menuBtn("People-watch the wave pool", () => {
-            runAction(log, cabanaService(session, "people_watch"));
+            runAction(log, cabanaService(session(), "people_watch"));
           }),
           menuBtn("Back to pool complex", () => navigateTo("pool-complex"), true),
         ]),
@@ -226,13 +240,13 @@ export function buildPoolRenderers(ctx) {
     if (gated) return gated;
 
     const log = el("div", { className: "log-area hotel-log" });
-    const pc = ensurePoolComplex(session);
-    enterZone(session, "shark_reef");
+    const pc = ensurePoolComplex(session());
+    enterZone(session(), "shark_reef");
     persist();
 
     const photoButtons = Object.values(SHARK_SPECIES).map((sp) =>
       menuBtn(sp.label, () => {
-        runAction(log, photographShark(session, sp.id), { refresh: true });
+        runAction(log, photographShark(session(), sp.id), { refresh: true });
       }),
     );
 
@@ -257,7 +271,7 @@ export function buildPoolRenderers(ctx) {
     if (gated) return gated;
 
     const log = el("div", { className: "log-area hotel-log" });
-    const pc = ensurePoolComplex(session);
+    const pc = ensurePoolComplex(session());
 
     return el("div", {}, [
       statusBanner(),
@@ -271,21 +285,21 @@ export function buildPoolRenderers(ctx) {
         log,
         el("ul", { className: "menu-list" }, [
           menuBtn("Enter / show pass ($75 first visit)", () => {
-            runAction(log, enterBeachClub(session), { refresh: true });
+            runAction(log, enterBeachClub(session()), { refresh: true });
           }),
           menuBtn("Pool bar — first-person at the rail", () => {
             if (ctx.barOverlay) {
-              ctx.barOverlay.setSession(session);
+              ctx.barOverlay.setSession(session());
               ctx.barOverlay.open("pool_beach_club");
             } else {
-              runAction(log, beachClubAction(session, "bar"), { refresh: true });
+              runAction(log, beachClubAction(session(), "bar"), { refresh: true });
             }
           }),
           menuBtn("Claim a sun deck lounger", () => {
-            runAction(log, beachClubAction(session, "sun_deck"));
+            runAction(log, beachClubAction(session(), "sun_deck"));
           }),
           menuBtn("VIP rope section ($50)", () => {
-            runAction(log, beachClubAction(session, "vip_rope"), { refresh: true });
+            runAction(log, beachClubAction(session(), "vip_rope"), { refresh: true });
           }),
           menuBtn("Back to pool complex", () => navigateTo("pool-complex"), true),
         ]),
@@ -298,11 +312,11 @@ export function buildPoolRenderers(ctx) {
     if (gated) return gated;
 
     const log = el("div", { className: "log-area hotel-log" });
-    enterZone(session, "beach_rave");
+    enterZone(session(), "beach_rave");
     persist();
 
     function doMove(moveIndex) {
-      const res = submitRaveMove(session, moveIndex);
+      const res = submitRaveMove(session(), moveIndex);
       renderAmenityLog(log, res);
       flashResult(res);
       persist();
@@ -319,7 +333,7 @@ export function buildPoolRenderers(ctx) {
         log,
         el("ul", { className: "menu-list" }, [
           menuBtn("Start dance sequence", () => {
-            runAction(log, startRaveDance(session));
+            runAction(log, startRaveDance(session()));
           }),
           menuBtn("Fist pump", () => doMove(0)),
           menuBtn("Shuffling", () => doMove(1)),
@@ -334,8 +348,8 @@ export function buildPoolRenderers(ctx) {
     const gated = overlayGateway("pool-events");
     if (gated) return gated;
 
-    const pc = ensurePoolComplex(session);
-    const unlocked = getUnlockedPoolEvents(session);
+    const pc = ensurePoolComplex(session());
+    const unlocked = getUnlockedPoolEvents(session());
     const locked = Object.values(POOL_EVENTS).filter((e) => !pc.unlockedEvents.includes(e.id));
 
     return el("div", {}, [

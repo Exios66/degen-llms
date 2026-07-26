@@ -186,7 +186,7 @@ export const PHONE_CALLS = {
     label: "Call Gentleman's Club — Velvet Ledger",
     destination: "Private membership lounge",
     flavor: "\"Gold members and suite keys welcome. Make it rain responsibly. No photographs.\"",
-    minTierIndex: 2,
+    // Reachable from any checked-in room — calling logs the line and opens the rope.
   },
   delano_tower: {
     id: "delano_tower",
@@ -583,11 +583,15 @@ export function makePhoneCall(session, callId) {
   if (unlocked.length) {
     message += `\n\n✦ Unlocked: ${unlocked.map((e) => e.label).join(", ")}`;
   }
+  if (callId === "gentlemans_club") {
+    message += "\n\n✦ Velvet rope noted — you can enter The Velvet Ledger from the hotel or casino floor.";
+  }
   return {
     ok: true,
     message,
     unlock: unlocked[0]?.id,
     openLimoDispatch: callId === "limo_service",
+    openGentlemansClub: callId === "gentlemans_club",
   };
 }
 

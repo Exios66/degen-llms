@@ -25,9 +25,23 @@ import { fmtChips } from "../core.js";
  */
 export function buildGentlemansClubRenderers(ctx) {
   const {
-    session, pushView, goBack, navigateTo, persist, render, el, banner, chipLine,
-    statusBanner, showStatus, recordActivityVisit,
+    pushView,
+    goBack,
+    navigateTo,
+    persist,
+    render,
+    el,
+    banner,
+    chipLine,
+    statusBanner,
+    showStatus,
+    recordActivityVisit,
   } = ctx;
+
+  function session() {
+    return ctx.session;
+  }
+
 
   function menuBtn(label, onclick, isBack = false) {
     return el("li", {}, [
@@ -47,7 +61,7 @@ export function buildGentlemansClubRenderers(ctx) {
   }
 
   function renderClubHub() {
-    const gate = canEnterGentlemansClub(session);
+    const gate = canEnterGentlemansClub(session());
     if (!gate.ok) {
       return el("div", { className: "panel" }, [
         banner(CLUB_NAME),
@@ -63,10 +77,10 @@ export function buildGentlemansClubRenderers(ctx) {
       ]);
     }
 
-    markClubVisit(session);
+    markClubVisit(session());
     recordActivityVisit?.("gentlemans_club");
     persist?.();
-    const sum = clubSummary(session);
+    const sum = clubSummary(session());
 
     return el("div", {}, [
       statusBanner(),
@@ -83,7 +97,7 @@ export function buildGentlemansClubRenderers(ctx) {
           menuBtn("<span class=\"num\">2)</span> Encounters — hosts, felt, bottle captain", () => pushView("gentlemans-club-encounters")),
           menuBtn("<span class=\"num\">3)</span> The Ledger Bar — first-person FPV", () => {
             if (ctx.barOverlay) {
-              ctx.barOverlay.setSession(session);
+              ctx.barOverlay.setSession(session());
               ctx.barOverlay.open("velvet_ledger");
             } else {
               pushView("gentlemans-club-bar");
@@ -110,7 +124,7 @@ export function buildGentlemansClubRenderers(ctx) {
           ...RAIN_TIERS.map((t) => menuBtn(
             `${t.label} — $${t.amount.toLocaleString()}`,
             () => {
-              const r = makeItRain(session, t.id);
+              const r = makeItRain(session(), t.id);
               logLine(log, r);
               persist?.();
               render();
@@ -124,7 +138,7 @@ export function buildGentlemansClubRenderers(ctx) {
 
   function renderBar() {
     if (ctx.barOverlay) {
-      ctx.barOverlay.setSession(session);
+      ctx.barOverlay.setSession(session());
       ctx.barOverlay.open("velvet_ledger");
       return el("div", { className: "panel" }, [
         el("p", { className: "dim", textContent: "Opening The Ledger Bar overlay…" }),
@@ -142,7 +156,7 @@ export function buildGentlemansClubRenderers(ctx) {
           ...CLUB_BAR.map((d) => menuBtn(
             `${d.name} — $${d.price.toLocaleString()} <span class="dim">${d.description}</span>`,
             () => {
-              const r = orderClubDrink(session, d.id);
+              const r = orderClubDrink(session(), d.id);
               logLine(log, r);
               persist?.();
               render();
@@ -193,7 +207,7 @@ export function buildGentlemansClubRenderers(ctx) {
           ...enc.choices.map((c, i) => menuBtn(
             c.cost ? `${c.label} ($${c.cost.toLocaleString()})` : c.label,
             () => {
-              const r = runClubEncounter(session, encounterId, i);
+              const r = runClubEncounter(session(), encounterId, i);
               logLine(log, r);
               persist?.();
               if (r.ok && r.minigame) {
@@ -253,7 +267,7 @@ export function buildGentlemansClubRenderers(ctx) {
       const stop = () => {
         if (timer) clearInterval(timer);
         timer = null;
-        const r = playTipCascade(session, meter);
+        const r = playTipCascade(session(), meter);
         logLine(log, r);
         persist?.();
         render();
@@ -308,7 +322,7 @@ export function buildGentlemansClubRenderers(ctx) {
               guess.push(label);
               picked.textContent = `Picked: ${guess.join(" → ")}`;
               if (guess.length >= 3) {
-                const r = resolveBottleMemory(session, round.sequence, guess);
+                const r = resolveBottleMemory(session(), round.sequence, guess);
                 logLine(log, r);
                 persist?.();
               }
@@ -329,12 +343,12 @@ export function buildGentlemansClubRenderers(ctx) {
           log,
           el("ul", { className: "menu-list" }, [
             menuBtn("Call HIGH", () => {
-              logLine(log, playFeltFlip(session, "high"));
+              logLine(log, playFeltFlip(session(), "high"));
               persist?.();
               render();
             }),
             menuBtn("Call LOW", () => {
-              logLine(log, playFeltFlip(session, "low"));
+              logLine(log, playFeltFlip(session(), "low"));
               persist?.();
               render();
             }),
@@ -351,8 +365,8 @@ export function buildGentlemansClubRenderers(ctx) {
   }
 
   function renderLedger() {
-    const club = ensureClub(session);
-    const sum = clubSummary(session);
+    const club = ensureClub(session());
+    const sum = clubSummary(session());
     return el("div", {}, [
       statusBanner(),
       banner("Club Ledger"),

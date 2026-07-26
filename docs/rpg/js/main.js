@@ -11,7 +11,7 @@ import {
   HoldemOverlay,
   RhythmOverlay,
   VegasStripDriveOverlay,
-} from "./systems/EncounterBridge.js?v=5ebd452";
+} from "./systems/EncounterBridge.js?v=f59ce31";
 import { TerminalHostOverlay } from "./systems/TerminalHostOverlay.js";
 import { DiningOverlay } from "../../js/DiningOverlay.js";
 import { BarOverlay } from "../../js/BarOverlay.js";

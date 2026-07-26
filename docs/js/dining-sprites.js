@@ -1,9 +1,10 @@
 /**
- * First-person dining sprites — high-px shaded SVG plates, glasses, and FPV stage.
+ * First-person dining sprites — high-detail shaded SVG plates/glasses + venue FPV stages.
  * Used by DiningOverlay for the eating-POV simulator.
  */
 
 /** @typedef {"food" | "drink" | "extra"} MenuKind */
+/** @typedef {"wine-tower" | "poolside" | "steakhouse"} DiningMotif */
 
 /**
  * @typedef {{
@@ -18,29 +19,74 @@ const SVG_NS_ATTR = 'xmlns="http://www.w3.org/2000/svg"';
 let _spriteUid = 0;
 
 function svgShell(viewBox, body, opts = {}) {
-  const w = opts.w ?? 320;
-  const h = opts.h ?? 240;
+  const w = opts.w ?? 400;
+  const h = opts.h ?? 300;
   return `<svg ${SVG_NS_ATTR} viewBox="${viewBox}" width="${w}" height="${h}" role="img" aria-hidden="true" class="dining-sprite-svg">${body}</svg>`;
 }
 
+/** Shared paint + texture kit for food plates */
 function foodDefs(uid) {
   return `<defs>
-    <radialGradient id="ps-${uid}" cx="38%" cy="32%" r="68%">
-      <stop offset="0%" stop-color="#fff8ee"/><stop offset="55%" stop-color="#e8d4b8"/><stop offset="100%" stop-color="#b89a72"/>
+    <radialGradient id="ps-${uid}" cx="36%" cy="30%" r="72%">
+      <stop offset="0%" stop-color="#fffaf2"/>
+      <stop offset="40%" stop-color="#f0e0c8"/>
+      <stop offset="78%" stop-color="#c8a888"/>
+      <stop offset="100%" stop-color="#8a6848"/>
     </radialGradient>
-    <radialGradient id="ms-${uid}" cx="40%" cy="35%" r="70%">
-      <stop offset="0%" stop-color="#c45a3a"/><stop offset="45%" stop-color="#8b2e1f"/><stop offset="100%" stop-color="#3a120c"/>
+    <radialGradient id="psInner-${uid}" cx="42%" cy="38%" r="55%">
+      <stop offset="0%" stop-color="#fffef8"/>
+      <stop offset="100%" stop-color="#efe0cc"/>
+    </radialGradient>
+    <radialGradient id="ms-${uid}" cx="38%" cy="32%" r="68%">
+      <stop offset="0%" stop-color="#d46848"/>
+      <stop offset="28%" stop-color="#a83820"/>
+      <stop offset="62%" stop-color="#6a1c10"/>
+      <stop offset="100%" stop-color="#2a0c08"/>
+    </radialGradient>
+    <radialGradient id="wagyu-${uid}" cx="40%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#e07050"/>
+      <stop offset="35%" stop-color="#b04028"/>
+      <stop offset="70%" stop-color="#701810"/>
+      <stop offset="100%" stop-color="#280808"/>
     </radialGradient>
     <linearGradient id="fm-${uid}" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#f2d6b8" stop-opacity="0.85"/><stop offset="100%" stop-color="#f2d6b8" stop-opacity="0.15"/>
+      <stop offset="0%" stop-color="#fff0d8" stop-opacity="0.95"/>
+      <stop offset="45%" stop-color="#f0d0a8" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#e8c090" stop-opacity="0.12"/>
     </linearGradient>
-    <filter id="ss-${uid}" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#1a0c08" flood-opacity="0.45"/>
+    <linearGradient id="sear-${uid}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a0804" stop-opacity="0.75"/>
+      <stop offset="40%" stop-color="#3a1808" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#1a0804" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="sauce-${uid}" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#8b1e3f"/>
+      <stop offset="100%" stop-color="#3a0c18"/>
+    </linearGradient>
+    <linearGradient id="herb-${uid}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#7aab48"/>
+      <stop offset="100%" stop-color="#2a4818"/>
+    </linearGradient>
+    <pattern id="porcelain-${uid}" width="8" height="8" patternUnits="userSpaceOnUse">
+      <circle cx="1" cy="1" r="0.6" fill="#d8c8b0" opacity="0.18"/>
+      <circle cx="5" cy="4" r="0.5" fill="#fff" opacity="0.12"/>
+    </pattern>
+    <filter id="grain-${uid}" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" seed="${uid % 97}" result="n"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0.2  0 0 0 0 0.1  0 0 0 0 0.05  0 0 0 0.18 0" in="n" result="g"/>
+      <feBlend in="SourceGraphic" in2="g" mode="multiply"/>
     </filter>
-    <filter id="cr-${uid}" x="-5%" y="-5%" width="110%" height="110%">
-      <feGaussianBlur in="SourceAlpha" stdDeviation="0.4" result="b"/>
-      <feOffset dy="1" result="o"/>
+    <filter id="ss-${uid}" x="-25%" y="-25%" width="150%" height="150%">
+      <feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#0a0604" flood-opacity="0.5"/>
+    </filter>
+    <filter id="cr-${uid}" x="-8%" y="-8%" width="116%" height="116%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="0.5" result="b"/>
+      <feOffset dy="1.2" result="o"/>
       <feMerge><feMergeNode in="o"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="softGlow-${uid}" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="2.5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
   </defs>`;
 }
@@ -48,37 +94,98 @@ function foodDefs(uid) {
 function drinkDefs(uid) {
   return `<defs>
     <linearGradient id="ge-${uid}" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="#fff" stop-opacity="0.55"/><stop offset="35%" stop-color="#fff" stop-opacity="0.08"/>
-      <stop offset="70%" stop-color="#fff" stop-opacity="0.2"/><stop offset="100%" stop-color="#fff" stop-opacity="0.45"/>
+      <stop offset="0%" stop-color="#fff" stop-opacity="0.65"/>
+      <stop offset="22%" stop-color="#fff" stop-opacity="0.08"/>
+      <stop offset="48%" stop-color="#fff" stop-opacity="0.02"/>
+      <stop offset="72%" stop-color="#fff" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#fff" stop-opacity="0.5"/>
     </linearGradient>
     <linearGradient id="wb-${uid}" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#6b1028"/><stop offset="55%" stop-color="#3a0614"/><stop offset="100%" stop-color="#1a0208"/>
+      <stop offset="0%" stop-color="#8b1838"/>
+      <stop offset="35%" stop-color="#5a0c20"/>
+      <stop offset="70%" stop-color="#2a0610"/>
+      <stop offset="100%" stop-color="#120208"/>
     </linearGradient>
     <linearGradient id="cb-${uid}" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#f7e7a3"/><stop offset="50%" stop-color="#e0c56a"/><stop offset="100%" stop-color="#b8963a"/>
+      <stop offset="0%" stop-color="#fff6c8"/>
+      <stop offset="35%" stop-color="#f0d878"/>
+      <stop offset="75%" stop-color="#c8a040"/>
+      <stop offset="100%" stop-color="#8a6820"/>
     </linearGradient>
     <linearGradient id="mb-${uid}" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#c8f0a8"/><stop offset="60%" stop-color="#7cb85a"/><stop offset="100%" stop-color="#3d6b2e"/>
+      <stop offset="0%" stop-color="#e0f8b8"/>
+      <stop offset="40%" stop-color="#98d060"/>
+      <stop offset="80%" stop-color="#4a8830"/>
+      <stop offset="100%" stop-color="#284818"/>
     </linearGradient>
     <linearGradient id="ob-${uid}" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#c47832"/><stop offset="55%" stop-color="#8a4a18"/><stop offset="100%" stop-color="#3e200c"/>
+      <stop offset="0%" stop-color="#e09048"/>
+      <stop offset="40%" stop-color="#a85820"/>
+      <stop offset="80%" stop-color="#5a280c"/>
+      <stop offset="100%" stop-color="#281008"/>
     </linearGradient>
     <linearGradient id="mt-${uid}" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#e8f0e4" stop-opacity="0.9"/><stop offset="100%" stop-color="#a8b8a0" stop-opacity="0.75"/>
+      <stop offset="0%" stop-color="#f0f8ec" stop-opacity="0.92"/>
+      <stop offset="55%" stop-color="#c8d8c0" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#889888" stop-opacity="0.7"/>
     </linearGradient>
-    <filter id="gs-${uid}" x="-25%" y="-15%" width="150%" height="140%">
-      <feDropShadow dx="2" dy="6" stdDeviation="5" flood-color="#0a0604" flood-opacity="0.5"/>
+    <radialGradient id="ice-${uid}" cx="40%" cy="35%" r="60%">
+      <stop offset="0%" stop-color="#fff" stop-opacity="0.85"/>
+      <stop offset="55%" stop-color="#c8e0f0" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#80a0b8" stop-opacity="0.25"/>
+    </radialGradient>
+    <filter id="gs-${uid}" x="-30%" y="-15%" width="160%" height="140%">
+      <feDropShadow dx="2" dy="7" stdDeviation="6" flood-color="#060402" flood-opacity="0.55"/>
+    </filter>
+    <filter id="bubble-${uid}" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="0.4"/>
     </filter>
   </defs>`;
 }
 
-function plateBase(uid) {
+function plateBase(uid, opts = {}) {
+  const rim = opts.rim || "#c8a878";
+  const accent = opts.accent || null;
   return `
-    <ellipse cx="160" cy="198" rx="132" ry="28" fill="#1a100c" opacity="0.35"/>
-    <ellipse cx="160" cy="175" rx="128" ry="48" fill="url(#ps-${uid})" filter="url(#ss-${uid})"/>
-    <ellipse cx="160" cy="172" rx="108" ry="38" fill="#f7efe2"/>
-    <ellipse cx="160" cy="170" rx="98" ry="32" fill="#fffaf2"/>
-    <ellipse cx="118" cy="152" rx="36" ry="14" fill="#ffffff" opacity="0.35"/>`;
+    <ellipse cx="200" cy="248" rx="165" ry="34" fill="#0a0604" opacity="0.4"/>
+    <ellipse cx="200" cy="220" rx="158" ry="58" fill="url(#ps-${uid})" filter="url(#ss-${uid})"/>
+    <ellipse cx="200" cy="218" rx="158" ry="58" fill="url(#porcelain-${uid})" opacity="0.55"/>
+    <ellipse cx="200" cy="216" rx="138" ry="48" fill="${rim}" opacity="0.35"/>
+    <ellipse cx="200" cy="214" rx="128" ry="42" fill="url(#psInner-${uid})"/>
+    <ellipse cx="200" cy="212" rx="118" ry="36" fill="#fffef9"/>
+    <ellipse cx="155" cy="192" rx="42" ry="16" fill="#ffffff" opacity="0.4"/>
+    <ellipse cx="200" cy="228" rx="100" ry="22" fill="#e8d4b8" opacity="0.15"/>
+    ${accent ? `<ellipse cx="200" cy="214" rx="122" ry="40" fill="none" stroke="${accent}" stroke-width="3" opacity="0.45"/>` : ""}`;
+}
+
+function grillMarks(uid, cx, cy, w, h, n = 5) {
+  let out = "";
+  for (let i = 0; i < n; i++) {
+    const x = cx - w / 2 + (w / (n - 1)) * i;
+    out += `<rect x="${x - 2.5}" y="${cy - h / 2}" width="5" height="${h}" rx="2" fill="url(#sear-${uid})" opacity="${0.45 + (i % 2) * 0.15}" transform="rotate(${-8 + i * 3} ${x} ${cy})"/>`;
+  }
+  return out;
+}
+
+function herbScatter(cx, cy, count = 6) {
+  let out = "";
+  for (let i = 0; i < count; i++) {
+    const a = (Math.PI * 2 * i) / count;
+    const x = cx + Math.cos(a) * (18 + (i % 3) * 6);
+    const y = cy + Math.sin(a) * (10 + (i % 2) * 5);
+    out += `<ellipse cx="${x}" cy="${y}" rx="5" ry="2.2" fill="#4a7828" opacity="0.85" transform="rotate(${i * 40} ${x} ${y})"/>`;
+  }
+  return out;
+}
+
+function condensation(uid, x, y, w, h) {
+  let out = "";
+  for (let i = 0; i < 10; i++) {
+    const dx = x + (i * 17) % w;
+    const dy = y + ((i * 29) % h);
+    out += `<ellipse cx="${dx}" cy="${dy}" rx="${1.2 + (i % 3) * 0.4}" ry="${2 + (i % 2)}" fill="#fff" opacity="${0.25 + (i % 3) * 0.08}"/>`;
+  }
+  return out;
 }
 
 /** @type {Record<string, (uid: number) => { kind: MenuKind, plateLabel: string, svg: string }>} */
@@ -86,267 +193,418 @@ const SPRITE_BUILDERS = {
   aur_amuse: (uid) => ({
     kind: "food",
     plateLabel: "Amuse flight",
-    svg: svgShell("0 0 320 240", `${foodDefs(uid)}${plateBase(uid)}
+    svg: svgShell("0 0 400 300", `${foodDefs(uid)}${plateBase(uid, { accent: "#8b1e3f" })}
       <g filter="url(#cr-${uid})">
-        <ellipse cx="110" cy="155" rx="22" ry="14" fill="#2d5a3a"/>
-        <ellipse cx="110" cy="152" rx="16" ry="9" fill="#f5e6c8"/>
-        <circle cx="106" cy="150" r="3" fill="#c45c26"/>
-        <ellipse cx="160" cy="148" rx="20" ry="12" fill="#8b1e3f"/>
-        <ellipse cx="160" cy="145" rx="14" ry="8" fill="#f0d090"/>
-        <ellipse cx="210" cy="156" rx="22" ry="13" fill="#1a3a4a"/>
-        <ellipse cx="210" cy="153" rx="15" ry="8" fill="#e8c8a0"/>
-        <circle cx="214" cy="151" r="2.5" fill="#d4a84b"/>
+        <ellipse cx="130" cy="200" rx="36" ry="22" fill="#1a3a28"/>
+        <ellipse cx="130" cy="196" rx="28" ry="15" fill="#f8ecd0" filter="url(#grain-${uid})"/>
+        <ellipse cx="124" cy="192" rx="8" ry="5" fill="#c45c26"/>
+        <circle cx="138" cy="194" r="3" fill="#8b1e3f"/>
+        <path d="M118 188 q8 -10 16 0" stroke="#3a6828" stroke-width="1.5" fill="none"/>
+        <ellipse cx="200" cy="188" rx="34" ry="20" fill="#4a1020"/>
+        <ellipse cx="200" cy="184" rx="26" ry="14" fill="#f0d090" filter="url(#grain-${uid})"/>
+        <path d="M188 178 q12 -14 24 2" stroke="#2a0c10" stroke-width="2" fill="none"/>
+        <ellipse cx="200" cy="182" rx="10" ry="5" fill="#fff8e0" opacity="0.5"/>
+        <ellipse cx="270" cy="202" rx="36" ry="20" fill="#0e2838"/>
+        <ellipse cx="270" cy="198" rx="28" ry="14" fill="#e8c8a0" filter="url(#grain-${uid})"/>
+        <circle cx="276" cy="194" r="4" fill="#d4a84b"/>
+        <ellipse cx="262" cy="196" rx="6" ry="3" fill="#2a6f6f"/>
+        ${herbScatter(200, 210, 4)}
       </g>`),
   }),
+
   aur_tasting: (uid) => ({
     kind: "food",
     plateLabel: "Tasting courses",
-    svg: svgShell("0 0 320 240", `${foodDefs(uid)}${plateBase(uid)}
+    svg: svgShell("0 0 400 300", `${foodDefs(uid)}${plateBase(uid, { accent: "#d4a84b" })}
       <g filter="url(#cr-${uid})">
-        <path d="M95 155 Q160 120 225 155 Q160 185 95 155" fill="url(#ms-${uid})"/>
-        <ellipse cx="130" cy="150" rx="18" ry="10" fill="#6b8f3a"/>
-        <ellipse cx="190" cy="152" rx="16" ry="9" fill="#c47832"/>
-        <ellipse cx="160" cy="142" rx="22" ry="8" fill="#f5e6c8" opacity="0.9"/>
-        <path d="M120 160 Q160 145 200 158" stroke="url(#fm-${uid})" stroke-width="3" fill="none"/>
+        <ellipse cx="200" cy="215" rx="95" ry="28" fill="#1a0c08" opacity="0.28"/>
+        <path d="M110 200 Q200 155 290 200 Q200 240 110 200" fill="url(#ms-${uid})" filter="url(#grain-${uid})"/>
+        <path d="M140 195 Q200 175 255 198" stroke="url(#fm-${uid})" stroke-width="4" fill="none"/>
+        <ellipse cx="155" cy="188" rx="28" ry="16" fill="#5a7a30"/>
+        <ellipse cx="155" cy="184" rx="20" ry="10" fill="#8ab048"/>
+        <ellipse cx="245" cy="190" rx="26" ry="14" fill="#c47832"/>
+        <ellipse cx="245" cy="186" rx="18" ry="9" fill="#e09850"/>
+        <ellipse cx="200" cy="175" rx="32" ry="12" fill="#f8ecd8" opacity="0.9"/>
+        <ellipse cx="200" cy="172" rx="22" ry="7" fill="#fff" opacity="0.35"/>
+        <circle cx="175" cy="200" r="5" fill="url(#sauce-${uid})"/>
+        <circle cx="225" cy="205" r="4" fill="#d4a84b"/>
+        ${herbScatter(200, 205, 5)}
       </g>`),
   }),
+
   aur_steak: (uid) => ({
     kind: "food",
     plateLabel: "Dry-aged ribeye",
-    svg: svgShell("0 0 320 240", `${foodDefs(uid)}${plateBase(uid)}
+    svg: svgShell("0 0 400 300", `${foodDefs(uid)}${plateBase(uid)}
       <g filter="url(#cr-${uid})">
-        <ellipse cx="160" cy="170" rx="78" ry="22" fill="#1a0c08" opacity="0.3"/>
-        <path d="M85 155 C100 120 140 110 175 118 C210 126 240 145 235 165 C230 185 190 195 150 190 C110 185 75 175 85 155Z" fill="url(#ms-${uid})"/>
-        <path d="M110 145 Q145 135 180 148 Q210 158 200 170" stroke="url(#fm-${uid})" stroke-width="4" fill="none" stroke-linecap="round"/>
-        <ellipse cx="210" cy="155" rx="28" ry="16" fill="#3d5c28"/>
-        <ellipse cx="212" cy="152" rx="20" ry="10" fill="#6b8f3a"/>
-        <ellipse cx="100" cy="168" rx="14" ry="8" fill="#c45c26" opacity="0.85"/>
-        <ellipse cx="145" cy="130" rx="22" ry="8" fill="#ffffff" opacity="0.12"/>
+        <ellipse cx="200" cy="222" rx="105" ry="30" fill="#120808" opacity="0.35"/>
+        <path d="M95 195 C115 145 175 130 230 142 C285 154 320 185 310 215 C300 245 240 262 175 255 C110 248 80 225 95 195Z"
+          fill="url(#ms-${uid})" filter="url(#grain-${uid})"/>
+        <path d="M95 195 C115 145 175 130 230 142 C285 154 320 185 310 215 C300 245 240 262 175 255 C110 248 80 225 95 195Z"
+          fill="none" stroke="#2a1008" stroke-width="2" opacity="0.4"/>
+        ${grillMarks(uid, 200, 195, 120, 55, 6)}
+        <path d="M130 175 Q185 158 245 180 Q275 195 255 215" stroke="url(#fm-${uid})" stroke-width="6" fill="none" stroke-linecap="round"/>
+        <path d="M145 200 Q200 185 250 205" stroke="#fff0d8" stroke-opacity="0.35" stroke-width="2.5" fill="none"/>
+        <ellipse cx="275" cy="185" rx="40" ry="24" fill="#2a4018"/>
+        <ellipse cx="278" cy="180" rx="30" ry="16" fill="#5a8a30" filter="url(#grain-${uid})"/>
+        <ellipse cx="270" cy="175" rx="12" ry="6" fill="#8ab850" opacity="0.55"/>
+        <ellipse cx="115" cy="215" rx="20" ry="12" fill="#c45c26" opacity="0.9"/>
+        <ellipse cx="115" cy="212" rx="12" ry="6" fill="#e07840" opacity="0.6"/>
+        <ellipse cx="175" cy="155" rx="30" ry="10" fill="#fff" opacity="0.12"/>
+        ${herbScatter(200, 220, 5)}
       </g>`),
   }),
+
   aur_tower_pour: (uid) => ({
     kind: "drink",
     plateLabel: "Cabernet",
-    svg: svgShell("0 0 200 280", `${drinkDefs(uid)}
-      <ellipse cx="100" cy="262" rx="36" ry="8" fill="#0a0604" opacity="0.4"/>
+    svg: svgShell("0 0 220 320", `${drinkDefs(uid)}
+      <ellipse cx="110" cy="300" rx="42" ry="10" fill="#060402" opacity="0.45"/>
       <g filter="url(#gs-${uid})">
-        <path d="M70 40 L130 40 L122 150 Q100 175 78 150 Z" fill="url(#ge-${uid})" opacity="0.35"/>
-        <path d="M78 55 L122 55 L116 145 Q100 165 84 145 Z" fill="url(#wb-${uid})"/>
-        <ellipse cx="100" cy="55" rx="22" ry="5" fill="#8b1e3f"/>
-        <ellipse cx="100" cy="52" rx="18" ry="3" fill="#c45a6a" opacity="0.35"/>
-        <rect x="96" y="165" width="8" height="70" rx="2" fill="#d8e8f0" opacity="0.55"/>
-        <ellipse cx="100" cy="245" rx="28" ry="7" fill="#d8e8f0" opacity="0.5"/>
-      </g>`, { w: 200, h: 280 }),
+        <path d="M72 36 L148 36 L138 175 Q110 205 82 175 Z" fill="url(#ge-${uid})" opacity="0.4"/>
+        <path d="M82 52 L138 52 L130 168 Q110 192 90 168 Z" fill="url(#wb-${uid})"/>
+        <ellipse cx="110" cy="52" rx="28" ry="6" fill="#9a2040"/>
+        <ellipse cx="110" cy="48" rx="22" ry="4" fill="#d06078" opacity="0.4"/>
+        <path d="M90 70 Q110 95 130 70" stroke="#fff" stroke-opacity="0.12" fill="none"/>
+        <path d="M92 100 Q110 120 128 100" stroke="#fff" stroke-opacity="0.08" fill="none"/>
+        ${condensation(uid, 88, 70, 44, 80)}
+        <rect x="105" y="192" width="10" height="78" rx="2" fill="#d8e8f0" opacity="0.55"/>
+        <ellipse cx="110" cy="280" rx="34" ry="8" fill="#d8e8f0" opacity="0.5"/>
+        <ellipse cx="110" cy="277" rx="26" ry="4" fill="#fff" opacity="0.28"/>
+        <path d="M86 60 L90 165" stroke="#fff" stroke-opacity="0.2" stroke-width="2"/>
+      </g>`, { w: 220, h: 320 }),
   }),
+
   aur_champagne: (uid) => ({
     kind: "drink",
     plateLabel: "Krug glass",
-    svg: svgShell("0 0 200 280", `${drinkDefs(uid)}
-      <ellipse cx="100" cy="262" rx="30" ry="7" fill="#0a0604" opacity="0.35"/>
+    svg: svgShell("0 0 200 320", `${drinkDefs(uid)}
+      <ellipse cx="100" cy="300" rx="32" ry="8" fill="#060402" opacity="0.4"/>
       <g filter="url(#gs-${uid})">
-        <path d="M85 30 L115 30 L108 160 Q100 175 92 160 Z" fill="url(#ge-${uid})" opacity="0.4"/>
-        <path d="M90 45 L110 45 L105 155 Q100 168 95 155 Z" fill="url(#cb-${uid})"/>
-        <ellipse cx="100" cy="45" rx="10" ry="3" fill="#f7e7a3"/>
-        <circle cx="96" cy="70" r="1.5" fill="#fff" opacity="0.7"/>
-        <circle cx="102" cy="90" r="1.2" fill="#fff" opacity="0.6"/>
-        <circle cx="98" cy="115" r="1.4" fill="#fff" opacity="0.55"/>
-        <rect x="97" y="168" width="6" height="72" rx="2" fill="#d8e8f0" opacity="0.55"/>
-        <ellipse cx="100" cy="248" rx="22" ry="6" fill="#d8e8f0" opacity="0.5"/>
-      </g>`, { w: 200, h: 280 }),
+        <path d="M82 28 L118 28 L110 185 Q100 202 90 185 Z" fill="url(#ge-${uid})" opacity="0.42"/>
+        <path d="M88 44 L112 44 L106 178 Q100 192 94 178 Z" fill="url(#cb-${uid})"/>
+        <ellipse cx="100" cy="44" rx="12" ry="3.5" fill="#fff6c8"/>
+        <ellipse cx="100" cy="42" rx="9" ry="2" fill="#fff" opacity="0.45"/>
+        ${[58, 78, 98, 118, 138, 155].map((y, i) =>
+          `<circle cx="${96 + (i % 3) * 4}" cy="${y}" r="${1.2 + (i % 2) * 0.4}" fill="#fff" opacity="${0.55 + (i % 3) * 0.1}" filter="url(#bubble-${uid})"/>`).join("")}
+        <rect x="96" y="195" width="8" height="78" rx="2" fill="#d8e8f0" opacity="0.55"/>
+        <ellipse cx="100" cy="282" rx="24" ry="7" fill="#d8e8f0" opacity="0.5"/>
+        <path d="M90 50 L92 170" stroke="#fff" stroke-opacity="0.22" stroke-width="1.5"/>
+      </g>`, { w: 200, h: 320 }),
   }),
+
   aur_dessert: (uid) => ({
     kind: "extra",
     plateLabel: "Chocolate sphere",
-    svg: svgShell("0 0 320 240", `${foodDefs(uid)}${plateBase(uid)}
+    svg: svgShell("0 0 400 300", `${foodDefs(uid)}${plateBase(uid, { accent: "#d4a84b" })}
+      <defs>
+        <radialGradient id="choco-${uid}" cx="35%" cy="30%" r="65%">
+          <stop offset="0%" stop-color="#8a4a28"/><stop offset="40%" stop-color="#4a2010"/>
+          <stop offset="100%" stop-color="#1a0804"/>
+        </radialGradient>
+      </defs>
       <g filter="url(#cr-${uid})">
-        <circle cx="160" cy="140" r="48" fill="#3a1a10"/>
-        <circle cx="160" cy="140" r="42" fill="#5c2a18"/>
-        <circle cx="145" cy="125" r="14" fill="#8b4a28" opacity="0.55"/>
-        <ellipse cx="160" cy="175" rx="55" ry="10" fill="#c45c26" opacity="0.55"/>
-        <path d="M120 165 Q160 185 200 160" stroke="#e07830" stroke-width="3" fill="none" opacity="0.7"/>
+        <ellipse cx="200" cy="225" rx="70" ry="18" fill="#0a0402" opacity="0.35"/>
+        <circle cx="200" cy="175" r="62" fill="url(#choco-${uid})" filter="url(#grain-${uid})"/>
+        <circle cx="200" cy="175" r="56" fill="none" stroke="#d4a84b" stroke-width="1.5" opacity="0.35"/>
+        <ellipse cx="175" cy="155" rx="22" ry="14" fill="#a86838" opacity="0.55"/>
+        <ellipse cx="168" cy="148" rx="10" ry="6" fill="#fff" opacity="0.2"/>
+        <path d="M155 145 Q200 110 245 150" stroke="#e0b868" stroke-width="2" fill="none" opacity="0.45"/>
+        <ellipse cx="200" cy="228" rx="78" ry="14" fill="#c45c26" opacity="0.65"/>
+        <path d="M140 215 Q200 245 260 210" stroke="#e88840" stroke-width="4" fill="none" opacity="0.75"/>
+        <path d="M150 222 Q200 248 250 218" stroke="#fff" stroke-opacity="0.15" stroke-width="2" fill="none"/>
+        <circle cx="230" cy="200" r="4" fill="#d4a84b" opacity="0.7"/>
       </g>`),
   }),
+
   bg_guacamole: (uid) => ({
     kind: "food",
     plateLabel: "Guacamole",
-    svg: svgShell("0 0 320 240", `${foodDefs(uid)}${plateBase(uid)}
+    svg: svgShell("0 0 400 300", `${foodDefs(uid)}${plateBase(uid, { accent: "#2a6f6f", rim: "#e8c878" })}
+      <defs>
+        <radialGradient id="guac-${uid}" cx="40%" cy="35%" r="60%">
+          <stop offset="0%" stop-color="#a8d050"/><stop offset="50%" stop-color="#6a9a30"/><stop offset="100%" stop-color="#3a5818"/>
+        </radialGradient>
+      </defs>
       <g filter="url(#cr-${uid})">
-        <ellipse cx="155" cy="160" rx="55" ry="28" fill="#3d5c1a"/>
-        <ellipse cx="155" cy="155" rx="48" ry="22" fill="#6b9a32"/>
-        <ellipse cx="145" cy="148" rx="20" ry="10" fill="#8fc04a" opacity="0.7"/>
-        <circle cx="160" cy="152" r="4" fill="#f5f0e0"/>
-        <circle cx="175" cy="160" r="3" fill="#c45c26"/>
-        <ellipse cx="220" cy="165" rx="28" ry="18" fill="#e8c878"/>
-        <path d="M205 165 L235 155 M205 170 L235 168 M208 175 L232 178" stroke="#d4a84b" stroke-width="3"/>
+        <ellipse cx="185" cy="205" rx="78" ry="40" fill="#2a4010"/>
+        <ellipse cx="185" cy="198" rx="70" ry="34" fill="url(#guac-${uid})" filter="url(#grain-${uid})"/>
+        <ellipse cx="170" cy="185" rx="28" ry="14" fill="#c0e868" opacity="0.55"/>
+        <circle cx="195" cy="192" r="5" fill="#f8f0e0"/>
+        <circle cx="210" cy="205" r="4" fill="#c45c26"/>
+        <circle cx="165" cy="208" r="3.5" fill="#1a1008"/>
+        <circle cx="180" cy="198" r="2.5" fill="#fff" opacity="0.35"/>
+        <ellipse cx="285" cy="210" rx="42" ry="28" fill="#e8c060"/>
+        <ellipse cx="285" cy="205" rx="34" ry="20" fill="#f5d878" filter="url(#grain-${uid})"/>
+        <path d="M265 205 L305 190 M262 214 L308 208 M268 222 L302 228" stroke="#d4a84b" stroke-width="4" stroke-linecap="round"/>
+        <ellipse cx="285" cy="192" rx="10" ry="4" fill="#fff" opacity="0.25"/>
       </g>`),
   }),
+
   bg_ceviche: (uid) => ({
     kind: "food",
     plateLabel: "Ceviche trio",
-    svg: svgShell("0 0 320 240", `${foodDefs(uid)}${plateBase(uid)}
+    svg: svgShell("0 0 400 300", `${foodDefs(uid)}${plateBase(uid, { accent: "#2a6f6f" })}
       <g filter="url(#cr-${uid})">
-        <ellipse cx="115" cy="155" rx="32" ry="20" fill="#f0f4f0"/>
-        <ellipse cx="115" cy="152" rx="26" ry="14" fill="#c8e8d0"/>
-        <ellipse cx="160" cy="148" rx="30" ry="18" fill="#f8f0e0"/>
-        <ellipse cx="160" cy="145" rx="24" ry="12" fill="#f0d090"/>
-        <ellipse cx="205" cy="156" rx="30" ry="18" fill="#e8f0f8"/>
-        <ellipse cx="205" cy="153" rx="24" ry="12" fill="#a8d0e0"/>
+        ${[[130, 198, "#c8e8d0", "#e8f8f0", "#c45c26"], [200, 185, "#f0d090", "#fff0c8", "#2a6f6f"], [270, 200, "#a8d0e0", "#e0f0f8", "#d4a84b"]].map(([x, y, a, b, c]) => `
+          <ellipse cx="${x}" cy="${y + 8}" rx="42" ry="26" fill="#d0d8d0" opacity="0.5"/>
+          <ellipse cx="${x}" cy="${y}" rx="40" ry="24" fill="${a}"/>
+          <ellipse cx="${x}" cy="${y - 4}" rx="32" ry="16" fill="${b}" filter="url(#grain-${uid})"/>
+          <circle cx="${x - 8}" cy="${y - 2}" r="4" fill="${c}"/>
+          <circle cx="${x + 10}" cy="${y + 4}" r="3" fill="#fff" opacity="0.4"/>
+          <ellipse cx="${x}" cy="${y - 10}" rx="14" ry="5" fill="#fff" opacity="0.3"/>
+        `).join("")}
+        ${herbScatter(200, 215, 4)}
       </g>`),
   }),
+
   bg_brunch: (uid) => ({
     kind: "food",
     plateLabel: "Brunch feast",
-    svg: svgShell("0 0 320 240", `${foodDefs(uid)}${plateBase(uid)}
+    svg: svgShell("0 0 400 300", `${foodDefs(uid)}${plateBase(uid, { accent: "#c45c26" })}
       <g filter="url(#cr-${uid})">
-        <ellipse cx="130" cy="155" rx="40" ry="22" fill="#e8c878"/>
-        <ellipse cx="130" cy="150" rx="32" ry="14" fill="#f5e6a0"/>
-        <ellipse cx="190" cy="148" rx="36" ry="20" fill="#c45c26"/>
-        <ellipse cx="190" cy="144" rx="28" ry="12" fill="#e07840"/>
-        <ellipse cx="160" cy="170" rx="50" ry="14" fill="#6b8f3a"/>
-        <circle cx="145" cy="145" r="8" fill="#fff8e8"/>
+        <ellipse cx="155" cy="200" rx="55" ry="32" fill="#c8a040"/>
+        <ellipse cx="155" cy="192" rx="46" ry="24" fill="#f0d878" filter="url(#grain-${uid})"/>
+        <ellipse cx="145" cy="182" rx="18" ry="10" fill="#fff8c8" opacity="0.55"/>
+        <ellipse cx="250" cy="188" rx="50" ry="28" fill="#a83818"/>
+        <ellipse cx="250" cy="180" rx="40" ry="20" fill="#e06838" filter="url(#grain-${uid})"/>
+        ${grillMarks(uid, 250, 180, 50, 30, 4)}
+        <ellipse cx="200" cy="220" rx="70" ry="20" fill="#3a5820"/>
+        <ellipse cx="200" cy="215" rx="58" ry="14" fill="#6a9a38"/>
+        <circle cx="175" cy="178" r="12" fill="#fff8e8"/>
+        <circle cx="175" cy="178" r="7" fill="#f0d060"/>
+        <circle cx="230" cy="200" r="7" fill="#8b1e3f"/>
+        <ellipse cx="155" cy="175" rx="16" ry="6" fill="#fff" opacity="0.25"/>
       </g>`),
   }),
+
   bg_enchiladas: (uid) => ({
     kind: "food",
     plateLabel: "Enchiladas",
-    svg: svgShell("0 0 320 240", `${foodDefs(uid)}${plateBase(uid)}
+    svg: svgShell("0 0 400 300", `${foodDefs(uid)}${plateBase(uid, { accent: "#c45c26" })}
+      <defs>
+        <linearGradient id="ench-${uid}" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#e88848"/><stop offset="55%" stop-color="#c05020"/><stop offset="100%" stop-color="#6a2010"/>
+        </linearGradient>
+      </defs>
       <g filter="url(#cr-${uid})">
-        <rect x="95" y="140" width="130" height="40" rx="18" fill="#c45c26"/>
-        <rect x="100" y="145" width="120" height="30" rx="14" fill="#e07840"/>
-        <ellipse cx="130" cy="155" rx="18" ry="10" fill="#f5e6c8" opacity="0.85"/>
-        <ellipse cx="170" cy="158" rx="16" ry="9" fill="#f5e6c8" opacity="0.75"/>
-        <ellipse cx="200" cy="154" rx="14" ry="8" fill="#6b8f3a"/>
+        <rect x="105" y="175" width="190" height="55" rx="22" fill="#8a3010"/>
+        <rect x="112" y="180" width="176" height="45" rx="18" fill="url(#ench-${uid})" filter="url(#grain-${uid})"/>
+        <ellipse cx="155" cy="195" rx="28" ry="14" fill="#f8ecd0" opacity="0.9"/>
+        <ellipse cx="210" cy="200" rx="26" ry="12" fill="#f8ecd0" opacity="0.8"/>
+        <ellipse cx="255" cy="192" rx="22" ry="12" fill="#5a8a30"/>
+        <ellipse cx="255" cy="188" rx="14" ry="7" fill="#8ab848"/>
+        <path d="M125 188 Q200 168 275 190" stroke="#fff" stroke-opacity="0.28" stroke-width="2.5" fill="none"/>
+        <circle cx="170" cy="210" r="3" fill="#fff" opacity="0.35"/>
+        ${herbScatter(200, 215, 4)}
       </g>`),
   }),
+
   bg_margarita: (uid) => ({
     kind: "drink",
     plateLabel: "Margarita",
-    svg: svgShell("0 0 200 280", `${drinkDefs(uid)}
-      <ellipse cx="100" cy="262" rx="34" ry="8" fill="#0a0604" opacity="0.4"/>
+    svg: svgShell("0 0 220 320", `${drinkDefs(uid)}
+      <ellipse cx="110" cy="300" rx="40" ry="10" fill="#060402" opacity="0.45"/>
       <g filter="url(#gs-${uid})">
-        <path d="M55 70 L145 70 L115 165 Q100 180 85 165 Z" fill="url(#ge-${uid})" opacity="0.35"/>
-        <path d="M65 85 L135 85 L110 160 Q100 172 90 160 Z" fill="url(#mb-${uid})"/>
-        <ellipse cx="100" cy="85" rx="35" ry="6" fill="#e8f8d0"/>
-        <circle cx="118" cy="78" r="10" fill="#d4a84b"/>
-        <path d="M118 68 L118 55 M112 62 L124 62" stroke="#3d5c1a" stroke-width="2"/>
-        <rect x="96" y="172" width="8" height="60" rx="2" fill="#d8e8f0" opacity="0.5"/>
-        <ellipse cx="100" cy="240" rx="26" ry="7" fill="#d8e8f0" opacity="0.5"/>
-      </g>`, { w: 200, h: 280 }),
+        <path d="M48 78 L172 78 L132 195 Q110 215 88 195 Z" fill="url(#ge-${uid})" opacity="0.38"/>
+        <path d="M62 95 L158 95 L125 188 Q110 205 95 188 Z" fill="url(#mb-${uid})"/>
+        <ellipse cx="110" cy="95" rx="48" ry="8" fill="#e8f8d0"/>
+        <ellipse cx="110" cy="90" rx="46" ry="6" fill="#fff" opacity="0.25"/>
+        <ellipse cx="110" cy="88" rx="48" ry="5" fill="none" stroke="#f0f0f0" stroke-width="3" opacity="0.7"/>
+        <circle cx="138" cy="82" r="14" fill="#e8a830"/>
+        <ellipse cx="138" cy="78" rx="8" ry="5" fill="#f0c860" opacity="0.7"/>
+        <path d="M138 68 L138 52 M128 60 L148 60" stroke="#3d5c1a" stroke-width="2.5" stroke-linecap="round"/>
+        <ellipse cx="100" cy="130" rx="10" ry="7" fill="url(#ice-${uid})"/>
+        <ellipse cx="120" cy="150" rx="8" ry="6" fill="url(#ice-${uid})"/>
+        ${condensation(uid, 70, 110, 70, 60)}
+        <rect x="105" y="205" width="10" height="68" rx="2" fill="#d8e8f0" opacity="0.5"/>
+        <ellipse cx="110" cy="282" rx="30" ry="8" fill="#d8e8f0" opacity="0.5"/>
+        <path d="M72 105 L78 180" stroke="#fff" stroke-opacity="0.2" stroke-width="2"/>
+      </g>`, { w: 220, h: 320 }),
   }),
+
   bg_mezcal: (uid) => ({
     kind: "drink",
     plateLabel: "Mezcal flight",
-    svg: svgShell("0 0 280 240", `${drinkDefs(uid)}
+    svg: svgShell("0 0 320 280", `${drinkDefs(uid)}
       <g filter="url(#gs-${uid})">
-        ${[70, 140, 210].map((x, i) => `
-          <ellipse cx="${x}" cy="210" rx="18" ry="5" fill="#0a0604" opacity="0.35"/>
-          <rect x="${x - 12}" y="90" width="24" height="100" rx="4" fill="url(#ge-${uid})" opacity="0.35"/>
-          <rect x="${x - 9}" y="110" width="18" height="70" rx="3" fill="${i === 0 ? "#c47832" : i === 1 ? "#8a4a18" : "#5c3010"}"/>
-          <ellipse cx="${x}" cy="110" rx="9" ry="3" fill="#e0a060" opacity="0.6"/>
+        ${[[80, "#e09048", "#a85820"], [160, "#c07030", "#6a3810"], [240, "#8a5020", "#3a2008"]].map(([x, top, bot], i) => `
+          <ellipse cx="${x}" cy="250" rx="22" ry="6" fill="#060402" opacity="0.4"/>
+          <rect x="${x - 16}" y="85" width="32" height="140" rx="5" fill="url(#ge-${uid})" opacity="0.35"/>
+          <rect x="${x - 12}" y="110" width="24" height="100" rx="4" fill="${bot}"/>
+          <rect x="${x - 12}" y="110" width="24" height="55" rx="4" fill="${top}" opacity="0.85"/>
+          <ellipse cx="${x}" cy="110" rx="12" ry="4" fill="#f0b070" opacity="0.65"/>
+          <path d="M${x - 8} 120 L${x - 6} 195" stroke="#fff" stroke-opacity="0.18" stroke-width="1.5"/>
+          <ellipse cx="${x + 6}" cy="${140 + i * 4}" rx="3" ry="5" fill="#fff" opacity="0.12"/>
         `).join("")}
-      </g>`, { w: 280, h: 240 }),
+        <rect x="40" y="230" width="240" height="14" rx="3" fill="#3a2418" opacity="0.7"/>
+        <rect x="40" y="230" width="240" height="4" fill="#d4a84b" opacity="0.25"/>
+      </g>`, { w: 320, h: 280 }),
   }),
+
   bg_bottomless: (uid) => ({
     kind: "extra",
     plateLabel: "Bottomless pour",
-    svg: svgShell("0 0 200 280", `${drinkDefs(uid)}
-      <ellipse cx="100" cy="262" rx="36" ry="8" fill="#0a0604" opacity="0.4"/>
+    svg: svgShell("0 0 220 320", `${drinkDefs(uid)}
+      <ellipse cx="110" cy="300" rx="42" ry="10" fill="#060402" opacity="0.45"/>
       <g filter="url(#gs-${uid})">
-        <path d="M60 50 L140 50 L130 170 Q100 195 70 170 Z" fill="url(#ge-${uid})" opacity="0.35"/>
-        <path d="M70 70 L130 70 L122 160 Q100 180 78 160 Z" fill="url(#cb-${uid})"/>
-        <ellipse cx="100" cy="70" rx="30" ry="6" fill="#f7e7a3"/>
-        <circle cx="90" cy="100" r="2" fill="#fff" opacity="0.7"/>
-        <circle cx="110" cy="130" r="1.5" fill="#fff" opacity="0.6"/>
-        <rect x="96" y="185" width="8" height="50" rx="2" fill="#d8e8f0" opacity="0.5"/>
-        <ellipse cx="100" cy="245" rx="28" ry="7" fill="#d8e8f0" opacity="0.5"/>
-      </g>`, { w: 200, h: 280 }),
+        <path d="M55 48 L165 48 L152 200 Q110 230 68 200 Z" fill="url(#ge-${uid})" opacity="0.38"/>
+        <path d="M68 70 L152 70 L142 188 Q110 212 78 188 Z" fill="url(#cb-${uid})"/>
+        <ellipse cx="110" cy="70" rx="42" ry="7" fill="#fff6c8"/>
+        <ellipse cx="110" cy="66" rx="36" ry="4" fill="#fff" opacity="0.4"/>
+        ${[90, 115, 140, 165].map((y, i) =>
+          `<circle cx="${100 + (i % 3) * 8}" cy="${y}" r="${1.5 + (i % 2)}" fill="#fff" opacity="0.6" filter="url(#bubble-${uid})"/>`).join("")}
+        ${condensation(uid, 75, 90, 70, 80)}
+        <rect x="105" y="218" width="10" height="55" rx="2" fill="#d8e8f0" opacity="0.5"/>
+        <ellipse cx="110" cy="282" rx="32" ry="8" fill="#d8e8f0" opacity="0.5"/>
+      </g>`, { w: 220, h: 320 }),
   }),
+
   ss_oysters: (uid) => ({
     kind: "food",
     plateLabel: "Oysters on ice",
-    svg: svgShell("0 0 320 240", `${foodDefs(uid)}${plateBase(uid)}
+    svg: svgShell("0 0 400 300", `${foodDefs(uid)}${plateBase(uid, { accent: "#6a9ab0" })}
       <g filter="url(#cr-${uid})">
-        <ellipse cx="160" cy="165" rx="90" ry="35" fill="#d8e8f0"/>
-        <ellipse cx="160" cy="160" rx="82" ry="28" fill="#f0f8fc"/>
-        ${[[120, 150], [155, 140], [190, 148], [140, 168], [180, 165]].map(([x, y]) => `
-          <ellipse cx="${x}" cy="${y}" rx="22" ry="14" fill="#8a9a8a" transform="rotate(-15 ${x} ${y})"/>
-          <ellipse cx="${x}" cy="${y}" rx="14" ry="8" fill="#e8d0b0" transform="rotate(-15 ${x} ${y})"/>
+        <ellipse cx="200" cy="215" rx="120" ry="48" fill="#b0c8d8"/>
+        <ellipse cx="200" cy="208" rx="112" ry="42" fill="#e8f4fc" filter="url(#grain-${uid})"/>
+        ${[[145, 190], [195, 175], [250, 188], [165, 220], [230, 215], [200, 200]].map(([x, y], i) => `
+          <ellipse cx="${x}" cy="${y}" rx="30" ry="18" fill="#6a7a6a" transform="rotate(${-20 + i * 8} ${x} ${y})"/>
+          <ellipse cx="${x}" cy="${y}" rx="22" ry="12" fill="#8a9a88" transform="rotate(${-20 + i * 8} ${x} ${y})"/>
+          <ellipse cx="${x}" cy="${y}" rx="16" ry="8" fill="#e8d0b0" transform="rotate(${-20 + i * 8} ${x} ${y})"/>
+          <ellipse cx="${x - 2}" cy="${y - 1}" rx="9" ry="4" fill="#c8a888" transform="rotate(${-20 + i * 8} ${x} ${y})"/>
+          <ellipse cx="${x - 4}" cy="${y - 3}" rx="4" ry="2" fill="#fff" opacity="0.35" transform="rotate(${-20 + i * 8} ${x} ${y})"/>
         `).join("")}
+        ${[[120, 195], [280, 210], [190, 230], [260, 175]].map(([x, y]) =>
+          `<circle cx="${x}" cy="${y}" r="${3 + (x % 3)}" fill="#fff" opacity="0.75"/>`).join("")}
+        <ellipse cx="300" cy="195" rx="14" ry="10" fill="#c45c26" opacity="0.85"/>
+        <ellipse cx="300" cy="192" rx="8" ry="5" fill="#e07040"/>
       </g>`),
   }),
+
   ss_wagyu: (uid) => ({
     kind: "food",
     plateLabel: "A5 wagyu",
-    svg: svgShell("0 0 320 240", `${foodDefs(uid)}${plateBase(uid)}
+    svg: svgShell("0 0 400 300", `${foodDefs(uid)}${plateBase(uid, { accent: "#d4a84b" })}
       <g filter="url(#cr-${uid})">
-        <path d="M90 150 C110 115 160 108 210 125 C245 140 240 175 200 185 C150 198 85 180 90 150Z" fill="url(#ms-${uid})"/>
-        <path d="M115 140 Q160 125 205 145 Q220 155 200 168 Q150 185 120 165" fill="none" stroke="url(#fm-${uid})" stroke-width="5"/>
-        <ellipse cx="215" cy="155" rx="22" ry="12" fill="#3d5c28"/>
-        <ellipse cx="100" cy="165" rx="12" ry="6" fill="#c45c26"/>
+        <ellipse cx="200" cy="225" rx="108" ry="28" fill="#0a0402" opacity="0.35"/>
+        <path d="M100 190 C125 140 195 128 265 150 C320 170 315 220 255 238 C185 258 85 230 100 190Z"
+          fill="url(#wagyu-${uid})" filter="url(#grain-${uid})"/>
+        <path d="M125 170 Q200 148 270 178 Q290 195 260 215 Q190 240 130 205" fill="none" stroke="url(#fm-${uid})" stroke-width="7"/>
+        <path d="M140 195 Q200 175 255 200" stroke="#fff8ee" stroke-opacity="0.4" stroke-width="3" fill="none"/>
+        <path d="M155 185 Q210 170 245 190" stroke="#f0d0a8" stroke-opacity="0.55" stroke-width="2" fill="none"/>
+        ${grillMarks(uid, 200, 190, 100, 45, 5)}
+        <ellipse cx="285" cy="185" rx="32" ry="18" fill="#2a4018"/>
+        <ellipse cx="288" cy="180" rx="24" ry="12" fill="#5a8a30"/>
+        <ellipse cx="110" cy="210" rx="16" ry="9" fill="#c45c26"/>
+        <ellipse cx="170" cy="150" rx="28" ry="9" fill="#fff" opacity="0.14"/>
+        ${herbScatter(200, 220, 5)}
       </g>`),
   }),
+
   ss_prime: (uid) => ({
     kind: "food",
     plateLabel: "Bone-in ribeye",
-    svg: svgShell("0 0 320 240", `${foodDefs(uid)}${plateBase(uid)}
+    svg: svgShell("0 0 400 300", `${foodDefs(uid)}${plateBase(uid)}
       <g filter="url(#cr-${uid})">
-        <path d="M75 155 C95 118 150 105 205 120 C250 135 255 175 210 190 C155 205 70 185 75 155Z" fill="url(#ms-${uid})"/>
-        <ellipse cx="95" cy="150" rx="18" ry="28" fill="#e8d4b8" transform="rotate(-25 95 150)"/>
-        <ellipse cx="95" cy="150" rx="10" ry="18" fill="#f5ebe0" transform="rotate(-25 95 150)"/>
-        <path d="M120 145 Q165 130 210 150" stroke="url(#fm-${uid})" stroke-width="4" fill="none"/>
-        <ellipse cx="220" cy="160" rx="24" ry="14" fill="#4a6b2a"/>
+        <ellipse cx="200" cy="225" rx="115" ry="30" fill="#0a0402" opacity="0.32"/>
+        <path d="M80 195 C105 140 185 122 265 145 C325 165 335 220 270 245 C190 270 65 235 80 195Z"
+          fill="url(#ms-${uid})" filter="url(#grain-${uid})"/>
+        <ellipse cx="105" cy="185" rx="24" ry="38" fill="#e8d4b8" transform="rotate(-28 105 185)"/>
+        <ellipse cx="105" cy="185" rx="14" ry="26" fill="#f8f0e8" transform="rotate(-28 105 185)"/>
+        <ellipse cx="105" cy="185" rx="6" ry="14" fill="#d0b898" transform="rotate(-28 105 185)"/>
+        ${grillMarks(uid, 210, 190, 110, 50, 6)}
+        <path d="M140 175 Q210 155 275 185" stroke="url(#fm-${uid})" stroke-width="5" fill="none"/>
+        <ellipse cx="290" cy="195" rx="34" ry="20" fill="#3a5820"/>
+        <ellipse cx="292" cy="190" rx="24" ry="12" fill="#6a9a38"/>
+        <ellipse cx="160" cy="148" rx="26" ry="8" fill="#fff" opacity="0.12"/>
+        ${herbScatter(200, 225, 4)}
       </g>`),
   }),
+
   ss_fries: (uid) => ({
     kind: "extra",
     plateLabel: "Duck-fat fries",
-    svg: svgShell("0 0 320 240", `${foodDefs(uid)}${plateBase(uid)}
+    svg: svgShell("0 0 400 300", `${foodDefs(uid)}${plateBase(uid, { accent: "#c47832" })}
+      <defs>
+        <linearGradient id="fry-${uid}" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#fff0a0"/><stop offset="40%" stop-color="#e8c050"/><stop offset="100%" stop-color="#a87820"/>
+        </linearGradient>
+      </defs>
       <g filter="url(#cr-${uid})">
-        <ellipse cx="160" cy="185" rx="40" ry="12" fill="#c8a878"/>
-        ${[[140, 100, -12], [155, 85, 8], [170, 95, -5], [148, 115, 15], [175, 110, -18], [162, 125, 4], [135, 130, 20], [185, 128, -10]].map(([x, y, r]) => `
-          <rect x="${x}" y="${y}" width="10" height="55" rx="3" fill="#e8c060" transform="rotate(${r} ${x + 5} ${y + 27})"/>
-          <rect x="${x + 2}" y="${y + 2}" width="3" height="40" rx="1" fill="#fff3c0" opacity="0.45" transform="rotate(${r} ${x + 5} ${y + 27})"/>
+        <ellipse cx="200" cy="235" rx="55" ry="16" fill="#c8a878"/>
+        <ellipse cx="200" cy="232" rx="48" ry="12" fill="#e0c090"/>
+        ${[[165, 110, -14], [185, 88, 10], [208, 100, -6], [175, 130, 18], [220, 118, -20], [195, 145, 6], [155, 150, 22], [235, 148, -12], [180, 165, -8], [215, 160, 14]].map(([x, y, r]) => `
+          <rect x="${x}" y="${y}" width="13" height="72" rx="4" fill="url(#fry-${uid})" transform="rotate(${r} ${x + 6} ${y + 36})" filter="url(#grain-${uid})"/>
+          <rect x="${x + 3}" y="${y + 4}" width="4" height="50" rx="1.5" fill="#fff8c8" opacity="0.45" transform="rotate(${r} ${x + 6} ${y + 36})"/>
+          <rect x="${x + 1}" y="${y + 50}" width="11" height="8" rx="2" fill="#8a5810" opacity="0.35" transform="rotate(${r} ${x + 6} ${y + 36})"/>
         `).join("")}
+        <ellipse cx="200" cy="120" rx="20" ry="8" fill="#fff" opacity="0.1"/>
       </g>`),
   }),
+
   ss_old_fashioned: (uid) => ({
     kind: "drink",
     plateLabel: "Old fashioned",
-    svg: svgShell("0 0 200 280", `${drinkDefs(uid)}
-      <ellipse cx="100" cy="250" rx="40" ry="10" fill="#0a0604" opacity="0.4"/>
+    svg: svgShell("0 0 220 320", `${drinkDefs(uid)}
+      <ellipse cx="110" cy="290" rx="48" ry="12" fill="#060402" opacity="0.45"/>
       <g filter="url(#gs-${uid})">
-        <rect x="55" y="90" width="90" height="130" rx="8" fill="url(#ge-${uid})" opacity="0.3"/>
-        <rect x="62" y="110" width="76" height="100" rx="6" fill="url(#ob-${uid})"/>
-        <ellipse cx="100" cy="110" rx="38" ry="8" fill="#c47832"/>
-        <rect x="85" y="125" width="28" height="22" rx="3" fill="#e8f4f8" opacity="0.55"/>
-        <circle cx="125" cy="145" r="12" fill="#c45c26"/>
-        <path d="M125 133 L125 120 M118 128 L132 128" stroke="#3d5c1a" stroke-width="2"/>
-      </g>`, { w: 200, h: 280 }),
+        <rect x="48" y="95" width="124" height="160" rx="10" fill="url(#ge-${uid})" opacity="0.32"/>
+        <rect x="58" y="118" width="104" height="125" rx="8" fill="url(#ob-${uid})"/>
+        <ellipse cx="110" cy="118" rx="52" ry="10" fill="#e09048"/>
+        <ellipse cx="110" cy="114" rx="46" ry="6" fill="#fff" opacity="0.15"/>
+        <rect x="88" y="135" width="40" height="32" rx="4" fill="url(#ice-${uid})"/>
+        <rect x="95" y="142" width="28" height="20" rx="3" fill="#fff" opacity="0.25"/>
+        <circle cx="145" cy="160" r="16" fill="#c45c26"/>
+        <ellipse cx="145" cy="154" rx="10" ry="7" fill="#e07840" opacity="0.7"/>
+        <path d="M145 144 L145 128 M135 136 L155 136" stroke="#3d5c1a" stroke-width="2.5" stroke-linecap="round"/>
+        ${condensation(uid, 65, 130, 90, 90)}
+        <path d="M68 130 L72 220" stroke="#fff" stroke-opacity="0.18" stroke-width="2"/>
+        <ellipse cx="78" cy="180" rx="5" ry="12" fill="#fff" opacity="0.1"/>
+      </g>`, { w: 220, h: 320 }),
   }),
+
   ss_martini: (uid) => ({
     kind: "drink",
     plateLabel: "Dirty martini",
-    svg: svgShell("0 0 200 280", `${drinkDefs(uid)}
-      <ellipse cx="100" cy="255" rx="32" ry="8" fill="#0a0604" opacity="0.4"/>
+    svg: svgShell("0 0 220 320", `${drinkDefs(uid)}
+      <ellipse cx="110" cy="295" rx="36" ry="9" fill="#060402" opacity="0.45"/>
       <g filter="url(#gs-${uid})">
-        <path d="M50 70 L150 70 L105 160 Q100 170 95 160 Z" fill="url(#ge-${uid})" opacity="0.35"/>
-        <path d="M65 85 L135 85 L102 155 Q100 162 98 155 Z" fill="url(#mt-${uid})"/>
-        <ellipse cx="100" cy="85" rx="35" ry="5" fill="#e8f0e4"/>
-        <circle cx="100" cy="120" r="6" fill="#6b8f3a"/>
-        <circle cx="112" cy="128" r="5" fill="#5a7a30"/>
-        <line x1="100" y1="160" x2="100" y2="230" stroke="#d8e8f0" stroke-width="5" opacity="0.55"/>
-        <ellipse cx="100" cy="238" rx="24" ry="6" fill="#d8e8f0" opacity="0.5"/>
-      </g>`, { w: 200, h: 280 }),
+        <path d="M40 72 L180 72 L118 188 Q110 200 102 188 Z" fill="url(#ge-${uid})" opacity="0.38"/>
+        <path d="M58 90 L162 90 L112 180 Q110 188 108 180 Z" fill="url(#mt-${uid})"/>
+        <ellipse cx="110" cy="90" rx="52" ry="7" fill="#e8f0e4"/>
+        <ellipse cx="110" cy="86" rx="44" ry="4" fill="#fff" opacity="0.35"/>
+        <circle cx="110" cy="135" r="8" fill="#5a7a30"/>
+        <ellipse cx="110" cy="132" rx="5" ry="3" fill="#8ab048" opacity="0.6"/>
+        <circle cx="128" cy="148" r="7" fill="#4a6820"/>
+        <ellipse cx="128" cy="145" rx="4" ry="2.5" fill="#7a9a38" opacity="0.55"/>
+        <line x1="110" y1="188" x2="110" y2="262" stroke="#d8e8f0" stroke-width="6" opacity="0.55"/>
+        <ellipse cx="110" cy="272" rx="28" ry="7" fill="#d8e8f0" opacity="0.5"/>
+        <ellipse cx="110" cy="270" rx="20" ry="3" fill="#fff" opacity="0.25"/>
+        <path d="M70 100 L78 165" stroke="#fff" stroke-opacity="0.22" stroke-width="2"/>
+        ${condensation(uid, 70, 100, 80, 50)}
+      </g>`, { w: 220, h: 320 }),
   }),
+
   ss_cheesecake: (uid) => ({
     kind: "food",
     plateLabel: "Basque cheesecake",
-    svg: svgShell("0 0 320 240", `${foodDefs(uid)}${plateBase(uid)}
+    svg: svgShell("0 0 400 300", `${foodDefs(uid)}${plateBase(uid, { accent: "#8b5a30" })}
+      <defs>
+        <radialGradient id="cake-${uid}" cx="45%" cy="40%" r="60%">
+          <stop offset="0%" stop-color="#fff8e8"/><stop offset="55%" stop-color="#e8d0a8"/><stop offset="100%" stop-color="#c8a878"/>
+        </radialGradient>
+        <radialGradient id="burnt-${uid}" cx="50%" cy="40%" r="55%">
+          <stop offset="0%" stop-color="#8a5a30"/><stop offset="50%" stop-color="#4a2810"/><stop offset="100%" stop-color="#1a0c04"/>
+        </radialGradient>
+      </defs>
       <g filter="url(#cr-${uid})">
-        <path d="M110 165 Q110 120 160 115 Q210 120 210 165 Q160 185 110 165Z" fill="#e8d4b0"/>
-        <path d="M115 145 Q160 105 205 145 Q160 130 115 145Z" fill="#5c3a22"/>
-        <ellipse cx="145" cy="135" rx="18" ry="8" fill="#8b5a30" opacity="0.55"/>
-        <ellipse cx="160" cy="160" rx="30" ry="10" fill="#fff8ee" opacity="0.35"/>
+        <ellipse cx="200" cy="230" rx="75" ry="20" fill="#0a0402" opacity="0.3"/>
+        <path d="M125 215 Q125 150 200 140 Q275 150 275 215 Q200 245 125 215Z" fill="url(#cake-${uid})" filter="url(#grain-${uid})"/>
+        <path d="M132 185 Q200 125 268 185 Q200 165 132 185Z" fill="url(#burnt-${uid})"/>
+        <ellipse cx="175" cy="165" rx="28" ry="12" fill="#a87040" opacity="0.45"/>
+        <ellipse cx="200" cy="200" rx="40" ry="14" fill="#fff" opacity="0.3"/>
+        <ellipse cx="160" cy="195" rx="16" ry="8" fill="#fff8ee" opacity="0.4"/>
+        <path d="M140 200 Q200 230 260 198" stroke="#c8a878" stroke-width="2" fill="none" opacity="0.4"/>
       </g>`),
   }),
 };
@@ -365,19 +623,68 @@ export function getDiningSprite(itemId, kind = "food") {
   return { id: itemId, ...built };
 }
 
+/** Venue-specific scenery HTML injected into the FPV stage */
+const VENUE_SCENERY = {
+  "wine-tower": `
+    <div class="dining-venue-scenery dining-venue-scenery--aureole">
+      <div class="dining-venue-scenery__tower">
+        <span class="dining-venue-scenery__tower-glow"></span>
+        <span class="dining-venue-scenery__bottle"></span>
+        <span class="dining-venue-scenery__bottle dining-venue-scenery__bottle--2"></span>
+        <span class="dining-venue-scenery__bottle dining-venue-scenery__bottle--3"></span>
+        <span class="dining-venue-scenery__bottle dining-venue-scenery__bottle--4"></span>
+        <span class="dining-venue-scenery__angel"></span>
+        <span class="dining-venue-scenery__cable"></span>
+      </div>
+      <div class="dining-venue-scenery__velvet"></div>
+      <div class="dining-venue-scenery__label">Aureole · Wine Tower</div>
+    </div>`,
+  poolside: `
+    <div class="dining-venue-scenery dining-venue-scenery--border">
+      <div class="dining-venue-scenery__window">
+        <span class="dining-venue-scenery__sky-wash"></span>
+        <span class="dining-venue-scenery__water"></span>
+        <span class="dining-venue-scenery__wave"></span>
+        <span class="dining-venue-scenery__wave dining-venue-scenery__wave--2"></span>
+        <span class="dining-venue-scenery__palm"></span>
+        <span class="dining-venue-scenery__palm dining-venue-scenery__palm--2"></span>
+        <span class="dining-venue-scenery__sun"></span>
+      </div>
+      <div class="dining-venue-scenery__tile"></div>
+      <div class="dining-venue-scenery__label">Border Grill · Poolside</div>
+    </div>`,
+  steakhouse: `
+    <div class="dining-venue-scenery dining-venue-scenery--strip">
+      <div class="dining-venue-scenery__booth"></div>
+      <div class="dining-venue-scenery__grill">
+        <span class="dining-venue-scenery__ember"></span>
+        <span class="dining-venue-scenery__ember dining-venue-scenery__ember--2"></span>
+        <span class="dining-venue-scenery__ember dining-venue-scenery__ember--3"></span>
+        <span class="dining-venue-scenery__spark"></span>
+      </div>
+      <div class="dining-venue-scenery__brass"></div>
+      <div class="dining-venue-scenery__label">Stripsteak · Mina</div>
+    </div>`,
+};
+
 /**
- * Build the persistent first-person dining stage (restaurant POV).
- * @param {string} motif
+ * Build the persistent first-person dining stage for a venue motif.
+ * @param {DiningMotif|string} motif
+ * @param {{ venueName?: string }} [opts]
  * @returns {HTMLElement}
  */
-export function buildFpvStage(motif = "steakhouse") {
+export function buildFpvStage(motif = "steakhouse", opts = {}) {
   const stage = document.createElement("div");
-  stage.className = `dining-fpv dining-fpv--${motif}`;
+  const key = VENUE_SCENERY[motif] ? motif : "steakhouse";
+  stage.className = `dining-fpv dining-fpv--${key}`;
+  stage.dataset.motif = key;
   stage.setAttribute("aria-hidden", "true");
+  const scenery = VENUE_SCENERY[key] || VENUE_SCENERY.steakhouse;
   stage.innerHTML = `
     <div class="dining-fpv__sky"></div>
     <div class="dining-fpv__room">
       <div class="dining-fpv__backwall"></div>
+      ${scenery}
       <div class="dining-fpv__lights">
         <span class="dining-fpv__pendant"></span>
         <span class="dining-fpv__pendant dining-fpv__pendant--2"></span>
@@ -415,13 +722,20 @@ export function buildFpvStage(motif = "steakhouse") {
       <div class="dining-fpv__bite" data-fpv-bite></div>
     </div>
     <div class="dining-fpv__vignette"></div>
-    <div class="dining-fpv__caption" data-fpv-caption></div>
+    <div class="dining-fpv__caption" data-fpv-caption>${opts.venueName ? escapeHtml(opts.venueName) : ""}</div>
   `;
   return stage;
 }
 
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 /**
- * Place or clear a food/drink sprite on the FPV stage.
  * @param {HTMLElement} stage
  * @param {{ foodId?: string|null, drinkId?: string|null, foodKind?: MenuKind, drinkKind?: MenuKind, caption?: string }} state
  */
@@ -467,14 +781,13 @@ export function syncFpvSprites(stage, state = {}) {
   }
 }
 
-function looksLikeDrink(item) {
+export function looksLikeDrink(item) {
   if (item.kind === "drink") return true;
   if (item.kind !== "extra") return false;
   return /pour|margarita|mezcal|bottomless|champagne|wine|martini|fashioned/i.test(`${item.name}${item.id}`);
 }
 
 /**
- * Play a smooth first-person consume animation (bite or sip).
  * @param {HTMLElement} stage
  * @param {{ id: string, kind: MenuKind, name: string }} item
  * @param {{ reducedMotion?: boolean }} [opts]
@@ -532,5 +845,3 @@ export function playConsumeAnimation(stage, item, opts = {}) {
     }, isDrink ? 720 : 820);
   });
 }
-
-export { looksLikeDrink };

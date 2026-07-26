@@ -204,6 +204,18 @@ See [`CONTRIBUTING-POSIT.md`](CONTRIBUTING-POSIT.md) and [`.cursor/skills/posit-
 
 All random outcomes use OS-backed CSPRNG (`secrets.SystemRandom()` in Python, `crypto.getRandomValues()` in the browser). No outcome manipulation.
 
+## GitHub profile badge
+
+Copy into a profile README under **Highlighted Projects** (same style as other for-the-badge project links):
+
+```markdown
+[![The Mandalay Bay](https://img.shields.io/badge/The%20Mandalay%20Bay-8A2BE2?style=for-the-badge&labelColor=333&logo=readme&logoColor=white)](https://github.com/Exios66/degen-llms)
+```
+
+Preview:
+
+[![The Mandalay Bay](https://img.shields.io/badge/The%20Mandalay%20Bay-8A2BE2?style=for-the-badge&labelColor=333&logo=readme&logoColor=white)](https://github.com/Exios66/degen-llms)
+
 ## License
 
 MIT — see [LICENSE](LICENSE).

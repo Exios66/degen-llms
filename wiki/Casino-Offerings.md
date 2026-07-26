@@ -10,7 +10,7 @@ Seven floors, eleven activities, one chip wallet:
 |-------|------------|---------|
 | **Table Games** | Blackjack, Texas Hold'em, Mandalay Roulette, Craps | 10 chips |
 | **Slot Machines** | 14 machines incl. Megabucks & linked progressives | 1 chip |
-| **Lottery Counter** | Pick 3, Pick 4, Mega draw, scratchers | Varies |
+| **Lottery Counter** | Pick 3/4, Mega/Powerball, premium scratchers | Varies (stake-scaled) |
 | **Sports Book** | Scenario board, parlays/futures + prediction markets | 10 chips |
 | **Trading Floor** | Futures & call/put options (NYSE, commodities, crypto) | 25 chips |
 | **Racing Pavilion** | Mandalay Racing (thoroughbred sim) | 5 chips |
@@ -83,10 +83,9 @@ Progressive jackpots (Megabucks, Monte Carlo, Super Spin) persist in your save. 
 
 | Ticket | Description |
 |--------|-------------|
-| **Strip Pick 3** | 3-digit draw — straight or box |
-| **Neon Pick 4** | 4-digit draw — straight or box |
-| **Mandalay Mega** | 5 numbers + Mega Ball |
-| **Scratchers** | Instant-win tickets |
+| **Strip Pick 3 / Pick 4** | Digit draws — straight or box (+ high-limit SKUs) |
+| **Mandalay Mega / Salon Powerball** | 5 lucky numbers (1–70) + Powerball (1–25) |
+| **Scratchers** | Gold, Wild, Platinum, Diamond instant tickets |
 
 → [[Lottery-Counter]]
 

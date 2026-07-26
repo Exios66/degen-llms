@@ -992,6 +992,30 @@ body {
   margin: 4px 0;
 }
 
+.bj-hand-heading {
+  color: var(--gold);
+  font-size: 8px;
+  margin-bottom: 6px;
+}
+
+.bj-dealer--sprites,
+.bj-row--sprites,
+.holdem-sprite-table {
+  margin-bottom: 10px;
+}
+
+.blackjack-panel .playing-card,
+.holdem-sprite-table .playing-card {
+  width: 2.6rem;
+  height: 3.5rem;
+}
+
+.blackjack-panel .card-row--sprites,
+.holdem-sprite-table .card-row--sprites {
+  gap: 0.3rem;
+  margin-bottom: 6px;
+}
+
 .bj-row.highlight {
   color: var(--cyan);
 }

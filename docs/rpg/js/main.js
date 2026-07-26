@@ -1,6 +1,6 @@
 import Phaser from "phaser";
-import { OverworldScene } from "./scenes/GameScenes.js?v=grid-boot-1";
-import { TitleScreen, renderHud, renderTrainerCard } from "./scenes/TitleScreen.js?v=grid-boot-1";
+import { OverworldScene } from "./scenes/GameScenes.js?v=pr89-main-1";
+import { TitleScreen, renderHud, renderTrainerCard } from "./scenes/TitleScreen.js?v=pr89-main-1";
 import { DialogueManager } from "./systems/DialogueManager.js";
 import { SaveAdapter } from "./systems/SaveAdapter.js";
 import { defaultAppearance } from "./systems/CharacterAppearance.js";
@@ -10,7 +10,7 @@ import {
   RouletteOverlay,
   HoldemOverlay,
   RhythmOverlay,
-} from "./systems/EncounterBridge.js";
+} from "./systems/EncounterBridge.js?v=pr89-main-1";
 import { TerminalHostOverlay } from "./systems/TerminalHostOverlay.js";
 import { QuestManager } from "./systems/QuestManager.js";
 import { MenuOverlay } from "./systems/MenuOverlay.js";

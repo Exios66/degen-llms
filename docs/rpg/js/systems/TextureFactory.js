@@ -1,15 +1,47 @@
 import { ART_UNIT, TILE, TILE_SIZE } from "./MapTiles.js";
+import {
+  appearanceTextureBase,
+  normalizeAppearance,
+  resolvePalette,
+} from "./CharacterAppearance.js";
 
 /**
  * Procedural pixel textures for the ground, decor and UI cues — 16px art grid,
- * 2× upscale. Consistent top-left lighting, 4–5 tone palettes, DS polish.
+ * 2× upscale. Consistent top-left lighting, clustered dither, selective
+ * colored outlines, and animated water — Chrono Trigger / modern SNES-era polish.
  *
- * Characters are not drawn here: they come from the vendored sprite sheets in
- * `CharacterSprites.js`, which are hand-drawn art rather than generated.
+ * Overworld characters are 32×44 procedural tuxedo sprites (see CHAR_METRICS);
+ * environment tiles, fringes, and shadows are authored below.
  */
 
 const SCALE = TILE_SIZE / ART_UNIT;
-const OUTLINE = 0x241d2e;
+/** Selective outline: cool charcoal, never pure black — soft against busy floors. */
+const OUTLINE = 0x241c30;
+/** Water animation frames registered at boot and cycled by the overworld. */
+export const WATER_FRAMES = 3;
+
+/** Characters are authored at 2× the tile art unit for lapels, bow ties, and facial detail. */
+const CHAR_W = ART_UNIT * 2;
+const CHAR_H = 44;
+/** One art pixel → one texture pixel so the 32×44 grid keeps the same on-screen footprint. */
+const CHAR_SCALE = 1;
+const OUTLINE_SOFT = 0x303040;
+
+/**
+ * Collision / placement metrics for the 32×44 tuxedo sprites.
+ * Feet sit near the bottom of the frame; the scene uses origin (0.5, 1) so the
+ * sprite position is the shoe line and FOOT_DROP is zero.
+ */
+export const CHAR_METRICS = {
+  width: CHAR_W,
+  height: CHAR_H,
+  scale: 1,
+  feet: { x: 6, y: 36, w: 20, h: 8 },
+};
+/** With feet-origin sprites the position already is the tile stand point. */
+export const FOOT_DROP = 0;
+
+// ─── Color utilities ───────────────────────────────────────────────────────
 
 function clamp(v, lo, hi) {
   return Math.max(lo, Math.min(hi, v));
@@ -142,6 +174,24 @@ function ditherWeave(w, x0, y0, w0, h0, c1, c2) {
   for (let y = y0; y < y0 + h0; y++) {
     for (let x = x0; x < x0 + w0; x++) {
       w.px((x + y) % 2 === 0 ? c1 : c2, x, y);
+    }
+  }
+}
+
+/**
+ * Painterly clustering: 2×2 same-tone blocks with sparse checker breaks —
+ * the reference technique that gives volume without noisy Bayer dither.
+ */
+function clusterDither(w, x0, y0, w0, h0, c1, c2, seed = 0) {
+  for (let y = y0; y < y0 + h0; y += 2) {
+    for (let x = x0; x < x0 + w0; x += 2) {
+      const tone = hash(x, y, seed) > 0.45 ? c1 : c2;
+      const bw = Math.min(2, x0 + w0 - x);
+      const bh = Math.min(2, y0 + h0 - y);
+      w.px(tone, x, y, bw, bh);
+      if (hash(x + 3, y + 5, seed + 1) > 0.72 && bw > 1 && bh > 1) {
+        w.px(tone === c1 ? c2 : c1, x + 1, y + 1, 1, 1);
+      }
     }
   }
 }
@@ -359,43 +409,50 @@ function drawTrimTile(g) {
   ambientLight(fine, TILE_SIZE, TILE_SIZE, { lift: 0.06, drop: 0.07 });
 }
 
-function drawWaterTile(g) {
+function drawWaterTile(g, frame = 0) {
   const w = makeWriter(g);
   const fine = fineWriter(g);
-  // Deep lagoon base with layered depth — dark floor, mid-water, sunlit surface.
+  const f = ((frame % WATER_FRAMES) + WATER_FRAMES) % WATER_FRAMES;
+  // Deep lagoon base with layered depth — dark floor, mid-water, sunlit cyan.
   w.px(0x0a2840, 0, 0, 16, 16);
   w.px(0x0e3858, 0, 0, 16, 5);
   w.px(0x145878, 0, 4, 16, 5);
   w.px(0x186888, 0, 8, 16, 4);
   w.px(0x124868, 0, 12, 16, 4);
-  // Scaly ripple lattice (reference-style wave cells).
+  clusterDither(w, 1, 1, 14, 14, 0x145878, 0x186888, 17 + f);
+  // Scaly ripple lattice — phase-shifted per frame so the pool breathes.
+  const ox = f;
+  const oy = f === 2 ? 1 : 0;
   for (let y = 1; y < 15; y += 3) {
-    for (let x = (y % 6 === 1 ? 0 : 2); x <= 13; x += 4) {
-      w.px(0x1a7090, x, y, 3, 1);
-      w.px(0x2a98b0, x + 1, y, 1, 1);
+    for (let x = ((y % 6 === 1 ? 0 : 2) + ox) % 14; x <= 13; x += 4) {
+      const yy = Math.min(14, y + oy);
+      w.px(0x1a7090, x, yy, 3, 1);
+      w.px(0x2a98b0, x + 1, yy, 1, 1);
     }
   }
-  // Bright caustic streaks + foam sparkles.
-  w.px(0x4ad4de, 1, 2, 5, 1);
-  w.px(0x80f8ff, 2, 2, 2, 1);
-  w.px(0x39c5cf, 8, 1, 6, 1);
-  w.px(0x6ae8f0, 9, 1, 3, 1);
-  w.px(0x4ad4de, 3, 7, 7, 1);
-  w.px(0x80f8ff, 5, 7, 2, 1);
-  w.px(0x39c5cf, 10, 10, 5, 1);
-  w.px(0x6ae8f0, 11, 10, 2, 1);
+  // Bright caustic streaks travel with the frame.
+  const streaks = [
+    [1 + f, 2, 5], [8 - (f % 2), 1, 6], [3 + f, 7, 7], [10 - f, 10, 5],
+  ];
+  for (const [sx, sy, sw] of streaks) {
+    w.px(0x4ad4de, sx, sy, sw, 1);
+    w.px(0x80f8ff, sx + 1, sy, Math.max(1, sw - 2), 1);
+  }
   w.px(0x2a90a8, 0, 5, 16, 1, 0.45);
   w.px(0x2a90a8, 1, 13, 14, 1, 0.4);
-  // Shoreline foam edge along the bottom (reads when abutting sand/deck).
   w.px(0xa8f0f8, 0, 15, 16, 1, 0.35);
-  w.px(0x6ae8f0, 2, 14, 3, 1, 0.5);
-  w.px(0x6ae8f0, 9, 14, 4, 1, 0.45);
-  sparkle(fine, [[6, 5], [14, 3], [22, 9], [10, 15], [26, 19], [4, 22]], 0xffffff, 0.65);
+  w.px(0x6ae8f0, 2 + f, 14, 3, 1, 0.5);
+  w.px(0x6ae8f0, 9 - (f % 2), 14, 4, 1, 0.45);
+  const sparks = [
+    [6 + f * 2, 5], [14, 3 + (f % 2)], [22 - f * 2, 9],
+    [10 + f, 15], [26, 19 - f], [4 + f * 3, 22],
+  ];
+  sparkle(fine, sparks, 0xffffff, 0.65);
   speckle(fine, 0, 0, TILE_SIZE, TILE_SIZE, [
     [0x8af0ff, 0.28], [0x082030, 0.32], [0x4ad4de, 0.22], [0xffffff, 0.2],
-  ], 0.18, 29);
-  glow(fine, 10, 6, [{ r: 8, alpha: 0.09 }, { r: 4, alpha: 0.16 }], 0x9ef6ff);
-  glow(fine, 24, 20, [{ r: 7, alpha: 0.08 }, { r: 3, alpha: 0.14 }], 0x9ef6ff);
+  ], 0.18, 29 + f);
+  glow(fine, 10 + f * 2, 6, [{ r: 8, alpha: 0.09 }, { r: 4, alpha: 0.16 }], 0x9ef6ff);
+  glow(fine, 24 - f * 2, 20, [{ r: 7, alpha: 0.08 }, { r: 3, alpha: 0.14 }], 0x9ef6ff);
   ambientLight(fine, TILE_SIZE, TILE_SIZE, { lift: 0.1, drop: 0.05 });
 }
 
@@ -472,6 +529,7 @@ function drawPlantTile(g) {
   // Resort landscaping: warm flagstone under dappled tropical canopy.
   tileFrame(w, 0x283028, 0x384838, 0x182018);
   w.px(0x304030, 2, 2, 12, 12);
+  clusterDither(w, 2, 2, 12, 12, 0x3a5038, 0x304030, 53);
   // Irregular flagstones with individual bevels.
   const stones = [
     [2, 2, 6, 5, 0x4a5a40], [8, 2, 6, 4, 0x586848],
@@ -484,7 +542,7 @@ function drawPlantTile(g) {
     w.px(shade(tone, 0.7), sx + sw - 1, sy, 1, sh);
     w.px(shade(tone, 0.7), sx, sy + sh - 1, sw, 1);
   }
-  // Leaf litter + moss tufts (cozy greenery clutter).
+  // Leaf litter, moss tufts, and bright flora pops (reference clutter density).
   w.px(0x1a5a30, 3, 4, 2, 1);
   w.px(0x2d8a48, 4, 3, 2, 1);
   w.px(0x4acc68, 5, 3, 1, 1);
@@ -494,8 +552,11 @@ function drawPlantTile(g) {
   w.px(0x4acc68, 12, 7, 1, 1);
   w.px(0x186028, 6, 11, 3, 1);
   w.px(0x2d8a48, 7, 10, 2, 1);
-  w.px(0xc8a848, 9, 5, 1, 1); // warm Nevada litter fleck
+  w.px(0xc8a848, 9, 5, 1, 1);
   w.px(0xe8c878, 14, 12, 1, 1);
+  w.px(0x4a80d0, 4, 9, 1, 1); // bluebell
+  w.px(0xe05070, 12, 4, 1, 1); // desert bloom
+  w.px(0xf0e8a0, 8, 12, 1, 1); // pale clover
   speckle(fine, 2, 2, 28, 28, [
     [0x789878, 0.28], [0x304430, 0.3], [0x4acc68, 0.16], [0xd8b868, 0.1],
   ], 0.22, 109);
@@ -609,7 +670,7 @@ function drawSandTile(g) {
   const fine = fineWriter(g);
   // Nevada heat: sun-bleached ochre sand with wind ripples and warm glare.
   w.px(0xc4a060, 0, 0, 16, 16);
-  ditherWeave(w, 0, 0, 16, 16, 0xd8b878, 0xc8a868);
+  clusterDither(w, 0, 0, 16, 16, 0xd8b878, 0xc8a868, 41);
   // Hot-spot bands — brighter toward the sunlit top.
   w.px(0xe8d090, 0, 0, 16, 3, 0.45);
   w.px(0xf0dc9c, 0, 0, 16, 1, 0.5);
@@ -886,18 +947,40 @@ const variantCount = (tile) => SCUFFS.length + (FLOOR_ACCENTS[tile] ? 1 : 0);
 export function groundTextureKeys() {
   const keys = [];
   for (const id of Object.keys(TILE_DRAWERS)) {
+    const tile = Number(id);
+    if (tile === TILE.WATER) {
+      for (let f = 0; f < WATER_FRAMES; f += 1) {
+        keys.push(`tile_${tile}_f${f}`);
+        for (let v = 0; v < SCUFFS.length; v += 1) keys.push(`tile_${tile}_f${f}_s${v}`);
+      }
+      keys.push(`tile_${tile}`);
+      continue;
+    }
     keys.push(`tile_${id}`);
-    if (!SCUFFED_FLOORS.has(Number(id))) continue;
-    for (let v = 0; v < variantCount(Number(id)); v += 1) keys.push(`tile_${id}_s${v}`);
+    if (!SCUFFED_FLOORS.has(tile)) continue;
+    for (let v = 0; v < variantCount(tile); v += 1) keys.push(`tile_${id}_s${v}`);
   }
   return keys;
 }
 
 /** Texture key for a ground tile at a map position, spreading the variants. */
-export function groundTileKey(tile, x, y) {
+export function groundTileKey(tile, x, y, frame = 0) {
+  if (tile === TILE.WATER) {
+    const f = ((frame % WATER_FRAMES) + WATER_FRAMES) % WATER_FRAMES;
+    const variant = (x * 5 + y * 3 + ((x * y) % 7)) % (SCUFFS.length + 1);
+    return variant === 0 ? `tile_${tile}_f${f}` : `tile_${tile}_f${f}_s${variant - 1}`;
+  }
   if (!SCUFFED_FLOORS.has(tile)) return `tile_${tile}`;
   const variant = (x * 5 + y * 3 + ((x * y) % 7)) % (variantCount(tile) + 1);
   return variant === 0 ? `tile_${tile}` : `tile_${tile}_s${variant - 1}`;
+}
+
+/**
+ * Neighbor-edge fringe key. `kind` is foam | wet | path | pool; `dir` is n|s|e|w.
+ * Overlays sit on top of ground so sand↔water and carpet↔path read as one surface.
+ */
+export function fringeTextureKey(kind, dir) {
+  return `fringe_${kind}_${dir}`;
 }
 
 // ─── Decor & UI sprites ──────────────────────────────────────────────────────
@@ -1024,10 +1107,159 @@ function drawPlantDecor(g) {
   w.px(0x4acc68, 14, 3, 2, 2);
   w.px(0x70f090, 15, 3, 1, 1);
   w.px(0x145028, 5, 8, 6, 2);
+  // Color pops tucked into the canopy — pink bloom + gold fruit fleck.
+  w.px(0xe86890, 5, 4, 1, 1);
+  w.px(0xf0c050, 11, 5, 1, 1);
   sparkle(fine, [[13, 3], [15, 6], [11, 1], [17, 8], [21, 4], [6, 8]], 0xc8ffd0, 0.55);
   glow(fine, 16, 6, [{ r: 7, alpha: 0.07 }], 0xa0f0b0);
   glow(fine, 10, 22, [{ r: 4, alpha: 0.14 }], 0xf0dcb0);
   ambientLight(fine, TILE_SIZE, TILE_SIZE, { lift: 0.08, drop: 0.05 });
+}
+
+/** Walkable flower cluster — bluebells / desert blooms for lived-in density. */
+function drawFlowerDecor(g) {
+  const w = makeWriter(g);
+  const fine = fineWriter(g);
+  // Stem tufts
+  w.px(0x2d6a38, 4, 10, 1, 4);
+  w.px(0x2d6a38, 8, 9, 1, 5);
+  w.px(0x2d6a38, 11, 11, 1, 3);
+  w.px(0x4acc68, 4, 10, 1, 1);
+  w.px(0x4acc68, 8, 9, 1, 1);
+  // Bloom heads — bright palette pops against sand/lobby.
+  w.px(OUTLINE, 3, 7, 3, 3);
+  w.px(0x4a80d0, 3, 7, 3, 3);
+  w.px(0x80b0f0, 3, 7, 2, 1);
+  w.px(0xffffff, 4, 8, 1, 1);
+  w.px(OUTLINE, 7, 5, 3, 3);
+  w.px(0xe05070, 7, 5, 3, 3);
+  w.px(0xf090a8, 7, 5, 2, 1);
+  w.px(0xfff0c0, 8, 6, 1, 1);
+  w.px(OUTLINE, 10, 8, 3, 3);
+  w.px(0xf0d050, 10, 8, 3, 3);
+  w.px(0xffe890, 10, 8, 2, 1);
+  w.px(0xffffff, 11, 9, 1, 1, 0.7);
+  glow(fine, 16, 14, [{ r: 5, alpha: 0.08 }], 0xf0d0a0);
+  ambientLight(fine, TILE_SIZE, TILE_SIZE, { lift: 0.06, drop: 0.04 });
+}
+
+/** Blocking boulder with moss and top-left bevel. */
+function drawRockDecor(g) {
+  const w = makeWriter(g);
+  const fine = fineWriter(g);
+  w.px(OUTLINE, 3, 6, 10, 9);
+  w.px(0x5a5048, 4, 7, 8, 7);
+  w.px(0x7a7064, 4, 7, 7, 1);
+  w.px(0x7a7064, 4, 7, 1, 6);
+  w.px(0x3a342e, 11, 7, 1, 7);
+  w.px(0x3a342e, 4, 13, 8, 1);
+  w.px(0x9a9080, 5, 8, 3, 2);
+  w.px(0xb0a898, 5, 8, 2, 1);
+  // Moss cap + grit
+  w.px(0x3a7040, 6, 6, 4, 2);
+  w.px(0x50a058, 7, 6, 2, 1);
+  w.px(0x2a5030, 5, 11, 2, 1);
+  speckle(fine, 8, 14, 16, 14, [[0x8a8074, 0.3], [0x3a342e, 0.28]], 0.2, 223);
+  ambientLight(fine, TILE_SIZE, TILE_SIZE, { lift: 0.07, drop: 0.08 });
+}
+
+/** Brass lantern on a post — warm bloom for evening atmosphere. */
+function drawLanternDecor(g) {
+  const w = makeWriter(g);
+  const fine = fineWriter(g);
+  // Post
+  w.px(OUTLINE, 7, 6, 2, 10);
+  w.px(0x5c3a1a, 7, 6, 2, 9);
+  w.px(0x8a6030, 7, 6, 1, 8);
+  // Lantern body
+  w.px(OUTLINE, 4, 2, 8, 7);
+  w.px(0x3a2a18, 5, 3, 6, 5);
+  w.px(0xc8a030, 5, 2, 6, 1);
+  w.px(0xe8c547, 5, 2, 4, 1);
+  w.px(0xffe890, 6, 4, 4, 3);
+  w.px(0xfff6c8, 7, 4, 2, 2);
+  w.px(0xffffff, 7, 4, 1, 1, 0.7);
+  // Cap + base
+  w.px(OUTLINE, 5, 1, 6, 2);
+  w.px(0x8a6018, 6, 1, 4, 1);
+  w.px(OUTLINE, 5, 14, 6, 2);
+  w.px(0x5c3a1a, 6, 14, 4, 1);
+  glow(fine, 16, 10, [
+    { r: 12, alpha: 0.08 }, { r: 8, alpha: 0.12 }, { r: 4, alpha: 0.2 },
+  ], 0xffe090);
+  sparkle(fine, [[14, 8], [18, 10]], 0xffffff, 0.55);
+  ambientLight(fine, TILE_SIZE, TILE_SIZE, { lift: 0.05, drop: 0.06 });
+}
+
+/** Soft elliptical contact shadow under decor / characters. */
+function drawShadowBlob(g) {
+  const w = makeWriter(g);
+  const fine = fineWriter(g);
+  // Opaque core so the blob survives generateTexture + scene alpha/scale.
+  w.px(0x000000, 4, 10, 8, 4, 0.55);
+  w.px(0x000000, 5, 9, 6, 6, 0.4);
+  w.px(0x000000, 6, 11, 4, 2, 0.7);
+  glow(fine, TILE_SIZE / 2, TILE_SIZE / 2 + 4, [
+    { r: 14, alpha: 0.16 },
+    { r: 10, alpha: 0.22 },
+    { r: 6, alpha: 0.3 },
+    { r: 3, alpha: 0.4 },
+  ], 0x000000);
+}
+
+/**
+ * Edge fringe strips — transparent except the contact band.
+ * Foam: water edge. Wet: sand/deck meeting water. Path: gold walkway into carpet.
+ * Pool: aqua deck meeting lagoon.
+ */
+function drawFringe(g, kind, dir) {
+  const w = makeWriter(g);
+  const fine = fineWriter(g);
+  const horizontal = dir === "n" || dir === "s";
+  const atStart = dir === "n" || dir === "w";
+  // Keep the contact band mostly opaque — Phaser generateTexture drops
+  // near-transparent-only Graphics. Band is 3 art-px thick so shorelines
+  // read clearly at 2× zoom (not a 1px hairline).
+  const band = horizontal
+    ? { x: 0, y: atStart ? 0 : 13, bw: 16, bh: 3 }
+    : { x: atStart ? 0 : 13, y: 0, bw: 3, bh: 16 };
+
+  if (kind === "foam") {
+    w.px(0xc8f8ff, band.x, band.y, band.bw, band.bh);
+    w.px(0xffffff, band.x + (horizontal ? 1 : 0), band.y + (horizontal ? 0 : 1),
+      horizontal ? 3 : 1, horizontal ? 1 : 3);
+    w.px(0x80f0ff, band.x + (horizontal ? 5 : 0), band.y + (horizontal ? 1 : 5),
+      horizontal ? 2 : 2, horizontal ? 1 : 2);
+    w.px(0xffffff, band.x + (horizontal ? 9 : 1), band.y + (horizontal ? 0 : 9),
+      horizontal ? 2 : 1, horizontal ? 1 : 2);
+    w.px(0xa8f0f8, band.x + (horizontal ? 12 : 0), band.y + (horizontal ? 1 : 12),
+      horizontal ? 3 : 2, horizontal ? 1 : 3);
+    sparkle(fine, horizontal
+      ? [[4, band.y * 2], [14, band.y * 2 + 1], [24, band.y * 2]]
+      : [[band.x * 2, 6], [band.x * 2 + 1, 16], [band.x * 2, 26]],
+    0xffffff, 0.7);
+  } else if (kind === "wet") {
+    w.px(0x8a6830, band.x, band.y, band.bw, band.bh);
+    w.px(0x39c5cf, band.x, band.y + (horizontal ? (atStart ? 1 : 0) : 0),
+      horizontal ? 16 : 1, horizontal ? 1 : 16);
+    w.px(0x6ae8f0, band.x + (horizontal ? 2 : 0), band.y + (horizontal ? 0 : 3),
+      horizontal ? 2 : 1, horizontal ? 1 : 2);
+    w.px(0xb89048, band.x + (horizontal ? 7 : 1), band.y + (horizontal ? 1 : 8),
+      horizontal ? 3 : 1, horizontal ? 1 : 3);
+  } else if (kind === "path") {
+    w.px(0xe8c547, band.x, band.y, band.bw, band.bh);
+    w.px(0xffe890, band.x + (horizontal ? 1 : 0), band.y + (horizontal ? 0 : 1),
+      horizontal ? 14 : 1, horizontal ? 1 : 14);
+    w.px(0xfff6c8, band.x + (horizontal ? 4 : 0), band.y + (horizontal ? 0 : 4),
+      horizontal ? 2 : 1, horizontal ? 1 : 2);
+  } else if (kind === "pool") {
+    w.px(0x2a8090, band.x, band.y, band.bw, band.bh);
+    w.px(0x6ae8f0, band.x, band.y + (horizontal ? 0 : 0),
+      horizontal ? 16 : 2, horizontal ? 1 : 16);
+    w.px(0xa8f8ff, band.x + (horizontal ? 3 : 0), band.y + (horizontal ? 1 : 4),
+      horizontal ? 2 : 1, horizontal ? 1 : 2);
+    sparkle(fine, [[8, band.y * 2], [20, band.y * 2]], 0xffffff, 0.6);
+  }
 }
 
 function drawSlotDecor(g) {
@@ -1118,8 +1350,15 @@ const SPRITE_DRAWERS = {
   decor_screen: drawScreenDecor,
   decor_glass: drawGlassTile,
   decor_rope: drawRopeTile,
+  decor_flower: drawFlowerDecor,
+  decor_rock: drawRockDecor,
+  decor_lantern: drawLanternDecor,
   interact_icon: drawInteractIcon,
+  shadow_blob: drawShadowBlob,
 };
+
+const FRINGE_KINDS = ["foam", "wet", "path", "pool"];
+const FRINGE_DIRS = ["n", "s", "e", "w"];
 
 /** Every art key the overworld registers at boot. */
 export function artKeys() {
@@ -1134,9 +1373,18 @@ export function artKeys() {
  * this is the same drawer against a canvas, for previews and headless checks.
  */
 export function drawArtToCanvas(canvas, key) {
-  const drawer = key.startsWith("tile_")
-    ? TILE_DRAWERS[key.slice("tile_".length)]
-    : SPRITE_DRAWERS[key];
+  let drawer = null;
+  if (key.startsWith("tile_")) {
+    const id = key.slice("tile_".length);
+    drawer = TILE_DRAWERS[id];
+  } else if (key.startsWith("fringe_")) {
+    const parts = key.split("_");
+    const kind = parts[1];
+    const dir = parts[2];
+    drawer = (target) => drawFringe(target, kind, dir);
+  } else {
+    drawer = SPRITE_DRAWERS[key];
+  }
   if (!drawer) throw new Error(`unknown art key "${key}"`);
   const ctx = canvas.getContext("2d");
   canvas.width = TILE_SIZE;
@@ -1146,10 +1394,346 @@ export function drawArtToCanvas(canvas, key) {
   drawer(canvas);
 }
 
+// ─── Characters ──────────────────────────────────────────────────────────────
+
+/**
+ * Characters are authored as pixel grids rather than stacked rectangles: one
+ * character per pixel, 32 wide × 44 tall, read against a palette legend. The
+ * default silhouette is a black-tie tuxedo (lapels, bow tie, white shirt, satin
+ * trouser stripe). The upper body is separate from the legs so a walk cycle only
+ * has to swap the leg block and bob the body a pixel, the way DS sprites do.
+ */
+
+const CHAR_LEGEND = (palette) => {
+  const { body, mid, shade: outfit, hair, hairShade, skinLight, skinMid, skinShade } = palette;
+  const jacketHi = mix(body, 0xffffff, 0.18);
+  const satin = mix(mid, 0xffffff, 0.12);
+  return {
+    O: [OUTLINE, 1],
+    o: [OUTLINE_SOFT, 1],
+    H: [hair, 1],
+    h: [hairShade, 1],
+    G: [mix(hair, 0xffffff, 0.22), 1],
+    S: [skinLight, 1],
+    s: [skinMid, 1],
+    d: [skinShade, 1],
+    e: [0xfffaf2, 1],
+    p: [OUTLINE, 1],
+    c: [mix(skinMid, 0xe06878, 0.5), 1],
+    // Jacket / tuxedo body — outfit colour (tuxedo defaults to near-black).
+    B: [body, 1],
+    M: [mid, 1],
+    D: [outfit, 1],
+    W: [jacketHi, 1],
+    b: [shade(outfit, 0.55), 1],
+    // Satin lapel face (slightly brighter than the jacket mid).
+    R: [satin, 1],
+    r: [mix(outfit, satin, 0.45), 1],
+    // Dress shirt.
+    w: [0xf7f4ee, 1],
+    u: [0xd8d2c6, 1],
+    // Bow tie — classic black with a deep crimson knot highlight.
+    Y: [0x14141c, 1],
+    y: [0x8a2030, 1],
+    // Studs / cufflinks / buckle.
+    L: [0xf4dc84, 1],
+    // Formal trousers (charcoal) with a satin outer stripe (A/a).
+    N: [0x1a1a28, 1],
+    n: [0x101018, 1],
+    A: [0x3a3a4e, 1],
+    a: [0x2a2a3a, 1],
+    k: [0x14141c, 1],
+    K: [0x3a3a48, 1],
+    ",": [0x000000, 0.16],
+    ";": [0x000000, 0.26],
+  };
+};
+
+/** Head, tuxedo torso and arms: 29 rows. */
+const CHAR_BODY = {
+  down: [
+    ".............OOOOOO.............",
+    "...........OOhhhhhhOO...........",
+    "..........OhGGHHHHHhO...........",
+    ".........OHGGHHHHHHhO...........",
+    ".........OHSSSSSSSShO...........",
+    ".........OHSSSSSSSShO...........",
+    ".........OHsSSSSSSshO...........",
+    ".........OHOOSSSSOOhO...........",
+    ".........OHepSSpSehO............",
+    "..........OcSSSSScO.............",
+    "...........OssssO...............",
+    "..........OdsssdO...............",
+    "........OOOOYYYYOOOO............",
+    ".......OWMRRYyyYRRMWO...........",
+    "......OWMRRRwwwwRRRMWO..........",
+    ".....OWBBBRRwwwwRRBBBWO.........",
+    "....OWBBBBBRwwwwRBBBBBWO........",
+    "....OBBBBBBRwwwwRBBBBBBO........",
+    "....OBBBBBBRwuuwRBBBBBBO........",
+    "...OoBBBBBBBwLLwBBBBBBBoO.......",
+    "...OoBBBBBBBwLLwBBBBBBBoO.......",
+    "...OoBBBBBBBBwwBBBBBBBBoO.......",
+    "...OSBBBBBBBBwwBBBBBBBBSO.......",
+    "....OBBBBBBBBwwBBBBBBBBO........",
+    "....OBBBBBBBBwwBBBBBBBBO........",
+    "....OBBBBBBBBBuBBBBBBBBO........",
+    "....ObbbbbbbbbbbbbbbbbO.........",
+    ".....ObbbbbbbbbbbbbbbO..........",
+    "......OOOOOOOOOOOOOO............",
+  ],
+  up: [
+    ".............OOOOOO.............",
+    "...........OOhhhhhhOO...........",
+    "..........OhGGHHHHHhO...........",
+    ".........OHGGHHHHHHhO...........",
+    ".........OHHHHHHHHhO............",
+    ".........OHHHHHHHHhO............",
+    ".........OHHHHHHHhhO............",
+    ".........OHHHHHHHhhO............",
+    "..........OhhhhhhO..............",
+    "...........OhsshO...............",
+    "...........OdssdO...............",
+    "..........OOOOOOOO..............",
+    "........OOWMMMMMMWOO............",
+    ".......OWMRRRRRRRRMWO...........",
+    "......OWMRRRRRRRRRRMWO..........",
+    ".....OWBBBRRRRRRRRBBBWO.........",
+    "....OWBBBBBRRRRRRBBBBBWO........",
+    "....OBBBBBBBBBBBBBBBBBBO........",
+    "....OBBBBBBBBBBBBBBBBBBO........",
+    "...OoBBBBBBBBBBBBBBBBBBoO.......",
+    "...OoBBBBBBBBBBBBBBBBBBoO.......",
+    "...OoBBBBBBBBBBBBBBBBBBoO.......",
+    "...OSBBBBBBBBBBBBBBBBBBSO.......",
+    "....OBBBBBBBBBBBBBBBBBBO........",
+    "....OBBBBBBBBBBBBBBBBBBO........",
+    "....OBBBBBBBBBBBBBBBBBBO........",
+    "....ObbbbbbbbbbbbbbbbbO.........",
+    ".....ObbbbbbbbbbbbbbbO..........",
+    "......OOOOOOOOOOOOOO............",
+  ],
+  left: [
+    "..............OOOOOO............",
+    "............OOhhhhhhO...........",
+    "...........OGHHHHHHhO...........",
+    "..........OHHHHHHHhhO...........",
+    "..........OSSSSHHHhhO...........",
+    "..........OSSSSHHHhhO...........",
+    "..........OOOSSSHHhhO...........",
+    "..........OepSdSHHhhO...........",
+    "..........OcSSdHHhhO............",
+    "...........OdSshhO..............",
+    "...........OdssO................",
+    "..........OOOOOOO...............",
+    "........OOWMMMMMMO..............",
+    ".......OWMRRRRRRMO..............",
+    "......OWMRRRwwwwRMO.............",
+    ".....OWBBBRwwwwRRBO.............",
+    "....OWBBBBRwwwwRBBO.............",
+    "....OBBBBBRwuuwRBBO.............",
+    "....OBBBBBBwLLwBBBO.............",
+    "...OoBBBBBBwLLwBBBoO............",
+    "...OoBBBBBBBwwBBBBoO............",
+    "...OoBBBBBBBwwBBBBoO............",
+    "...OSBBBBBBBwwBBBBSO............",
+    "....OBBBBBBBwwBBBBO.............",
+    "....OBBBBBBBuBBBBBO.............",
+    "....OBBBBBBBBBBBBBO.............",
+    "....ObbbbbbbbbbbbO..............",
+    ".....ObbbbbbbbbbO...............",
+    "......OOOOOOOOOO................",
+  ],
+};
+
+/** Legs, satin stripe, shoes and contact shadow: 14 rows × 3 walk frames. */
+const CHAR_LEGS = [
+  [
+    "......ONNAAAAAANNO..............",
+    "......ONNAAAAAnnO...............",
+    "......ONNNAAAnnnO...............",
+    "......ONNNnOOnnnO...............",
+    "......ONNNnOOnnnO...............",
+    "......OnnnnOOnnnO...............",
+    "......OnnnnOOnnnO...............",
+    "......OnnnnOOnnnO...............",
+    "......OKkkkOOKkkO...............",
+    "......OKkkkOOKkkO...............",
+    ".....,OOOOO,,OOOO,..............",
+    ".....,OOOO,,,,OOOO,.............",
+    "......;;;;;;;;..................",
+    ".......;;;;;;...................",
+  ],
+  [
+    "......ONNAAAAAANNO..............",
+    "......ONNAAAAAnnO...............",
+    "......ONNNAAAnnnO...............",
+    "......ONNNnOOnnnO...............",
+    "......ONNNnOOnnnO...............",
+    "......OKkkkOOnnnO...............",
+    "......OKkkkOOnnnO...............",
+    "............OnnnO...............",
+    "............OKkkO...............",
+    "............OKkkO...............",
+    ".....,,,,,,OOOOOO,..............",
+    ".....,,,,,OOOOOOO,..............",
+    "......;;;;;;;;..................",
+    ".......;;;;;;...................",
+  ],
+  [
+    "......ONNAAAAAANNO..............",
+    "......ONNAAAAAnnO...............",
+    "......ONNNAAAnnnO...............",
+    "......ONNNnOOnnnO...............",
+    "......ONNNnOOnnnO...............",
+    "......OnnnnOOKkkO...............",
+    "......OnnnnOOKkkO...............",
+    "......OnnnO.....................",
+    "......OKkkO.....................",
+    "......OKkkO.....................",
+    ".....,OOOOOO,,,,,,..............",
+    ".....,OOOOOOO,,,,,..............",
+    "......;;;;;;;;..................",
+    ".......;;;;;;...................",
+  ],
+];
+
+const BODY_TOP = 1;
+const LEGS_TOP = 30;
+
+
+const mirrorRows = (rows) => rows.map((row) => [...row].reverse().join(""));
+
+const CHAR_BODY_BY_DIR = { ...CHAR_BODY, right: mirrorRows(CHAR_BODY.left) };
+
+function drawCharacterPixels(w, palette, dir, frame) {
+  const legend = CHAR_LEGEND(palette);
+  const legs = CHAR_LEGS[frame] ?? CHAR_LEGS[0];
+  const body = CHAR_BODY_BY_DIR[dir] ?? CHAR_BODY_BY_DIR.down;
+  // Frames 1 and 2 lift a foot, so the upper body rides a pixel higher. The leg
+  // block always starts at LEGS_TOP, which keeps the waist joined either way.
+  const bob = frame === 0 ? 0 : -1;
+  paintGrid(w, legs, legend, LEGS_TOP);
+  paintGrid(w, body, legend, BODY_TOP + bob);
+}
+
+/** The authored grids, so tests can assert their shape and legend coverage. */
+export function characterGrids() {
+  return {
+    legend: Object.keys(CHAR_LEGEND(resolvePalette({}))),
+    rowWidth: CHAR_W,
+    bodyRows: 29,
+    legRows: 14,
+    body: CHAR_BODY_BY_DIR,
+    legs: CHAR_LEGS,
+  };
+}
+
+function drawCharacter(g, palette, dir, frame) {
+  // Characters use CHAR_SCALE (1), not the tile SCALE (2). Drawing at tile
+  // scale painted a 64×88 sprite into a 32×44 texture — only the top-left
+  // quarter was visible in the overworld.
+  drawCharacterPixels(makeWriter(g, CHAR_SCALE), palette, dir, frame);
+}
+
+/** Draw character to a 2D canvas (for previews and dialogue portraits). */
+export function drawCharacterToCanvas(canvas, palette, dir = "down", frame = 0, pixelScale = 2) {
+  const ctx = canvas.getContext("2d");
+  const w = CHAR_W * pixelScale;
+  const h = CHAR_H * pixelScale;
+  canvas.width = w;
+  canvas.height = h;
+  ctx.imageSmoothingEnabled = false;
+  ctx.clearRect(0, 0, w, h);
+  drawCharacterPixels(makeWriter(canvas, pixelScale), palette, dir, frame);
+}
+
+function createPlayerAnims(scene, base) {
+  for (const dir of ["down", "up", "left", "right"]) {
+    const animKey = `${base}_walk_${dir}`;
+    if (scene.anims.exists(animKey)) scene.anims.remove(animKey);
+    scene.anims.create({
+      key: animKey,
+      frames: [
+        { key: `${base}_${dir}_1` },
+        { key: `${base}_${dir}` },
+        { key: `${base}_${dir}_2` },
+        { key: `${base}_${dir}` },
+      ],
+      frameRate: 8,
+      repeat: -1,
+    });
+    const idleKey = `${base}_idle_${dir}`;
+    if (scene.anims.exists(idleKey)) scene.anims.remove(idleKey);
+    scene.anims.create({
+      key: idleKey,
+      frames: [{ key: `${base}_${dir}` }],
+      frameRate: 1,
+      repeat: 0,
+    });
+  }
+}
+
+/** Bake a character frame via canvas so portraits and overworld share pixels. */
+function bakeCharacterTexture(scene, key, palette, dir, frame) {
+  if (scene.textures.exists(key)) scene.textures.remove(key);
+  const canvas = document.createElement("canvas");
+  drawCharacterToCanvas(canvas, palette, dir, frame, CHAR_SCALE);
+  scene.textures.addCanvas(key, canvas);
+}
+
+export function ensurePlayerTextures(scene, appearance) {
+  const normalized = normalizeAppearance({ appearance });
+  const palette = resolvePalette(normalized);
+  const base = appearanceTextureBase(normalized);
+  if (scene.textures.exists(`${base}_down`)) return base;
+
+  for (const dir of ["down", "up", "left", "right"]) {
+    for (const frame of [0, 1, 2]) {
+      const suffix = frame === 0 ? "" : `_${frame}`;
+      bakeCharacterTexture(scene, `${base}_${dir}${suffix}`, palette, dir, frame);
+    }
+  }
+  createPlayerAnims(scene, base);
+  return base;
+}
+
+export function playerTextureKey(rpgOrArchetype, facing = "down") {
+  if (rpgOrArchetype && typeof rpgOrArchetype === "object") {
+    const base = appearanceTextureBase(normalizeAppearance(rpgOrArchetype));
+    return `${base}_${facing}`;
+  }
+  const archetype = rpgOrArchetype ?? "weekend_warrior";
+  const base = appearanceTextureBase(normalizeAppearance({ archetype }));
+  return `${base}_${facing}`;
+}
+
+export function playerAnimKey(rpgOrArchetype, facing, moving) {
+  const base = (rpgOrArchetype && typeof rpgOrArchetype === "object")
+    ? appearanceTextureBase(normalizeAppearance(rpgOrArchetype))
+    : appearanceTextureBase(normalizeAppearance({ archetype: rpgOrArchetype ?? "weekend_warrior" }));
+  return moving ? `${base}_walk_${facing}` : `${base}_idle_${facing}`;
+}
+
 export function createGameTextures(scene) {
   for (const [id, drawer] of Object.entries(TILE_DRAWERS)) {
-    makeTex(scene, `tile_${id}`, drawer);
     const tile = Number(id);
+    if (tile === TILE.WATER) {
+      for (let f = 0; f < WATER_FRAMES; f += 1) {
+        const frameDrawer = (g) => drawWaterTile(g, f);
+        makeTex(scene, `tile_${tile}_f${f}`, frameDrawer);
+        // Alias frame 0 to the static key so any leftover lookup still resolves.
+        if (f === 0) makeTex(scene, `tile_${tile}`, frameDrawer);
+        SCUFFS.forEach((_, variant) => {
+          makeTex(scene, `tile_${tile}_f${f}_s${variant}`, (g) => {
+            frameDrawer(g);
+            scuff(g, variant);
+          });
+        });
+      }
+      continue;
+    }
+    makeTex(scene, `tile_${id}`, drawer);
     if (!SCUFFED_FLOORS.has(tile)) continue;
     SCUFFS.forEach((_, variant) => {
       makeTex(scene, `tile_${id}_s${variant}`, (g) => {
@@ -1166,12 +1750,36 @@ export function createGameTextures(scene) {
     }
   }
 
-  makeTex(scene, "decor_bar", drawBarDecor);
-  makeTex(scene, "decor_plant", drawPlantDecor);
-  makeTex(scene, "decor_slot", drawSlotDecor);
-  makeTex(scene, "decor_screen", drawScreenDecor);
-  makeTex(scene, "decor_glass", drawGlassTile);
-  makeTex(scene, "decor_rope", drawRopeTile);
-  makeTex(scene, "interact_icon", drawInteractIcon, TILE_SIZE, TILE_SIZE * 0.875);
+  for (const [key, drawer] of Object.entries(SPRITE_DRAWERS)) {
+    if (key === "interact_icon") {
+      makeTex(scene, key, drawer, TILE_SIZE, TILE_SIZE * 0.875);
+    } else {
+      makeTex(scene, key, drawer);
+    }
+  }
+
+  for (const kind of FRINGE_KINDS) {
+    for (const dir of FRINGE_DIRS) {
+      makeTex(scene, fringeTextureKey(kind, dir), (g) => drawFringe(g, kind, dir));
+    }
+  }
+
+  // Procedural tuxedo NPCs (overworld sprites share the character baker).
+  const npcs = [
+    ["npc_gold", 0xf0d050, 0xc8a838, 0x987820, 0x685010, 0x504008],
+    ["npc_green", 0x50e8a0, 0x38b878, 0x288858, 0x186040, 0x104030],
+    ["npc_pink", 0xd888f0, 0xa868c0, 0x7848a0, 0x503070, 0x382050],
+    ["npc_teal", 0x48d8e8, 0x30a8b8, 0x208898, 0x1a6070, 0x104050],
+    ["npc_red", 0xf08088, 0xc86068, 0x984048, 0x682830, 0x481820],
+    ["npc_orange", 0xffb060, 0xd89048, 0xa86830, 0x784820, 0x503010],
+    ["npc_silver", 0xc0c8d8, 0x9098a8, 0x606878, 0x404850, 0x303038],
+  ];
+  for (const [key, body, mid, shadeTone, hair, hairShade] of npcs) {
+    const palette = {
+      body, mid, shade: shadeTone, hair, hairShade,
+      skinLight: 0xffe8d0, skinMid: 0xffd8b8, skinShade: 0xffc8a8,
+    };
+    bakeCharacterTexture(scene, key, palette, "down", 0);
+  }
 }
 

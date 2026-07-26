@@ -105,6 +105,29 @@
       "h": 1
     }
   ],
+  "scatter": [
+    {
+      "tile": "FLOWER",
+      "mod": 8,
+      "on": [
+        "LOBBY"
+      ]
+    },
+    {
+      "tile": "ROCK",
+      "mod": 17,
+      "on": [
+        "SAND"
+      ]
+    },
+    {
+      "tile": "LANTERN",
+      "mod": 19,
+      "on": [
+        "LOBBY"
+      ]
+    }
+  ],
   "doors": [
     {
       "x": 15,

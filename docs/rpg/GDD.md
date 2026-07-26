@@ -68,9 +68,9 @@ flowchart TB
 | Tile vocabulary | `js/systems/MapTiles.js` |
 | JSON → tile layers | `js/systems/MapLoader.js` |
 | Map/NPC/door accessors + procedural fallback | `js/systems/MapData.js` |
-| Procedural tiles (16px) + tuxedo characters (32×44) | `js/systems/TextureFactory.js` |
+| Procedural ground / decor / fringe textures (16px → 2×) | `js/systems/TextureFactory.js` |
 | Vendored tiles + procedural FX | `js/systems/EnvironmentTextures.js` |
-| Character / staff sprite sheets | `js/systems/CharacterSprites.js` |
+| Character sheets + palette repaint | `js/systems/CharacterSprites.js`, `js/data/character-sheets.js` |
 | Dialogue graph | `js/systems/DialogueManager.js` |
 | Encounter routing | `js/systems/EncounterBridge.js`, `js/systems/HostedEncounters.js` |
 | Mounting terminal screens | `js/systems/TerminalHostOverlay.js` |
@@ -90,25 +90,22 @@ on the bottom and right, then whatever pattern the surface needs. Every surface
 lights from the top left; breaking that is what makes a set of tiles look like
 it came from different games. Wide floors — lobby, carpet, felt, road, sand —
 also register three scuffed variants, and `groundTileKey()` spreads them across
-the map so a ballroom does not read as wallpaper. `EnvironmentTextures.js` can
-also map vendored PNGs under `assets/tiles/` onto the same `TILE` enum without
+the map so a ballroom does not read as wallpaper. Water registers three animated
+frames; the overworld cycles them. Neighbor-edge fringe overlays (foam, wet sand,
+path, pool) soften tile seams. Decor and characters cast soft contact shadows;
+slots, screens, and lanterns pulse. Walkable `FLOWER` clutter plus blocking
+`ROCK` / `LANTERN` props densify outdoor maps. `EnvironmentTextures.js` can also
+map vendored PNGs under `assets/tiles/` onto the same `TILE` enum without
 changing map JSON.
 
-Characters are **authored pixel grids**, not stacked rectangles: `CHAR_BODY` and
-`CHAR_LEGS` in `TextureFactory.js` are arrays of **32-character** strings
-(32×44 art), one character per pixel, resolved through a palette legend
-(`O` outline, `H` hair, `S` skin, `B` jacket, `R` satin lapel, `w` dress shirt,
-`Y` bow tie, `N`/`A` tuxedo trousers with stripe, and so on). The default outfit
-is a black-tie **tuxedo**. The upper body and the legs are separate blocks,
-which is what lets a three-frame walk cycle swap only the legs and drop the
-torso a pixel. Right-facing is the left grid mirrored.
-`CharacterSprites.js` loads optional staff/dealer sheets from
-`assets/characters/` for named NPCs.
-
-To change how a character looks, edit the strings. `scripts/smoke-test-rpg.mjs`
-asserts every row is exactly 32 characters and every character is in the legend,
-then renders all twelve frames of every wardrobe combination headlessly, because
-a bad palette lookup at boot takes the whole overworld down.
+Characters come from **vendored sprite sheets** under `assets/characters/`,
+repainted at runtime by `CharacterSprites.js`. Each sheet's palette is sorted
+into skin / hair / outfit / legwear ramps (see `js/data/character-sheets.js`);
+a look maps those ramps onto wardrobe colours while preserving relative
+luminance, so highlights and shadows stay intact. Collision boxes hug the feet
+via `CHAR_METRICS` / `FOOT_DROP` so the taller sheet art still stands on the
+tile centre. `scripts/smoke-test-rpg.mjs` checks every sheet's claimed ramp
+colours against the PNG pixels and that every wardrobe combination resolves.
 
 ---
 

@@ -1,12 +1,9 @@
 import Phaser from "phaser";
-import { createGameTextures, groundTileKey } from "../systems/TextureFactory.js";
 import {
-  CHAR_METRICS, FOOT_DROP, applyLook, ensurePlayerTextures,
-  playerAnimKey, playerTextureKey,
-} from "../systems/CharacterSprites.js";
-import {
-  normalizeAppearance, resolveDealerLook, resolveNpcLook,
-} from "../systems/CharacterAppearance.js";
+  CHAR_METRICS, FOOT_DROP, createGameTextures, ensurePlayerTextures,
+  fringeTextureKey, groundTileKey, playerAnimKey, playerTextureKey, WATER_FRAMES,
+} from "../systems/TextureFactory.js";
+import { normalizeAppearance } from "../systems/CharacterAppearance.js";
 import {
   TILE_SIZE, MAP_WIDTH, MAP_HEIGHT, buildMapLayersForId, getNpcsForMap,
   doorAt, getMapDefinition, SPAWN_DEFAULT, TILE, resolveNpcPosition,
@@ -34,8 +31,8 @@ const GOLF_CART_BONUS = 68;
 const GOLF_CART_TIER_IDX = 3;
 
 /**
- * Sprite position that stands a character's feet on the middle of a tile.
- * Sheet art is a tile and a half tall, so the centre sits above the shoes.
+ * Sprite position with feet on the tile centre. Tuxedo sprites use origin
+ * (0.5, 1), so FOOT_DROP is zero and the position is the shoe line.
  */
 const tileToSprite = (tileX, tileY) => ({
   x: tileX * TILE_SIZE + TILE_SIZE / 2,
@@ -44,7 +41,7 @@ const tileToSprite = (tileX, tileY) => ({
 
 /** Y for a name plate floating just clear of a character's head. */
 const tileHeadY = (tileY) =>
-  tileToSprite(0, tileY).y - (CHAR_METRICS.height * CHAR_METRICS.scale) / 2 - 6;
+  tileToSprite(0, tileY).y - CHAR_METRICS.height * CHAR_METRICS.scale - 6;
 
 /** Per-surface footstep sound. */
 const FOOTSTEP_SFX = {
@@ -76,7 +73,41 @@ const DECOR_KEYS = {
   [TILE.SCREEN]: "decor_screen",
   [TILE.GLASS]: "decor_glass",
   [TILE.ROPE]: "decor_rope",
+  [TILE.FLOWER]: "decor_flower",
+  [TILE.ROCK]: "decor_rock",
+  [TILE.LANTERN]: "decor_lantern",
 };
+
+/** Props that cast a soft ground shadow (reference lived-in density). */
+const SHADOW_DECOR = new Set([
+  TILE.PLANT, TILE.BAR, TILE.SLOT, TILE.SCREEN, TILE.ROPE,
+  TILE.ROCK, TILE.LANTERN, TILE.GLASS,
+]);
+
+/** Neon / lamp props that gently pulse for atmospheric life. */
+const GLOW_DECOR = new Set([TILE.SLOT, TILE.SCREEN, TILE.LANTERN]);
+
+/**
+ * When `tile` meets `neighbor`, stamp this fringe kind on the shared edge.
+ * Ordered pairs keep sand↔water foam on the water side and wet sand on shore.
+ */
+const FRINGE_RULES = [
+  { tile: TILE.WATER, neighbor: TILE.SAND, kind: "foam" },
+  { tile: TILE.WATER, neighbor: TILE.AQUA, kind: "foam" },
+  { tile: TILE.SAND, neighbor: TILE.WATER, kind: "wet" },
+  { tile: TILE.AQUA, neighbor: TILE.WATER, kind: "pool" },
+  { tile: TILE.CARPET, neighbor: TILE.PATH, kind: "path" },
+  { tile: TILE.LOBBY, neighbor: TILE.PATH, kind: "path" },
+  { tile: TILE.PATH, neighbor: TILE.CARPET, kind: "path" },
+  { tile: TILE.PATH, neighbor: TILE.LOBBY, kind: "path" },
+];
+
+const FRINGE_DIRS = [
+  { dx: 0, dy: -1, dir: "n" },
+  { dx: 0, dy: 1, dir: "s" },
+  { dx: -1, dy: 0, dir: "w" },
+  { dx: 1, dy: 0, dir: "e" },
+];
 
 /** Sub-line under the room placard: which wing you are in, and when. */
 const placardSub = (mapDef, phaseLabel) =>
@@ -139,30 +170,43 @@ export class OverworldScene extends Phaser.Scene {
     }
 
     this.groundLayer = this.add.group();
+    this._waterSprites = [];
+    this._waterFrame = 0;
+    this._glowSprites = [];
     for (let y = 0; y < MAP_HEIGHT; y++) {
       for (let x = 0; x < MAP_WIDTH; x++) {
         const tile = ground[y][x];
         if (tile === 0) continue;
-        const groundImg = this.add.image(
-          x * TILE_SIZE + TILE_SIZE / 2,
-          y * TILE_SIZE + TILE_SIZE / 2,
-          groundTileKey(tile, x, y)
-        );
+        const cx = x * TILE_SIZE + TILE_SIZE / 2;
+        const cy = y * TILE_SIZE + TILE_SIZE / 2;
+        const groundImg = this.add.image(cx, cy, groundTileKey(tile, x, y, 0));
         groundImg.setDepth(0);
         this.groundLayer.add(groundImg);
+        if (tile === TILE.WATER) {
+          groundImg.setData("wx", x);
+          groundImg.setData("wy", y);
+          this._waterSprites.push(groundImg);
+        }
+        this._placeFringes(ground, x, y, cx, cy);
         if (decor[y][x]) {
-          const decorKey = DECOR_KEYS[decor[y][x]] ?? "decor_plant";
-          const decorImg = this.add.image(
-            x * TILE_SIZE + TILE_SIZE / 2,
-            y * TILE_SIZE + TILE_SIZE / 2,
-            decorKey
-          );
+          const prop = decor[y][x];
+          const decorKey = DECOR_KEYS[prop] ?? "decor_plant";
+          if (SHADOW_DECOR.has(prop)) {
+            const shadow = this.add.image(cx, cy + TILE_SIZE * 0.22, "shadow_blob");
+            shadow.setDepth(1);
+            shadow.setAlpha(0.75);
+            shadow.setScale(0.95, 0.5);
+            this.groundLayer.add(shadow);
+          }
+          const decorImg = this.add.image(cx, cy, decorKey);
           decorImg.setDepth(2);
           this.groundLayer.add(decorImg);
+          if (GLOW_DECOR.has(prop)) this._glowSprites.push(decorImg);
         }
       }
     }
     this._createZoneSigns(mapId);
+    this._startAtmosphere();
 
     const spawn = this.saveAdapter.rpg;
     const mapDef = getMapDefinition(mapId);
@@ -174,12 +218,17 @@ export class OverworldScene extends Phaser.Scene {
     ensurePlayerTextures(this, this.playerAppearance);
     const pKey = playerTextureKey({ appearance: this.playerAppearance }, "down");
     const spawnPos = tileToSprite(px, py);
-    this.player = this.physics.add.sprite(spawnPos.x, spawnPos.y, pKey.key, pKey.frame);
+    this.player = this.physics.add.sprite(spawnPos.x, spawnPos.y, pKey);
+    this.player.setOrigin(0.5, 1);
     this.player.setCollideWorldBounds(true);
     this.player.setDepth(10);
     const feet = CHAR_METRICS.feet;
     this.player.body.setSize(feet.w * CHAR_METRICS.scale, feet.h * CHAR_METRICS.scale);
     this.player.body.setOffset(feet.x * CHAR_METRICS.scale, feet.y * CHAR_METRICS.scale);
+    this.playerShadow = this.add.image(this.player.x, this.player.y + FOOT_DROP + 2, "shadow_blob");
+    this.playerShadow.setDepth(9);
+    this.playerShadow.setAlpha(0.7);
+    this.playerShadow.setScale(0.8, 0.4);
 
     this.physics.world.setBounds(0, 0, MAP_WIDTH * TILE_SIZE, MAP_HEIGHT * TILE_SIZE);
 
@@ -198,16 +247,19 @@ export class OverworldScene extends Phaser.Scene {
     });
     for (const npc of this.currentNpcs) {
       const at = tileToSprite(npc.x, npc.y);
-      const sprite = this.add.sprite(at.x, at.y, "interact_icon");
+      const shadow = this.add.image(at.x, at.y + FOOT_DROP + 2, "shadow_blob");
+      shadow.setDepth(9);
+      shadow.setAlpha(0.65);
+      shadow.setScale(0.75, 0.38);
+      this.groundLayer.add(shadow);
+      const spriteKey = npc.zone
+        ? this._dealerForZone(npc.zone).sprite
+        : npc.sprite;
+      const sprite = this.add.sprite(at.x, at.y, spriteKey);
+      sprite.setOrigin(0.5, 1);
       sprite.setDepth(10);
       sprite.setData("npc", npc);
       this.npcSprites.set(npc.id, sprite);
-
-      // Dealers keep their own sheet; guests get a look seeded from their id.
-      const look = npc.zone
-        ? resolveDealerLook(this._dealerForZone(npc.zone).id, npc.sprite)
-        : resolveNpcLook(npc.sprite, npc.id);
-      applyLook(this, sprite, look, npc.direction ?? "down");
 
       const displayName = this._resolveNpcDisplayName(npc);
       const label = this._createNpcLabel(sprite.x, tileHeadY(npc.y), displayName, npc.zone);
@@ -287,7 +339,10 @@ export class OverworldScene extends Phaser.Scene {
     this.nearbyNpc = null;
     // Ignore the tile we spawn on so a warp never immediately re-fires an exit
     // door if the landing tile and a doorway happen to overlap.
-    this._lastDoorTile = `${Math.floor(this.player.x / TILE_SIZE)},${Math.floor(this.player.y / TILE_SIZE)}`;
+    {
+      const spawnTile = this.playerTile();
+      this._lastDoorTile = `${spawnTile.x},${spawnTile.y}`;
+    }
     this._lastTriggerId = null;
     this._footTimer = 0;
     this._konami = [];
@@ -442,6 +497,55 @@ export class OverworldScene extends Phaser.Scene {
     this.runSpeed = TILE_SIZE * 8.125 + idx * SPEED_PER_TIER * 2 + cart;
   }
 
+  /**
+   * Stamp transparent edge fringes where two floor types meet — sand↔water foam,
+   * wet shoreline, gold path into carpet, pool-deck caustic. Keeps the grid from
+   * reading as wallpaper seams.
+   */
+  _placeFringes(ground, x, y, cx, cy) {
+    const tile = ground[y][x];
+    for (const { dx, dy, dir } of FRINGE_DIRS) {
+      const nx = x + dx;
+      const ny = y + dy;
+      if (nx < 0 || ny < 0 || nx >= MAP_WIDTH || ny >= MAP_HEIGHT) continue;
+      const neighbor = ground[ny][nx];
+      for (const rule of FRINGE_RULES) {
+        if (tile !== rule.tile || neighbor !== rule.neighbor) continue;
+        const fringe = this.add.image(cx, cy, fringeTextureKey(rule.kind, dir));
+        fringe.setDepth(0.5);
+        this.groundLayer.add(fringe);
+        break;
+      }
+    }
+  }
+
+  /** Water frame cycling + soft neon/lamp pulse — the world stays alive at rest. */
+  _startAtmosphere() {
+    this._waterFrame = 0;
+    for (const sprite of this._glowSprites) {
+      this.tweens.add({
+        targets: sprite,
+        alpha: { from: 1, to: 0.78 },
+        duration: 700 + Math.floor(Math.random() * 500),
+        yoyo: true,
+        repeat: -1,
+        ease: "Sine.easeInOut",
+      });
+    }
+  }
+
+  _tickWaterAnim(time) {
+    if (!this._waterSprites?.length) return;
+    const frame = Math.floor(time / 380) % WATER_FRAMES;
+    if (frame === this._waterFrame) return;
+    this._waterFrame = frame;
+    for (const img of this._waterSprites) {
+      const wx = img.getData("wx");
+      const wy = img.getData("wy");
+      img.setTexture(groundTileKey(TILE.WATER, wx, wy, frame));
+    }
+  }
+
   _createZoneSigns(mapId) {
     // Authored rooms carry their own signage; MAP_ZONE_SIGNS only covers the
     // procedural fallback floor.
@@ -566,8 +670,8 @@ export class OverworldScene extends Phaser.Scene {
   }
 
   /**
-   * World position of the player's feet. Sprites are drawn with their feet on
-   * the tile centre, so the sprite origin sits FOOT_DROP px higher.
+   * World position of the player's feet. Tuxedo sprites use origin (0.5, 1),
+   * so the sprite position is the shoe line; the body centre is the same tile.
    */
   playerFoot() {
     const at = this.player.body?.center;
@@ -715,8 +819,7 @@ export class OverworldScene extends Phaser.Scene {
     if (this.anims.exists(key)) {
       this.player.anims.play(key, true);
     } else {
-      const still = playerTextureKey(appearance, this.facing);
-      this.player.setTexture(still.key, still.frame);
+      this.player.setTexture(playerTextureKey(appearance, this.facing));
     }
   }
 
@@ -726,13 +829,17 @@ export class OverworldScene extends Phaser.Scene {
     this.playerAppearance = normalizeAppearance(rpg);
     ensurePlayerTextures(this, this.playerAppearance);
     this.player.anims?.stop();
-    const still = playerTextureKey({ appearance: this.playerAppearance }, this.facing);
-    this.player.setTexture(still.key, still.frame);
+    this.player.setTexture(playerTextureKey({ appearance: this.playerAppearance }, this.facing));
     this._applyPlayerAnim(this._moving);
   }
 
   update(_time, delta) {
     if (!this.player?.body) return;
+
+    this._tickWaterAnim(_time);
+    if (this.playerShadow) {
+      this.playerShadow.setPosition(this.player.x, this.player.y + FOOT_DROP + 2);
+    }
 
     // Physics runs after update(), so this is how far the last frame got us.
     this._lastFrameTravel = Math.hypot(
@@ -779,8 +886,9 @@ export class OverworldScene extends Phaser.Scene {
     let { x: mx, y: my } = this._readMoveVector();
 
     if (mx === 0 && my === 0 && this.moveTarget) {
-      const dx = this.moveTarget.x - this.player.x;
-      const dy = this.moveTarget.y - this.player.y;
+      const foot = this.playerFoot();
+      const dx = this.moveTarget.x - foot.x;
+      const dy = this.moveTarget.y - foot.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
       if (dist < TILE_SIZE * 0.2) {
         this.movePath?.shift();
@@ -797,15 +905,14 @@ export class OverworldScene extends Phaser.Scene {
       this._clearMovePath();
     }
 
-    let vx = mx * speed;
-    let vy = my * speed;
-    // Normalize diagonal so WASD/arrows feel even on diagonals
-    if (vx !== 0 && vy !== 0) {
-      const inv = Math.SQRT1_2;
-      vx *= inv;
-      vy *= inv;
+    const mag = Math.hypot(mx, my);
+    if (mag > 1) {
+      mx /= mag;
+      my /= mag;
     }
-
+    const assisted = this._cornerAssist(mx, my);
+    const vx = assisted.x * speed;
+    const vy = assisted.y * speed;
     this.player.body.setVelocity(vx, vy);
 
     // A guest can wander into a planned route. Give up rather than shove.
@@ -827,8 +934,7 @@ export class OverworldScene extends Phaser.Scene {
       if (this._footTimer > 200) {
         this._footTimer = 0;
         if (this.saveAdapter.rpg.options?.footsteps !== false) {
-          const tx = Math.floor(this.player.x / TILE_SIZE);
-          const ty = Math.floor(this.player.y / TILE_SIZE);
+          const { x: tx, y: ty } = this.playerTile();
           this.audio?.sfx?.(FOOTSTEP_SFX[this.groundGrid?.[ty]?.[tx]] ?? "foot_carpet");
         }
       }
@@ -907,13 +1013,50 @@ export class OverworldScene extends Phaser.Scene {
     return this.collisionGrid[ty][tx] === 1;
   }
 
+  /**
+   * Slip past the edge of a doorway instead of stopping dead on it.
+   * @returns {{x: number, y: number}}
+   */
+  _cornerAssist(mx, my) {
+    if (!this.player?.body || this.moveTarget) return { x: mx, y: my };
+    if ((mx !== 0) === (my !== 0)) return { x: mx, y: my };
+
+    const { x: cx, y: cy } = this.player.body.center;
+    const tx = Math.floor(cx / TILE_SIZE);
+    const ty = Math.floor(cy / TILE_SIZE);
+    const PUSH = 0.6;
+    const DEADZONE = 3;
+
+    if (mx !== 0) {
+      const ahead = tx + Math.sign(mx);
+      if (!this._isBlocked(ahead, ty)) return { x: mx, y: my };
+      const off = cy - (ty * TILE_SIZE + TILE_SIZE / 2);
+      for (const dir of [-1, 1]) {
+        if (Math.sign(off) !== dir || Math.abs(off) < DEADZONE) continue;
+        if (this._isBlocked(tx, ty + dir) || this._isBlocked(ahead, ty + dir)) continue;
+        return { x: mx, y: dir * PUSH };
+      }
+    } else {
+      const ahead = ty + Math.sign(my);
+      if (!this._isBlocked(tx, ahead)) return { x: mx, y: my };
+      const off = cx - (tx * TILE_SIZE + TILE_SIZE / 2);
+      for (const dir of [-1, 1]) {
+        if (Math.sign(off) !== dir || Math.abs(off) < DEADZONE) continue;
+        if (this._isBlocked(tx + dir, ty) || this._isBlocked(tx + dir, ahead)) continue;
+        return { x: dir * PUSH, y: my };
+      }
+    }
+    return { x: mx, y: my };
+  }
+
   _updateNearbyNpc() {
     let closest = null;
     let closestDist = 999;
+    const foot = this.playerFoot();
 
     for (const npc of this.currentNpcs ?? []) {
-      const dx = this.player.x - (npc.x * TILE_SIZE + TILE_SIZE / 2);
-      const dy = this.player.y - (npc.y * TILE_SIZE + TILE_SIZE / 2);
+      const dx = foot.x - (npc.x * TILE_SIZE + TILE_SIZE / 2);
+      const dy = foot.y - (npc.y * TILE_SIZE + TILE_SIZE / 2);
       const dist = Math.sqrt(dx * dx + dy * dy);
       if (dist < this._touchInteractRadius && this._isFacingNpc(npc)) {
         if (dist < closestDist) {
@@ -942,8 +1085,7 @@ export class OverworldScene extends Phaser.Scene {
    */
   _checkChallengers() {
     if (this._challengeRunning) return;
-    const px = Math.floor(this.player.x / TILE_SIZE);
-    const py = Math.floor(this.player.y / TILE_SIZE);
+    const { x: px, y: py } = this.playerTile();
     for (const npc of this.currentNpcs ?? []) {
       if (!npc.sight) continue;
       if (this.saveAdapter.hasFlag(`challenged_${npc.id}`)) continue;
@@ -1020,8 +1162,7 @@ export class OverworldScene extends Phaser.Scene {
   }
 
   _isFacingNpc(npc) {
-    const px = this.player.x;
-    const py = this.player.y;
+    const { x: px, y: py } = this.playerFoot();
     const nx = npc.x * TILE_SIZE + TILE_SIZE / 2;
     const ny = npc.y * TILE_SIZE + TILE_SIZE / 2;
     const dx = nx - px;
@@ -1055,8 +1196,7 @@ export class OverworldScene extends Phaser.Scene {
 
   async _checkDoorTriggers() {
     if (this._gateBusy) return;
-    const tx = Math.floor(this.player.x / TILE_SIZE);
-    const ty = Math.floor(this.player.y / TILE_SIZE);
+    const { x: tx, y: ty } = this.playerTile();
     const key = `${tx},${ty}`;
     if (this._lastDoorTile === key) return;
     this._lastDoorTile = key;
@@ -1108,8 +1248,7 @@ export class OverworldScene extends Phaser.Scene {
   }
 
   _checkZoneTriggers() {
-    const tx = Math.floor(this.player.x / TILE_SIZE);
-    const ty = Math.floor(this.player.y / TILE_SIZE);
+    const { x: tx, y: ty } = this.playerTile();
     for (const t of this.triggers) {
       if (t.mapId && t.mapId !== this.currentMapId) continue;
       const w = t.width ?? 1;
@@ -1297,11 +1436,10 @@ export class OverworldScene extends Phaser.Scene {
 
   _saveTimer = 0;
   _autosavePosition(delta) {
-    this._saveTimer += delta;
+    this._saveTimer = (this._saveTimer ?? 0) + delta;
     if (this._saveTimer < 2000) return;
     this._saveTimer = 0;
-    const tx = Math.floor(this.player.x / TILE_SIZE);
-    const ty = Math.floor(this.player.y / TILE_SIZE);
+    const { x: tx, y: ty } = this.playerTile();
     this.saveAdapter.updatePosition(tx, ty);
     this.saveAdapter.persist();
   }

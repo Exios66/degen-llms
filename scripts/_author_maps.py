@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """One-shot authoring tool: emits docs/rpg/js/data/maps/*.json and npcs.json.
 
-The JSON it writes is the source of truth; this script exists so the 28 rooms
+The JSON it writes is the source of truth; this script exists so the rooms
 could be written as readable Python literals instead of by hand.
 """
 from __future__ import annotations
@@ -59,31 +59,276 @@ FELT_SIGN = {"color": "#b8ffd0", "stroke": "#0a5028"}
 MAPS_SPEC: list[dict] = [
     {
         "id": "strip_sidewalk",
-        "label": "Las Vegas Blvd",
+        "label": "Las Vegas Blvd — Mandalay",
         "bgm": "lobby",
-        "spawn": {"x": 15, "y": 26},
+        "spawn": {"x": 15, "y": 22},
         "base": "WALL",
-        # Sidewalk south, the Boulevard across the middle, porte-cochère north.
+        # South Strip arrival: boulevard east–west, porte-cochère north into
+        # Mandalay Bay, and a walkable sidewalk spine south toward Luxor.
         "rects": [
-            rect("LOBBY", 2, 23, 26, 5),
-            rect("ROAD", 1, 17, 28, 6),
-            rect("LOBBY", 5, 3, 20, 14),
-            rect("ROAD", 12, 1, 6, 4),
-            rect("SAND", 14, 17, 3, 6),
+            rect("ROAD", 2, 12, 26, 6),
+            rect("LOBBY", 4, 2, 22, 10),
+            rect("LOBBY", 2, 18, 26, 10),
+            rect("SAND", 2, 8, 4, 4),
+            rect("SAND", 24, 8, 4, 4),
+            rect("SAND", 3, 20, 4, 5),
+            rect("SAND", 23, 20, 4, 5),
+            rect("PATH", 13, 3, 4, 24),
+            rect("PATH", 2, 14, 26, 2),
+            rect("PATH", 2, 22, 4, 3),
         ],
         "decor": [
             points("PLANT", [
-                (5, 5), (24, 5), (5, 15), (24, 15),
-                (5, 24), (24, 24), (9, 27), (20, 27),
+                (5, 4), (24, 4), (6, 9), (23, 9),
+                (4, 19), (25, 19), (5, 25), (24, 25),
+                (8, 6), (21, 6), (9, 21), (20, 21),
             ]),
-            rect("SCREEN", 8, 3, 2, 1),
-            rect("SCREEN", 20, 3, 2, 1),
-            rect("BAR", 11, 26, 4, 1),
+            points("LANTERN", [
+                (7, 5), (22, 5), (6, 15), (23, 15),
+                (8, 23), (21, 23), (11, 18), (18, 18),
+            ]),
+            points("ROCK", [(3, 10), (26, 10), (4, 24), (25, 24)]),
+            rect("SCREEN", 8, 2, 2, 1),
+            rect("SCREEN", 20, 2, 2, 1),
+            rect("BAR", 10, 7, 3, 1),
+            rect("BAR", 17, 7, 3, 1),
+        ],
+        "signs": [
+            sign(15, 3.4, "MANDALAY BAY \u2191"),
+            sign(15, 26.2, "STRIP \u2193 LUXOR", **COOL_SIGN),
+            sign(3.5, 22.5, "\u2190 VALET", **COOL_SIGN),
+            sign(15, 16.5, "LAS VEGAS BLVD"),
+        ],
+        "scatter": [
+            {"tile": "FLOWER", "mod": 5, "on": ["LOBBY", "SAND"]},
+            {"tile": "PLANT", "mod": 11, "on": ["LOBBY"]},
+            {"tile": "ROCK", "mod": 18, "on": ["SAND"]},
+            {"tile": "LANTERN", "mod": 19, "on": ["LOBBY"]},
+        ],
+        "clear": [
+            rect("PATH", 13, 2, 4, 26),
+            rect("PATH", 2, 14, 26, 2),
+            rect("LOBBY", 2, 21, 4, 4),
         ],
         "doors": [
-            # Land one tile inside the lobby — never on the reciprocal exit door.
-            door(15, 3, "registration_lobby", 15, 26, "Through the gold doors — Mandalay Bay."),
-            door(2, 24, "valet_garage", 26, 15, "Valet ramp, level P1."),
+            door(15, 2, "registration_lobby", 15, 26, "Through the gold doors — Mandalay Bay."),
+            door(2, 22, "valet_garage", 26, 15, "Valet ramp, level P1."),
+            door(15, 27, "strip_luxor", 15, 3, "South on Las Vegas Blvd — toward Luxor."),
+        ],
+    },
+    {
+        "id": "strip_luxor",
+        "label": "Las Vegas Blvd — Luxor",
+        "bgm": "lobby",
+        "spawn": {"x": 15, "y": 3},
+        "base": "WALL",
+        # Mid-Strip block: warm sidewalks, neon marquees, Luxor atrium west.
+        "rects": [
+            rect("ROAD", 2, 12, 26, 6),
+            rect("LOBBY", 3, 2, 24, 10),
+            rect("LOBBY", 2, 18, 26, 10),
+            rect("SAND", 4, 4, 5, 5),
+            rect("SAND", 21, 4, 5, 5),
+            rect("SAND", 4, 21, 5, 5),
+            rect("SAND", 21, 21, 5, 5),
+            rect("VIP", 2, 6, 3, 6),
+            rect("PATH", 13, 2, 4, 26),
+            rect("PATH", 2, 14, 26, 2),
+            rect("PATH", 2, 8, 4, 3),
+        ],
+        "decor": [
+            points("PLANT", [
+                (6, 3), (23, 3), (5, 10), (24, 10),
+                (5, 20), (24, 20), (7, 25), (22, 25),
+                (9, 6), (20, 6), (10, 22), (19, 22),
+            ]),
+            points("LANTERN", [
+                (8, 5), (21, 5), (7, 15), (22, 15),
+                (9, 23), (20, 23), (4, 18), (25, 18),
+            ]),
+            points("ROCK", [(5, 8), (24, 8), (6, 24), (23, 24)]),
+            rect("SCREEN", 10, 3, 3, 1),
+            rect("SCREEN", 17, 3, 3, 1),
+            rect("BAR", 11, 9, 8, 1),
+            rect("GLASS", 2, 7, 1, 4),
+        ],
+        "signs": [
+            sign(15, 3.4, "MANDALAY \u2191", **COOL_SIGN),
+            sign(15, 26.2, "EXCALIBUR \u2193", **COOL_SIGN),
+            sign(3.5, 9.5, "\u2190 LUXOR"),
+            sign(15, 16.5, "LAS VEGAS BLVD"),
+        ],
+        "scatter": [
+            {"tile": "FLOWER", "mod": 5, "on": ["LOBBY", "SAND"]},
+            {"tile": "PLANT", "mod": 10, "on": ["LOBBY"]},
+            {"tile": "ROCK", "mod": 17, "on": ["SAND"]},
+            {"tile": "LANTERN", "mod": 18, "on": ["LOBBY"]},
+        ],
+        "clear": [
+            rect("PATH", 13, 2, 4, 26),
+            rect("PATH", 2, 14, 26, 2),
+            rect("PATH", 2, 7, 5, 5),
+        ],
+        "doors": [
+            door(15, 2, "strip_sidewalk", 15, 26, "North — back to Mandalay Bay."),
+            door(15, 27, "strip_excalibur", 15, 3, "South on the Strip — Excalibur ahead."),
+            door(2, 9, "luxor_atrium", 26, 15, "Into the Luxor atrium."),
+        ],
+    },
+    {
+        "id": "strip_excalibur",
+        "label": "Las Vegas Blvd — Excalibur",
+        "bgm": "lobby",
+        "spawn": {"x": 15, "y": 3},
+        "base": "WALL",
+        # Further Strip: castle-colored stage accents, courtyard entrance west.
+        "rects": [
+            rect("ROAD", 2, 12, 26, 6),
+            rect("LOBBY", 3, 2, 24, 10),
+            rect("LOBBY", 2, 18, 26, 10),
+            rect("SAND", 4, 5, 4, 4),
+            rect("SAND", 22, 5, 4, 4),
+            rect("SAND", 4, 22, 4, 4),
+            rect("SAND", 22, 22, 4, 4),
+            rect("STAGE", 2, 6, 3, 6),
+            rect("PATH", 13, 2, 4, 26),
+            rect("PATH", 2, 14, 26, 2),
+            rect("PATH", 2, 8, 4, 3),
+        ],
+        "decor": [
+            points("PLANT", [
+                (6, 3), (23, 3), (5, 10), (24, 10),
+                (5, 20), (24, 20), (8, 25), (21, 25),
+                (9, 7), (20, 7), (10, 21), (19, 21),
+            ]),
+            points("LANTERN", [
+                (8, 4), (21, 4), (7, 15), (22, 15),
+                (9, 23), (20, 23), (4, 19), (25, 19),
+            ]),
+            points("ROCK", [(5, 8), (24, 8), (6, 24), (23, 24)]),
+            rect("SCREEN", 10, 3, 3, 1),
+            rect("SCREEN", 17, 3, 3, 1),
+            rect("BAR", 11, 9, 8, 1),
+            rect("BAR", 2, 7, 1, 4),
+        ],
+        "signs": [
+            sign(15, 3.4, "LUXOR \u2191", **COOL_SIGN),
+            sign(3.5, 9.5, "\u2190 EXCALIBUR"),
+            sign(15, 16.5, "LAS VEGAS BLVD"),
+            sign(15, 25.5, "STRIP VIEW"),
+        ],
+        "scatter": [
+            {"tile": "FLOWER", "mod": 5, "on": ["LOBBY", "SAND"]},
+            {"tile": "PLANT", "mod": 10, "on": ["LOBBY"]},
+            {"tile": "ROCK", "mod": 17, "on": ["SAND"]},
+            {"tile": "LANTERN", "mod": 18, "on": ["LOBBY"]},
+        ],
+        "clear": [
+            rect("PATH", 13, 2, 4, 26),
+            rect("PATH", 2, 14, 26, 2),
+            rect("PATH", 2, 7, 5, 5),
+        ],
+        "doors": [
+            door(15, 2, "strip_luxor", 15, 26, "North — back toward Luxor and Mandalay."),
+            door(2, 9, "excalibur_courtyard", 26, 15, "Through the drawbridge doors — Excalibur."),
+        ],
+    },
+    {
+        "id": "luxor_atrium",
+        "label": "Luxor Atrium",
+        "bgm": "title",
+        "spawn": {"x": 26, "y": 15},
+        "base": "WALL",
+        # Visit destination: Egyptian lobby plaza (not a full casino floor).
+        "rects": [
+            rect("VIP", 3, 3, 24, 24),
+            rect("LOBBY", 8, 8, 14, 14),
+            rect("PATH", 14, 4, 2, 22),
+            rect("PATH", 4, 14, 22, 2),
+            rect("SAND", 10, 10, 10, 10),
+            rect("WATER", 12, 12, 6, 6),
+        ],
+        "decor": [
+            points("PLANT", [
+                (5, 5), (24, 5), (5, 24), (24, 24),
+                (9, 7), (20, 7), (9, 22), (20, 22),
+            ]),
+            points("LANTERN", [(7, 8), (22, 8), (7, 21), (22, 21)]),
+            points("ROCK", [(11, 11), (18, 11), (11, 18), (18, 18)]),
+            rect("SCREEN", 12, 4, 6, 1),
+            rect("BAR", 10, 22, 10, 1),
+            rect("GLASS", 6, 6, 1, 4),
+            rect("GLASS", 23, 6, 1, 4),
+        ],
+        "signs": [
+            sign(15, 5.5, "LUXOR ATRIUM"),
+            sign(15, 23.5, "OBELISK BAR"),
+            sign(26.2, 14.5, "STRIP \u2192", **COOL_SIGN),
+            sign(15, 3.4, "SKY BRIDGE \u2191", **COOL_SIGN),
+        ],
+        "scatter": [
+            {"tile": "FLOWER", "mod": 6, "on": ["LOBBY", "SAND", "VIP"]},
+            {"tile": "PLANT", "mod": 12, "on": ["VIP", "LOBBY"]},
+            {"tile": "LANTERN", "mod": 16, "on": ["VIP"]},
+            {"tile": "ROCK", "mod": 18, "on": ["SAND"]},
+        ],
+        "clear": [
+            rect("PATH", 14, 3, 2, 24),
+            rect("PATH", 3, 14, 24, 2),
+            rect("VIP", 25, 14, 3, 3),
+            rect("LOBBY", 14, 2, 3, 3),
+        ],
+        "doors": [
+            door(27, 15, "strip_luxor", 3, 9, "Back out to Las Vegas Blvd."),
+            door(15, 2, "sky_bridge", 15, 14, "Sky bridge toward Mandalay Place."),
+        ],
+    },
+    {
+        "id": "excalibur_courtyard",
+        "label": "Excalibur Courtyard",
+        "bgm": "encounter",
+        "spawn": {"x": 26, "y": 15},
+        "base": "WALL",
+        # Visit destination: castle courtyard with stage and market stalls.
+        "rects": [
+            rect("STAGE", 3, 3, 24, 24),
+            rect("LOBBY", 7, 7, 16, 16),
+            rect("PATH", 14, 4, 2, 22),
+            rect("PATH", 4, 14, 22, 2),
+            rect("CARPET", 10, 10, 10, 10),
+            rect("SAND", 8, 20, 5, 4),
+            rect("SAND", 17, 20, 5, 4),
+        ],
+        "decor": [
+            points("PLANT", [
+                (5, 5), (24, 5), (5, 24), (24, 24),
+                (8, 8), (21, 8), (9, 18), (20, 18),
+            ]),
+            points("LANTERN", [(7, 6), (22, 6), (7, 22), (22, 22), (12, 12), (17, 12)]),
+            points("ROCK", [(9, 21), (20, 21)]),
+            rect("BAR", 9, 8, 4, 1),
+            rect("BAR", 17, 8, 4, 1),
+            rect("SCREEN", 12, 4, 6, 1),
+            rect("BAR", 11, 22, 8, 1),
+        ],
+        "signs": [
+            sign(15, 5.5, "EXCALIBUR"),
+            sign(15, 23.5, "TOURNAMENT YARD"),
+            sign(26.2, 14.5, "STRIP \u2192", **COOL_SIGN),
+        ],
+        "scatter": [
+            {"tile": "FLOWER", "mod": 6, "on": ["LOBBY", "SAND", "CARPET"]},
+            {"tile": "PLANT", "mod": 11, "on": ["STAGE", "LOBBY"]},
+            {"tile": "LANTERN", "mod": 15, "on": ["STAGE", "LOBBY"]},
+            {"tile": "ROCK", "mod": 18, "on": ["SAND"]},
+        ],
+        "clear": [
+            rect("PATH", 14, 3, 2, 24),
+            rect("PATH", 3, 14, 24, 2),
+            rect("STAGE", 25, 14, 3, 3),
+        ],
+        "doors": [
+            door(27, 15, "strip_excalibur", 3, 9, "Back out to Las Vegas Blvd."),
         ],
     },
     {
@@ -92,16 +337,26 @@ MAPS_SPEC: list[dict] = [
         "bgm": "lobby",
         "spawn": {"x": 26, "y": 15},
         "base": "WALL",
-        "rects": [rect("ROAD", 2, 2, 26, 26)],
+        "rects": [
+            rect("ROAD", 2, 2, 26, 26),
+            rect("LOBBY", 10, 20, 10, 6),
+            rect("SAND", 4, 22, 4, 4),
+            rect("SAND", 22, 22, 4, 4),
+        ],
         "decor": [
             rect("SCREEN", 4, 4, 1, 8),
             rect("SCREEN", 25, 4, 1, 8),
             rect("BAR", 12, 6, 6, 1),
-            points("PLANT", [(8, 24), (21, 24)]),
+            points("PLANT", [(8, 24), (21, 24), (11, 21), (18, 21)]),
+            points("LANTERN", [(10, 22), (19, 22)]),
+        ],
+        "scatter": [
+            {"tile": "FLOWER", "mod": 8, "on": ["LOBBY", "SAND"]},
+            {"tile": "ROCK", "mod": 16, "on": ["SAND"]},
         ],
         "clear": [rect("ROAD", 26, 14, 2, 3), rect("ROAD", 14, 26, 3, 2)],
         "doors": [
-            door(27, 15, "strip_sidewalk", 3, 24, "Back out to the Boulevard."),
+            door(27, 15, "strip_sidewalk", 3, 22, "Back out to Las Vegas Blvd."),
             door(15, 27, "registration_lobby", 15, 4, "Elevator up to registration."),
         ],
     },
@@ -126,7 +381,11 @@ MAPS_SPEC: list[dict] = [
         ],
         "decor": [
             rect("BAR", 10, 7, 10, 1),
-            points("PLANT", [(4, 6), (25, 6), (4, 21), (25, 21), (11, 23), (18, 23)]),
+            points("PLANT", [
+                (4, 6), (25, 6), (4, 21), (25, 21), (11, 23), (18, 23),
+                (6, 12), (23, 12), (9, 17), (20, 17),
+            ]),
+            points("LANTERN", [(5, 9), (24, 9), (12, 24), (17, 24)]),
         ],
         "signs": [
             sign(15, 8.6, "FRONT DESK", color="#fff8e8", stroke="#8a6a28"),
@@ -137,6 +396,11 @@ MAPS_SPEC: list[dict] = [
             sign(8, 4.5, "GUEST FLOOR \u2191", **COOL_SIGN),
             sign(21, 4.5, "ROOM 24-118 \u2191"),
         ],
+        "scatter": [
+            {"tile": "FLOWER", "mod": 7, "on": ["LOBBY", "CARPET"]},
+            {"tile": "LANTERN", "mod": 18, "on": ["LOBBY"]},
+            {"tile": "PLANT", "mod": 14, "on": ["LOBBY"]},
+        ],
         "clear": [
             rect("LOBBY", 14, 2, 3, 3),
             rect("LOBBY", 14, 26, 3, 3),
@@ -146,7 +410,7 @@ MAPS_SPEC: list[dict] = [
             rect("LOBBY", 20, 2, 3, 3),
         ],
         "doors": [
-            door(15, 27, "strip_sidewalk", 15, 4, "Out to the Boulevard."),
+            door(15, 27, "strip_sidewalk", 15, 5, "Out to Las Vegas Blvd."),
             door(15, 3, "main_resort", 15, 26, "Casino floor — north."),
             door(2, 15, "valet_garage", 15, 26, "Down to the garage."),
             door(27, 15, "hotel_tower", 15, 26, "Gold elevators to the tower."),
@@ -190,7 +454,11 @@ MAPS_SPEC: list[dict] = [
             sign(15, 22, "LOBBY", color="#fff8e8", stroke="#8a6a28"),
             sign(26, 6, "SOUTH \u2192", **COOL_SIGN),
         ],
-        "scatter": [{"tile": "PLANT", "mod": 11, "on": ["LOBBY"], "bounds": rect("LOBBY", 3, 21, 24, 5)}],
+        "scatter": [
+            {"tile": "PLANT", "mod": 11, "on": ["LOBBY"], "bounds": rect("LOBBY", 3, 21, 24, 5)},
+            {"tile": "FLOWER", "mod": 8, "on": ["LOBBY"], "bounds": {"x": 3, "y": 21, "w": 24, "h": 5}},
+            {"tile": "LANTERN", "mod": 17, "on": ["LOBBY"], "bounds": {"x": 3, "y": 21, "w": 24, "h": 5}},
+        ],
         "clear": [
             rect("VIP", 14, 1, 3, 5),
             rect("CARPET", 14, 26, 3, 3),
@@ -354,12 +622,28 @@ MAPS_SPEC: list[dict] = [
         "decor": [
             rect("GLASS", 11, 4, 1, 20),
             rect("GLASS", 18, 4, 1, 20),
-            points("PLANT", [(12, 14), (17, 14)]),
+            points("PLANT", [(12, 14), (17, 14), (12, 8), (17, 8), (12, 20), (17, 20)]),
+            points("LANTERN", [(12, 6), (17, 6), (12, 22), (17, 22)]),
+            points("FLOWER", [(13, 11), (16, 11), (13, 17), (16, 17)]),
         ],
-        "clear": [rect("LOBBY", 14, 1, 3, 3), rect("LOBBY", 14, 26, 3, 3)],
+        "signs": [
+            sign(15, 26.2, "SHOPPES \u2193"),
+            sign(15, 3.4, "CONVENTION \u2191"),
+            sign(15, 14.5, "\u2190 LUXOR ATRIUM", **COOL_SIGN),
+        ],
+        "scatter": [
+            {"tile": "FLOWER", "mod": 7, "on": ["LOBBY"]},
+            {"tile": "LANTERN", "mod": 16, "on": ["LOBBY"]},
+        ],
+        "clear": [
+            rect("LOBBY", 14, 1, 3, 3),
+            rect("LOBBY", 14, 26, 3, 3),
+            rect("LOBBY", 11, 13, 3, 4),
+        ],
         "doors": [
             door(15, 27, "mandalay_place", 15, 3, "Back down to the Shoppes."),
             door(15, 2, "convention_center", 15, 26, "Convention center concourse."),
+            door(11, 14, "luxor_atrium", 15, 4, "Across the glass — Luxor atrium."),
         ],
     },
     {
@@ -430,15 +714,25 @@ MAPS_SPEC: list[dict] = [
         "rects": [
             rect("LOBBY", 3, 3, 24, 25),
             rect("CARPET", 10, 10, 11, 12),
+            rect("PATH", 14, 4, 3, 22),
         ],
         "decor": [
             rect("BAR", 12, 7, 7, 1),
-            points("PLANT", [(5, 6), (24, 6), (5, 24), (24, 24)]),
+            points("PLANT", [
+                (5, 6), (24, 6), (5, 24), (24, 24),
+                (7, 12), (22, 12), (8, 18), (21, 18),
+            ]),
+            points("LANTERN", [(6, 8), (23, 8), (6, 20), (23, 20)]),
         ],
         "signs": [
             sign(15, 3.4, "GUEST FLOOR \u2191"),
             sign(21, 3.4, "ROOM 24-118 \u2191"),
             sign(15, 26.2, "REGISTRATION \u2193", **COOL_SIGN),
+        ],
+        "scatter": [
+            {"tile": "FLOWER", "mod": 7, "on": ["LOBBY", "CARPET"]},
+            {"tile": "LANTERN", "mod": 16, "on": ["LOBBY"]},
+            {"tile": "PLANT", "mod": 13, "on": ["LOBBY"]},
         ],
         "clear": [
             rect("LOBBY", 14, 26, 3, 3),
@@ -468,9 +762,16 @@ MAPS_SPEC: list[dict] = [
             rect("CARPET", 20, 11, 7, 8),
             rect("CARPET", 5, 4, 5, 4),
             rect("CARPET", 20, 4, 5, 4),
+            rect("PATH", 14, 3, 2, 24),
+            rect("LOBBY", 11, 12, 3, 4),
+            rect("LOBBY", 16, 12, 3, 4),
         ],
         "decor": [
-            points("PLANT", [(10, 8), (19, 8), (10, 22), (19, 22), (6, 15), (24, 12)]),
+            points("PLANT", [
+                (10, 8), (19, 8), (10, 22), (19, 22), (6, 15), (24, 12),
+                (11, 5), (18, 5), (11, 18), (18, 18),
+            ]),
+            points("LANTERN", [(10, 11), (19, 11), (10, 19), (19, 19), (7, 13), (23, 13)]),
         ],
         "signs": [
             sign(15, 26.2, "ELEVATORS \u2193"),
@@ -479,6 +780,11 @@ MAPS_SPEC: list[dict] = [
             sign(24.5, 14.5, "SUITE WING \u2192"),
             sign(7, 5.5, "24-112"),
             sign(23, 5.5, "24-124"),
+        ],
+        "scatter": [
+            {"tile": "FLOWER", "mod": 6, "on": ["CARPET", "LOBBY"]},
+            {"tile": "LANTERN", "mod": 14, "on": ["CARPET"]},
+            {"tile": "PLANT", "mod": 12, "on": ["CARPET"]},
         ],
         "clear": [
             rect("CARPET", 14, 1, 3, 3),
@@ -506,12 +812,22 @@ MAPS_SPEC: list[dict] = [
             rect("CARPET", 7, 6, 16, 22),
             rect("GLASS", 7, 6, 16, 1),
             rect("LOBBY", 8, 20, 6, 6),
+            rect("PATH", 14, 8, 2, 18),
+            rect("VIP", 17, 20, 5, 5),
         ],
         "decor": [
             rect("BAR", 9, 10, 3, 1),
             rect("SCREEN", 18, 10, 3, 1),
             rect("BAR", 16, 14, 5, 3),
-            points("PLANT", [(21, 24)]),
+            rect("BAR", 9, 22, 3, 1),
+            points("PLANT", [(21, 24), (8, 8), (21, 8), (8, 18), (20, 18)]),
+            points("LANTERN", [(10, 12), (19, 12), (12, 24)]),
+            points("FLOWER", [(9, 16), (11, 16), (18, 22)]),
+        ],
+        "scatter": [
+            {"tile": "FLOWER", "mod": 5, "on": ["CARPET", "LOBBY", "VIP"]},
+            {"tile": "LANTERN", "mod": 13, "on": ["CARPET"]},
+            {"tile": "PLANT", "mod": 11, "on": ["CARPET"]},
         ],
         "clear": [rect("CARPET", 14, 26, 3, 3)],
         "doors": [door(15, 27, "guest_corridor", 15, 4, "Back into the corridor.")],
@@ -525,10 +841,21 @@ MAPS_SPEC: list[dict] = [
         "rects": [
             rect("LOBBY", 2, 2, 26, 26),
             rect("VIP", 8, 8, 14, 14),
+            rect("PATH", 14, 4, 2, 22),
+            rect("PATH", 4, 14, 22, 2),
         ],
         "decor": [
-            points("PLANT", [(5, 5), (24, 5), (5, 24), (24, 24), (14, 5), (15, 24)]),
+            points("PLANT", [
+                (5, 5), (24, 5), (5, 24), (24, 24), (14, 5), (15, 24),
+                (7, 10), (22, 10), (7, 19), (22, 19),
+            ]),
+            points("LANTERN", [(6, 8), (23, 8), (6, 21), (23, 21)]),
             rect("BAR", 12, 12, 6, 1),
+        ],
+        "scatter": [
+            {"tile": "FLOWER", "mod": 7, "on": ["LOBBY", "VIP"]},
+            {"tile": "LANTERN", "mod": 16, "on": ["LOBBY"]},
+            {"tile": "PLANT", "mod": 12, "on": ["LOBBY"]},
         ],
         "clear": [
             rect("LOBBY", 25, 14, 3, 3),
@@ -550,10 +877,25 @@ MAPS_SPEC: list[dict] = [
         "rects": [
             rect("SPA", 3, 2, 24, 26),
             rect("WATER", 9, 10, 12, 9),
+            rect("PATH", 8, 9, 14, 1),
+            rect("PATH", 8, 19, 14, 1),
+            rect("PATH", 8, 10, 1, 9),
+            rect("PATH", 21, 10, 1, 9),
         ],
         "decor": [
-            points("PLANT", [(5, 6), (24, 6), (5, 22), (24, 22)]),
+            points("PLANT", [
+                (5, 6), (24, 6), (5, 22), (24, 22),
+                (6, 12), (23, 12), (6, 17), (23, 17),
+            ]),
+            points("LANTERN", [(7, 8), (22, 8), (7, 20), (22, 20)]),
+            points("ROCK", [(10, 9), (19, 9), (10, 19), (19, 19)]),
             rect("BAR", 12, 24, 6, 1),
+        ],
+        "scatter": [
+            {"tile": "FLOWER", "mod": 6, "on": ["SPA"]},
+            {"tile": "PLANT", "mod": 10, "on": ["SPA"]},
+            {"tile": "ROCK", "mod": 15, "on": ["SPA"]},
+            {"tile": "LANTERN", "mod": 18, "on": ["SPA"]},
         ],
         "clear": [rect("SPA", 14, 1, 3, 4)],
         "doors": [door(15, 2, "delano_wing", 15, 26, "Back up to the Delano wing.")],
@@ -566,18 +908,40 @@ MAPS_SPEC: list[dict] = [
         "base": "WALL",
         "rects": [
             rect("SAND", 2, 2, 26, 26),
-            rect("WATER", 9, 9, 13, 12),
+            rect("WATER", 10, 10, 11, 10),
+            # Boardwalk ring around the lagoon — gold path reads as warm wood deck.
+            rect("PATH", 9, 9, 13, 1),
+            rect("PATH", 9, 20, 13, 1),
+            rect("PATH", 9, 10, 1, 10),
+            rect("PATH", 21, 10, 1, 10),
+            rect("AQUA", 11, 21, 9, 2),
+            # Keep east/west promenades open to the wing doors.
+            rect("PATH", 2, 14, 7, 3),
+            rect("PATH", 22, 14, 6, 3),
+            rect("PATH", 14, 2, 3, 7),
+            rect("PATH", 14, 21, 3, 7),
         ],
         "decor": [
-            points("PLANT", [(5, 5), (24, 5), (5, 24), (24, 24), (5, 14), (24, 14)]),
+            points("PLANT", [
+                (5, 5), (24, 5), (5, 24), (24, 24),
+                (7, 8), (22, 8), (7, 21), (22, 21),
+            ]),
+            points("LANTERN", [(8, 7), (21, 7), (8, 22), (21, 22)]),
+            points("ROCK", [(6, 6), (23, 6), (6, 23), (23, 23)]),
             rect("BAR", 12, 25, 6, 1),
         ],
-        "scatter": [{"tile": "PLANT", "mod": 13, "on": ["SAND"]}],
+        "scatter": [
+            {"tile": "FLOWER", "mod": 5, "on": ["SAND", "AQUA"]},
+            {"tile": "PLANT", "mod": 11, "on": ["SAND"]},
+            {"tile": "ROCK", "mod": 19, "on": ["SAND"]},
+            {"tile": "LANTERN", "mod": 21, "on": ["SAND"], "bounds": {"x": 4, "y": 4, "w": 22, "h": 22}},
+        ],
         "clear": [
-            rect("SAND", 14, 1, 3, 4),
-            rect("SAND", 2, 14, 3, 3),
-            rect("SAND", 25, 14, 3, 3),
-            rect("SAND", 14, 26, 3, 3),
+            # Spines kept clear so doors, NPCs, and the wave-pool trigger stay reachable.
+            rect("PATH", 14, 1, 3, 28),
+            rect("PATH", 2, 14, 26, 3),
+            rect("SAND", 14, 21, 3, 3),
+            rect("SAND", 5, 11, 3, 3),
         ],
         "doors": [
             door(15, 2, "casino_floor_south", 15, 26, "Back inside to the casino."),
@@ -598,10 +962,28 @@ MAPS_SPEC: list[dict] = [
             rect("WATER", 19, 6, 5, 5),
             rect("WATER", 6, 19, 5, 5),
             rect("WATER", 19, 19, 5, 5),
+            rect("PATH", 12, 4, 6, 22),
+            rect("PATH", 4, 13, 22, 4),
+            rect("AQUA", 5, 5, 7, 1),
+            rect("AQUA", 18, 5, 7, 1),
+            rect("AQUA", 5, 24, 7, 1),
+            rect("AQUA", 18, 24, 7, 1),
         ],
         "decor": [
             rect("BAR", 13, 13, 4, 2),
-            points("PLANT", [(14, 4), (14, 25), (4, 14), (25, 14)]),
+            rect("BAR", 5, 12, 2, 1),
+            rect("BAR", 23, 12, 2, 1),
+            points("PLANT", [
+                (14, 4), (14, 25), (4, 14), (25, 14),
+                (8, 4), (21, 4), (8, 25), (21, 25),
+            ]),
+            points("LANTERN", [(12, 6), (17, 6), (12, 23), (17, 23), (4, 16), (25, 16)]),
+        ],
+        "scatter": [
+            {"tile": "PLANT", "mod": 8, "on": ["SAND"]},
+            {"tile": "FLOWER", "mod": 5, "on": ["SAND", "AQUA"]},
+            {"tile": "ROCK", "mod": 15, "on": ["SAND"]},
+            {"tile": "LANTERN", "mod": 18, "on": ["SAND"]},
         ],
         "clear": [rect("SAND", 2, 14, 3, 3)],
         "doors": [door(2, 15, "mandalay_beach", 26, 15, "Back to the wave pool.")],
@@ -615,11 +997,26 @@ MAPS_SPEC: list[dict] = [
         "rects": [
             rect("SAND", 2, 2, 26, 26),
             rect("STAGE", 10, 8, 11, 8),
+            rect("PATH", 9, 7, 13, 1),
+            rect("PATH", 9, 16, 13, 1),
+            rect("PATH", 9, 8, 1, 8),
+            rect("PATH", 21, 8, 1, 8),
+            rect("LOBBY", 12, 18, 7, 4),
         ],
         "decor": [
             rect("BAR", 6, 22, 6, 1),
             rect("BAR", 18, 22, 6, 1),
-            points("PLANT", [(4, 5), (25, 5), (4, 25), (25, 25)]),
+            points("PLANT", [
+                (4, 5), (25, 5), (4, 25), (25, 25),
+                (7, 10), (22, 10), (8, 18), (21, 18),
+            ]),
+            points("LANTERN", [(9, 6), (20, 6), (9, 17), (20, 17), (5, 20), (24, 20)]),
+        ],
+        "scatter": [
+            {"tile": "PLANT", "mod": 8, "on": ["SAND"]},
+            {"tile": "FLOWER", "mod": 5, "on": ["SAND", "LOBBY"]},
+            {"tile": "LANTERN", "mod": 16, "on": ["SAND"]},
+            {"tile": "ROCK", "mod": 18, "on": ["SAND"]},
         ],
         "clear": [rect("SAND", 14, 1, 3, 4), rect("SAND", 25, 14, 3, 3)],
         "doors": [
@@ -636,11 +1033,19 @@ MAPS_SPEC: list[dict] = [
         "rects": [
             rect("STAGE", 3, 3, 24, 25),
             rect("SAND", 10, 20, 11, 8),
+            rect("PATH", 13, 18, 5, 3),
         ],
         "decor": [
             rect("SCREEN", 8, 5, 14, 1),
             rect("BAR", 5, 12, 2, 4),
             rect("BAR", 23, 12, 2, 4),
+            points("LANTERN", [(8, 19), (21, 19), (11, 22), (18, 22)]),
+            points("PLANT", [(10, 21), (19, 21)]),
+        ],
+        "scatter": [
+            {"tile": "FLOWER", "mod": 6, "on": ["SAND"]},
+            {"tile": "LANTERN", "mod": 14, "on": ["SAND"]},
+            {"tile": "PLANT", "mod": 10, "on": ["SAND"]},
         ],
         "clear": [rect("SAND", 14, 26, 3, 3)],
         "doors": [door(15, 27, "beach_club", 26, 15, "Back to the beach club.")],
@@ -674,10 +1079,19 @@ MAPS_SPEC: list[dict] = [
         "rects": [
             rect("AQUA", 2, 2, 26, 26),
             rect("WATER", 8, 7, 15, 12),
+            rect("PATH", 7, 6, 17, 1),
+            rect("PATH", 7, 19, 17, 1),
         ],
         "decor": [
-            points("PLANT", [(7, 8), (7, 17), (23, 8), (23, 17)]),
+            points("PLANT", [(7, 8), (7, 17), (23, 8), (23, 17), (5, 12), (24, 12)]),
+            points("LANTERN", [(8, 6), (21, 6), (8, 19), (21, 19)]),
             rect("SCREEN", 13, 23, 4, 1),
+        ],
+        "scatter": [
+            {"tile": "PLANT", "mod": 11, "on": ["AQUA"]},
+            {"tile": "ROCK", "mod": 14, "on": ["AQUA"]},
+            {"tile": "LANTERN", "mod": 18, "on": ["AQUA"]},
+            {"tile": "FLOWER", "mod": 9, "on": ["AQUA"]},
         ],
         "clear": [rect("AQUA", 25, 14, 3, 3)],
         "doors": [door(27, 15, "reef_tunnel", 3, 15, "Back through the tunnel.")],
@@ -764,7 +1178,11 @@ MAPS_SPEC: list[dict] = [
 # Which part of the property each room belongs to. Kept out of the specs above
 # so the groupings read as one list; injected into every record on write.
 WINGS: dict[str, str] = {
-    "strip_sidewalk": "Arrival",
+    "strip_sidewalk": "Strip",
+    "strip_luxor": "Strip",
+    "strip_excalibur": "Strip",
+    "luxor_atrium": "Strip",
+    "excalibur_courtyard": "Strip",
     "valet_garage": "Arrival",
     "registration_lobby": "Arrival",
     "main_resort": "Casino",
@@ -799,9 +1217,38 @@ NPCS: dict[str, list[dict]] = {
     "strip_sidewalk": [
         {"id": "doorman_dante", "name": "Doorman Dante", "x": 15, "y": 6, "sprite": "npc_red",
          "dialogueId": "doorman_dante_greet", "direction": "down"},
-        {"id": "cab_line_carl", "name": "Cab Line Carl", "x": 9, "y": 25, "sprite": "npc_silver",
+        {"id": "cab_line_carl", "name": "Cab Line Carl", "x": 9, "y": 24, "sprite": "npc_silver",
          "dialogueId": "cab_line_carl_greet", "direction": "up",
-         "schedule": {"late": {"x": 21, "y": 25}}},
+         "schedule": {"late": {"x": 21, "y": 24}}},
+        {"id": "strip_hawker_hal", "name": "Hawker Hal", "x": 20, "y": 19, "sprite": "npc_orange",
+         "dialogueId": "strip_hawker_hal_greet", "direction": "left"},
+    ],
+    "strip_luxor": [
+        {"id": "photographer_pam", "name": "Photographer Pam", "x": 10, "y": 10, "sprite": "npc_pink",
+         "dialogueId": "photographer_pam_greet", "direction": "down"},
+        {"id": "pyramid_pete", "name": "Pyramid Pete", "x": 5, "y": 9, "sprite": "npc_gold",
+         "dialogueId": "pyramid_pete_greet", "direction": "right"},
+        {"id": "strip_vendor_viv", "name": "Vendor Viv", "x": 18, "y": 20, "sprite": "npc_teal",
+         "dialogueId": "strip_vendor_viv_greet", "encounter": "shops", "direction": "up"},
+    ],
+    "strip_excalibur": [
+        {"id": "knight_nate", "name": "Knight Nate", "x": 5, "y": 9, "sprite": "npc_red",
+         "dialogueId": "knight_nate_greet", "direction": "right"},
+        {"id": "jester_jess", "name": "Jester Jess", "x": 18, "y": 20, "sprite": "npc_orange",
+         "dialogueId": "jester_jess_greet", "direction": "left",
+         "sight": {"dir": "left", "range": 3}, "challengeDialogueId": "jester_jess_challenge"},
+    ],
+    "luxor_atrium": [
+        {"id": "sphinx_sally", "name": "Sphinx Sally", "x": 15, "y": 10, "sprite": "npc_gold",
+         "dialogueId": "sphinx_sally_greet", "direction": "down"},
+        {"id": "obelisk_owen", "name": "Obelisk Owen", "x": 10, "y": 20, "sprite": "npc_silver",
+         "dialogueId": "obelisk_owen_greet", "encounter": "bar", "direction": "up"},
+    ],
+    "excalibur_courtyard": [
+        {"id": "herald_henry", "name": "Herald Henry", "x": 15, "y": 10, "sprite": "npc_teal",
+         "dialogueId": "herald_henry_greet", "direction": "down"},
+        {"id": "mead_maya", "name": "Mead Maya", "x": 12, "y": 20, "sprite": "npc_pink",
+         "dialogueId": "mead_maya_greet", "encounter": "bar", "direction": "up"},
     ],
     "valet_garage": [
         {"id": "valet_vic", "name": "Valet Vic", "x": 15, "y": 8, "sprite": "npc_orange",

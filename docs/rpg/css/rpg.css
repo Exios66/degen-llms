@@ -1,14 +1,14 @@
 :root {
-  --bg: #0a0812;
-  --panel: #14101f;
-  --gold: #e8c547;
+  --bg: #100c0a;
+  --panel: #1a1410;
+  --gold: #e8c868;
   --cyan: #39c5cf;
   --green: #3dd68c;
   --red: #f07178;
   --magenta: #c678dd;
-  --text: #e6e1cf;
-  --dim: #7a8494;
-  --border: #2a2438;
+  --text: #f0e8d4;
+  --dim: #8a7a68;
+  --border: #3a2e24;
   --felt: #1a5c3a;
   --font-pixel: "Press Start 2P", monospace;
 }
@@ -43,10 +43,10 @@ body {
   align-items: center;
   justify-content: center;
   background:
-    radial-gradient(ellipse at 50% 12%, rgba(232, 197, 71, 0.14) 0%, transparent 42%),
-    radial-gradient(ellipse at 20% 80%, rgba(57, 197, 207, 0.06) 0%, transparent 40%),
-    radial-gradient(ellipse at 80% 75%, rgba(198, 120, 221, 0.05) 0%, transparent 38%),
-    linear-gradient(180deg, #120e1c 0%, var(--bg) 45%, #08060e 100%);
+    radial-gradient(ellipse at 50% 12%, rgba(232, 200, 104, 0.16) 0%, transparent 42%),
+    radial-gradient(ellipse at 20% 80%, rgba(57, 197, 207, 0.08) 0%, transparent 40%),
+    radial-gradient(ellipse at 80% 75%, rgba(232, 140, 80, 0.06) 0%, transparent 38%),
+    linear-gradient(180deg, #1a1410 0%, var(--bg) 45%, #0a0806 100%);
 }
 
 #game-shell.arcade-cabinet {

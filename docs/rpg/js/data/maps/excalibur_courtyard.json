@@ -1,0 +1,261 @@
+{
+  "id": "excalibur_courtyard",
+  "label": "Excalibur Courtyard",
+  "wing": "Strip",
+  "bgm": "encounter",
+  "spawn": {
+    "x": 26,
+    "y": 15
+  },
+  "base": "WALL",
+  "rects": [
+    {
+      "tile": "STAGE",
+      "x": 3,
+      "y": 3,
+      "w": 24,
+      "h": 24
+    },
+    {
+      "tile": "LOBBY",
+      "x": 7,
+      "y": 7,
+      "w": 16,
+      "h": 16
+    },
+    {
+      "tile": "PATH",
+      "x": 14,
+      "y": 4,
+      "w": 2,
+      "h": 22
+    },
+    {
+      "tile": "PATH",
+      "x": 4,
+      "y": 14,
+      "w": 22,
+      "h": 2
+    },
+    {
+      "tile": "CARPET",
+      "x": 10,
+      "y": 10,
+      "w": 10,
+      "h": 10
+    },
+    {
+      "tile": "SAND",
+      "x": 8,
+      "y": 20,
+      "w": 5,
+      "h": 4
+    },
+    {
+      "tile": "SAND",
+      "x": 17,
+      "y": 20,
+      "w": 5,
+      "h": 4
+    }
+  ],
+  "decor": [
+    {
+      "tile": "PLANT",
+      "points": [
+        [
+          5,
+          5
+        ],
+        [
+          24,
+          5
+        ],
+        [
+          5,
+          24
+        ],
+        [
+          24,
+          24
+        ],
+        [
+          8,
+          8
+        ],
+        [
+          21,
+          8
+        ],
+        [
+          9,
+          18
+        ],
+        [
+          20,
+          18
+        ]
+      ]
+    },
+    {
+      "tile": "LANTERN",
+      "points": [
+        [
+          7,
+          6
+        ],
+        [
+          22,
+          6
+        ],
+        [
+          7,
+          22
+        ],
+        [
+          22,
+          22
+        ],
+        [
+          12,
+          12
+        ],
+        [
+          17,
+          12
+        ]
+      ]
+    },
+    {
+      "tile": "ROCK",
+      "points": [
+        [
+          9,
+          21
+        ],
+        [
+          20,
+          21
+        ]
+      ]
+    },
+    {
+      "tile": "BAR",
+      "x": 9,
+      "y": 8,
+      "w": 4,
+      "h": 1
+    },
+    {
+      "tile": "BAR",
+      "x": 17,
+      "y": 8,
+      "w": 4,
+      "h": 1
+    },
+    {
+      "tile": "SCREEN",
+      "x": 12,
+      "y": 4,
+      "w": 6,
+      "h": 1
+    },
+    {
+      "tile": "BAR",
+      "x": 11,
+      "y": 22,
+      "w": 8,
+      "h": 1
+    }
+  ],
+  "signs": [
+    {
+      "x": 15,
+      "y": 5.5,
+      "text": "EXCALIBUR",
+      "color": "#ffe890",
+      "stroke": "#684810"
+    },
+    {
+      "x": 15,
+      "y": 23.5,
+      "text": "TOURNAMENT YARD",
+      "color": "#ffe890",
+      "stroke": "#684810"
+    },
+    {
+      "x": 26.2,
+      "y": 14.5,
+      "text": "STRIP →",
+      "color": "#a8e8ff",
+      "stroke": "#184868"
+    }
+  ],
+  "scatter": [
+    {
+      "tile": "FLOWER",
+      "mod": 6,
+      "on": [
+        "LOBBY",
+        "SAND",
+        "CARPET"
+      ]
+    },
+    {
+      "tile": "PLANT",
+      "mod": 11,
+      "on": [
+        "STAGE",
+        "LOBBY"
+      ]
+    },
+    {
+      "tile": "LANTERN",
+      "mod": 15,
+      "on": [
+        "STAGE",
+        "LOBBY"
+      ]
+    },
+    {
+      "tile": "ROCK",
+      "mod": 18,
+      "on": [
+        "SAND"
+      ]
+    }
+  ],
+  "clear": [
+    {
+      "tile": "PATH",
+      "x": 14,
+      "y": 3,
+      "w": 2,
+      "h": 24
+    },
+    {
+      "tile": "PATH",
+      "x": 3,
+      "y": 14,
+      "w": 24,
+      "h": 2
+    },
+    {
+      "tile": "STAGE",
+      "x": 25,
+      "y": 14,
+      "w": 3,
+      "h": 3
+    }
+  ],
+  "doors": [
+    {
+      "x": 27,
+      "y": 15,
+      "to": "strip_excalibur",
+      "toX": 3,
+      "toY": 9,
+      "message": "Back out to Las Vegas Blvd."
+    }
+  ]
+}

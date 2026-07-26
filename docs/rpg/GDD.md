@@ -93,8 +93,11 @@ the map so a ballroom does not read as wallpaper. Water registers three animated
 frames; the overworld cycles them. Neighbor-edge fringe overlays (foam, wet sand,
 path, pool) soften tile seams. Decor and characters cast soft contact shadows;
 slots, screens, and lanterns pulse. Walkable `FLOWER` clutter plus blocking
-`ROCK` / `LANTERN` props densify outdoor maps. Ground and decor are always
-procedural — there is no vendored `assets/tiles/` loader on the live boot path.
+`ROCK` / `LANTERN` props densify outdoor maps. Hotel and Pool wings lean into a
+cozy resort read — warm wood walls, rosewood carpet, honey travertine, fluffy
+planters, boardwalk path rings, and soft amber day/night wash — while casino
+floors keep their neon pit identity. Ground and decor are always procedural —
+there is no vendored `assets/tiles/` loader on the live boot path.
 
 Overworld characters are also baked by `TextureFactory.js` (32×44 tuxedo
 sprites with wardrobe palettes from `CharacterAppearance.js`). Collision boxes
@@ -107,13 +110,14 @@ to boot the overworld.
 
 ## 3. The world
 
-Twenty-eight rooms, each a 30×30 tile grid, authored as declarative JSON in
+Thirty-two rooms, each a 30×30 tile grid, authored as declarative JSON in
 `js/data/maps/`. `js/data/maps/index.json` lists them; `MapLoader.compileMap()`
 turns each record into ground, collision, and decor layers at boot.
 
 | Wing | Rooms |
 |------|-------|
-| Arrival | Las Vegas Blvd, Valet & Parking, Registration Lobby |
+| Strip | Las Vegas Blvd — Mandalay, Luxor, Excalibur; Luxor Atrium; Excalibur Courtyard |
+| Arrival | Valet & Parking, Registration Lobby |
 | Casino | Casino Floor North, Casino Floor South, Race & Sports Book, High Limit Salon, Foundation Room |
 | Retail | The Shoppes at Mandalay Place, Sky Bridge, Convention Center |
 | Bars | Betty's Bar, Skyfall Lounge |
@@ -121,6 +125,12 @@ turns each record into ground, collision, and decor layers at boot.
 | Pool | Mandalay Beach, Cabana Row, Beach Club, Moonlight Rave Stage |
 | Attractions | Shark Reef Tunnel, Shark Reef Exhibit, House of Blues, HOB Green Room, ULTRA Arena |
 | Back of house | Staff Corridor |
+
+The Strip wing is a walkable outdoor overworld: gold-path spines connect
+Mandalay Bay's porte-cochère south to Luxor and Excalibur facade plazas. Atrium
+and courtyard maps are visit destinations (atmosphere + NPCs + light encounters),
+not full rival casino floors — the sky bridge also links Luxor atrium back into
+Mandalay Place.
 
 ### Map record schema
 

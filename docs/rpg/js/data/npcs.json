@@ -13,16 +13,122 @@
       "id": "cab_line_carl",
       "name": "Cab Line Carl",
       "x": 9,
-      "y": 25,
+      "y": 24,
       "sprite": "npc_silver",
       "dialogueId": "cab_line_carl_greet",
       "direction": "up",
       "schedule": {
         "late": {
           "x": 21,
-          "y": 25
+          "y": 24
         }
       }
+    },
+    {
+      "id": "strip_hawker_hal",
+      "name": "Hawker Hal",
+      "x": 20,
+      "y": 19,
+      "sprite": "npc_orange",
+      "dialogueId": "strip_hawker_hal_greet",
+      "direction": "left"
+    }
+  ],
+  "strip_luxor": [
+    {
+      "id": "photographer_pam",
+      "name": "Photographer Pam",
+      "x": 10,
+      "y": 10,
+      "sprite": "npc_pink",
+      "dialogueId": "photographer_pam_greet",
+      "direction": "down"
+    },
+    {
+      "id": "pyramid_pete",
+      "name": "Pyramid Pete",
+      "x": 5,
+      "y": 9,
+      "sprite": "npc_gold",
+      "dialogueId": "pyramid_pete_greet",
+      "direction": "right"
+    },
+    {
+      "id": "strip_vendor_viv",
+      "name": "Vendor Viv",
+      "x": 18,
+      "y": 20,
+      "sprite": "npc_teal",
+      "dialogueId": "strip_vendor_viv_greet",
+      "encounter": "shops",
+      "direction": "up"
+    }
+  ],
+  "strip_excalibur": [
+    {
+      "id": "knight_nate",
+      "name": "Knight Nate",
+      "x": 5,
+      "y": 9,
+      "sprite": "npc_red",
+      "dialogueId": "knight_nate_greet",
+      "direction": "right"
+    },
+    {
+      "id": "jester_jess",
+      "name": "Jester Jess",
+      "x": 18,
+      "y": 20,
+      "sprite": "npc_orange",
+      "dialogueId": "jester_jess_greet",
+      "direction": "left",
+      "sight": {
+        "dir": "left",
+        "range": 3
+      },
+      "challengeDialogueId": "jester_jess_challenge"
+    }
+  ],
+  "luxor_atrium": [
+    {
+      "id": "sphinx_sally",
+      "name": "Sphinx Sally",
+      "x": 15,
+      "y": 10,
+      "sprite": "npc_gold",
+      "dialogueId": "sphinx_sally_greet",
+      "direction": "down"
+    },
+    {
+      "id": "obelisk_owen",
+      "name": "Obelisk Owen",
+      "x": 10,
+      "y": 20,
+      "sprite": "npc_silver",
+      "dialogueId": "obelisk_owen_greet",
+      "encounter": "bar",
+      "direction": "up"
+    }
+  ],
+  "excalibur_courtyard": [
+    {
+      "id": "herald_henry",
+      "name": "Herald Henry",
+      "x": 15,
+      "y": 10,
+      "sprite": "npc_teal",
+      "dialogueId": "herald_henry_greet",
+      "direction": "down"
+    },
+    {
+      "id": "mead_maya",
+      "name": "Mead Maya",
+      "x": 12,
+      "y": 20,
+      "sprite": "npc_pink",
+      "dialogueId": "mead_maya_greet",
+      "encounter": "bar",
+      "direction": "up"
     }
   ],
   "valet_garage": [

@@ -15,6 +15,27 @@
       "y": 2,
       "w": 26,
       "h": 26
+    },
+    {
+      "tile": "LOBBY",
+      "x": 10,
+      "y": 20,
+      "w": 10,
+      "h": 6
+    },
+    {
+      "tile": "SAND",
+      "x": 4,
+      "y": 22,
+      "w": 4,
+      "h": 4
+    },
+    {
+      "tile": "SAND",
+      "x": 22,
+      "y": 22,
+      "w": 4,
+      "h": 4
     }
   ],
   "decor": [
@@ -49,7 +70,45 @@
         [
           21,
           24
+        ],
+        [
+          11,
+          21
+        ],
+        [
+          18,
+          21
         ]
+      ]
+    },
+    {
+      "tile": "LANTERN",
+      "points": [
+        [
+          10,
+          22
+        ],
+        [
+          19,
+          22
+        ]
+      ]
+    }
+  ],
+  "scatter": [
+    {
+      "tile": "FLOWER",
+      "mod": 8,
+      "on": [
+        "LOBBY",
+        "SAND"
+      ]
+    },
+    {
+      "tile": "ROCK",
+      "mod": 16,
+      "on": [
+        "SAND"
       ]
     }
   ],
@@ -75,8 +134,8 @@
       "y": 15,
       "to": "strip_sidewalk",
       "toX": 3,
-      "toY": 24,
-      "message": "Back out to the Boulevard."
+      "toY": 22,
+      "message": "Back out to Las Vegas Blvd."
     },
     {
       "x": 15,

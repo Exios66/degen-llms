@@ -125,8 +125,10 @@ export class AudioManager {
   bgmForMap(mapId) {
     if (mapId === "main_resort" || mapId === "casino_floor_north" || mapId === "casino_floor_south") return "casino";
     if (mapId === "foundation_room" || mapId === "high_limit_salon" || mapId === "staff_corridor") return "secret";
-    if (mapId === "house_of_blues" || mapId === "hob_green_room" || mapId === "beach_rave") return "encounter";
-    if (mapId === "shark_reef" || mapId === "reef_tunnel" || mapId === "spa") return "title";
+    if (mapId === "house_of_blues" || mapId === "hob_green_room" || mapId === "beach_rave"
+        || mapId === "excalibur_courtyard") return "encounter";
+    if (mapId === "shark_reef" || mapId === "reef_tunnel" || mapId === "spa"
+        || mapId === "luxor_atrium") return "title";
     return "lobby";
   }
 }

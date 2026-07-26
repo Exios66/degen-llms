@@ -83,7 +83,7 @@ Lifetime wagered chips advance you through Sapphire → Pearl → Gold → Plati
 
 Walk the resort in a **Pokémon-style pixel overworld** built with Phaser 3:
 
-- **28 rooms, 61 NPCs** — the Boulevard and valet, registration, two casino floors, the book, High Limit Salon, Foundation Room, the Shoppes and sky bridge, two bars, the hotel tower and your own room, Delano, the spa, four pool zones, Shark Reef, House of Blues, ULTRA Arena, and the back of house
+- **32 rooms, 73 NPCs** — a walkable Las Vegas Blvd Strip (Mandalay → Luxor → Excalibur), valet, registration, two casino floors, the book, High Limit Salon, Foundation Room, the Shoppes and sky bridge, two bars, the hotel tower and your own room, Delano, the spa, four pool zones, Shark Reef, House of Blues, ULTRA Arena, and the back of house
 - **Terminal parity, not a rewrite** — hotel, pool, shops, slots, sportsbook, racing, and cashier are the terminal's own screens mounted inside an encounter panel, so the two surfaces cannot drift
 - **Pokémon systems** — START menu, line-of-sight challengers, a quest board, a three-part dex, a bag, twelve cosmetic secrets, and NPCs who move with the clock
 - **One clock, one wallet** — daily resort charges, rotating reservation requirements, and eviction all reach the overworld

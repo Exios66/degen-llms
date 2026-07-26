@@ -100,6 +100,43 @@
         [
           18,
           23
+        ],
+        [
+          6,
+          12
+        ],
+        [
+          23,
+          12
+        ],
+        [
+          9,
+          17
+        ],
+        [
+          20,
+          17
+        ]
+      ]
+    },
+    {
+      "tile": "LANTERN",
+      "points": [
+        [
+          5,
+          9
+        ],
+        [
+          24,
+          9
+        ],
+        [
+          12,
+          24
+        ],
+        [
+          17,
+          24
         ]
       ]
     }
@@ -155,6 +192,30 @@
       "stroke": "#684810"
     }
   ],
+  "scatter": [
+    {
+      "tile": "FLOWER",
+      "mod": 7,
+      "on": [
+        "LOBBY",
+        "CARPET"
+      ]
+    },
+    {
+      "tile": "LANTERN",
+      "mod": 18,
+      "on": [
+        "LOBBY"
+      ]
+    },
+    {
+      "tile": "PLANT",
+      "mod": 14,
+      "on": [
+        "LOBBY"
+      ]
+    }
+  ],
   "clear": [
     {
       "tile": "LOBBY",
@@ -205,8 +266,8 @@
       "y": 27,
       "to": "strip_sidewalk",
       "toX": 15,
-      "toY": 4,
-      "message": "Out to the Boulevard."
+      "toY": 5,
+      "message": "Out to Las Vegas Blvd."
     },
     {
       "x": 15,

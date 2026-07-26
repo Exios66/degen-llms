@@ -27,6 +27,7 @@ import { buildSportsbookRenderers } from "./ui/sportsbook-renderers.js";
 import { buildTradingDeskRenderers } from "./ui/trading-desk-renderers.js";
 import { buildArcadeRenderers } from "./ui/arcade-renderers.js";
 import { ArcadeCabinetOverlay } from "./arcade/ArcadeCabinetOverlay.js";
+import { DiningOverlay } from "./DiningOverlay.js";
 import { buildRacingRenderers } from "./ui/racing-renderers.js";
 import { buildVenueRenderers } from "./ui/venue-renderers.js";
 import { buildCashierRenderers } from "./ui/cashier-renderers.js";
@@ -39,6 +40,7 @@ const app = document.getElementById("app");
 let session = new PlayerSession();
 let rewardsPhone = null;
 let arcadeOverlay = null;
+let diningOverlay = null;
 let casinoTimeTicker = null;
 
 const runtime = createRuntime({
@@ -52,6 +54,7 @@ const ctx = {
   set session(next) { session = next; },
   get rewardsPhone() { return rewardsPhone; },
   get arcadeOverlay() { return arcadeOverlay; },
+  get diningOverlay() { return diningOverlay; },
   runtime,
   persist,
   render,
@@ -151,6 +154,25 @@ function mountArcadeOverlay() {
   arcadeOverlay.setSession(session);
 }
 
+function mountDiningOverlay() {
+  const root = document.getElementById("dining-overlay");
+  if (!root) return;
+  diningOverlay = new DiningOverlay(root, {
+    onPersist: () => persist(),
+    onStatus: (msg, kind) => showStatus(msg, kind),
+    onClosed: () => render(),
+    onChipDelta: () => {
+      const line = document.querySelector(".chip-line");
+      if (line) {
+        line.classList.remove("chip-pulse--up", "chip-pulse--down");
+        void line.offsetWidth;
+        line.classList.add("chip-pulse", "chip-pulse--down");
+      }
+    },
+  });
+  diningOverlay.setSession(session);
+}
+
 
 
 
@@ -172,6 +194,7 @@ function enterCasino(nextSession) {
   startCasinoTimeTicker();
   mountRewardsPhone();
   mountArcadeOverlay();
+  mountDiningOverlay();
   syncContactIntros(nextSession);
   applyIntoxicationEffects(session);
   render();
@@ -183,6 +206,7 @@ function returnToSavePicker() {
   stopCasinoTimeTicker();
   rewardsPhone?.close();
   arcadeOverlay?.close();
+  diningOverlay?.close();
   runtime.sportsbook = new SportsbookState();
   runtime.tradingDesk = new TradingDeskState();
   runtime.blackjackGame = null;
@@ -705,6 +729,15 @@ function render() {
   } else {
     app.appendChild(renderNotFound({ requestedView: current.name }));
   }
+  const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+  if (!reduceMotion) {
+    app.classList.remove("view-transition");
+    void app.offsetWidth;
+    app.classList.add("view-transition");
+    window.setTimeout(() => app.classList.remove("view-transition"), 240);
+  }
+  diningOverlay?.setSession(session);
+  arcadeOverlay?.setSession(session);
   window.__casinoReady = true;
 }
 

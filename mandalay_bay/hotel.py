@@ -205,6 +205,13 @@ def hallway_choice(session: PlayerSession, choice_index: int) -> HallwayResult:
         return HallwayResult(False, "Pick a direction.")
     pick = beat.choices[choice_index]
     hotel.hallway_log.append(pick.label)
+    from mandalay_bay.dining import consume_food_coma_flag
+
+    if consume_food_coma_flag(session):
+        return HallwayResult(
+            False,
+            pick.quip or "Food coma detour — you zig toward ice machines and existential dread. Try again.",
+        )
     if pick.wing == hotel.wing and pick.quip is None:
         hotel.hallway_progress += 1
         if hotel.hallway_progress >= len(_hallway_beats(hotel)):

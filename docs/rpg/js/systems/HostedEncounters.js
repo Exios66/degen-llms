@@ -9,7 +9,10 @@ export const HOSTED_ENCOUNTERS = {
   // ── Hotel tower ──────────────────────────────────────────────────────────
   hotel: { view: "hotel-lobby", activityId: "hotel", title: "MANDALAY BAY HOTEL" },
   hotel_front_desk: { view: "hotel-front-desk", activityId: "hotel", title: "FRONT DESK" },
-  hotel_dining: { view: "hotel-dining", activityId: "hotel", title: "IN-ROOM DINING" },
+  hotel_dining: { view: "hotel-dining", activityId: "dining", title: "RESORT DINING" },
+  restaurant_aureole: { view: "hotel-dining", activityId: "dining", title: "AUREOLE", venueId: "aureole" },
+  restaurant_border_grill: { view: "hotel-dining", activityId: "dining", title: "BORDER GRILL", venueId: "border_grill" },
+  restaurant_stripsteak: { view: "hotel-dining", activityId: "dining", title: "STRIPSTEAK", venueId: "stripsteak" },
   hotel_room: { view: "hotel-room", activityId: "hotel", title: "YOUR ROOM" },
   hotel_hallway: { view: "hotel-hallway", activityId: "hotel", title: "GUEST FLOOR" },
   guest_directory: { view: "hotel-guest-directory", title: "GUEST DIRECTORY" },

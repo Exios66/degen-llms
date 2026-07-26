@@ -20,6 +20,7 @@ project:
     - docs/trading-floor.md
     - docs/racing.md
     - docs/hotel.md
+    - docs/dining.md
     - docs/pool-complex.md
     - docs/mgm-rewards.md
     - docs/pixel-rpg.md
@@ -58,6 +59,8 @@ website:
             text: Casino Offerings
           - href: docs/hotel.md
             text: Resort Hotel
+          - href: docs/dining.md
+            text: Resort Dining
           - href: docs/pool-complex.md
             text: Pool Complex
           - href: docs/mgm-rewards.md
@@ -86,6 +89,8 @@ website:
             text: Trading Floor
           - href: docs/racing.md
             text: Racing & Equestrian
+          - href: docs/dining.md
+            text: Resort Dining
       - text: Developer
         menu:
           - href: docs/architecture.md
@@ -139,6 +144,7 @@ website:
           - docs/access-points.md
           - docs/casino-offerings.md
           - docs/hotel.md
+          - docs/dining.md
           - docs/pool-complex.md
           - docs/mgm-rewards.md
       - section: "Player Guides"
@@ -154,6 +160,7 @@ website:
           - docs/sportsbook.md
           - docs/trading-floor.md
           - docs/racing.md
+          - docs/dining.md
       - section: "Developer Docs"
         contents:
           - docs/architecture.md

@@ -346,6 +346,7 @@ export class EncounterBridge {
     this.session = deps.session;
     this.overlays = deps.overlays;
     this.terminalHost = deps.terminalHost ?? null;
+    this.diningOverlay = deps.diningOverlay ?? null;
     this.onPersist = deps.onPersist;
     this.questManager = deps.questManager ?? null;
     this.onEncounterEnd = deps.onEncounterEnd ?? null;
@@ -354,6 +355,7 @@ export class EncounterBridge {
 
   isAnyActive() {
     if (this.terminalHost?.isActive()) return true;
+    if (this.diningOverlay?.active) return true;
     return Object.values(this.overlays).some((o) => o?.isActive?.());
   }
 
@@ -408,6 +410,9 @@ export class EncounterBridge {
 
   async _startHosted(encounterId, context) {
     const spec = HOSTED_ENCOUNTERS[encounterId];
+    if (spec.activityId === "dining" && this.diningOverlay) {
+      return this._startDining(spec);
+    }
     if (!this.terminalHost) {
       console.warn(`No terminal host available for "${encounterId}"`);
       return { net: 0 };
@@ -423,6 +428,19 @@ export class EncounterBridge {
       activityId: spec.activityId ?? null,
       tab: spec.tab ?? null,
       title: spec.title,
+    });
+  }
+
+  _startDining(spec) {
+    const chipsAtOpen = this.session.wallet.balance;
+    return new Promise((resolve) => {
+      this.diningOverlay.setSession(this.session);
+      this.diningOverlay.onceClosed(() => {
+        const net = this.session.wallet.balance - chipsAtOpen;
+        this.onPersist();
+        resolve({ net });
+      });
+      this.diningOverlay.open(spec.venueId ?? null);
     });
   }
 

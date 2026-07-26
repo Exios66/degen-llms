@@ -25,6 +25,11 @@ TERMINAL_VIEWS = [
     "hotel-lobby", "hotel-front-desk", "hotel-dining", "casino-floor", "pool-complex",
 ]
 
+DINING_OVERLAY_READY = """() => {
+  const root = document.getElementById('dining-overlay');
+  return Boolean(root && window.__casinoReady);
+}"""
+
 MENU_PAGES = ["root", "trainer", "quests", "dex", "bag", "eggs", "completion", "options"]
 
 IGNORED = (
@@ -49,6 +54,7 @@ TERMINAL_FLOWS = [
     ("hotel", "hotel-front-desk", [".menu-list li:nth-child(1) .menu-btn"]),
     ("pool", "pool-complex", [".menu-list li:nth-child(1) .menu-btn"]),
     ("amenities", "casino-floor", [".menu-list li:nth-child(1) .menu-btn"]),
+    ("dining", "hotel-dining", [".dining-card .btn.primary, .menu-list li:nth-child(1) .menu-btn"]),
     ("stake-tier", "floor", [".menu-list li:nth-child(1) .menu-btn", ".menu-list li:nth-child(2) .menu-btn"]),
 ]
 

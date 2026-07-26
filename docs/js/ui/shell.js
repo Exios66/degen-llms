@@ -170,7 +170,11 @@ export function createShell(ctx) {
     // Avoid repeating "offshore/off-strip" when the account name already says it.
     const suffix = /off[-\s]?strip|offshore/i.test(name) ? "" : " (offshore)";
     return el("div", { className: "chip-line-wrap" }, [
-      el("p", { className: "chip-line", textContent: `Floor chips: ${fmtChips(ctx.session.wallet.balance)}` }),
+      el("p", {
+        className: "chip-line chip-pulse",
+        "data-chip-balance": String(ctx.session.wallet.balance),
+        textContent: `Floor chips: ${fmtChips(ctx.session.wallet.balance)}`,
+      }),
       el("p", {
         className: "bank-line dim",
         textContent: `${name}: ${fmtChips(bank.balance)}${suffix}`,

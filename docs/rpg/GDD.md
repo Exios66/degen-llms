@@ -11,7 +11,7 @@
 The Mandalay Bay is a digital resort with three faces: a Python CLI, a web
 terminal, and this pixel RPG. All three share one chip wallet, one save
 library, and one set of game rules. The RPG's job is to make the resort a
-*place* — twenty-eight rooms you walk through, sixty people who have something
+*place* — thirty-three rooms you walk through, sixty people who have something
 to say, and a clock that charges you rent whether or not you are winning.
 
 The reference feel is Pokémon: a top-down overworld, a START menu that holds
@@ -65,6 +65,9 @@ flowchart TB
 |---------|------|
 | Boot, save picker, HUD wiring | `js/main.js`, `js/scenes/TitleScreen.js` |
 | Overworld scene, movement, triggers | `js/scenes/GameScenes.js` |
+| Tap-to-walk routing | `js/systems/Pathfinder.js` |
+| On-screen D-pad and buttons | `js/systems/TouchControls.js` |
+| Wardrobe ramps and NPC looks | `js/systems/CharacterAppearance.js`, `js/systems/CharacterCreator.js` |
 | Tile vocabulary | `js/systems/MapTiles.js` |
 | JSON → tile layers | `js/systems/MapLoader.js` |
 | Map/NPC/door accessors + procedural fallback | `js/systems/MapData.js` |
@@ -78,6 +81,28 @@ flowchart TB
 | Quests, dex, bag, secrets | `js/systems/QuestManager.js`, `Dex.js`, `Inventory.js`, `EasterEggs.js` |
 | Save bridge | `js/systems/SaveAdapter.js`, `docs/js/core.js` |
 | Procedural audio | `js/systems/AudioManager.js` |
+
+### Movement and input
+
+The keyboard drives an eight-way velocity that is normalised on the diagonal, so
+walking north-east is not forty percent faster than walking north. A tap or a
+click is the same gesture on a phone and a desktop: `Pathfinder.findPath()`
+breadth-firsts across the same collision grid the physics body collides with,
+`nearestReachable()` re-targets a tap that landed on a wall or an NPC to the
+closest tile beside it, and `smoothPath()` drops every waypoint that can be
+skipped in a straight line — otherwise a route across an open floor comes back
+as a staircase and is walked as a series of one-tile hops.
+
+Two smaller rules keep the walk from feeling sticky. A waypoint counts as
+reached within a radius that scales with the current speed, rather than at an
+exact pixel, so running does not overshoot and stutter back. And when input
+pushes into a corner that is blocked on one axis only, the scene nudges along
+the free axis — the Pokémon behaviour of sliding around a doorframe instead of
+stopping dead against it.
+
+`TouchControls.js` adds a D-pad and A/START buttons on coarse-pointer devices.
+They feed the same input state the keyboard writes, so nothing downstream knows
+which one is driving.
 
 ### Art
 
@@ -94,38 +119,52 @@ the map so a ballroom does not read as wallpaper. `EnvironmentTextures.js` can
 also map vendored PNGs under `assets/tiles/` onto the same `TILE` enum without
 changing map JSON.
 
-Characters are **authored pixel grids**, not stacked rectangles: `CHAR_BODY` and
-`CHAR_LEGS` in `TextureFactory.js` are arrays of 16-character strings, one
-character per pixel, resolved through a palette legend (`O` outline, `H` hair,
-`S` skin, `B` outfit, `N` denim, and so on). The upper body and the legs are
-separate blocks, which is what lets a three-frame walk cycle swap only the legs
-and drop the torso a pixel. Right-facing is the left grid mirrored.
-`CharacterSprites.js` loads optional staff/dealer sheets from
-`assets/characters/` for named NPCs.
+A pattern stamped into the middle of every tile is the failure mode to watch
+for: a whole room of it reads as a chequerboard on an exact 32px grid rather
+than as a surface. The carpet and the salon marble both had one and both were
+rebuilt — a motif is either an outline with the field showing through, or a
+quarter mark at the tile corner that four neighbours complete into one whole.
+An accent that lands on one tile in five needs to be something a real floor has
+that often; the boulevard's storm drain was not, and lined itself up into
+diagonal rows across the road.
 
-To change how a character looks, edit the strings. `scripts/smoke-test-rpg.mjs`
-asserts every row is exactly 16 characters and every character is in the legend,
-then renders all twelve frames of every wardrobe combination headlessly, because
-a bad palette lookup at boot takes the whole overworld down.
+Characters are **not** drawn in code. `CharacterSprites.js` loads the vendored
+sheets under `assets/characters/` (see its `ATTRIBUTION.md`) and repaints them:
+`js/data/character-sheets.js` sorts each sheet's palette into skin / hair /
+outfit / legwear ramps, and a look maps those ramps onto the ones it asks for by
+relative luminance, so a recoloured guest keeps every highlight the artist drew.
+`scripts/_author_sprites.py` regenerates that manifest. `CharacterAppearance.js`
+owns the ramps the wardrobe offers and hashes an NPC's id into a look of its
+own, so the floor is not seven faces on a loop.
+
+Six of the world's "NPCs" are fixtures you press A on rather than guests — the
+lobby lion, a room door, two kiosks, the salon cage and a minibar. `NPC_PROPS`
+in `TextureFactory.js` maps them to their own art, which stands on the floor of
+its tile rather than hovering in the middle of it, and their dialogue portraits
+show the object instead of a stand-in face.
+
+`scripts/smoke-test-rpg.mjs` draws every art key against a recording canvas and
+fails anything that draws outside its frame, leaves a ground tile transparent,
+or resolves a look to a sheet that is not on disk.
 
 ---
 
 ## 3. The world
 
-Twenty-eight rooms, each a 30×30 tile grid, authored as declarative JSON in
+Thirty-three rooms, each a 30×30 tile grid, authored as declarative JSON in
 `js/data/maps/`. `js/data/maps/index.json` lists them; `MapLoader.compileMap()`
 turns each record into ground, collision, and decor layers at boot.
 
 | Wing | Rooms |
 |------|-------|
-| Arrival | Las Vegas Blvd, Valet & Parking, Registration Lobby |
+| Arrival | Las Vegas Blvd, Valet & Parking, Mandalay Bay Tram Station, Registration Lobby |
 | Casino | Casino Floor North, Casino Floor South, Race & Sports Book, High Limit Salon, Foundation Room |
 | Retail | The Shoppes at Mandalay Place, Sky Bridge, Convention Center |
-| Bars | Betty's Bar, Skyfall Lounge |
-| Hotel | Hotel Tower, Guest Corridor, Room 24-118, Delano Wing, Bathhouse & Spa |
-| Pool | Mandalay Beach, Cabana Row, Beach Club, Moonlight Rave Stage |
-| Attractions | Shark Reef Tunnel, Shark Reef Exhibit, House of Blues, HOB Green Room, ULTRA Arena |
-| Back of house | Staff Corridor |
+| Food & drink | Betty's Bar, Skyfall Lounge, Minus5 Icebar, Restaurant Row |
+| Hotel | Tower Elevator Lobby, Guest Floor Corridor, Your Room, Delano Wing, Bathhouse Spa |
+| Pool | Mandalay Beach, Cabanas & Hot Tubs, The Lazy River, Moorea Beach Club, Moonlight Rave Stage |
+| Attractions | Shark Reef Tunnel, Shark Reef Exhibit Hall, House of Blues, HOB Green Room, Michael Jackson ONE Theatre, ULTRA Arena Concourse |
+| Back of house | Back of House |
 
 ### Map record schema
 
@@ -181,10 +220,20 @@ RPG still boots into a nine-map procedural world rather than a black screen.
 
 ## 4. Pokémon-style systems
 
-**START menu** (`Esc`, `X`, or `Enter` on empty ground) — Trainer Card, Quests,
-Dex, Bag, Secrets, Rewards Phone, Off-Strip Bank, Player Stats, Staff Manifest,
-Guest Book, Resort Completion, Options, Save, Exit to Terminal. Every entry
-past the first five mounts a shared terminal screen.
+**START menu** (`Esc`, `X`, or `Enter` on empty ground) — Trainer Card,
+Wardrobe, Stakes Desk, Resort Directory, Quests, Dex, Bag, Secrets, Rewards
+Phone, Off-Strip Bank, Player Stats, Staff Manifest, Guest Book, Resort
+Completion, Options, Save, Exit to Terminal. The lower half of the list mounts
+shared terminal screens rather than reimplementing them.
+
+Three of those pages exist because the overworld alone was hiding things.
+**Wardrobe** re-opens the character creator mid-run and writes the result to the
+save slot, so an appearance chosen once at boot is not final. **Stakes Desk**
+sets the tier every table and machine preselects, which used to be reachable
+only by walking up to the right dealer. **Resort Directory** lists the rooms you
+have stood in with their exits, and the rooms you have only seen a door to as
+leads — a wing you have not found yet stays off the list rather than padding it
+with identical unknown rows.
 
 **Line-of-sight challengers** — an NPC with `sight: { dir, range }` notices you
 entering its cone, walks over, plays its `challengeDialogueId`, and drops

@@ -5,16 +5,27 @@ project:
     - index.qmd
     - play.qmd
     - rpg.qmd
+    - docs/about.md
+    - docs/access-points.md
+    - docs/casino-offerings.md
     - docs/getting-started.md
     - docs/player-guide.md
     - docs/chip-economy.md
     - docs/saves.md
     - docs/blackjack.md
+    - docs/table-games.md
     - docs/slots.md
+    - docs/lottery.md
     - docs/sportsbook.md
+    - docs/racing.md
+    - docs/hotel.md
+    - docs/pool-complex.md
+    - docs/mgm-rewards.md
+    - docs/pixel-rpg.md
     - docs/architecture.md
     - docs/adding-activities.md
     - docs/testing.md
+    - docs/rng.md
     - docs/rpg/GDD.md
     - CONTRIBUTING-POSIT.md
 
@@ -36,6 +47,20 @@ website:
         text: Play
       - href: rpg.qmd
         text: Pixel RPG
+      - text: Resort
+        menu:
+          - href: docs/about.md
+            text: About
+          - href: docs/access-points.md
+            text: Access Points
+          - href: docs/casino-offerings.md
+            text: Casino Offerings
+          - href: docs/hotel.md
+            text: Resort Hotel
+          - href: docs/pool-complex.md
+            text: Pool Complex
+          - href: docs/mgm-rewards.md
+            text: MGM Rewards
       - text: Player Guides
         menu:
           - href: docs/getting-started.md
@@ -48,10 +73,16 @@ website:
             text: Save Slots
           - href: docs/blackjack.md
             text: Blackjack
+          - href: docs/table-games.md
+            text: Table Games
           - href: docs/slots.md
             text: Slot Machines
+          - href: docs/lottery.md
+            text: Lottery Counter
           - href: docs/sportsbook.md
             text: Sports Book
+          - href: docs/racing.md
+            text: Racing & Equestrian
       - text: Developer
         menu:
           - href: docs/architecture.md
@@ -60,6 +91,10 @@ website:
             text: Adding Activities
           - href: docs/testing.md
             text: Testing
+          - href: docs/rng.md
+            text: RNG & Fairness
+          - href: docs/pixel-rpg.md
+            text: Pixel RPG Simulator
           - href: docs/rpg/GDD.md
             text: Pixel RPG GDD
           - href: CONTRIBUTING-POSIT.md
@@ -74,6 +109,8 @@ website:
         aria-label: GitHub profile Exios66
       - text: Live Game
         href: https://exios66.github.io/degen-llms/
+      - text: Wiki
+        href: https://github.com/Exios66/degen-llms/wiki
   page-footer:
     left: "The Mandalay Bay · degen-llms · Jack J. Burleson"
     right:
@@ -93,6 +130,14 @@ website:
           - index.qmd
           - play.qmd
           - rpg.qmd
+      - section: "Resort"
+        contents:
+          - docs/about.md
+          - docs/access-points.md
+          - docs/casino-offerings.md
+          - docs/hotel.md
+          - docs/pool-complex.md
+          - docs/mgm-rewards.md
       - section: "Player Guides"
         contents:
           - docs/getting-started.md
@@ -100,13 +145,18 @@ website:
           - docs/chip-economy.md
           - docs/saves.md
           - docs/blackjack.md
+          - docs/table-games.md
           - docs/slots.md
+          - docs/lottery.md
           - docs/sportsbook.md
+          - docs/racing.md
       - section: "Developer Docs"
         contents:
           - docs/architecture.md
           - docs/adding-activities.md
           - docs/testing.md
+          - docs/rng.md
+          - docs/pixel-rpg.md
           - docs/rpg/GDD.md
           - CONTRIBUTING-POSIT.md
 

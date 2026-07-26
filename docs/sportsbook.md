@@ -38,10 +38,17 @@ Binary YES/NO contracts priced in cents (Polymarket-style):
 | **Headlines & Buzz** | Award shows, viral stories |
 | **Vegas & Resort** | Strip traffic, pool attendance |
 | **Public Sentiment** | Crowd/poll swings, social buzz |
+| **History Desk** | Real historical events with fixed, deterministic resolutions |
+| **Easter Eggs** | Ludicrous scenarios — alien disclosure, buffet infinity, time-travel whales |
 
 - Buy YES @ 35¢ with 100 chips → max payout ~286 chips if YES resolves
-- Prices drift ±5¢ on refresh
+- Prices drift ±5¢ on refresh (history markets drift less)
 - **High volatility** — you can lose your entire stake
+- History markets resolve to documented truth, not random simulation
+
+### Pixel RPG
+
+Talk to **Bookie Blake** in the Race & Sports Book. He opens the board on the sports tab, or straight onto the prediction markets if you ask what's on it.
 
 ## Board
 

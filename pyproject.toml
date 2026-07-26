@@ -1,7 +1,7 @@
 [project]
 name = "degen-llms"
 version = "1.0.0"
-description = "The Mandalay Bay monorepo — digital casino CLI, web terminal, and pixel RPG"
+description = "The Mandalay Bay monorepo — digital resort simulator (CLI, web terminal, pixel RPG)"
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }

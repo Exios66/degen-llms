@@ -58,7 +58,10 @@ Assert HTTP 200, title contains “Mandalay Bay”, and body includes activity /
 
 | Surface | Host | Source |
 |---------|------|--------|
-| Interactive web terminal + RPG | GitHub Pages (`gh-pages`) | `docs/**` HTML/JS |
+| Interactive web terminal + RPG | GitHub Pages (`gh-pages` branch `/docs`) | `main/docs/**` HTML/JS |
 | Documentation manuscript | Posit Connect Cloud | Quarto (`index.qmd`, guides) |
+| GitHub Wiki | github.com/Exios66/degen-llms/wiki | `wiki/` (manual sync) |
 
 Do not replace the Pages deploy with this Quarto site — they serve different jobs.
+
+**Pages publish:** Prefer `bash .cursor/skills/gh-pages-deploy-loop/scripts/run-manual.sh`. Automatic push/schedule Actions are disabled; optional `workflow_dispatch` remains. Pages source must be **Deploy from branch → `gh-pages` → `/docs`**. The legacy `sync-gh-pages` skill is manual-only.

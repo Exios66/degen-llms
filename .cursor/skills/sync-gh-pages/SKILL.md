@@ -1,27 +1,28 @@
 ---
 name: sync-gh-pages
 description: >-
-  Legacy manual-only GitHub Pages sync. Prefer gh-pages-deploy-loop for deploy
-  tasks (12-hour schedule + manual). Use only when the user explicitly invokes
-  /sync-gh-pages or names this skill directly.
+  Legacy manual-only GitHub Pages sync. Prefer gh-pages-deploy-loop for all
+  deploy tasks. Use only when the user explicitly invokes /sync-gh-pages or
+  names this skill directly. Automatic push/schedule publish is disabled.
 disable-model-invocation: true
 ---
 
-# Sync GitHub Pages (`gh-pages`)
+# Sync GitHub Pages (`gh-pages`) — legacy
 
 Publish the full `docs/` tree from `main` to the **`gh-pages`** branch so the live site matches local casino CSS, slot skins, horse sprites, hotel/RPG assets, and worldbuilding content.
+
+**Prefer [`gh-pages-deploy-loop`](../gh-pages-deploy-loop/)** for new work.
 
 **Live URL:** https://exios66.github.io/degen-llms/
 
 ## When to use
 
-- User runs `/sync-gh-pages` or asks to deploy/publish/sync GitHub Pages
-- After large `docs/` changes and the user wants the live site updated immediately (do not wait for hourly cron)
-- User reports stale assets on the published site
+- User runs `/sync-gh-pages` or names this skill explicitly
+- Otherwise use `/gh-pages-deploy-loop`
 
 ## Required behavior
 
-1. **Run the skill wrapper** (sets `SYNC_TRIGGER=manual_run` so logs show an explicit manual run, not an automated schedule/push reaction):
+1. **Run the skill wrapper** (sets `SYNC_TRIGGER=manual_run`):
 
    ```bash
    bash .cursor/skills/sync-gh-pages/scripts/run-sync.sh
@@ -31,7 +32,6 @@ Publish the full `docs/` tree from `main` to the **`gh-pages`** branch so the li
 
 2. **Pre-flight checks**
    - Working tree must be clean on `main`, or only contain changes already committed (the script checks out `gh-pages` and will abort if local edits block checkout).
-   - `git fetch origin main gh-pages` happens inside the script.
    - Requires push access to `origin` for `main` and `gh-pages`.
 
 3. **After the run**
@@ -50,10 +50,9 @@ TIMESTAMP | trigger=manual_run | main=SHA | gh-pages=SHA | status=… | synced=y
 
 | `trigger` | Meaning |
 |-----------|---------|
-| `manual_run` | This skill or `./scripts/sync-gh-pages.sh` locally |
-| `push` | GitHub Actions after `docs/**` change on `main` |
-| `schedule` | Hourly drift check (UTC) |
+| `manual_run` | This skill, deploy-loop, or local wrapper |
 | `workflow_dispatch` | Manual run from Actions tab |
+| `push` / `schedule` | **Historical only** — automation disabled in the workflow |
 
 Build outcomes (success/failure, error codes, HTTP checks) are logged to [`logs/gh-pages-build-status.log`](../../../logs/gh-pages-build-status.log). Code reference: [`logs/README.md`](../../../logs/README.md).
 
@@ -73,5 +72,6 @@ Build outcomes (success/failure, error codes, HTTP checks) are logged to [`logs/
 
 ## Related files
 
+- [`gh-pages-deploy-loop`](../gh-pages-deploy-loop/) — **preferred** skill
 - [`scripts/sync-gh-pages.sh`](../../../scripts/sync-gh-pages.sh) — core sync logic
-- [`.github/workflows/deploy-gh-pages.yml`](../../../.github/workflows/deploy-gh-pages.yml) — automated push + hourly schedule
+- [`.github/workflows/deploy-gh-pages.yml`](../../../.github/workflows/deploy-gh-pages.yml) — `workflow_dispatch` only

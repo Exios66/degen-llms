@@ -80,7 +80,7 @@ def test_your_game_can_enter():
 
 ### Step 6: Document
 
-Add `docs/your-game.md`, link from `docs/README.md`, and add a wiki page.
+Add `docs/your-game.md`, link from `docs/README.md`, register the page in `_quarto.yml`, and add a matching wiki page.
 
 ## Wallet conventions
 
@@ -149,13 +149,15 @@ Blackjack tests inject a seeded RNG. Production always uses `secrets.SystemRando
 
 ## GitHub Pages deployment
 
+Automatic push/schedule deploy is **disabled**. Prefer the deploy-loop skill wrapper:
+
 ```bash
-./scripts/sync-gh-pages.sh      # Manual sync to gh-pages branch
-./scripts/deploy-gh-pages.sh      # Full deploy
-./scripts/verify-gh-pages-live.sh # Live verification
+bash .cursor/skills/gh-pages-deploy-loop/scripts/run-manual.sh   # Preferred
+# or: gh workflow run deploy-gh-pages.yml   # workflow_dispatch only
+./scripts/verify-gh-pages-live.sh                               # Live verification
 ```
 
-Workflow: `.github/workflows/deploy-gh-pages.yml`
+Pages source must be **Deploy from branch → `gh-pages` → `/docs`**. The legacy `sync-gh-pages` skill and raw `scripts/sync-gh-pages.sh` still work when `SYNC_TRIGGER=manual_run` is set.
 
 ## Posit Connect Cloud deployment
 

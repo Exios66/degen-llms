@@ -148,6 +148,6 @@ See [[Developer-Guide]] for plugging in new games.
 
 | Surface | Mechanism |
 |---------|-----------|
-| GitHub Pages | `docs/` → `gh-pages` via Actions or `scripts/sync-gh-pages.sh` |
+| GitHub Pages | `main/docs/` → `gh-pages` `/docs` via `gh-pages-deploy-loop` (or Actions `workflow_dispatch`) |
 | Posit Connect Cloud | `quarto render` + `scripts/publish_posit_degen_llms.py` |
 | CLI | `python3 -m mandalay_bay` (no deploy) |

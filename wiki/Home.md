@@ -51,7 +51,7 @@ See [[Access-Points]] for full details on every surface.
 
 ## Pixel RPG simulator
 
-Walk the resort in a **16-bit JRPG–style overworld** built with Phaser 3.
+Walk the resort in a **Pokémon-style pixel overworld** built with Phaser 3.
 
 - [[Pixel-RPG-Simulator]] — Maps, controls, encounters, quests, saves, and expansion roadmap
 

@@ -33,15 +33,7 @@ Every game module in `docs/js/` uses `crypto.getRandomValues()` — never `Math.
 
 ## Testing vs production
 
-Blackjack unit tests inject a **seeded RNG** for reproducibility:
-
-```python
-class SeededRandom:
-    def __init__(self, seed: int) -> None:
-        self._rng = random.Random(seed)
-```
-
-This is test-only. Production code always uses `secrets.SystemRandom()`.
+Blackjack unit tests inject a **seeded RNG** for reproducibility. This is test-only. Production code always uses `secrets.SystemRandom()`.
 
 ## Audit trail
 
@@ -50,6 +42,6 @@ The chip wallet ledger records every wager and payout with timestamps. Player St
 ## Paytable transparency
 
 - Slot paytables shown when you sit at a machine
-- Blackjack rules documented in [[Blackjack]] / `docs/blackjack.md` and in-game Casino Guide
+- Blackjack rules documented in [Blackjack](blackjack.md) and in-game Casino Guide
 - Sports odds displayed on the board before wagering
 - Prediction market prices shown at purchase time

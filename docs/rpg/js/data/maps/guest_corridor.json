@@ -71,7 +71,7 @@
         ],
         [
           24,
-          15
+          12
         ]
       ]
     }
@@ -151,6 +151,13 @@
     },
     {
       "tile": "CARPET",
+      "x": 25,
+      "y": 14,
+      "w": 3,
+      "h": 3
+    },
+    {
+      "tile": "CARPET",
       "x": 14,
       "y": 26,
       "w": 3,
@@ -182,6 +189,14 @@
       "toX": 8,
       "toY": 4,
       "message": "West elevators down to registration."
+    },
+    {
+      "x": 26,
+      "y": 15,
+      "to": "delano_wing",
+      "toX": 15,
+      "toY": 3,
+      "message": "Sky bridge to the suite wing — Delano."
     }
   ]
 }

@@ -1318,10 +1318,35 @@ body.has-touch-pad .rewards-phone-root {
   bottom: auto;
 }
 
+/* FAB is top-right: open the shell down into the playfield, not off the top. */
+body.has-touch-pad .rewards-phone {
+  top: 64px;
+  bottom: auto;
+  max-height: min(320px, calc(100vh - 140px));
+}
+
+body.has-touch-pad .rewards-toast {
+  top: 60px;
+  bottom: auto;
+}
+
+body.has-touch-pad .rewards-phone-shell {
+  max-height: inherit;
+}
+
+body.has-touch-pad .rewards-lcd {
+  max-height: min(240px, calc(100vh - 200px));
+}
+
 /* The flip phone floats over everything in the terminal build. In here it has
    to sit under the pixel panels, or its badge covers the menu's chip total. */
 body .rewards-phone-root {
   z-index: 18;
+}
+
+/* While open, stay above the map banner so LCD buttons remain tappable. */
+body .rewards-phone-root.is-open {
+  z-index: 45;
 }
 
 /* Landscape phones have no room for a tall stack. */
@@ -1389,6 +1414,8 @@ body .rewards-phone-root {
   font-family: var(--font-mono, "JetBrains Mono", monospace);
   font-size: 13px;
   line-height: 1.5;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Terminal widgets adopt the cabinet palette. */

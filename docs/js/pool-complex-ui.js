@@ -36,8 +36,7 @@ export function buildPoolRenderers(ctx) {
       : ctx.poolOverlay;
     if (!overlay) return false;
     overlay.setSession(session);
-    if (overlay.active) overlay.openZone(zoneId);
-    else overlay.open(zoneId);
+    if (!overlay.active) overlay.open(zoneId);
     return true;
   }
 
@@ -73,20 +72,12 @@ export function buildPoolRenderers(ctx) {
 
   function overlayGateway(viewName) {
     const zoneId = VIEW_TO_ZONE[viewName] || "hub";
-    if (openOverlay(zoneId)) {
-      return el("div", { className: "panel hotel-panel pool-complex-panel" }, [
-        statusBanner(),
-        banner("Mandalay Beach"),
-        chipLine(),
-        el("p", { className: "subtitle", textContent: "Pool Complex overlay" }),
-        el("p", { className: "dim", textContent: "Opening the graphic beach deck…" }),
-        el("ul", { className: "menu-list" }, [
-          menuBtn("Re-open pool complex", () => openOverlay(zoneId)),
-          menuBtn("Back", () => (viewName === "pool-complex" ? navigateTo("hotel-lobby") : navigateTo("pool-complex")), true),
-        ]),
-      ]);
-    }
-    return null;
+    if (!openOverlay(zoneId)) return null;
+    return el("div", {
+      className: "pool-overlay-host",
+      hidden: true,
+      "aria-hidden": "true",
+    });
   }
 
   function renderPoolComplexHub() {

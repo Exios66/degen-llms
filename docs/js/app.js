@@ -232,7 +232,9 @@ function openPoolComplexVisual(zoneId = "hub") {
     return false;
   }
   overlay.setSession(session);
-  overlay.open(zoneId || "hub");
+  const target = zoneId || "hub";
+  if (!overlay.active) overlay.open(target);
+  else if (target !== "hub" && overlay.zoneId !== target) overlay.openZone(target);
   return true;
 }
 

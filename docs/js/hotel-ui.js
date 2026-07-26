@@ -914,8 +914,10 @@ export function buildHotelRenderers(ctx) {
 
   function openPoolComplex(zoneId = "hub") {
     if (typeof ctx.openPoolComplexVisual === "function") {
-      if (ctx.openPoolComplexVisual(zoneId)) return;
-      pushView("pool-complex");
+      const wasActive = ctx.poolOverlay?.active;
+      const opened = ctx.openPoolComplexVisual(zoneId);
+      if (opened && !wasActive) pushView("pool-complex");
+      else if (!opened) pushView("pool-complex");
       return;
     }
     const overlay = typeof ctx.ensurePoolOverlay === "function"
@@ -927,7 +929,13 @@ export function buildHotelRenderers(ctx) {
       return;
     }
     overlay.setSession(session);
-    overlay.open(zoneId);
+    const target = zoneId || "hub";
+    if (!overlay.active) {
+      pushView("pool-complex");
+      overlay.open(target);
+    } else if (target !== "hub" && overlay.zoneId !== target) {
+      overlay.openZone(target);
+    }
   }
 
   return {

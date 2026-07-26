@@ -26,6 +26,12 @@ export const TILE = {
   PATH: 18,
   /** Dark border trim that separates one floor type from the next. */
   TRIM: 19,
+  /** Walkable floral clutter — bluebells, desert blooms, lobby posies. */
+  FLOWER: 20,
+  /** Blocking boulder / stacked-stone clutter. */
+  ROCK: 21,
+  /** Blocking lantern prop with a warm glow spill. */
+  LANTERN: 22,
 };
 
 export const TILE_SIZE = 32;
@@ -45,4 +51,6 @@ export const COLLISION = new Set([
   TILE.SCREEN,
   TILE.GLASS,
   TILE.ROPE,
+  TILE.ROCK,
+  TILE.LANTERN,
 ]);

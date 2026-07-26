@@ -90,8 +90,12 @@ on the bottom and right, then whatever pattern the surface needs. Every surface
 lights from the top left; breaking that is what makes a set of tiles look like
 it came from different games. Wide floors — lobby, carpet, felt, road, sand —
 also register three scuffed variants, and `groundTileKey()` spreads them across
-the map so a ballroom does not read as wallpaper. `EnvironmentTextures.js` can
-also map vendored PNGs under `assets/tiles/` onto the same `TILE` enum without
+the map so a ballroom does not read as wallpaper. Water registers three animated
+frames; the overworld cycles them. Neighbor-edge fringe overlays (foam, wet sand,
+path, pool) soften tile seams. Decor and characters cast soft contact shadows;
+slots, screens, and lanterns pulse. Walkable `FLOWER` clutter plus blocking
+`ROCK` / `LANTERN` props densify outdoor maps. `EnvironmentTextures.js` can also
+map vendored PNGs under `assets/tiles/` onto the same `TILE` enum without
 changing map JSON.
 
 Characters are **authored pixel grids**, not stacked rectangles: `CHAR_BODY` and

@@ -54,6 +54,29 @@
       "h": 1
     }
   ],
+  "scatter": [
+    {
+      "tile": "PLANT",
+      "mod": 13,
+      "on": [
+        "AQUA"
+      ]
+    },
+    {
+      "tile": "ROCK",
+      "mod": 16,
+      "on": [
+        "AQUA"
+      ]
+    },
+    {
+      "tile": "LANTERN",
+      "mod": 21,
+      "on": [
+        "AQUA"
+      ]
+    }
+  ],
   "clear": [
     {
       "tile": "AQUA",

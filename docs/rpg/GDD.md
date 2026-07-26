@@ -26,8 +26,8 @@ RPG inside an encounter panel. When the terminal gains a feature, the RPG gets
 it for free.
 
 The only screens the RPG draws itself are the ones that read better in-world:
-blackjack, hold'em, roulette, and the House of Blues rhythm minigame. Those are
-the battle screens.
+blackjack, hold'em, roulette, the House of Blues rhythm minigame, and the
+valet garage Strip Drive arcade cabinet. Those are the battle screens.
 
 ---
 

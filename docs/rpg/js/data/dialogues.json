@@ -570,8 +570,15 @@
     "text": "Pulling your conf now — front desk terminal has the full stay menu once you're checked in. Phone locate counts too if you already used MGM Rewards.",
     "setFlag": "met_carmen",
     "choices": [
-      { "label": "Open front desk terminal", "encounter": "hotel_front_desk", "setFlag": "hotel_tower_visit" },
-      { "label": "I'm all set", "next": "clerk_carmen_bye" }
+      {
+        "label": "Open front desk terminal",
+        "encounter": "hotel_front_desk",
+        "setFlag": "hotel_tower_visit"
+      },
+      {
+        "label": "I'm all set",
+        "next": "clerk_carmen_bye"
+      }
     ]
   },
   "clerk_carmen_room": {
@@ -579,8 +586,14 @@
     "text": "Once your reservation is located — phone or desk — your key activates. Open front desk services for your full room menu.",
     "setFlag": "hotel_tower_visit",
     "choices": [
-      { "label": "Open front desk services", "encounter": "hotel_front_desk" },
-      { "label": "Thanks", "next": "clerk_carmen_bye" }
+      {
+        "label": "Open front desk services",
+        "encounter": "hotel_front_desk"
+      },
+      {
+        "label": "Thanks",
+        "next": "clerk_carmen_bye"
+      }
     ]
   },
   "clerk_carmen_bye": {
@@ -1452,7 +1465,7 @@
   },
   "doorman_dante_tour": {
     "speaker": "Doorman Dante",
-    "text": "Straight through registration for the casino floor. Slots and the pit up north, race book west, the Shoppes and the sky bridge east. Eleven acres of pool out back and a shark tank under it all. Or walk south on the Blvd — Luxor and Excalibur open their atriums if you want the scenic route.",
+    "text": "Straight through registration for the casino floor. Slots and the pit up north, race book west, the Shoppes and the sky bridge east. Eleven acres of pool out back and a shark tank under it all.",
     "setFlag": "met_doorman_dante",
     "next": "doorman_dante_bye"
   },
@@ -1486,8 +1499,7 @@
   },
   "cab_line_carl_walk": {
     "speaker": "Cab Line Carl",
-    "text": "Walk? On the Strip? Fine — follow the gold path south. Luxor's the glowing pyramid, Excalibur's the fake castle. Still feels like a mile. The line is shorter. Barely.",
-    "setFlag": "hint_strip_walk",
+    "text": "Walk? On the Strip? Friend, the next hotel is a mile of sidewalk and two escalators away. The line is shorter than the walk. Barely.",
     "next": "cab_line_carl_bye"
   },
   "cab_line_carl_card": {
@@ -1504,6 +1516,14 @@
     "speaker": "Valet Vic",
     "text": "Level P1. Keys on the hook, cars on the ramp, and one very tired golf cart in the corner.",
     "choices": [
+      {
+        "label": "Take a car for a spin.",
+        "encounter": "vegas_strip_drive"
+      },
+      {
+        "label": "Where are the exits?",
+        "next": "valet_vic_directions"
+      },
       {
         "label": "Can I get the comped cart?",
         "next": "valet_vic_cart"
@@ -1526,12 +1546,12 @@
   },
   "valet_vic_garage": {
     "speaker": "Valet Vic",
-    "text": "Row F has a car that's been here since the Fourth of July. Nobody's asked about it. I water the dust.",
+    "text": "Row F has a coupe that's been here since the Fourth of July. Keys desk has a little Strip Drive cabinet if you want to pretend you're in traffic without the tickets.",
     "next": "valet_vic_bye"
   },
   "valet_vic_bye": {
     "speaker": "Valet Vic",
-    "text": "Elevator's east. Try not to come back down heavier than you went up."
+    "text": "Strip exit east, elevators south. Try not to come back down heavier than you went up."
   },
   "valet_vic_challenge": {
     "speaker": "Valet Vic",
@@ -1982,7 +2002,7 @@
   },
   "housekeeper_hana_delano": {
     "speaker": "Housekeeper Hana",
-    "text": "Quieter. Cleaner. East door — SUITE WING — sky bridge straight into Delano. The carpet pattern over there never repeats. Go look, then tell me I'm wrong.",
+    "text": "Quieter. Cleaner. The carpet pattern over there never repeats, and I've walked it more than anyone alive. Go look, then tell me I'm wrong.",
     "setFlag": "hint_delano_ghost",
     "next": "housekeeper_hana_bye"
   },
@@ -2755,5 +2775,52 @@
   "mead_maya_bye": {
     "speaker": "Mead Maya",
     "text": "If the jester follows you in, the first round's on the castle."
+  },
+  "valet_vic_directions": {
+    "speaker": "Valet Vic",
+    "text": "Strip ramp is east — follow the blue STRIP signs. Elevators south back up to registration. Don't wander Row F unless you like dust.",
+    "next": "valet_vic_bye"
+  },
+  "keys_desk_arcade_greet": {
+    "speaker": "Keys Desk Cabinet",
+    "text": "A battered plastic wheel sticks out of a keys-desk arcade cabinet. The marquee flickers: STRIP DRIVE — INSERT ATTENTION.",
+    "choices": [
+      {
+        "label": "Grab the wheel.",
+        "encounter": "vegas_strip_drive"
+      },
+      {
+        "label": "Leave it.",
+        "next": "keys_desk_arcade_bye"
+      }
+    ]
+  },
+  "keys_desk_arcade_bye": {
+    "speaker": "Keys Desk Cabinet",
+    "text": "The cabinet clicks once, offended, and goes back to humming neon."
+  },
+  "row_f_coupe_greet": {
+    "speaker": "Row F Coupe",
+    "text": "Dust on the hood. A faded Fourth of July sticker. The meter says unpaid since July. Nobody has claimed it.",
+    "choices": [
+      {
+        "label": "Peek inside.",
+        "next": "row_f_coupe_peek"
+      },
+      {
+        "label": "Back away.",
+        "next": "row_f_coupe_bye"
+      }
+    ]
+  },
+  "row_f_coupe_peek": {
+    "speaker": "Row F Coupe",
+    "text": "Glovebox holds a valet ticket for someone named M. Nobody, a pack of matches from Skyfall, and a note: 'back in 20.' That was months ago.",
+    "setFlag": "met_row_f_coupe",
+    "next": "row_f_coupe_bye"
+  },
+  "row_f_coupe_bye": {
+    "speaker": "Row F Coupe",
+    "text": "The coupe settles. Somewhere a drip tick-ticks onto concrete."
   }
 }

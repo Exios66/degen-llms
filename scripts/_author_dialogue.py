@@ -70,10 +70,17 @@ NODES: dict[str, dict] = {
         "speaker": "Valet Vic",
         "text": "Level P1. Keys on the hook, cars on the ramp, and one very tired golf cart in the corner.",
         "choices": [
+            {"label": "Take a car for a spin.", "encounter": "vegas_strip_drive"},
+            {"label": "Where are the exits?", "next": "valet_vic_directions"},
             {"label": "Can I get the comped cart?", "next": "valet_vic_cart"},
             {"label": "Anything worth seeing down here?", "next": "valet_vic_garage"},
             {"label": "I'll walk.", "next": "valet_vic_bye"},
         ],
+    },
+    "valet_vic_directions": {
+        "speaker": "Valet Vic",
+        "text": "Strip ramp is east — follow the blue STRIP signs. Elevators south back up to registration. Don't wander Row F unless you like dust.",
+        "next": "valet_vic_bye",
     },
     "valet_vic_cart": {
         "speaker": "Valet Vic",
@@ -83,18 +90,48 @@ NODES: dict[str, dict] = {
     },
     "valet_vic_garage": {
         "speaker": "Valet Vic",
-        "text": "Row F has a car that's been here since the Fourth of July. Nobody's asked about it. I water the dust.",
+        "text": "Row F has a coupe that's been here since the Fourth of July. Keys desk has a little Strip Drive cabinet if you want to pretend you're in traffic without the tickets.",
         "next": "valet_vic_bye",
     },
     "valet_vic_bye": {
         "speaker": "Valet Vic",
-        "text": "Elevator's east. Try not to come back down heavier than you went up.",
+        "text": "Strip exit east, elevators south. Try not to come back down heavier than you went up.",
     },
     "valet_vic_challenge": {
         "speaker": "Valet Vic",
         "text": "Hey — HEY. You're the one going upstairs with real money, aren't you. Take the cart line seriously and I'll take you seriously.",
         "reputation": {"staff": 1},
         "next": "valet_vic_greet",
+    },
+    "keys_desk_arcade_greet": {
+        "speaker": "Keys Desk Cabinet",
+        "text": "A battered plastic wheel sticks out of a keys-desk arcade cabinet. The marquee flickers: STRIP DRIVE — INSERT ATTENTION.",
+        "choices": [
+            {"label": "Grab the wheel.", "encounter": "vegas_strip_drive"},
+            {"label": "Leave it.", "next": "keys_desk_arcade_bye"},
+        ],
+    },
+    "keys_desk_arcade_bye": {
+        "speaker": "Keys Desk Cabinet",
+        "text": "The cabinet clicks once, offended, and goes back to humming neon.",
+    },
+    "row_f_coupe_greet": {
+        "speaker": "Row F Coupe",
+        "text": "Dust on the hood. A faded Fourth of July sticker. The meter says unpaid since July. Nobody has claimed it.",
+        "choices": [
+            {"label": "Peek inside.", "next": "row_f_coupe_peek"},
+            {"label": "Back away.", "next": "row_f_coupe_bye"},
+        ],
+    },
+    "row_f_coupe_peek": {
+        "speaker": "Row F Coupe",
+        "text": "Glovebox holds a valet ticket for someone named M. Nobody, a pack of matches from Skyfall, and a note: 'back in 20.' That was months ago.",
+        "setFlag": "met_row_f_coupe",
+        "next": "row_f_coupe_bye",
+    },
+    "row_f_coupe_bye": {
+        "speaker": "Row F Coupe",
+        "text": "The coupe settles. Somewhere a drip tick-ticks onto concrete.",
     },
     # ── Registration lobby ────────────────────────────────────────────────
     "bell_desk_bruno_greet": {

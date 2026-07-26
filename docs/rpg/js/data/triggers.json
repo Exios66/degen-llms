@@ -218,5 +218,41 @@
     "y": 20,
     "type": "zone_message",
     "message": "Concrete, time clocks, and a vending machine that owes everyone money."
+  },
+  {
+    "id": "valet_garage_arrival",
+    "mapId": "valet_garage",
+    "x": 24,
+    "y": 14,
+    "width": 2,
+    "height": 3,
+    "type": "zone_message",
+    "message": "Valet P1 — strip ramp east, elevators south. Vic runs the desk."
+  },
+  {
+    "id": "valet_strip_exit_approach",
+    "mapId": "valet_garage",
+    "x": 25,
+    "y": 15,
+    "type": "zone_message",
+    "message": "Ramp to Las Vegas Blvd — daylight and taxi horns ahead."
+  },
+  {
+    "id": "valet_elevator_approach",
+    "mapId": "valet_garage",
+    "x": 15,
+    "y": 25,
+    "type": "zone_message",
+    "message": "Gold elevators up to registration. Leave the keys with Vic."
+  },
+  {
+    "id": "valet_row_f",
+    "mapId": "valet_garage",
+    "x": 5,
+    "y": 20,
+    "width": 3,
+    "height": 1,
+    "type": "zone_message",
+    "message": "Row F. One coupe nobody claims. Dust keeps the receipt."
   }
 ]

@@ -81,7 +81,11 @@ export class DialogueManager {
 
     const advanceHint = document.createElement("div");
     advanceHint.className = "dialogue-advance";
-    advanceHint.textContent = "▼ Tap or press Enter / Space / E";
+    // Listing three keys a phone cannot press pushes the hint into the border
+    // on a narrow screen, for a reader who has no keyboard to use them with.
+    advanceHint.textContent = window.matchMedia?.("(pointer: coarse)")?.matches
+      ? "▼ Tap to continue"
+      : "▼ Tap or press Enter / Space / E";
     content.appendChild(advanceHint);
 
     inner.append(portraitWrap, content);

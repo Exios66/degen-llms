@@ -416,17 +416,41 @@ export function renderHud(hudRoot, saveAdapter, questManager = null) {
     </div>
     <p class="hud-hint">${controlHint()}</p>
   `;
+  trackHudHeight(hudRoot);
+}
+
+/**
+ * Publish the HUD's measured height so the room placard can sit under it.
+ *
+ * The placard used to sit at a fixed offset that assumed a one-line HUD. On a
+ * narrow window the chips bar and the control hint each wrap, the HUD grows by
+ * a line or two, and the placard landed on top of the hint.
+ */
+function trackHudHeight(hudRoot) {
+  const publish = () => {
+    const px = Math.ceil(hudRoot.getBoundingClientRect().height);
+    if (px > 0) hudRoot.parentElement?.style.setProperty("--hud-height", `${px}px`);
+  };
+  publish();
+  if (hudRoot._hudResizeObserver || typeof ResizeObserver === "undefined") return;
+  hudRoot._hudResizeObserver = new ResizeObserver(publish);
+  hudRoot._hudResizeObserver.observe(hudRoot);
 }
 
 /**
  * Naming keys a phone player cannot press only costs them a line they have to
  * read past, so each input method gets its own crib sheet.
+ *
+ * The separators are glued to the item before them, so a hint that wraps on a
+ * narrow window breaks between controls rather than orphaning a bullet at the
+ * start of the second line.
  */
 function controlHint() {
   const touch = window.matchMedia?.("(pointer: coarse)")?.matches;
-  return touch
-    ? "Tap a tile to walk · tap someone to talk · MENU for the start menu"
-    : "WASD move · Shift run · E talk · Esc menu · T trainer · P phone";
+  const items = touch
+    ? ["Tap a tile to walk", "tap someone to talk", "MENU for the start menu"]
+    : ["WASD move", "Shift run", "E talk", "Esc menu", "T trainer", "P phone"];
+  return items.join("\u00a0· ");
 }
 
 export function renderTrainerCard(root, saveAdapter, questManager, hooks = {}) {

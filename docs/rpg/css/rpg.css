@@ -158,6 +158,7 @@ body {
   line-height: 1.4;
   text-align: center;
   white-space: normal;
+  text-wrap: balance;
 }
 
 .hud-badges {
@@ -1218,6 +1219,11 @@ body {
     overflow: hidden;
     text-overflow: ellipsis;
   }
+  /* The badge count wraps the chips bar onto a third row, which costs a strip
+     of the map on a phone. It is on the trainer card either way. */
+  .hud-badges {
+    display: none;
+  }
   #game-shell.arcade-cabinet {
     border-width: 8px;
   }
@@ -1733,7 +1739,10 @@ body .rewards-phone-root {
 
 #map-banner {
   position: absolute;
-  top: 88px;
+  /* 10px is the HUD's own top offset; --hud-height is published by renderHud
+     so a HUD that wraps to two or three lines pushes the placard down with it
+     instead of having the placard land on the control hint. */
+  top: calc(10px + var(--hud-height, 78px) + 10px);
   left: 50%;
   /* Below the panels (20) and the trainer card (25): a room placard should
      never land on top of a menu the player just opened. */

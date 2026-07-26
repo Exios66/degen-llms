@@ -3,7 +3,7 @@
     {
       "id": "doorman_dante",
       "name": "Doorman Dante",
-      "x": 15,
+      "x": 18,
       "y": 6,
       "sprite": "npc_red",
       "dialogueId": "doorman_dante_greet",
@@ -195,7 +195,7 @@
           "y": 19
         },
         "dusk": {
-          "x": 15,
+          "x": 18,
           "y": 6
         },
         "late": {
@@ -207,7 +207,7 @@
     {
       "id": "high_limit_host",
       "name": "High Limit Host",
-      "x": 15,
+      "x": 12,
       "y": 5,
       "sprite": "npc_gold",
       "dialogueId": "high_limit_host_greet",

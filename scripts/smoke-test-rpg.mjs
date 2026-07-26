@@ -255,7 +255,7 @@ check(dealerIds.size > 0, "dealers.js exported no dealers");
     const h = fontSize + 14;
     return { x0: cx - w / 2, x1: cx + w / 2, y0: cy - h / 2, y1: cy + h / 2 };
   };
-  const npcBox = (npc, x, y) => {
+  const spriteBox = (npc, x, y) => {
     const prop = NPC_PROPS[npc.id];
     const cx = x * TILE_SIZE + TILE_SIZE / 2;
     if (prop) {
@@ -268,6 +268,21 @@ check(dealerIds.size > 0, "dealers.js exported no dealers");
     const cy = y * TILE_SIZE + TILE_SIZE / 2 - FOOT_DROP;
     return { x0: cx - w / 2, x1: cx + w / 2, y0: cy - h / 2, y1: cy + h / 2 };
   };
+  // The name plate floating over each NPC, which sits above signs as well.
+  const plateBox = (npc, x, y) => {
+    const shown = npc.zone ? npc.name : String(npc.name ?? "").split(" ").pop();
+    const plateFont = Math.max(7, Math.round(TILE_SIZE * (npc.zone ? 0.26 : 0.3)));
+    const w = shown.length * plateFont + 16;
+    const h = plateFont + 12;
+    const sprite = spriteBox(npc, x, y);
+    const cy = sprite.y0 - 6;
+    return {
+      x0: x * TILE_SIZE + TILE_SIZE / 2 - w / 2,
+      x1: x * TILE_SIZE + TILE_SIZE / 2 + w / 2,
+      y0: cy - h / 2,
+      y1: cy + h / 2,
+    };
+  };
   const overlaps = (a, b) => a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1;
 
   let signCount = 0;
@@ -275,12 +290,20 @@ check(dealerIds.size > 0, "dealers.js exported no dealers");
     const signs = getMapDefinition(mapId).signs ?? MAP_ZONE_SIGNS[mapId] ?? [];
     signCount += signs.length;
     for (const sign of signs) {
+      // The camera clamps at the map edge, so walking to the north wall puts
+      // the top rows behind the chips banner and the control hints, which are
+      // on screen the whole time.
+      check(sign.y >= 3.2,
+        `${mapId}: sign "${sign.text}" at y=${sign.y} sits behind the HUD banner`);
       const box = signBox(sign);
       for (const npc of getNpcsForMap(mapId)) {
         for (let phase = 0; phase < 4; phase += 1) {
           const pos = resolveNpcPosition(npc, 720, phase);
-          check(!overlaps(box, npcBox(npc, pos.x, pos.y)),
+          check(!overlaps(box, spriteBox(npc, pos.x, pos.y)),
             `${mapId}: sign "${sign.text}" is covered by ${npc.id} at phase ${phase}`);
+          check(!overlaps(box, plateBox(npc, pos.x, pos.y)),
+            `${mapId}: sign "${sign.text}" collides with ${npc.id}'s name plate ` +
+            `at phase ${phase}`);
         }
       }
     }

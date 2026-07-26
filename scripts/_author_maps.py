@@ -140,8 +140,8 @@ MAPS_SPEC: list[dict] = [
             sign(4.5, 12.5, "\u2190 VALET", **COOL_SIGN),
             sign(25.5, 12.5, "TOWER \u2192"),
             sign(15, 26.2, "BLVD \u2193", **COOL_SIGN),
-            sign(8, 3.0, "GUEST FLOOR \u2191", **COOL_SIGN),
-            sign(21, 3.0, "ROOM 24-118 \u2191"),
+            sign(8, 3.4, "GUEST FLOOR \u2191", **COOL_SIGN),
+            sign(21, 3.4, "ROOM 24-118 \u2191"),
         ],
         "clear": [
             rect("LOBBY", 14, 2, 3, 3),
@@ -196,7 +196,7 @@ MAPS_SPEC: list[dict] = [
             sign(15, 7.4, "TABLE PIT", **FELT_SIGN),
             sign(25.5, 6.6, "SLOTS"),
             sign(5, 8.6, "SPORTS", **COOL_SIGN),
-            sign(15, 2.6, "HIGH LIMIT"),
+            sign(15, 3.4, "HIGH LIMIT"),
             sign(15, 22, "LOBBY", color="#fff8e8", stroke="#8a6a28"),
             sign(26, 4.4, "SOUTH \u2192", **COOL_SIGN),
         ],
@@ -511,7 +511,7 @@ MAPS_SPEC: list[dict] = [
         ],
         "signs": [
             sign(15, 26.2, "ELEVATORS \u2193"),
-            sign(15, 1.5, "ROOM 24-118 \u2191"),
+            sign(15, 6.0, "ROOM 24-118 \u2191"),
             sign(5, 14.5, "\u2190 LOBBY", **COOL_SIGN),
             sign(24.5, 14.5, "SUITE WING \u2192"),
             sign(7, 5.5, "24-112"),
@@ -668,7 +668,7 @@ MAPS_SPEC: list[dict] = [
             points("PLANT", [(4, 5), (25, 5), (4, 25), (25, 25)]),
         ],
         "signs": [
-            sign(15, 2.4, "BEACH \u2191", **COOL_SIGN),
+            sign(15, 3.4, "BEACH \u2191", **COOL_SIGN),
             sign(25.5, 12.5, "RAVE \u2192"),
             sign(4.5, 12.5, "\u2190 LAZY RIVER", **COOL_SIGN),
         ],
@@ -838,7 +838,7 @@ MAPS_SPEC: list[dict] = [
             points("PLANT", [(4, 12), (26, 12), (4, 20), (26, 20)]),
         ],
         "signs": [
-            sign(15, 8.4, "ONE STAGE"),
+            sign(15, 7.6, "ONE STAGE"),
             sign(11, 12.4, "ORCHESTRA", **COOL_SIGN),
             sign(20, 12.4, "ORCHESTRA", **COOL_SIGN),
             sign(4.5, 12.5, "LOBBY", **COOL_SIGN),
@@ -943,9 +943,9 @@ MAPS_SPEC: list[dict] = [
         ],
         "signs": [
             sign(15, 5.4, "LAZY RIVER", **COOL_SIGN),
-            sign(15, 11.4, "TUBE RENTAL"),
-            sign(15, 2.4, "CABANAS \u2191", **COOL_SIGN),
-            sign(25.5, 12.5, "BEACH CLUB \u2192", **COOL_SIGN),
+            sign(15, 10.6, "TUBE RENTAL"),
+            sign(15, 3.4, "CABANAS \u2191", **COOL_SIGN),
+            sign(25.5, 11.0, "BEACH CLUB \u2192", **COOL_SIGN),
         ],
         "clear": [rect("PATH", 14, 2, 3, 3), rect("SAND", 25, 14, 3, 3)],
         "doors": [
@@ -981,7 +981,7 @@ MAPS_SPEC: list[dict] = [
         ],
         "signs": [
             sign(15, 6.4, "NORTHBOUND", **COOL_SIGN),
-            sign(15, 17.4, "SOUTHBOUND", **COOL_SIGN),
+            sign(15, 16.6, "SOUTHBOUND", **COOL_SIGN),
             sign(15, 26.2, "CONVENTION \u2193"),
             sign(4.5, 17.5, "\u2190 BLVD TRAM", **COOL_SIGN),
         ],
@@ -1034,7 +1034,7 @@ WINGS: dict[str, str] = {
 # NPC rosters per map. Positions are validated by scripts/smoke-test-rpg.mjs.
 NPCS: dict[str, list[dict]] = {
     "strip_sidewalk": [
-        {"id": "doorman_dante", "name": "Doorman Dante", "x": 15, "y": 6, "sprite": "npc_red",
+        {"id": "doorman_dante", "name": "Doorman Dante", "x": 18, "y": 6, "sprite": "npc_red",
          "dialogueId": "doorman_dante_greet", "direction": "down"},
         {"id": "cab_line_carl", "name": "Cab Line Carl", "x": 9, "y": 25, "sprite": "npc_silver",
          "dialogueId": "cab_line_carl_greet", "direction": "up",
@@ -1079,8 +1079,8 @@ NPCS: dict[str, list[dict]] = {
         {"id": "security_sam", "name": "Security Sam", "x": 15, "y": 6, "sprite": "npc_red",
          "dialogueId": "security_sam_greet", "direction": "down",
          "schedule": {"dawn": {"x": 11, "y": 6}, "midday": {"x": 20, "y": 19},
-                      "dusk": {"x": 15, "y": 6}, "late": {"x": 8, "y": 22}}},
-        {"id": "high_limit_host", "name": "High Limit Host", "x": 15, "y": 5, "sprite": "npc_gold",
+                      "dusk": {"x": 18, "y": 6}, "late": {"x": 8, "y": 22}}},
+        {"id": "high_limit_host", "name": "High Limit Host", "x": 12, "y": 5, "sprite": "npc_gold",
          "dialogueId": "high_limit_host_greet", "encounter": "high_limit_salon",
          "direction": "down"},
         {"id": "shop_clerk", "name": "Shop Clerk", "x": 10, "y": 22, "sprite": "npc_pink",

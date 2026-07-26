@@ -135,14 +135,14 @@
     },
     {
       "x": 8,
-      "y": 3.0,
+      "y": 3.4,
       "text": "GUEST FLOOR ↑",
       "color": "#a8e8ff",
       "stroke": "#184868"
     },
     {
       "x": 21,
-      "y": 3.0,
+      "y": 3.4,
       "text": "ROOM 24-118 ↑",
       "color": "#ffe890",
       "stroke": "#684810"

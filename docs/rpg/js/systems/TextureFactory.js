@@ -364,18 +364,26 @@ function drawVoidTile(g) {
 
 function drawRoadTile(g) {
   const w = makeWriter(g);
-  // Porte-cochère asphalt: coarse aggregate and an oil sheen, nothing more.
-  // A lane stripe used to run across every tile, which turned the whole
-  // boulevard into horizontal banding at 32px intervals.
-  w.px(0x22212a, 0, 0, 16, 16);
-  ditherWeave(w, 0, 0, 16, 16, 0x2a2933, 0x24232d);
-  w.px(0x2e2d38, 1, 1, 6, 3);
-  w.px(0x2b2a34, 9, 5, 6, 4);
-  w.px(0x1e1d26, 3, 6, 4, 1);
-  w.px(0x1e1d26, 9, 11, 5, 1);
-  w.px(0x1a1922, 4, 13, 3, 1);
-  w.px(0x35343f, 12, 2, 2, 1);
-  w.px(0x35343f, 2, 10, 2, 1);
+  // Porte-cochère asphalt. It used to sit near black, which read as a hole cut
+  // in the map beside the cream sidewalk rather than a surface you drive on;
+  // this is a real road value with aggregate in it. A lane stripe on every
+  // tile turned the boulevard into 32px banding, so paint stays on the accent.
+  w.px(0x3c3b49, 0, 0, 16, 16);
+  ditherWeave(w, 0, 0, 16, 16, 0x413f4f, 0x393845);
+  tileFrame(w, 0x3c3b49, 0x484756, 0x2f2e3a);
+  // Chips of stone catching the light, and the pits between them.
+  for (const [x, y] of [
+    [2, 1], [7, 2], [12, 1], [4, 4], [10, 5], [14, 7],
+    [1, 8], [6, 9], [11, 10], [3, 12], [8, 13], [13, 14],
+  ]) {
+    w.px(0x54535f, x, y, 1, 1);
+  }
+  for (const [x, y] of [
+    [5, 3], [9, 4], [2, 6], [13, 4], [7, 6], [12, 8],
+    [4, 11], [10, 13], [1, 14], [14, 11],
+  ]) {
+    w.px(0x2e2d39, x, y, 1, 1);
+  }
 }
 
 function drawSandTile(g) {
@@ -574,13 +582,16 @@ const FLOOR_ACCENTS = {
     w.px(0xe8c878, 7, 7, 2, 2);
     w.px(0xffe890, 7, 7, 1, 1);
   },
-  // A chipped length of lane paint and the drain it runs past.
+  // Tar seams sealing a crack, and nothing louder. Accents land on roughly one
+  // tile in five, which is often enough that anything with a recognisable
+  // shape — the storm drain and the lane paint that lived here before — lines
+  // itself up into visible diagonal rows across the boulevard.
   [TILE.ROAD]: (w) => {
-    w.px(0x8a8770, 4, 7, 8, 2);
-    w.px(0xa8a58c, 4, 7, 8, 1);
-    w.px(0x6a6752, 9, 8, 2, 1);
-    w.px(0x1a1922, 12, 12, 3, 3);
-    w.px(0x35343f, 13, 13, 1, 1);
+    w.px(0x33323e, 1, 4, 7, 1);
+    w.px(0x33323e, 7, 5, 6, 1);
+    w.px(0x33323e, 4, 11, 9, 1);
+    w.px(0x474655, 1, 4, 7, 1, 0.25);
+    w.px(0x474655, 4, 11, 9, 1, 0.25);
   },
   // Damp patch around a spa drain.
   [TILE.SPA]: (w) => {

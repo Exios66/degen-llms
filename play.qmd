@@ -16,7 +16,8 @@ Browser hub with casino floors, hotel, pool, and rewards phone.
 
 ::: {.play-card}
 ### Pixel RPG
-Twenty-eight walkable rooms that mount the terminal's own screens.
+Thirty-two walkable rooms — including a Strip overworld to Luxor and Excalibur —
+that mount the terminal's own screens.
 
 **[Launch pixel RPG →](https://exios66.github.io/degen-llms/rpg/)** · [about](rpg.qmd)
 :::

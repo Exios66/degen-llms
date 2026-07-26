@@ -645,24 +645,26 @@ function drawVoidTile(g) {
 function drawRoadTile(g) {
   const w = makeWriter(g);
   const fine = fineWriter(g);
-  // Strip asphalt under Nevada sun: warm-grey aggregate and heat shimmer.
-  // A full-width lane stripe on every tile banded the boulevard at 32px, so
-  // bleached paint lives on the occasional FLOOR_ACCENTS variant instead.
-  w.px(0x2a2824, 0, 0, 16, 16);
-  ditherWeave(w, 0, 0, 16, 16, 0x34322e, 0x2c2a26);
-  w.px(0x3e3a34, 1, 1, 6, 3);
-  w.px(0x36322e, 9, 5, 6, 4);
-  w.px(0x1e1c18, 3, 6, 4, 1);
-  w.px(0x1e1c18, 9, 11, 5, 1);
-  w.px(0x181610, 4, 13, 3, 1);
-  w.px(0x4a463e, 12, 2, 2, 1);
-  w.px(0x4a463e, 2, 10, 2, 1);
-  w.px(0x5a5448, 0, 15, 16, 1);
+  // Las Vegas Blvd asphalt: warm dusk-grey aggregate, heat shimmer, soft palm
+  // shade flecks. Lane paint lives on FLOOR_ACCENTS so the boulevard does not band.
+  w.px(0x2e2a24, 0, 0, 16, 16);
+  ditherWeave(w, 0, 0, 16, 16, 0x3a342c, 0x322c26);
+  w.px(0x464038, 1, 1, 6, 3);
+  w.px(0x3e3830, 9, 5, 6, 4);
+  w.px(0x221e18, 3, 6, 4, 1);
+  w.px(0x221e18, 9, 11, 5, 1);
+  w.px(0x1a1610, 4, 13, 3, 1);
+  w.px(0x524a40, 12, 2, 2, 1);
+  w.px(0x524a40, 2, 10, 2, 1);
+  w.px(0x6a6254, 0, 15, 16, 1);
+  // Soft palm-canopy shade + sunbaked grit.
+  w.px(0x1a2418, 2, 2, 3, 2, 0.22);
+  w.px(0x1a2418, 10, 8, 4, 2, 0.18);
   speckle(fine, 0, 0, TILE_SIZE, TILE_SIZE, [
-    [0x524e44, 0.3], [0x181610, 0.32], [0x6a6458, 0.16], [0xe8c878, 0.08],
-  ], 0.24, 151);
-  glow(fine, 16, 4, [{ r: 8, alpha: 0.05 }], 0xffd080);
-  ambientLight(fine, TILE_SIZE, TILE_SIZE, { lift: 0.1, drop: 0.05 });
+    [0x5a5244, 0.3], [0x1a1610, 0.3], [0x746858, 0.16], [0xe8c878, 0.1], [0x3a5030, 0.08],
+  ], 0.26, 151);
+  glow(fine, 16, 4, [{ r: 9, alpha: 0.06 }], 0xffd080);
+  ambientLight(fine, TILE_SIZE, TILE_SIZE, { lift: 0.11, drop: 0.05 });
 }
 
 function drawSandTile(g) {

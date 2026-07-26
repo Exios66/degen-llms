@@ -266,8 +266,8 @@
       "y": 27,
       "to": "strip_sidewalk",
       "toX": 15,
-      "toY": 4,
-      "message": "Out to the Boulevard."
+      "toY": 5,
+      "message": "Out to Las Vegas Blvd."
     },
     {
       "x": 15,

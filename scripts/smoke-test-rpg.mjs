@@ -619,10 +619,14 @@ for (const mapId of MAP_IDS) {
 // ── Casino door chain (feet tile reachability) ────────────────────────────
 {
   const chain = [
-    ["strip_sidewalk", 15, 3, "registration_lobby", 15, 26],
+    ["strip_sidewalk", 15, 2, "registration_lobby", 15, 26],
+    ["strip_sidewalk", 15, 27, "strip_luxor", 15, 3],
+    ["strip_luxor", 15, 27, "strip_excalibur", 15, 3],
+    ["strip_luxor", 2, 9, "luxor_atrium", 26, 15],
+    ["strip_excalibur", 2, 9, "excalibur_courtyard", 26, 15],
     ["registration_lobby", 15, 3, "main_resort", 15, 26],
     ["main_resort", 15, 27, "registration_lobby", 15, 4],
-    ["registration_lobby", 15, 27, "strip_sidewalk", 15, 4],
+    ["registration_lobby", 15, 27, "strip_sidewalk", 15, 5],
   ];
   for (const [from, dx, dy, to, lx, ly] of chain) {
     const doors = doorsForMap(from);

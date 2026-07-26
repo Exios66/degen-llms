@@ -2,12 +2,62 @@
   {
     "id": "strip_arrival",
     "mapId": "strip_sidewalk",
-    "x": 14,
-    "y": 20,
-    "width": 3,
+    "x": 13,
+    "y": 16,
+    "width": 4,
     "height": 1,
     "type": "zone_message",
-    "message": "Las Vegas Blvd. The porte-cochère glows gold ahead."
+    "message": "Las Vegas Blvd. Gold doors north into Mandalay — or walk south toward Luxor."
+  },
+  {
+    "id": "strip_to_luxor",
+    "mapId": "strip_sidewalk",
+    "x": 13,
+    "y": 25,
+    "width": 4,
+    "height": 1,
+    "type": "zone_message",
+    "message": "The sidewalk warms. Luxor's beam washes the next block gold."
+  },
+  {
+    "id": "strip_luxor_mid",
+    "mapId": "strip_luxor",
+    "x": 13,
+    "y": 14,
+    "width": 4,
+    "height": 1,
+    "type": "zone_message",
+    "message": "Mid-Strip. Pyramid glass west — Excalibur further south."
+  },
+  {
+    "id": "strip_excalibur_mid",
+    "mapId": "strip_excalibur",
+    "x": 13,
+    "y": 14,
+    "width": 4,
+    "height": 1,
+    "type": "zone_message",
+    "message": "Castle banners and tourist armor. Excalibur courtyard opens west."
+  },
+  {
+    "id": "luxor_atrium_lagoon",
+    "mapId": "luxor_atrium",
+    "x": 13,
+    "y": 14,
+    "width": 4,
+    "height": 1,
+    "type": "zone_message",
+    "message": "Luxor atrium lagoon. Neon hieroglyphs, free air conditioning."
+  },
+  {
+    "id": "excalibur_yard",
+    "mapId": "excalibur_courtyard",
+    "x": 13,
+    "y": 14,
+    "width": 4,
+    "height": 1,
+    "type": "zone_message",
+    "message": "Tournament yard. The drawbridge is decorative. The mead is not."
   },
   {
     "id": "registration_arrival",

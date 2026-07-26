@@ -102,11 +102,15 @@ const FRINGE_RULES = [
   { tile: TILE.CARPET, neighbor: TILE.PATH, kind: "path" },
   { tile: TILE.LOBBY, neighbor: TILE.PATH, kind: "path" },
   { tile: TILE.SAND, neighbor: TILE.PATH, kind: "path" },
+  { tile: TILE.ROAD, neighbor: TILE.PATH, kind: "path" },
+  { tile: TILE.ROAD, neighbor: TILE.LOBBY, kind: "path" },
   { tile: TILE.PATH, neighbor: TILE.CARPET, kind: "path" },
   { tile: TILE.PATH, neighbor: TILE.LOBBY, kind: "path" },
   { tile: TILE.PATH, neighbor: TILE.SAND, kind: "path" },
+  { tile: TILE.PATH, neighbor: TILE.ROAD, kind: "path" },
   { tile: TILE.CARPET, neighbor: TILE.LOBBY, kind: "path" },
   { tile: TILE.LOBBY, neighbor: TILE.CARPET, kind: "path" },
+  { tile: TILE.LOBBY, neighbor: TILE.ROAD, kind: "path" },
 ];
 
 const FRINGE_DIRS = [

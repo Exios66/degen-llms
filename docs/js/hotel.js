@@ -409,6 +409,10 @@ export function lateCheckout(session, rewardsTracker) {
   if (hotel.lateCheckoutUsed) {
     return { ok: false, message: "You already negotiated late checkout." };
   }
+  if (session.bank?.hasPerk?.("late_checkout_credit") && session.bank.consumePerk("late_checkout_credit")) {
+    hotel.lateCheckoutUsed = true;
+    return { ok: true, message: "Carmen honors your offshore late-checkout credit. Two extra hours." };
+  }
   if (isNetPositive(session)) {
     hotel.lateCheckoutUsed = true;
     return { ok: true, message: "Carmen comps an extra two hours. The minibar sensor sleeps." };
@@ -418,7 +422,7 @@ export function lateCheckout(session, rewardsTracker) {
     hotel.lateCheckoutUsed = true;
     return { ok: true, message: `Paid ${fmtChips(cost)} for two extra hours. Worth it.` };
   }
-  return { ok: false, message: `Need ${fmtChips(cost)} or net-positive floor status.` };
+  return { ok: false, message: `Need ${fmtChips(cost)}, net-positive floor status, or an offshore late-checkout credit.` };
 }
 
 const WAKE_UP_ALARMS = [

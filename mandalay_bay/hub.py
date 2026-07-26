@@ -8,7 +8,8 @@ from mandalay_bay.chips import ChipTransaction
 from mandalay_bay.display import TerminalUI, fmt_chips
 from mandalay_bay.help_text import SECTIONS
 from mandalay_bay.bank_account import (
-    OUTSIDE_EXPENSE_CATEGORIES,
+    BANK_RESORT_PURCHASES,
+    OUTSIDE_EXPENSE_GROUPS,
     BankTransaction,
     buy_in_for_session,
     cash_out_to_bank,
@@ -16,7 +17,9 @@ from mandalay_bay.bank_account import (
     expense_category_label,
     fund_bank_from_outside,
     pay_bank_expense,
+    purchase_bank_resort_item,
     rename_bank_account,
+    resort_purchase_available,
 )
 from mandalay_bay.chip_limits import (
     BUY_CHIPS_MAX,
@@ -237,16 +240,91 @@ def _show_bank_ledger(session: PlayerSession, ui: TerminalUI) -> None:
         )
 
 
+def _run_bank_expense_tree(session: PlayerSession, ui: TerminalUI) -> None:
+    bank = ensure_bank(session)
+    if bank.balance <= 0:
+        ui.error("Your bank account is empty.")
+        return
+    group_labels = [str(g["label"]) for g in OUTSIDE_EXPENSE_GROUPS]
+    group_choice = ui.menu_choice(group_labels, title="Expense branch:")
+    if group_choice == 0:
+        return
+    group = OUTSIDE_EXPENSE_GROUPS[group_choice - 1]
+    categories = group["categories"]
+    cat_labels = [label for _, label in categories]
+    ui.dim(str(group["blurb"]))
+    cat_choice = ui.menu_choice(cat_labels, title=f"{group['label']}:")
+    if cat_choice == 0:
+        return
+    category_id = categories[cat_choice - 1][0]
+    withdraw_max = bank_withdraw_max_for_session(session)
+    rewards = getattr(session, "rewards", None)
+    tier = tier_for_wagered(getattr(rewards, "lifetime_wagered", 0) or 0)
+    spend_cap = min(bank.balance, withdraw_max)
+    ui.dim(f"{tier.label} withdraw limit: ${withdraw_max:,} per transfer.")
+    amount = ui.prompt_int(
+        "Amount to spend",
+        1,
+        spend_cap,
+        default=min(100, spend_cap),
+    )
+    note = ui.prompt("Memo (optional): ").strip()
+    label = expense_category_label(category_id)
+    description = f"{label}" + (f" — {note}" if note else "")
+    outcome = pay_bank_expense(session, amount, category_id, description)
+    if outcome == "ok":
+        ui.success(f"Paid {fmt_chips(amount)} for {label}. Bank balance: {fmt_chips(bank.balance)}")
+    elif outcome == "tier_withdraw_limit":
+        ui.error(f"{tier.label} withdraw limit is ${withdraw_max:,}.")
+    else:
+        ui.error("Payment failed.")
+
+
+def _run_bank_resort_shop(session: PlayerSession, ui: TerminalUI) -> None:
+    bank = ensure_bank(session)
+    if bank.balance <= 0:
+        ui.error("Your bank account is empty.")
+        return
+    withdraw_max = bank_withdraw_max_for_session(session)
+    rewards = getattr(session, "rewards", None)
+    tier = tier_for_wagered(getattr(rewards, "lifetime_wagered", 0) or 0)
+    ui.dim(f"In-resort privileges. {tier.label} withdraw cap ${withdraw_max:,}.")
+    options = []
+    for item in BANK_RESORT_PURCHASES:
+        ok, reason = resort_purchase_available(session, item)
+        tag = f"${int(item['cost']):,}" if ok else "unavailable"
+        options.append(f"{item['label']} ({tag})")
+        ui.dim(f"  · {item['label']}: {item['blurb']}")
+    choice = ui.menu_choice(options, title="Purchase:")
+    if choice == 0:
+        return
+    item = BANK_RESORT_PURCHASES[choice - 1]
+    ok, reason = resort_purchase_available(session, item)
+    if not ok:
+        ui.error(reason or "Unavailable.")
+        return
+    outcome = purchase_bank_resort_item(session, str(item["id"]))
+    if outcome == "ok":
+        ui.success(f"Purchased {item['label']}. Bank balance: {fmt_chips(bank.balance)}")
+    elif outcome == "tier_withdraw_limit":
+        ui.error(f"{tier.label} withdraw limit is ${withdraw_max:,}.")
+    elif outcome == "insufficient":
+        ui.error("Insufficient offshore balance.")
+    else:
+        ui.error(reason or "Purchase failed.")
+
+
 def run_bank_account(session: PlayerSession, ui: TerminalUI) -> None:
     bank = ensure_bank(session)
     ui.banner(bank.account_name)
-    ui.print("Your private offshore account — cashed-out chips land here for life outside the casino.")
+    ui.print("Your private offshore account — park winnings, pay life & business costs, or buy resort privileges.")
     ui.chip_line(session.wallet.balance)
     ui.print(f"Bank balance: {fmt_chips(bank.balance)}")
     choice = ui.menu_choice(
         [
             "Deposit outside funds",
-            "Pay outside expense",
+            "Life & business expenses",
+            "Buy resort privileges",
             "Rename account",
             "View bank ledger",
         ],
@@ -259,42 +337,15 @@ def run_bank_account(session: PlayerSession, ui: TerminalUI) -> None:
         fund_bank_from_outside(session, amount)
         ui.success(f"Deposited {fmt_chips(amount)}. Bank balance: {fmt_chips(bank.balance)}")
     elif choice == 2:
-        if bank.balance <= 0:
-            ui.error("Your bank account is empty.")
-        else:
-            options = [label for _, label in OUTSIDE_EXPENSE_CATEGORIES]
-            cat_choice = ui.menu_choice(options, title="Expense category:")
-            if cat_choice == 0:
-                ui.pause()
-                return
-            category_id = OUTSIDE_EXPENSE_CATEGORIES[cat_choice - 1][0]
-            withdraw_max = bank_withdraw_max_for_session(session)
-            rewards = getattr(session, "rewards", None)
-            tier = tier_for_wagered(getattr(rewards, "lifetime_wagered", 0) or 0)
-            spend_cap = min(bank.balance, withdraw_max)
-            ui.dim(f"{tier.label} withdraw limit: ${withdraw_max:,} per transfer.")
-            amount = ui.prompt_int(
-                "Amount to spend",
-                1,
-                spend_cap,
-                default=min(100, spend_cap),
-            )
-            note = ui.prompt("Memo (optional): ").strip()
-            label = expense_category_label(category_id)
-            description = f"{label}" + (f" — {note}" if note else "")
-            outcome = pay_bank_expense(session, amount, category_id, description)
-            if outcome == "ok":
-                ui.success(f"Paid {fmt_chips(amount)} for {label}. Bank balance: {fmt_chips(bank.balance)}")
-            elif outcome == "tier_withdraw_limit":
-                ui.error(f"{tier.label} withdraw limit is ${withdraw_max:,}.")
-            else:
-                ui.error("Payment failed.")
+        _run_bank_expense_tree(session, ui)
     elif choice == 3:
+        _run_bank_resort_shop(session, ui)
+    elif choice == 4:
         new_name = ui.prompt(f"Account name [{bank.account_name}]: ").strip()
         if new_name:
             rename_bank_account(session, new_name)
             ui.success(f"Account renamed to {session.bank.account_name}.")
-    elif choice == 4:
+    elif choice == 5:
         _show_bank_ledger(session, ui)
     ui.pause()
 

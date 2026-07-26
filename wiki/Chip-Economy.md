@@ -80,6 +80,19 @@ Your table stack carries across hands. Wins and losses accrue on the felt; leavi
 
 Park winnings outside the cage. Fund casino trips from external income without carrying full balance on the floor.
 
+### Offshore spend tree
+
+1. **Deposit outside funds** — symbolic personal wire ($50–$1M)
+2. **Life & business expenses**
+   - Personal lifestyle (dining, transport, shopping, lodging, entertainment)
+   - Legal & obligations (legal fees, debt repayments)
+   - Business affairs (operating expenses, contracts & retainers)
+   - Miscellaneous
+3. **Buy resort privileges** — in-world upgrades paid from offshore cash (floor floats, Betty welcome round, arcade vouchers, late-checkout credit, VIP host retainer, High Limit marker, recovery spa, lucky rail tip)
+4. **Rename account** / **View bank ledger**
+
+Expense and privilege spends respect MGM Rewards tier withdraw caps.
+
 ## Insufficient funds
 
 Activities check balance before accepting wagers:

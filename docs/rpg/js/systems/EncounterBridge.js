@@ -352,6 +352,7 @@ export class EncounterBridge {
     this.overlays = deps.overlays;
     this.terminalHost = deps.terminalHost ?? null;
     this.diningOverlay = deps.diningOverlay ?? null;
+    this.barOverlay = deps.barOverlay ?? null;
     this.poolOverlay = deps.poolOverlay ?? null;
     this.onPersist = deps.onPersist;
     this.questManager = deps.questManager ?? null;
@@ -362,6 +363,7 @@ export class EncounterBridge {
   isAnyActive() {
     if (this.terminalHost?.isActive()) return true;
     if (this.diningOverlay?.active) return true;
+    if (this.barOverlay?.active) return true;
     if (this.poolOverlay?.active) return true;
     return Object.values(this.overlays).some((o) => o?.isActive?.());
   }
@@ -423,6 +425,9 @@ export class EncounterBridge {
     if (spec.activityId === "dining" && this.diningOverlay) {
       return this._startDining(spec);
     }
+    if (spec.activityId === "bar" && this.barOverlay) {
+      return this._startBar(spec);
+    }
     if (spec.activityId === "pool_complex" && this.poolOverlay) {
       return this._startPool(spec);
     }
@@ -454,6 +459,19 @@ export class EncounterBridge {
         resolve({ net });
       });
       this.diningOverlay.open(spec.venueId ?? null);
+    });
+  }
+
+  _startBar(spec) {
+    const chipsAtOpen = this.session.wallet.balance;
+    return new Promise((resolve) => {
+      this.barOverlay.setSession(this.session);
+      this.barOverlay.onceClosed(() => {
+        const net = this.session.wallet.balance - chipsAtOpen;
+        this.onPersist();
+        resolve({ net });
+      });
+      this.barOverlay.open(spec.venueId ?? null);
     });
   }
 

@@ -39,13 +39,17 @@ check(indexHtml.includes("js/app.js"), "index.html boots app.js");
 const appJs = read("docs/js/app.js");
 check(appJs.includes("openPoolComplexVisual"), "app.js exports openPoolComplexVisual");
 check(appJs.includes("ensurePoolOverlay"), "app.js exports ensurePoolOverlay");
+check(appJs.includes("handlePoolOverlayClosed"), "pool Esc/close returns via handlePoolOverlayClosed");
 check(appJs.includes("Pool Complex — Mandalay Beach"), "hub menu lists Pool Complex");
 check(appJs.includes("POOL_LAUNCH_ZONES"), "deep-link zone map present");
 check(appJs.includes("applyDeepView"), "launch params open pool overlay");
+check(appJs.includes("function mountBarOverlay"), "bar overlay still mounted beside pool");
 
 const hotelUi = read("docs/js/hotel-ui.js");
 check(hotelUi.includes("openPoolComplexVisual") || hotelUi.includes("ensurePoolOverlay"),
   "hotel-ui opens graphic overlay");
+check(hotelUi.includes('returnView: "hotel-lobby"') || hotelUi.includes('returnView = "hotel-lobby"'),
+  "hotel pool exit targets hotel lobby");
 
 const amenitiesUi = read("docs/js/casino-amenities-ui.js");
 check(amenitiesUi.includes("Pool Complex — Mandalay Beach"), "amenities menu lists Pool Complex");

@@ -13,9 +13,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/casino.css">
-  <link rel="stylesheet" href="css/intoxication-effects.css">
-  <link rel="stylesheet" href="css/rewards-phone.css">
+  <link rel="stylesheet" href="css/casino.css?v=fb67eee">
+  <link rel="stylesheet" href="css/intoxication-effects.css?v=fb67eee">
+  <link rel="stylesheet" href="css/rewards-phone.css?v=fb67eee">
 </head>
 <body>
   <div id="app" aria-live="polite">
@@ -27,18 +27,33 @@
         </p>
       </div>
     </noscript>
-    <div class="loading-screen" id="boot-loader">
-      <div class="banner"><h1>The Mandalay Bay</h1></div>
-      <p class="subtitle">Digital Casino</p>
-      <p class="dim loading-pulse">Opening the floor&hellip;</p>
-      <p class="footer-note">Blackjack &middot; Slots &middot; Hotel &middot; Pixel RPG</p>
-      <p class="footer-note" style="margin-top:1rem;">
-        <a href="rpg/index.html" style="color:#39c5cf;">Play Pixel RPG mode &rarr;</a>
-      </p>
+    <div class="loading-screen loading-screen--cabinet" id="boot-loader">
+      <div class="cabinet-title-bezel">
+        <div class="cabinet-title-marquee">
+          <span class="cabinet-title-marquee-text">THE MANDALAY BAY</span>
+        </div>
+        <div class="cabinet-title-screen">
+          <div class="cabinet-title-felt" aria-hidden="true"></div>
+          <div class="cabinet-title-content">
+            <p class="cabinet-title-eyebrow">Welcome to</p>
+            <h1 class="cabinet-title-logo">The Mandalay Bay</h1>
+            <div class="cabinet-title-rule" aria-hidden="true"></div>
+            <p class="cabinet-title-tagline">Digital Table Games · Cabinet Edition</p>
+            <p class="cabinet-title-hint">Opening the floor&hellip;</p>
+          </div>
+        </div>
+        <div class="cabinet-title-rail" aria-hidden="true">
+          <span class="cabinet-title-rail-lamp"></span>
+          <span class="cabinet-title-rail-lamp"></span>
+          <span class="cabinet-title-rail-lamp"></span>
+          <span class="cabinet-title-rail-lamp"></span>
+          <span class="cabinet-title-rail-lamp"></span>
+        </div>
+      </div>
     </div>
   </div>
   <div id="rewards-phone" aria-live="polite"></div>
-  <script type="module" src="js/app.js"></script>
+  <script type="module" src="js/app.js?v=fb67eee"></script>
   <script>
     window.addEventListener("error", function (e) {
       var app = document.getElementById("app");

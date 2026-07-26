@@ -109,7 +109,7 @@ export function renderCharacterCreator(root, { session, onComplete, onBack, titl
 
   function refresh() {
     const palette = resolvePalette(state.appearance);
-    drawCharacterToCanvas(previewCanvas, palette, "down", 0, 4);
+    drawCharacterToCanvas(previewCanvas, palette, "down", 0, 2);
     for (const btn of archetypeRow.querySelectorAll(".character-creator__archetype")) {
       btn.classList.toggle("character-creator__archetype--active", btn.dataset.archetype === state.archetype);
     }

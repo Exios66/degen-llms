@@ -51,11 +51,11 @@ export class DialogueManager {
     portraitWrap.className = "dialogue-portrait-wrap";
     const portrait = document.createElement("canvas");
     portrait.className = "dialogue-portrait";
-    portrait.width = 56;
-    portrait.height = 77;
+    portrait.width = 64;
+    portrait.height = 88;
     portrait.setAttribute("aria-hidden", "true");
     const palette = resolveSpeakerPortrait(speaker ?? "Resort");
-    drawCharacterToCanvas(portrait, palette, "down", 0, 3);
+    drawCharacterToCanvas(portrait, palette, "down", 0, 2);
     portraitWrap.appendChild(portrait);
 
     const content = document.createElement("div");

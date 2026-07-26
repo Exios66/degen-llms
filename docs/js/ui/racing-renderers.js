@@ -2,7 +2,7 @@
 import { ACTIVITIES, signedChips } from "../core.js";
 import { fmtOddsEq, generateDressage, generateJumper, settleDressageTicket, settleJumperTicket, simulateDressage, simulateJumper } from "../equestrian.js";
 import { createRacePreview, createRaceTrackView } from "../horse-race-track.js";
-import { createHorseSpriteCanvas, getHorseSprite, getJockeySilks } from "../horse-sprites.js";
+import { assignHorseSprites, createHorseSpriteCanvas, getHorseSprite, getJockeySilks } from "../horse-sprites.js";
 import { fmtOdds as fmtRaceOdds, generateRace, getHorseNamePool, parseHorseNamesCSV, setCustomHorseNames, settleTicket, simulateRace } from "../horse_racing.js";
 import { effectiveTableStakes, formatStakeRange } from "../stakes.js";
 
@@ -48,8 +48,15 @@ export function buildRacingRenderers(ctx) {
     return card;
   }
 
+  function withHorseSpriteIds(horses) {
+    if (!horses.some((h) => !h.spriteId)) return horses;
+    const spriteIds = assignHorseSprites(horses.length, 0);
+    return horses.map((h, i) => (h.spriteId ? h : { ...h, spriteId: spriteIds[i] }));
+  }
+
   function renderHorsePaddock(horses, { selectedNumber = null, onSelect = null } = {}) {
-    return el("div", { className: "racing-paddock" }, horses.map((h) =>
+    const roster = withHorseSpriteIds(horses);
+    return el("div", { className: "racing-paddock" }, roster.map((h) =>
       horsePaddockCard(h, {
         selected: selectedNumber === h.number,
         onClick: onSelect ? () => onSelect(h.number) : null,

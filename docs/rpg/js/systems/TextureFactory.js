@@ -11,8 +11,11 @@ import {
  */
 
 const SCALE = TILE_SIZE / ART_UNIT;
-const CHAR_W = ART_UNIT;
-const CHAR_H = 22;
+/** Characters are authored at 2× the tile art unit for lapels, bow ties, and facial detail. */
+const CHAR_W = ART_UNIT * 2;
+const CHAR_H = 44;
+/** One art pixel → one texture pixel so the 32×44 grid keeps the same on-screen footprint. */
+const CHAR_SCALE = 1;
 const OUTLINE = 0x181828;
 const OUTLINE_SOFT = 0x303040;
 
@@ -565,20 +568,23 @@ export function groundTileKey(tile, x, y) {
   return variant === 0 ? `tile_${tile}` : `tile_${tile}_s${variant - 1}`;
 }
 
-const TEX_CHAR_W = CHAR_W * SCALE;
-const TEX_CHAR_H = CHAR_H * SCALE;
+const TEX_CHAR_W = CHAR_W * CHAR_SCALE;
+const TEX_CHAR_H = CHAR_H * CHAR_SCALE;
 
 // ─── Characters ──────────────────────────────────────────────────────────────
 
 /**
  * Characters are authored as pixel grids rather than stacked rectangles: one
- * character per pixel, 16 wide, read against a palette legend. The upper body
- * (rows 1-15) is separate from the legs (rows 15-21) so a walk cycle only has
- * to swap the leg block and bob the body a pixel, the way DS sprites do.
+ * character per pixel, 32 wide × 44 tall, read against a palette legend. The
+ * default silhouette is a black-tie tuxedo (lapels, bow tie, white shirt, satin
+ * trouser stripe). The upper body is separate from the legs so a walk cycle only
+ * has to swap the leg block and bob the body a pixel, the way DS sprites do.
  */
 
 const CHAR_LEGEND = (palette) => {
   const { body, mid, shade: outfit, hair, hairShade, skinLight, skinMid, skinShade } = palette;
+  const jacketHi = mix(body, 0xffffff, 0.18);
+  const satin = mix(mid, 0xffffff, 0.12);
   return {
     O: [OUTLINE, 1],
     o: [OUTLINE_SOFT, 1],
@@ -591,111 +597,187 @@ const CHAR_LEGEND = (palette) => {
     e: [0xfffaf2, 1],
     p: [OUTLINE, 1],
     c: [mix(skinMid, 0xe06878, 0.5), 1],
+    // Jacket / tuxedo body — outfit colour (tuxedo defaults to near-black).
     B: [body, 1],
     M: [mid, 1],
     D: [outfit, 1],
-    W: [mix(body, 0xffffff, 0.5), 1],
+    W: [jacketHi, 1],
     b: [shade(outfit, 0.55), 1],
+    // Satin lapel face (slightly brighter than the jacket mid).
+    R: [satin, 1],
+    r: [mix(outfit, satin, 0.45), 1],
+    // Dress shirt.
+    w: [0xf7f4ee, 1],
+    u: [0xd8d2c6, 1],
+    // Bow tie — classic black with a deep crimson knot highlight.
+    Y: [0x14141c, 1],
+    y: [0x8a2030, 1],
+    // Studs / cufflinks / buckle.
     L: [0xf4dc84, 1],
-    // Trousers stay a neutral denim so the outfit colour reads as one garment
-    // instead of tinting the whole character.
-    N: [0x46507a, 1],
-    n: [0x323a5c, 1],
-    k: [0x2a2a3a, 1],
-    K: [0x4e4e64, 1],
+    // Formal trousers (charcoal) with a satin outer stripe (A/a).
+    N: [0x1a1a28, 1],
+    n: [0x101018, 1],
+    A: [0x3a3a4e, 1],
+    a: [0x2a2a3a, 1],
+    k: [0x14141c, 1],
+    K: [0x3a3a48, 1],
     ",": [0x000000, 0.16],
     ";": [0x000000, 0.26],
   };
 };
 
-/** Head, torso and arms: grid rows 1 through 15. */
+/** Head, tuxedo torso and arms: 29 rows. */
 const CHAR_BODY = {
   down: [
-    ".....OOOOOO.....",
-    "....OhhhhhhO....",
-    "...OhGGHHHHhO...",
-    "...OHGHHHHHhO...",
-    "...OHSSSSSShO...",
-    "...OHOOSSOOhO...",
-    "...OHepSSephO...",
-    "....OcSSSScO....",
-    ".....OssssO.....",
-    "...OOOOOOOOOO...",
-    "...OMMOddOMMO...",
-    "..OMoBBBBBBoDO..",
-    "..OMoBBBBBBoDO..",
-    "..OSoBBBBBBosO..",
-    "...ObbbLLbbbO...",
+    ".............OOOOOO.............",
+    "...........OOhhhhhhOO...........",
+    "..........OhGGHHHHHhO...........",
+    ".........OHGGHHHHHHhO...........",
+    ".........OHSSSSSSSShO...........",
+    ".........OHSSSSSSSShO...........",
+    ".........OHsSSSSSSshO...........",
+    ".........OHOOSSSSOOhO...........",
+    ".........OHepSSpSehO............",
+    "..........OcSSSSScO.............",
+    "...........OssssO...............",
+    "..........OdsssdO...............",
+    "........OOOOYYYYOOOO............",
+    ".......OWMRRYyyYRRMWO...........",
+    "......OWMRRRwwwwRRRMWO..........",
+    ".....OWBBBRRwwwwRRBBBWO.........",
+    "....OWBBBBBRwwwwRBBBBBWO........",
+    "....OBBBBBBRwwwwRBBBBBBO........",
+    "....OBBBBBBRwuuwRBBBBBBO........",
+    "...OoBBBBBBBwLLwBBBBBBBoO.......",
+    "...OoBBBBBBBwLLwBBBBBBBoO.......",
+    "...OoBBBBBBBBwwBBBBBBBBoO.......",
+    "...OSBBBBBBBBwwBBBBBBBBSO.......",
+    "....OBBBBBBBBwwBBBBBBBBO........",
+    "....OBBBBBBBBwwBBBBBBBBO........",
+    "....OBBBBBBBBBuBBBBBBBBO........",
+    "....ObbbbbbbbbbbbbbbbbO.........",
+    ".....ObbbbbbbbbbbbbbbO..........",
+    "......OOOOOOOOOOOOOO............",
   ],
   up: [
-    ".....OOOOOO.....",
-    "....OhhhhhhO....",
-    "...OhGGHHHHhO...",
-    "...OHGHHHHHhO...",
-    "...OHHHHHHHhO...",
-    "...OHHHHHHHhO...",
-    "...OHHHHHhhhO...",
-    "....OhhhhhhO....",
-    ".....OhsshO.....",
-    "...OOOOOOOOOO...",
-    "...OMMMMMMMMO...",
-    "..OMoBBBBBBoDO..",
-    "..OMoBBBBBBoDO..",
-    "..OSoBBBBBBosO..",
-    "...ObbbbbbbbO...",
+    ".............OOOOOO.............",
+    "...........OOhhhhhhOO...........",
+    "..........OhGGHHHHHhO...........",
+    ".........OHGGHHHHHHhO...........",
+    ".........OHHHHHHHHhO............",
+    ".........OHHHHHHHHhO............",
+    ".........OHHHHHHHhhO............",
+    ".........OHHHHHHHhhO............",
+    "..........OhhhhhhO..............",
+    "...........OhsshO...............",
+    "...........OdssdO...............",
+    "..........OOOOOOOO..............",
+    "........OOWMMMMMMWOO............",
+    ".......OWMRRRRRRRRMWO...........",
+    "......OWMRRRRRRRRRRMWO..........",
+    ".....OWBBBRRRRRRRRBBBWO.........",
+    "....OWBBBBBRRRRRRBBBBBWO........",
+    "....OBBBBBBBBBBBBBBBBBBO........",
+    "....OBBBBBBBBBBBBBBBBBBO........",
+    "...OoBBBBBBBBBBBBBBBBBBoO.......",
+    "...OoBBBBBBBBBBBBBBBBBBoO.......",
+    "...OoBBBBBBBBBBBBBBBBBBoO.......",
+    "...OSBBBBBBBBBBBBBBBBBBSO.......",
+    "....OBBBBBBBBBBBBBBBBBBO........",
+    "....OBBBBBBBBBBBBBBBBBBO........",
+    "....OBBBBBBBBBBBBBBBBBBO........",
+    "....ObbbbbbbbbbbbbbbbbO.........",
+    ".....ObbbbbbbbbbbbbbbO..........",
+    "......OOOOOOOOOOOOOO............",
   ],
   left: [
-    ".....OOOOOO.....",
-    "....OhhhhhhO....",
-    "...OGHHHHHhhO...",
-    "...OHHHHHHhhO...",
-    "...OSSSSHHhhO...",
-    "...OOOSSSHhhO...",
-    "...OepSdSHhhO...",
-    "...OcSSdHhhO....",
-    "....OdSshhO.....",
-    "...OOOOOOOOOO...",
-    "...OMMMMMMMMO...",
-    "..OMoBBBBBBBO...",
-    "..OMoBBBBBBBO...",
-    "..OSoBBBBBBBO...",
-    "...ObbbbbbbbO...",
+    "..............OOOOOO............",
+    "............OOhhhhhhO...........",
+    "...........OGHHHHHHhO...........",
+    "..........OHHHHHHHhhO...........",
+    "..........OSSSSHHHhhO...........",
+    "..........OSSSSHHHhhO...........",
+    "..........OOOSSSHHhhO...........",
+    "..........OepSdSHHhhO...........",
+    "..........OcSSdHHhhO............",
+    "...........OdSshhO..............",
+    "...........OdssO................",
+    "..........OOOOOOO...............",
+    "........OOWMMMMMMO..............",
+    ".......OWMRRRRRRMO..............",
+    "......OWMRRRwwwwRMO.............",
+    ".....OWBBBRwwwwRRBO.............",
+    "....OWBBBBRwwwwRBBO.............",
+    "....OBBBBBRwuuwRBBO.............",
+    "....OBBBBBBwLLwBBBO.............",
+    "...OoBBBBBBwLLwBBBoO............",
+    "...OoBBBBBBBwwBBBBoO............",
+    "...OoBBBBBBBwwBBBBoO............",
+    "...OSBBBBBBBwwBBBBSO............",
+    "....OBBBBBBBwwBBBBO.............",
+    "....OBBBBBBBuBBBBBO.............",
+    "....OBBBBBBBBBBBBBO.............",
+    "....ObbbbbbbbbbbbO..............",
+    ".....ObbbbbbbbbbO...............",
+    "......OOOOOOOOOO................",
   ],
 };
 
-/** Legs, shoes and contact shadow: grid rows 15 through 21, one per frame. */
+/** Legs, satin stripe, shoes and contact shadow: 14 rows × 3 walk frames. */
 const CHAR_LEGS = [
   [
-    "...ONNNNNNNNO...",
-    "...ONNNOOnnnO...",
-    "...ONNNOOnnnO...",
-    "...OnnnOOnnnO...",
-    "...OKkkOOKkkO...",
-    "..,OOOO,,OOOO,..",
-    "....;;;;;;;;....",
+    "......ONNAAAAAANNO..............",
+    "......ONNAAAAAnnO...............",
+    "......ONNNAAAnnnO...............",
+    "......ONNNnOOnnnO...............",
+    "......ONNNnOOnnnO...............",
+    "......OnnnnOOnnnO...............",
+    "......OnnnnOOnnnO...............",
+    "......OnnnnOOnnnO...............",
+    "......OKkkkOOKkkO...............",
+    "......OKkkkOOKkkO...............",
+    ".....,OOOOO,,OOOO,..............",
+    ".....,OOOO,,,,OOOO,.............",
+    "......;;;;;;;;..................",
+    ".......;;;;;;...................",
   ],
   [
-    "...ONNNNNNNNO...",
-    "...ONNNOOnnnO...",
-    "...ONNNOOnnnO...",
-    "...OKkkOOnnnO...",
-    "........OKkkO...",
-    "..,,,,,,OOOOO,..",
-    "....;;;;;;;;....",
+    "......ONNAAAAAANNO..............",
+    "......ONNAAAAAnnO...............",
+    "......ONNNAAAnnnO...............",
+    "......ONNNnOOnnnO...............",
+    "......ONNNnOOnnnO...............",
+    "......OKkkkOOnnnO...............",
+    "......OKkkkOOnnnO...............",
+    "............OnnnO...............",
+    "............OKkkO...............",
+    "............OKkkO...............",
+    ".....,,,,,,OOOOOO,..............",
+    ".....,,,,,OOOOOOO,..............",
+    "......;;;;;;;;..................",
+    ".......;;;;;;...................",
   ],
   [
-    "...ONNNNNNNNO...",
-    "...ONNNOOnnnO...",
-    "...ONNNOOnnnO...",
-    "...OnnnOOKkkO...",
-    "...OKkkO........",
-    "..,OOOOO,,,,,,..",
-    "....;;;;;;;;....",
+    "......ONNAAAAAANNO..............",
+    "......ONNAAAAAnnO...............",
+    "......ONNNAAAnnnO...............",
+    "......ONNNnOOnnnO...............",
+    "......ONNNnOOnnnO...............",
+    "......OnnnnOOKkkO...............",
+    "......OnnnnOOKkkO...............",
+    "......OnnnO.....................",
+    "......OKkkO.....................",
+    "......OKkkO.....................",
+    ".....,OOOOOO,,,,,,..............",
+    ".....,OOOOOOO,,,,,..............",
+    "......;;;;;;;;..................",
+    ".......;;;;;;...................",
   ],
 ];
 
 const BODY_TOP = 1;
-const LEGS_TOP = 15;
+const LEGS_TOP = 30;
+
 
 const mirrorRows = (rows) => rows.map((row) => [...row].reverse().join(""));
 
@@ -734,8 +816,8 @@ export function characterGrids() {
   return {
     legend: Object.keys(CHAR_LEGEND(resolvePalette({}))),
     rowWidth: CHAR_W,
-    bodyRows: 15,
-    legRows: 7,
+    bodyRows: 29,
+    legRows: 14,
     body: CHAR_BODY_BY_DIR,
     legs: CHAR_LEGS,
   };
@@ -746,7 +828,7 @@ function drawCharacter(g, palette, dir, frame) {
 }
 
 /** Draw character to a 2D canvas (for previews and dialogue portraits). */
-export function drawCharacterToCanvas(canvas, palette, dir = "down", frame = 0, pixelScale = 3) {
+export function drawCharacterToCanvas(canvas, palette, dir = "down", frame = 0, pixelScale = 2) {
   const ctx = canvas.getContext("2d");
   const w = CHAR_W * pixelScale;
   const h = CHAR_H * pixelScale;

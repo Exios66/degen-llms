@@ -5,8 +5,12 @@
 ## Game flow
 
 ```
-Trading Floor → Filter asset / instrument → Buy contracts → Settle / expire → Wallet updated
+Trading Floor → Live ticker + sparkline → Filter asset / instrument → Buy contracts → Settle / expire → Wallet updated
 ```
+
+## Live underlying tape
+
+While on the Trading Floor, a **LIVE** scrolling ticker shows spot prices for every underlying (NYSE, commodities, crypto) derived from futures marks, plus a rotating sparkline chart. Quotes random-walk so you can see where the book is trading before you buy.
 
 ## Asset classes
 

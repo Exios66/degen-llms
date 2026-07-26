@@ -9,6 +9,7 @@ from mandalay_bay.trading_desk import (
     filter_contracts,
     load_catalog,
     settle_position,
+    underlyings_from_catalog,
 )
 
 
@@ -45,6 +46,12 @@ class TradingDeskActivity(Activity):
                 f"{len(contracts)} contracts · filter {asset_filter}/{instrument_filter} · "
                 f"{len(positions)} open"
             )
+            quotes = underlyings_from_catalog(catalog)
+            if quotes:
+                tape = "  |  ".join(
+                    f"{q['symbol']} {q['spot']:.4g}" for q in quotes[:12]
+                )
+                ui.print(f"LIVE TAPE  {tape}{' …' if len(quotes) > 12 else ''}")
             choice = ui.menu_choice(
                 [
                     "Browse / buy contracts",
@@ -52,6 +59,7 @@ class TradingDeskActivity(Activity):
                     "Filter asset class",
                     "Filter instrument",
                     "Next contract page",
+                    "Underlying quotes",
                 ],
                 title="Trading Floor:",
             )
@@ -118,6 +126,15 @@ class TradingDeskActivity(Activity):
                 filtered = filter_contracts(contracts, asset_filter, instrument_filter)
                 cursor = (cursor + page_size) % max(1, len(filtered))
                 ui.dim(f"Page cursor → {cursor}")
+                ui.pause()
+            elif choice == 6:
+                ui.print("\n--- Underlying spots (futures marks) ---")
+                for q in underlyings_from_catalog(catalog):
+                    drifted = drift_spot(float(q["spot"]))
+                    ui.info(
+                        f"{q['symbol']:6} {q['assetClass']:12} "
+                        f"{drifted:>12.4g}  — {q['underlying']}"
+                    )
                 ui.pause()
 
         if trades:

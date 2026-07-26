@@ -24,28 +24,31 @@ STAKE_TIERS: dict[str, StakeTier] = {
     "penny": StakeTier(
         id="penny",
         name="Penny & Low Limit",
-        description="Micro stakes — $1–$25 per wager.",
+        description="Micro stakes — $1 min. Tables: no max (bankroll). Slots: up to $25.",
         min_bet=1,
         max_bet=25,
     ),
     "standard": StakeTier(
         id="standard",
         name="Standard",
-        description="Main floor limits — $5–$100 per wager.",
+        description="Main floor — $5 min. Tables: no max (bankroll). Slots: up to $100.",
         min_bet=5,
         max_bet=100,
     ),
     "high_limit": StakeTier(
         id="high_limit",
         name="High Limit",
-        description="High-limit room — $25–$500 per wager.",
+        description="High-limit room — $25 min. Tables: no max (bankroll). Slots: up to $500.",
         min_bet=25,
         max_bet=500,
     ),
     "401k_contribution": StakeTier(
         id="401k_contribution",
         name="401K Contribution",
-        description=f"Average employee deferral — ${_401K_MIN:,}/mo style (${_401K_MAX:,}/yr cap).",
+        description=(
+            f"Average employee deferral — ${_401K_MIN:,} min. "
+            f"Tables: no max. Slots: up to ${_401K_MAX:,}."
+        ),
         min_bet=_401K_MIN,
         max_bet=_401K_MAX,
     ),
@@ -99,9 +102,13 @@ def effective_max_bet(tier: StakeTier, balance: int) -> int:
 
 
 def effective_table_stakes(tier: StakeTier, balance: int, *, activity_min: int = 1) -> tuple[int, int]:
-    """Min/max for table games and sports wagers at a stake tier."""
+    """Min/max for table games and sports wagers at a stake tier.
+
+    Table games have no table maximum — wager up to bankroll. Slot machines
+    still use per-tier / per-machine caps via ``effective_slot_stakes``.
+    """
     min_bet = max(activity_min, tier.min_bet)
-    max_bet = effective_max_bet(tier, balance)
+    max_bet = balance
     return min_bet, max(min_bet, max_bet)
 
 
@@ -131,9 +138,11 @@ def format_stake_range(min_bet: int, max_bet: int, *, no_cap: bool = False) -> s
 
 
 def format_tier_label(tier: StakeTier, balance: int) -> str:
-    max_bet = effective_max_bet(tier, balance)
-    no_cap = tier.max_bet is None
-    stake = format_stake_range(tier.min_bet, max_bet, no_cap=no_cap)
+    if tier.max_bet is None:
+        stake = format_stake_range(tier.min_bet, balance, no_cap=True)
+    else:
+        slot_max = effective_max_bet(tier, balance)
+        stake = f"{tier.min_bet:,}+ tables (no max) · slots to {slot_max:,}"
     return f"{tier.name} ({stake})"
 
 

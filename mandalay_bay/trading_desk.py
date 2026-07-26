@@ -38,6 +38,26 @@ def filter_contracts(
     return out
 
 
+def underlyings_from_catalog(catalog: dict[str, Any] | None = None) -> list[dict[str, Any]]:
+    """Unique underlyings with spot ≈ futures mark (for ticker / CLI quotes)."""
+    catalog = catalog or load_catalog()
+    best: dict[str, dict[str, Any]] = {}
+    for c in catalog.get("contracts") or []:
+        if c.get("instrument") != "future":
+            continue
+        sym = c["symbol"]
+        mark = float(c.get("markPrice") or 0)
+        prev = best.get(sym)
+        if prev is None or mark > float(prev["spot"]):
+            best[sym] = {
+                "symbol": sym,
+                "underlying": c.get("underlying", sym),
+                "assetClass": c.get("assetClass", "nyse"),
+                "spot": mark,
+            }
+    return sorted(best.values(), key=lambda q: (q["assetClass"], q["symbol"]))
+
+
 def entry_cost_chips(contract: dict[str, Any], qty: int = 1) -> int:
     px = float(contract.get("ask") or contract.get("markPrice") or 0)
     mult = int(contract.get("multiplier") or 1)

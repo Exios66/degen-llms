@@ -18,13 +18,15 @@ Seven floors, eleven activities, one chip wallet:
 
 Choose a tier before playing any machine or table. Each tier sets min/max wagers for the session:
 
-| Tier | Range | Notes |
-|------|-------|-------|
-| Penny & Low Limit | $1 – $25 | Micro stakes |
-| Standard | $5 – $100 | Main floor |
-| High Limit | $25 – $500 | High-limit room |
-| **401K Contribution** | **$542 – $6,500** | Avg. U.S. employee deferral |
-| **High Roller / No Limit** | **$2,500 – bankroll** | Salon stakes — no table maximum |
+| Tier | Tables | Slots | Notes |
+|------|--------|-------|-------|
+| Penny & Low Limit | $1+ (no max) | $1 – $25 | Micro stakes |
+| Standard | $5+ (no max) | $5 – $100 | Main floor |
+| High Limit | $25+ (no max) | $25 – $500 | High-limit room |
+| **401K Contribution** | **$542+ (no max)** | **$542 – $6,500** | Avg. U.S. employee deferral |
+| **High Roller / No Limit** | **$2,500 – bankroll** | **bankroll** | Salon stakes — no table maximum |
+
+Cashier: buy up to **$1,000,000** chips per purchase. Cash out to the **private offshore account** up to **$1,000,000,000** per transfer. Offshore withdraws scale with MGM Rewards (Sapphire $1M → Chairman $1B).
 
 ## Table Games
 
@@ -101,7 +103,7 @@ Thoroughbred sim with win/place/show wagering. Real horse names, strength-based 
 | Amenity | Description |
 |---------|-------------|
 | **Cashier** | Buy chips, cash out, view ledger |
-| **Off-Strip Bank Account** | Park winnings outside the cage (web) |
+| **Private Offshore Account** | Park winnings outside the cage; tiered withdraws |
 | **Casino Floor — shopping & bars** | Mandalay Place sky bridge, three bars, intoxication |
 | **Staff Manifest** | Editable dealer roster with session overrides |
 | **High Limit salon** | Chip-gated VIP tables (web) |

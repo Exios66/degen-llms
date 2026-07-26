@@ -1,7 +1,9 @@
 import { secureRandomInt } from "./core.js";
 
 const CATALOG_PATH = new URL("../data/sports_catalog.json", import.meta.url).href;
+const SCENARIOS_PATH = new URL("../data/sports_scenarios.json", import.meta.url).href;
 let catalogCache = null;
+let scenariosCache = null;
 
 export async function loadCatalog() {
   if (catalogCache) return catalogCache;
@@ -14,6 +16,49 @@ export async function loadCatalog() {
 export function loadCatalogSync(catalog) {
   catalogCache = catalog;
   return catalog;
+}
+
+export async function loadSportsScenarios() {
+  if (scenariosCache) return scenariosCache;
+  const res = await fetch(SCENARIOS_PATH);
+  if (!res.ok) throw new Error(`Failed to load sports scenarios: ${res.status}`);
+  scenariosCache = await res.json();
+  return scenariosCache;
+}
+
+export function loadSportsScenariosSync(data) {
+  scenariosCache = data;
+  return data;
+}
+
+/** Materialize a stored scenario into a live board event. */
+export function eventFromScenario(scenario, index = 0) {
+  return {
+    ...scenario,
+    eventId: `${scenario.scenarioId}-${index}-${secureRandomInt(1000, 9999)}`,
+    homeScore: 0,
+    awayScore: 0,
+    winner: null,
+    propOutcomes: {},
+    status: "scheduled",
+    settled: false,
+    live: false,
+    label: scenario.label,
+  };
+}
+
+/** Page through the stored scenario DB (wraps). Falls back to [] if empty. */
+export function boardFromScenarios(scenarioDb, cursor = 0, count = null) {
+  const scenarios = scenarioDb?.scenarios ?? [];
+  if (!scenarios.length) return { events: [], nextCursor: 0 };
+  const boardSize = count ?? scenarioDb.boardSize ?? 10;
+  const events = [];
+  let idx = ((cursor % scenarios.length) + scenarios.length) % scenarios.length;
+  for (let i = 0; i < boardSize; i += 1) {
+    events.push(eventFromScenario(scenarios[idx], i));
+    idx = (idx + 1) % scenarios.length;
+  }
+  return { events, nextCursor: idx };
 }
 
 export function getSportKeys(catalog) {
@@ -282,10 +327,27 @@ export function simulateEventOutcome(catalog, event, options = {}) {
   const sportDef = catalog.sports[event.sport];
   if (!sportDef) return event;
 
-  if (sportDef.scoringProfile?.type === "outright") {
+  if (event.eventType === "outright" || event.eventType === "futures"
+      || sportDef.scoringProfile?.type === "outright") {
     simulateOutright(catalog, event, rng);
   } else {
     simulateGameScore(catalog, event, rng);
+    // Prop outcomes for richer stored props
+    const props = event.props ?? [];
+    event.propOutcomes = event.propOutcomes ?? {};
+    for (const prop of props) {
+      if (prop.id === "both-score") {
+        event.propOutcomes[prop.id] = event.homeScore > 0 && event.awayScore > 0;
+      } else if (prop.id === "over-tds") {
+        event.propOutcomes[prop.id] = (event.homeScore + event.awayScore) > 45;
+      } else if (prop.id === "over-threes") {
+        event.propOutcomes[prop.id] = (event.homeScore + event.awayScore) > 200;
+      } else if (prop.id === "over-hrs") {
+        event.propOutcomes[prop.id] = (event.homeScore + event.awayScore) > 8;
+      } else {
+        event.propOutcomes[prop.id] = rng() < 0.5;
+      }
+    }
   }
   event.status = "final";
   event.settled = true;

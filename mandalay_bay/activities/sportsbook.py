@@ -1,23 +1,27 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
-from blackjack.rng import SECURE_RANDOM
 from mandalay_bay.activities.base import Activity, ActivityInfo
 from mandalay_bay.prediction_markets import (
     MARKET_CATEGORIES,
     PredictionMarketsState,
     category_label,
     filter_markets,
-    generate_markets,
     prediction_payout,
     refresh_market_prices,
     resolve_market,
     resolve_position,
 )
 from mandalay_bay.session import PlayerSession
-from mandalay_bay.sport_simulator import generate_board, load_catalog, simulate_event_outcome
+from mandalay_bay.sport_simulator import (
+    board_from_scenarios,
+    generate_board,
+    load_catalog,
+    load_sports_scenarios,
+    simulate_event_outcome,
+)
 from mandalay_bay.stakes import effective_table_stakes, pick_stake_tier
 
 
@@ -30,6 +34,31 @@ class BetSlip:
     odds: int
     prop_id: str | None = None
     prop_label: str | None = None
+    legs: list[BetSlip] = field(default_factory=list)
+
+
+def combine_american_odds(legs: list[int]) -> int:
+    decimal = 1.0
+    for odds in legs:
+        if odds > 0:
+            decimal *= 1 + odds / 100
+        else:
+            decimal *= 1 + 100 / abs(odds)
+    if decimal >= 2:
+        return int(round((decimal - 1) * 100))
+    return int(round(-100 / (decimal - 1)))
+
+
+def available_bet_types(event: dict[str, Any]) -> list[str]:
+    et = event.get("eventType")
+    if et == "futures":
+        return ["futures"]
+    if et == "outright":
+        return ["outright"]
+    types = ["moneyline", "spread", "total"]
+    if event.get("props"):
+        types.append("prop")
+    return types
 
 
 class SportsbookActivity(Activity):
@@ -37,12 +66,17 @@ class SportsbookActivity(Activity):
         id="sportsbook",
         name="Mandalay Sports Book",
         floor="Sports Book",
-        description="Sports wagering and prediction markets — history desk, headlines, and easter-egg YES/NO contracts.",
+        description=(
+            "125+ stored sports scenarios and prediction markets — "
+            "ML, spread, totals, props, parlays, futures."
+        ),
         min_bet=10,
     )
 
     def __init__(self) -> None:
         self._catalog = load_catalog()
+        self._scenario_db = load_sports_scenarios()
+        self._scenario_cursor = 0
         self._events: list[dict[str, Any]] = []
         self._pending: list[BetSlip] = []
         self._predictions = PredictionMarketsState()
@@ -68,6 +102,7 @@ class SportsbookActivity(Activity):
 
         session_net = 0
         bets_placed = 0
+        n_scenarios = len(self._scenario_db.get("scenarios") or [])
 
         while True:
             self._predictions.sync_markets(self._events)
@@ -76,7 +111,7 @@ class SportsbookActivity(Activity):
                     f"Sports board ({len(self._events)} events, {len(self._pending)} ticket(s))",
                     f"Prediction markets ({len(self._predictions.positions)} open)",
                     "Settle all open positions",
-                    "Refresh lines & markets",
+                    f"Next scenario slate (cursor {self._scenario_cursor}/{n_scenarios})",
                 ],
                 title="Sports Book:",
             )
@@ -96,8 +131,11 @@ class SportsbookActivity(Activity):
                 bets_placed += count
             elif choice == 4:
                 self._refresh_board(force=True)
-                self._predictions.sync_markets(self._events, force=True)
-                ui.success("Lines and prediction markets refreshed.")
+                self._predictions.next_slate(self._events)
+                ui.success(
+                    f"Next slate loaded — sports cursor {self._scenario_cursor}, "
+                    f"predictions cursor {self._predictions.scenario_cursor}."
+                )
 
         session.record_result(self.info.id, session_net, bets=bets_placed)
         ui.pause()
@@ -105,7 +143,13 @@ class SportsbookActivity(Activity):
     def _refresh_board(self, force: bool = False) -> None:
         if self._events and not force:
             return
-        self._events = generate_board(self._catalog)
+        scenarios = self._scenario_db.get("scenarios") or []
+        if scenarios:
+            self._events, self._scenario_cursor = board_from_scenarios(
+                self._scenario_db, self._scenario_cursor,
+            )
+        else:
+            self._events = generate_board(self._catalog)
 
     def _sports_board_loop(
         self,
@@ -118,17 +162,25 @@ class SportsbookActivity(Activity):
         count = 0
         while True:
             ui.print("\n--- Today's Board ---")
+            ui.dim(
+                f"Stored scenarios · cursor {self._scenario_cursor} · "
+                f"{len(self._scenario_db.get('scenarios') or [])} in book"
+            )
             for i, event in enumerate(self._events, start=1):
                 ui.print(self._format_event_line(i, event))
 
             choice = ui.menu_choice(
-                ["Place a wager", "Back"],
+                ["Place a wager", "Build parlay (2–4 legs)", "Back"],
                 title="Sports board:",
             )
-            if choice == 0 or choice == 2:
+            if choice == 0 or choice == 3:
                 break
             if choice == 1:
                 placed = self._place_wager(session, ui, wager_min, wager_max)
+                if placed:
+                    count += 1
+            elif choice == 2:
+                placed = self._place_parlay(session, ui, wager_min, wager_max)
                 if placed:
                     count += 1
         return net, count
@@ -144,7 +196,10 @@ class SportsbookActivity(Activity):
         count = 0
         while True:
             ui.print("\n--- Prediction Markets ---")
-            ui.dim("YES/NO contracts — History Desk settles to recorded truth; Easter Eggs are longshots.")
+            ui.dim(
+                "YES/NO contracts — History Desk settles to recorded truth; Easter Eggs are longshots. "
+                f"Slate cursor {self._predictions.scenario_cursor}."
+            )
             visible = filter_markets(self._predictions.markets, self._predictions.category_filter)
             if not visible:
                 visible = self._predictions.markets
@@ -157,10 +212,16 @@ class SportsbookActivity(Activity):
                 )
 
             choice = ui.menu_choice(
-                ["Buy YES/NO contract", "Filter category", "Refresh prices", "Back"],
+                [
+                    "Buy YES/NO contract",
+                    "Filter category",
+                    "Refresh prices",
+                    "Next prediction slate",
+                    "Back",
+                ],
                 title="Predictions:",
             )
-            if choice == 0 or choice == 4:
+            if choice == 0 or choice == 5:
                 break
             if choice == 1:
                 placed = self._place_prediction(session, ui, wager_min, wager_max, visible)
@@ -176,16 +237,30 @@ class SportsbookActivity(Activity):
             elif choice == 3:
                 self._predictions.markets = refresh_market_prices(self._predictions.markets)
                 ui.success("Market prices updated.")
+            elif choice == 4:
+                self._predictions.next_slate(self._events)
+                ui.success(f"Next prediction slate — cursor {self._predictions.scenario_cursor}.")
         return net, count
 
     def _format_event_line(self, index: int, event: dict[str, Any]) -> str:
         sport = event.get("sportLabel") or event["sport"]
-        if event.get("eventType") == "outright":
-            return (
-                f"  {index}) [{sport}] {event['label']}\n"
-                f"     Outright: {event['home']} {self._fmt_odds(event['homeOdds'])} | "
-                f"{event['away']} {self._fmt_odds(event['awayOdds'])}"
+        et = event.get("eventType")
+        if et in ("outright", "futures"):
+            tag = "FUTURES" if et == "futures" else "OUTRIGHT"
+            field = event.get("field") or [event["home"], event["away"]]
+            odds_map = event.get("outrightOdds") or {}
+            picks = " | ".join(
+                f"{name} {self._fmt_odds(odds_map.get(name, event.get('homeOdds', 100)))}"
+                for name in field[:4]
             )
+            return (
+                f"  {index}) [{sport} · {tag}] {event['label']}\n"
+                f"     {picks}"
+            )
+        props = event.get("props") or []
+        prop_line = ""
+        if props:
+            prop_line = "\n     Props: " + "; ".join(p["label"] for p in props[:3])
         return (
             f"  {index}) [{sport}] {event['label']}\n"
             f"     ML: {event['away']} {self._fmt_odds(event['awayOdds'])} | "
@@ -193,6 +268,7 @@ class SportsbookActivity(Activity):
             f"     Spread: {event['home']} {event['spread']:+.1f} ({self._fmt_odds(event['spreadHomeOdds'])}) | "
             f"{event['away']} {-event['spread']:+.1f} ({self._fmt_odds(event['spreadAwayOdds'])})\n"
             f"     Total: O/U {event['total']} ({self._fmt_odds(event['totalOverOdds'])})"
+            f"{prop_line}"
         )
 
     def _place_wager(
@@ -201,41 +277,47 @@ class SportsbookActivity(Activity):
         ui,
         wager_min: int,
         wager_max: int,
+        events: list[dict[str, Any]] | None = None,
     ) -> bool:
-        idx = ui.prompt_int("Event number", 1, len(self._events), default=1) - 1
-        event = self._events[idx]
-
-        if event.get("eventType") == "outright":
-            bet_types = ["Outright winner"]
-        else:
-            bet_types = ["Moneyline", "Spread", "Total (O/U)", "Game prop"]
-
-        bet_choice = ui.menu_choice(bet_types, title="Bet type:")
+        board = events or self._events
+        if not board:
+            ui.error("No events on the board.")
+            return False
+        idx = ui.prompt_int("Event number", 1, len(board), default=1) - 1
+        event = board[idx]
+        types = available_bet_types(event)
+        labels = {
+            "moneyline": "Moneyline",
+            "spread": "Spread",
+            "total": "Total (O/U)",
+            "prop": "Game prop",
+            "outright": "Outright winner",
+            "futures": "Futures contract",
+        }
+        bet_choice = ui.menu_choice([labels[t] for t in types], title="Bet type:")
         if bet_choice == 0:
             return False
+        btype = types[bet_choice - 1]
 
-        btype = "moneyline"
         team = event["home"]
-        odds = event["home_odds"]
+        odds = event.get("homeOdds", -110)
         prop_id = None
         prop_label = None
 
-        if event.get("eventType") == "outright":
-            pick = ui.menu_choice(list(event.get("field") or [event["home"], event["away"]]), title="Pick winner:")
+        if btype in ("outright", "futures"):
+            names = list(event.get("field") or [event["home"], event["away"]])
+            pick = ui.menu_choice(names, title="Pick winner:")
             if pick == 0:
                 return False
-            names = event.get("field") or [event["home"], event["away"]]
             team = names[pick - 1]
-            odds = event.get("outrightOdds", {}).get(team, event["homeOdds"])
-            btype = "outright"
-        elif bet_choice == 1:
+            odds = event.get("outrightOdds", {}).get(team, event.get("homeOdds", 100))
+        elif btype == "moneyline":
             pick = ui.menu_choice([event["away"], event["home"]], title="Pick winner:")
             if pick == 0:
                 return False
             team = event["away"] if pick == 1 else event["home"]
             odds = event["awayOdds"] if pick == 1 else event["homeOdds"]
-            btype = "moneyline"
-        elif bet_choice == 2:
+        elif btype == "spread":
             pick = ui.menu_choice(
                 [f"{event['home']} {event['spread']:+.1f}", f"{event['away']} {-event['spread']:+.1f}"],
                 title="Pick spread:",
@@ -244,21 +326,19 @@ class SportsbookActivity(Activity):
                 return False
             team = event["home"] if pick == 1 else event["away"]
             odds = event["spreadHomeOdds"] if pick == 1 else event["spreadAwayOdds"]
-            btype = "spread"
-        elif bet_choice == 3:
+        elif btype == "total":
             pick = ui.menu_choice([f"Over {event['total']}", f"Under {event['total']}"], title="Pick total:")
             if pick == 0:
                 return False
             team = "over" if pick == 1 else "under"
             odds = event["totalOverOdds"] if pick == 1 else event["totalUnderOdds"]
-            btype = "total"
         else:
             props = event.get("props") or []
             if not props:
                 ui.error("No props available for this event.")
                 return False
-            labels = [p["label"] for p in props]
-            prop_pick = ui.menu_choice(labels, title="Pick prop:")
+            prop_labels = [p["label"] for p in props]
+            prop_pick = ui.menu_choice(prop_labels, title="Pick prop:")
             if prop_pick == 0:
                 return False
             prop = props[prop_pick - 1]
@@ -267,7 +347,6 @@ class SportsbookActivity(Activity):
                 return False
             team = "yes" if side == 1 else "no"
             odds = prop["yesOdds"] if side == 1 else prop["noOdds"]
-            btype = "prop"
             prop_id = prop["id"]
             prop_label = prop["label"]
 
@@ -292,6 +371,72 @@ class SportsbookActivity(Activity):
         )
         ui.print(f"\nTicket placed: {amount:,} chips on {team} ({btype}, {self._fmt_odds(odds)})")
         self._pending.append(slip)
+        return True
+
+    def _place_parlay(
+        self,
+        session: PlayerSession,
+        ui,
+        wager_min: int,
+        wager_max: int,
+    ) -> bool:
+        games = [e for e in self._events if e.get("eventType", "game") == "game"]
+        if len(games) < 2:
+            ui.error("Need at least two game events on the board for a parlay.")
+            return False
+
+        n_legs = ui.prompt_int("Number of legs (2–4)", 2, min(4, len(games)), default=2)
+        legs: list[BetSlip] = []
+        used: set[str] = set()
+        for leg_i in range(n_legs):
+            available = [e for e in games if e["eventId"] not in used]
+            for i, event in enumerate(available, start=1):
+                ui.print(f"  {i}) {event['label']}")
+            idx = ui.prompt_int(f"Leg {leg_i + 1} event", 1, len(available), default=1) - 1
+            event = available[idx]
+            used.add(event["eventId"])
+            side = ui.menu_choice(
+                [
+                    f"ML {event['away']} ({self._fmt_odds(event['awayOdds'])})",
+                    f"ML {event['home']} ({self._fmt_odds(event['homeOdds'])})",
+                    f"Over {event['total']} ({self._fmt_odds(event['totalOverOdds'])})",
+                    f"Under {event['total']} ({self._fmt_odds(event['totalUnderOdds'])})",
+                ],
+                title=f"Leg {leg_i + 1} pick:",
+            )
+            if side == 0:
+                return False
+            if side == 1:
+                pick, odds, btype = event["away"], event["awayOdds"], "moneyline"
+            elif side == 2:
+                pick, odds, btype = event["home"], event["homeOdds"], "moneyline"
+            elif side == 3:
+                pick, odds, btype = "over", event["totalOverOdds"], "total"
+            else:
+                pick, odds, btype = "under", event["totalUnderOdds"], "total"
+            legs.append(BetSlip(event=event, bet_type=btype, pick=pick, amount=0, odds=odds))
+
+        combined = combine_american_odds([leg.odds for leg in legs])
+        amount = ui.prompt_int(
+            f"Parlay stake ({wager_min}-{wager_max})",
+            wager_min,
+            wager_max,
+            default=wager_min,
+        )
+        if not session.wallet.debit(amount, self.info.id, f"{len(legs)}-leg parlay"):
+            ui.error("Insufficient chips.")
+            return False
+
+        slip = BetSlip(
+            event=legs[0].event,
+            bet_type="parlay",
+            pick=f"{len(legs)}-leg",
+            amount=amount,
+            odds=combined,
+            legs=legs,
+        )
+        self._pending.append(slip)
+        ui.print(f"\nParlay placed: {amount:,} chips @ {self._fmt_odds(combined)}")
         return True
 
     def _place_prediction(
@@ -348,12 +493,15 @@ class SportsbookActivity(Activity):
         if self._pending:
             ui.banner("FINAL SCORES")
             for slip in self._pending:
-                event = slip.event
-                if event["eventId"] not in simulated and not event.get("settled"):
-                    simulate_event_outcome(self._catalog, event)
-                    simulated.add(event["eventId"])
+                events_to_sim = [leg.event for leg in slip.legs] if slip.bet_type == "parlay" else [slip.event]
+                for event in events_to_sim:
+                    eid = event.get("eventId") or id(event)
+                    if eid not in simulated and not event.get("settled"):
+                        simulate_event_outcome(self._catalog, event)
+                        simulated.add(eid)
+                    if slip.bet_type != "parlay":
+                        ui.print(f"\n{event['label']}: {self._score_line(event)}")
 
-                ui.print(f"\n{event['label']}: {self._score_line(event)}")
                 won, payout, reason = self._resolve_slip(slip)
                 if won:
                     session.wallet.credit(payout, self.info.id, reason)
@@ -392,11 +540,23 @@ class SportsbookActivity(Activity):
         return session_net, count
 
     def _score_line(self, event: dict[str, Any]) -> str:
-        if event.get("eventType") == "outright":
+        if event.get("eventType") in ("outright", "futures"):
             return f"Winner: {event.get('winner', 'TBD')}"
         return f"{event['away']} {event['awayScore']} — {event['home']} {event['homeScore']}"
 
     def _resolve_slip(self, slip: BetSlip) -> tuple[bool, int, str]:
+        if slip.bet_type == "parlay":
+            all_won = True
+            for leg in slip.legs:
+                won, _, reason = self._resolve_slip(leg)
+                if not won:
+                    all_won = False
+                    break
+            if not all_won:
+                return False, 0, "Parlay lost — a leg missed"
+            profit = self._profit(slip.amount, slip.odds)
+            return True, slip.amount + profit, f"Parlay cashes ({len(slip.legs)} legs)"
+
         event = slip.event
         if slip.bet_type == "moneyline":
             if event["homeScore"] == event["awayScore"]:
@@ -437,7 +597,7 @@ class SportsbookActivity(Activity):
                 return True, slip.amount + profit, f"{slip.prop_label}: {slip.pick.upper()}"
             return False, 0, f"{slip.prop_label}: {slip.pick.upper()} missed"
 
-        if slip.bet_type == "outright":
+        if slip.bet_type in ("outright", "futures"):
             if event.get("winner") == slip.pick:
                 profit = self._profit(slip.amount, slip.odds)
                 return True, slip.amount + profit, f"{slip.pick} wins"

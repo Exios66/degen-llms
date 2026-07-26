@@ -13,6 +13,7 @@ flowchart TD
     lobby --> slots[Slot Machines]
     lobby --> lottery[Lottery Counter]
     lobby --> sports[Sports Book]
+    lobby --> trading[Trading Floor]
     lobby --> racing[Racing Pavilion]
     lobby --> equestrian[Equestrian Arena]
     lobby --> cashier[Cashier]
@@ -28,6 +29,8 @@ flowchart TD
     sports --> bookMenu[Sports Book Menu]
     bookMenu --> wager[Place Wager]
     bookMenu --> settle[Settle Bets]
+    trading --> markets[Browse Contracts]
+    markets --> buy[Buy Future or Option]
 ```
 
 - **Main lobby** has no "Back" option — you are always at the root
@@ -48,23 +51,24 @@ Choose your adventure:
   2) Explore Slot Machines
   3) Explore Lottery Counter
   4) Explore Sports Book
-  5) Explore Racing Pavilion
-  6) Explore Equestrian Arena
-  7) Cashier
-  8) Player Stats
-  9) Save Game
- 10) Casino Guide
- 11) Leave Casino
+  5) Explore Trading Floor
+  6) Explore Racing Pavilion
+  7) Explore Equestrian Arena
+  8) Cashier
+  9) Player Stats
+ 10) Save Game
+ 11) Casino Guide
+ 12) Leave Casino
 ```
 
 | Option | Action |
 |--------|--------|
-| 1–6 | Enter a casino floor and pick an activity |
-| 7 | Buy/cash out chips, view ledger |
-| 8 | Session statistics per activity |
-| 9 | Manual save to your slot |
-| 10 | In-game rules and controls reference |
-| 11 | Auto-save and exit (confirmation required) |
+| 1–7 | Enter a casino floor and pick an activity |
+| 8 | Buy/cash out chips, view ledger |
+| 9 | Session statistics per activity |
+| 10 | Manual save to your slot |
+| 11 | In-game rules and controls reference |
+| 12 | Auto-save and exit (confirmation required) |
 
 Progress **auto-saves** after each floor activity and when leaving.
 
@@ -231,7 +235,7 @@ Pick 3, Pick 4, Mega draw, and scratchers. Quick pick or enter your own numbers.
 
 ## Sports Book floor
 
-Two tabs: **Sports** (moneyline, spread, totals) and **Predictions** (binary contracts). See [Sports Book](sportsbook.md).
+Two tabs: **Sports** (moneyline, spread, totals, props, futures, parlays) and **Predictions** (binary contracts). Boards page through stored scenario DBs. See [Sports Book](sportsbook.md).
 
 ```
 --- Today's Board ---
@@ -241,20 +245,27 @@ Two tabs: **Sports** (moneyline, spread, totals) and **Predictions** (binary con
   ...
 
 Sports Book:
-  1) Place a wager (2 open ticket(s))
-  2) Settle all open bets (2 ticket(s))
-  3) Refresh lines
+  1) Place sports wager
+  2) Build parlay (2–4 legs)
+  3) Settle all open positions
+  4) Next scenario slate
   0) Back
 ```
 
 ### Placing a wager
 
 1. **Event number** — pick from the board
-2. **Bet type** — Moneyline or Spread
-3. **Pick** — Team or spread side
+2. **Bet type** — Moneyline, Spread, Total, Prop, Outright, or Futures (gated by event)
+3. **Pick** — Team, side, or field member
 4. **Wager amount** — min $10 up to your balance
 
 Chips are debited immediately when the ticket is placed.
+
+---
+
+## Trading Floor
+
+Browse the stored contract catalog, filter by asset class / instrument, buy futures or options, then settle. See [Trading Floor](trading-floor.md).
 
 ### Settling bets
 

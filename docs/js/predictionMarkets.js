@@ -9,118 +9,21 @@ export const MARKET_CATEGORIES = [
   { id: "easter-eggs", label: "Easter Eggs" },
 ];
 
-const HISTORY_MARKETS = [
-  {
-    question: "Did Apollo 11 land humans on the Moon in July 1969?",
-    resolution: "yes",
-    yesPrice: 88,
-    blurb: "Neil Armstrong & Buzz Aldrin — Sea of Tranquility.",
-  },
-  {
-    question: "Did the Berlin Wall fall in 1989?",
-    resolution: "yes",
-    yesPrice: 86,
-    blurb: "November 9, 1989 — checkpoints opened overnight.",
-  },
-  {
-    question: "Did the 'Miracle on Ice' (USA over USSR) happen at Lake Placid 1980?",
-    resolution: "yes",
-    yesPrice: 84,
-    blurb: "Feb 22, 1980 — amateur US hockey shocked the Soviets.",
-  },
-  {
-    question: "Was the Titanic's maiden voyage completed successfully in 1912?",
-    resolution: "no",
-    yesPrice: 12,
-    blurb: "Struck an iceberg April 14–15, 1912; ship did not finish the crossing.",
-  },
-  {
-    question: "Did the Wright brothers achieve powered flight at Kitty Hawk in 1903?",
-    resolution: "yes",
-    yesPrice: 90,
-    blurb: "December 17, 1903 — first controlled powered airplane flight.",
-  },
-  {
-    question: "Did the Cuban Missile Crisis end with a US invasion of Cuba?",
-    resolution: "no",
-    yesPrice: 18,
-    blurb: "Resolved via naval quarantine and Soviet missile withdrawal (1962).",
-  },
-  {
-    question: "Was Shakespeare historically proven to be a woman writing under a pen name?",
-    resolution: "no",
-    yesPrice: 8,
-    blurb: "Authorship debates persist; mainstream history attributes the works to William Shakespeare.",
-  },
-  {
-    question: "Did Napoleon win the Battle of Waterloo (1815)?",
-    resolution: "no",
-    yesPrice: 15,
-    blurb: "Defeated by Wellington and Blücher — ended the Hundred Days.",
-  },
-  {
-    question: "Did the US formally enter WWII after Pearl Harbor (Dec 1941)?",
-    resolution: "yes",
-    yesPrice: 92,
-    blurb: "Congress declared war on Japan December 8, 1941.",
-  },
-  {
-    question: "Was the original Woodstock festival held in 1999?",
-    resolution: "no",
-    yesPrice: 10,
-    blurb: "Woodstock '69 — Bethel, New York. 1999 was a later revival.",
-  },
-  {
-    question: "Did the first Super Bowl take place before 1970?",
-    resolution: "yes",
-    yesPrice: 78,
-    blurb: "Super Bowl I — January 15, 1967 (Packers over Chiefs).",
-  },
-  {
-    question: "Did Prohibition in the United States end with the 21st Amendment?",
-    resolution: "yes",
-    yesPrice: 85,
-    blurb: "Ratified December 5, 1933 — repealed the 18th Amendment.",
-  },
-];
+const SCENARIOS_PATH = new URL("../data/prediction_scenarios.json", import.meta.url).href;
+let scenarioDbCache = null;
 
-const HEADLINE_TEMPLATES = [
-  "Major award show produces a surprise winner tonight?",
-  "Viral celebrity story breaks before midnight?",
-  "Streaming platform hits #1 trending globally?",
-  "Late-night monologue sparks national backlash?",
-  "A tech keynote announces a product nobody expected?",
-];
+export async function loadPredictionScenarios() {
+  if (scenarioDbCache) return scenarioDbCache;
+  const res = await fetch(SCENARIOS_PATH);
+  if (!res.ok) throw new Error(`Failed to load prediction scenarios: ${res.status}`);
+  scenarioDbCache = await res.json();
+  return scenarioDbCache;
+}
 
-const VEGAS_TEMPLATES = [
-  "Strip foot traffic exceeds weekend forecast?",
-  "Pool party attendance breaks venue record?",
-  "High-roller salon fills every seat tonight?",
-  "Fountain show crowd exceeds 10,000 viewers?",
-  "A wedding party books the entire shark-reef overlook?",
-];
-
-const SENTIMENT_TEMPLATES = [
-  "Public poll swings toward the underdog?",
-  "Social buzz peaks for the away side?",
-  "Crowd favors the under on the main event?",
-  "National sentiment shifts before kickoff?",
-];
-
-const EASTER_EGG_TEMPLATES = [
-  "A pigeon steals a $25 chip from the high-limit salon tonight?",
-  "The Mandalay Bay shark tank contains at least one shark thinking about blackjack?",
-  "Steve Harvey's survey board correctly predicts a roulette spin?",
-  "A guest tries to tip the dealer in casino points instead of chips?",
-  "The sportsbook espresso machine gains sentience and fades the public?",
-  "Someone asks if the horse-racing pavilion takes crypto pigeons?",
-  "A slot machine pays a progressive in Monopoly money (it doesn't clear)?",
-  "The volcano show apologizes to a tourist for being 'too lava'?",
-  "A craps shooter names their dice after Supreme Court justices?",
-  "An LLM writes a perfect parlay and then fades itself?",
-  "The neon 'OPEN' sign winks in Morse code spelling '7-out'?",
-  "A lottery scratcher reveals three identical philosophical questions?",
-];
+export function loadPredictionScenariosSync(data) {
+  scenarioDbCache = data;
+  return data;
+}
 
 function clampPrice(n) {
   return Math.max(5, Math.min(95, n));
@@ -134,15 +37,6 @@ function makeMarketId(prefix) {
   return `${prefix}-${secureRandomInt(10000, 99999)}`;
 }
 
-function shuffleCopy(list) {
-  const pool = [...list];
-  for (let i = pool.length - 1; i > 0; i -= 1) {
-    const j = secureRandomInt(0, i);
-    [pool[i], pool[j]] = [pool[j], pool[i]];
-  }
-  return pool;
-}
-
 function sportsPulseMarkets(events) {
   const markets = [];
   for (const event of events.slice(0, 4)) {
@@ -154,6 +48,7 @@ function sportsPulseMarkets(events) {
     const yesBase = event.homeOdds <= -130 ? 58 : event.homeOdds >= 130 ? 42 : 50;
     markets.push({
       marketId: makeMarketId("sp"),
+      scenarioId: null,
       category: "sports-pulse",
       question: `${coverSide} covers tonight?`,
       yesPrice: yesBase,
@@ -167,6 +62,7 @@ function sportsPulseMarkets(events) {
     const yes = clampPrice(48 + secureRandomInt(-8, 8));
     markets.push({
       marketId: makeMarketId("sp"),
+      scenarioId: null,
       category: "sports-pulse",
       question: `Total goes over ${event.total} in ${event.label}?`,
       yesPrice: yes,
@@ -181,60 +77,43 @@ function sportsPulseMarkets(events) {
   return markets;
 }
 
-function historyMarkets(count = 4) {
-  return shuffleCopy(HISTORY_MARKETS).slice(0, count).map((item) => {
-    const yes = clampPrice(item.yesPrice + secureRandomInt(-4, 4));
-    return {
-      marketId: makeMarketId("hx"),
-      category: "history",
-      question: item.question,
+/** Page through the stored prediction scenario DB. */
+export function pageFromScenarios(scenarioDb, cursor = 0, pageSize = null, events = []) {
+  const scenarios = scenarioDb?.scenarios ?? [];
+  const size = pageSize ?? scenarioDb?.pageSize ?? 20;
+  const pulse = sportsPulseMarkets(events);
+  const staticCount = Math.max(0, size - pulse.length);
+  if (!scenarios.length) {
+    return { markets: pulse.slice(0, size), nextCursor: 0 };
+  }
+  const markets = [...pulse];
+  let idx = ((cursor % scenarios.length) + scenarios.length) % scenarios.length;
+  for (let i = 0; i < staticCount; i += 1) {
+    const s = scenarios[idx];
+    const yes = clampPrice(s.yesPrice + secureRandomInt(-2, 2));
+    markets.push({
+      marketId: makeMarketId(s.scenarioId ?? "sc"),
+      scenarioId: s.scenarioId,
+      category: s.category,
+      question: s.question,
       yesPrice: yes,
       noPrice: 100 - yes,
-      volume: secureRandomInt(4000, 40000),
-      linkedEventId: null,
+      volume: s.volume ?? secureRandomInt(2000, 30000),
+      linkedEventId: s.linkedEventId ?? null,
       resolution: null,
-      fixedResolution: item.resolution,
-      blurb: item.blurb ?? null,
-    };
-  });
-}
-
-function templateMarkets(category, templates, prefix, count = 3) {
-  const picked = [];
-  const pool = [...templates];
-  while (pool.length && picked.length < count) {
-    const idx = secureRandomInt(0, pool.length - 1);
-    picked.push(pool.splice(idx, 1)[0]);
+      fixedResolution: s.fixedResolution ?? null,
+      blurb: s.blurb ?? null,
+    });
+    idx = (idx + 1) % scenarios.length;
   }
-  return picked.map((question) => {
-    const yesPrice = category === "easter-eggs"
-      ? clampPrice(8 + secureRandomInt(0, 22))
-      : clampPrice(35 + secureRandomInt(0, 30));
-    return {
-      marketId: makeMarketId(prefix),
-      category,
-      question,
-      yesPrice,
-      noPrice: 100 - yesPrice,
-      volume: secureRandomInt(1200, 25000),
-      linkedEventId: null,
-      resolution: null,
-      fixedResolution: null,
-      blurb: null,
-    };
-  });
+  return { markets: markets.slice(0, size), nextCursor: idx };
 }
 
-export function generateMarkets(events = []) {
-  const markets = [
-    ...sportsPulseMarkets(events),
-    ...historyMarkets(4),
-    ...templateMarkets("headlines", HEADLINE_TEMPLATES, "hb", 2),
-    ...templateMarkets("vegas", VEGAS_TEMPLATES, "vg", 2),
-    ...templateMarkets("sentiment", SENTIMENT_TEMPLATES, "ps", 2),
-    ...templateMarkets("easter-eggs", EASTER_EGG_TEMPLATES, "ee", 4),
-  ];
-  return markets.slice(0, 20);
+export function generateMarkets(events = [], scenarioDb = null, cursor = 0) {
+  if (scenarioDb?.scenarios?.length) {
+    return pageFromScenarios(scenarioDb, cursor, scenarioDb.pageSize ?? 20, events).markets;
+  }
+  return sportsPulseMarkets(events).slice(0, 20);
 }
 
 export function refreshMarketPrices(markets) {
@@ -298,17 +177,51 @@ export class PredictionMarketsState {
     this.markets = [];
     this.positions = [];
     this.categoryFilter = "all";
+    this.scenarioDb = null;
+    this.scenarioCursor = 0;
     if (data) {
       this.markets = data.markets ?? [];
       this.positions = data.positions ?? [];
       this.categoryFilter = data.categoryFilter ?? "all";
+      this.scenarioCursor = data.scenarioCursor ?? 0;
     }
+  }
+
+  async ensureCatalog() {
+    if (!this.scenarioDb) {
+      try {
+        this.scenarioDb = await loadPredictionScenarios();
+      } catch {
+        this.scenarioDb = { pageSize: 20, scenarios: [] };
+      }
+    }
+    return this.scenarioDb;
   }
 
   syncMarkets(events, force = false) {
     if (!this.markets.length || force) {
-      this.markets = generateMarkets(events);
+      if (this.scenarioDb?.scenarios?.length) {
+        const { markets, nextCursor } = pageFromScenarios(
+          this.scenarioDb, this.scenarioCursor, this.scenarioDb.pageSize ?? 20, events,
+        );
+        this.markets = markets;
+        if (force) this.scenarioCursor = nextCursor;
+      } else {
+        this.markets = generateMarkets(events);
+      }
     }
+  }
+
+  nextSlate(events = []) {
+    if (!this.scenarioDb?.scenarios?.length) {
+      this.markets = generateMarkets(events);
+      return;
+    }
+    const { markets, nextCursor } = pageFromScenarios(
+      this.scenarioDb, this.scenarioCursor, this.scenarioDb.pageSize ?? 20, events,
+    );
+    this.markets = markets;
+    this.scenarioCursor = nextCursor;
   }
 
   refreshPrices() {
@@ -343,6 +256,7 @@ export class PredictionMarketsState {
       markets: this.markets,
       positions: this.positions,
       categoryFilter: this.categoryFilter,
+      scenarioCursor: this.scenarioCursor,
     };
   }
 

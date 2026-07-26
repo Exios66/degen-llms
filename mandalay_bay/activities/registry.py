@@ -7,6 +7,7 @@ from mandalay_bay.activities.lottery import LotteryActivity
 from mandalay_bay.activities.roulette import RouletteActivity
 from mandalay_bay.activities.slots import SlotsActivity
 from mandalay_bay.activities.sportsbook import SportsbookActivity
+from mandalay_bay.activities.trading_desk import TradingDeskActivity
 
 ALL_ACTIVITIES: list = [
     BlackjackActivity(),
@@ -16,6 +17,7 @@ ALL_ACTIVITIES: list = [
     SlotsActivity(),
     LotteryActivity(),
     SportsbookActivity(),
+    TradingDeskActivity(),
     HorseRacingActivity(),
     DressageActivity(),
     JumperActivity(),
@@ -28,6 +30,7 @@ FLOOR_ORDER = [
     "Slot Machines",
     "Lottery Counter",
     "Sports Book",
+    "Trading Floor",
     "Racing Pavilion",
     "Equestrian Arena",
 ]

@@ -8,10 +8,15 @@ from typing import Any
 from blackjack.rng import SECURE_RANDOM
 
 _CATALOG: dict[str, Any] | None = None
+_SCENARIOS: dict[str, Any] | None = None
 
 
 def catalog_path() -> Path:
     return Path(__file__).resolve().parent / "data" / "sports_catalog.json"
+
+
+def scenarios_path() -> Path:
+    return Path(__file__).resolve().parent / "data" / "sports_scenarios.json"
 
 
 def load_catalog() -> dict[str, Any]:
@@ -21,6 +26,51 @@ def load_catalog() -> dict[str, Any]:
     with catalog_path().open(encoding="utf-8") as f:
         _CATALOG = json.load(f)
     return _CATALOG
+
+
+def load_sports_scenarios() -> dict[str, Any]:
+    global _SCENARIOS
+    if _SCENARIOS is not None:
+        return _SCENARIOS
+    path = scenarios_path()
+    if not path.exists():
+        _SCENARIOS = {"boardSize": 10, "scenarios": []}
+        return _SCENARIOS
+    with path.open(encoding="utf-8") as f:
+        _SCENARIOS = json.load(f)
+    return _SCENARIOS
+
+
+def event_from_scenario(scenario: dict[str, Any], index: int = 0) -> dict[str, Any]:
+    event = dict(scenario)
+    event["eventId"] = f"{scenario.get('scenarioId', 'sc')}-{index}-{SECURE_RANDOM.randint(1000, 9999)}"
+    event["homeScore"] = 0
+    event["awayScore"] = 0
+    event["winner"] = None
+    event["propOutcomes"] = {}
+    event["status"] = "scheduled"
+    event["settled"] = False
+    event["live"] = False
+    event["label"] = scenario.get("label") or f"{scenario.get('away')} @ {scenario.get('home')}"
+    return event
+
+
+def board_from_scenarios(
+    scenario_db: dict[str, Any] | None = None,
+    cursor: int = 0,
+    count: int | None = None,
+) -> tuple[list[dict[str, Any]], int]:
+    db = scenario_db or load_sports_scenarios()
+    scenarios = db.get("scenarios") or []
+    if not scenarios:
+        return [], 0
+    board_size = count or db.get("boardSize") or 10
+    idx = cursor % len(scenarios)
+    events: list[dict[str, Any]] = []
+    for i in range(board_size):
+        events.append(event_from_scenario(scenarios[idx], i))
+        idx = (idx + 1) % len(scenarios)
+    return events, idx
 
 
 def get_sport_keys(catalog: dict[str, Any]) -> list[str]:
@@ -241,18 +291,22 @@ def _simulate_game_score(catalog: dict[str, Any], event: dict[str, Any]) -> None
 
 
 def _simulate_outright(catalog: dict[str, Any], event: dict[str, Any]) -> None:
-    sport_def = catalog["sports"][event["sport"]]
+    sport_def = catalog["sports"].get(event["sport"]) or {}
     field_names = event.get("field") or [event["home"], event["away"]]
     pool = [p for p in _participants(sport_def) if p["name"] in field_names]
-    weights = [max(1, p["powerRating"] - 1300) for p in pool]
-    total = sum(weights)
-    roll = SECURE_RANDOM.random() * total
-    winner = pool[0]["name"]
-    for i, w in enumerate(weights):
-        roll -= w
-        if roll <= 0:
-            winner = pool[i]["name"]
-            break
+    if not pool:
+        # Futures / scenarios may list names not in the strength table — equal weight.
+        winner = field_names[SECURE_RANDOM.randint(0, len(field_names) - 1)]
+    else:
+        weights = [max(1, p.get("powerRating", 1500) - 1300) for p in pool]
+        total = sum(weights)
+        roll = SECURE_RANDOM.random() * total
+        winner = pool[0]["name"]
+        for i, w in enumerate(weights):
+            roll -= w
+            if roll <= 0:
+                winner = pool[i]["name"]
+                break
     event["winner"] = winner
     if len(field_names) == 2:
         event["homeScore"] = 1 if winner == event["home"] else 0
@@ -260,11 +314,30 @@ def _simulate_outright(catalog: dict[str, Any], event: dict[str, Any]) -> None:
 
 
 def simulate_event_outcome(catalog: dict[str, Any], event: dict[str, Any]) -> dict[str, Any]:
-    sport_def = catalog["sports"][event["sport"]]
-    if sport_def.get("scoringProfile", {}).get("type") == "outright":
+    sport_def = catalog["sports"].get(event["sport"]) or {}
+    if (
+        event.get("eventType") in ("outright", "futures")
+        or sport_def.get("scoringProfile", {}).get("type") == "outright"
+    ):
         _simulate_outright(catalog, event)
     else:
         _simulate_game_score(catalog, event)
+        props = event.get("props") or []
+        outcomes = event.setdefault("propOutcomes", {})
+        for prop in props:
+            pid = prop.get("id")
+            if not pid:
+                continue
+            if pid == "both-score":
+                outcomes[pid] = event["homeScore"] > 0 and event["awayScore"] > 0
+            elif pid == "over-tds":
+                outcomes[pid] = (event["homeScore"] + event["awayScore"]) > 45
+            elif pid == "over-threes":
+                outcomes[pid] = (event["homeScore"] + event["awayScore"]) > 200
+            elif pid == "over-hrs":
+                outcomes[pid] = (event["homeScore"] + event["awayScore"]) > 8
+            else:
+                outcomes[pid] = SECURE_RANDOM.random() < 0.5
     event["status"] = "final"
     event["settled"] = True
     return event

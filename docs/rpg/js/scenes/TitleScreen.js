@@ -500,7 +500,7 @@ export function renderTrainerCard(root, saveAdapter, questManager, hooks = {}) {
   root.innerHTML = `
     <div class="trainer-card-panel">
       <div class="trainer-card__header">
-        <canvas class="trainer-card__portrait" id="trainer-portrait" width="64" height="88" aria-hidden="true"></canvas>
+        <canvas class="trainer-card__portrait" id="trainer-portrait" width="64" height="88" aria-hidden="true"></canvas><!-- 32×44 @ 2× -->
         <div>
           <h2>Trainer Card</h2>
           <p>${saveAdapter.session.playerName}</p>
@@ -517,7 +517,7 @@ export function renderTrainerCard(root, saveAdapter, questManager, hooks = {}) {
   `;
   const portrait = root.querySelector("#trainer-portrait");
   if (portrait) {
-    drawCharacterToCanvas(portrait, resolvePalette(appearance), "down", 0, 3);
+    drawCharacterToCanvas(portrait, resolvePalette(appearance), "down", 0, 2);
   }
   root.querySelector("#trainer-wardrobe")?.addEventListener("click", () => {
     root.dataset.wardrobe = "1";

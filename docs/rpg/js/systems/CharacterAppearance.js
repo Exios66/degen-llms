@@ -21,6 +21,7 @@ export const HAIR_COLORS = [
 ];
 
 export const OUTFIT_COLORS = [
+  { id: "tuxedo", label: "Tuxedo", body: 0x1c1c28, mid: 0x323244, shade: 0x0e0e16 },
   { id: "teal", label: "Teal", body: 0x48d8e8, mid: 0x30a8b8, shade: 0x208898 },
   { id: "gold", label: "Gold", body: 0xf0d050, mid: 0xc8a838, shade: 0x987820 },
   { id: "purple", label: "Purple", body: 0xd888f0, mid: 0xa868c0, shade: 0x7848a0 },
@@ -79,10 +80,10 @@ export const SPEAKER_PORTRAITS = {
 };
 
 const ARCHETYPE_DEFAULTS = {
-  weekend_warrior: { skin: "fair", hair: "teal", outfit: "teal" },
-  high_roller: { skin: "medium", hair: "black", outfit: "gold" },
-  convention_goer: { skin: "fair", hair: "pink", outfit: "purple" },
-  local: { skin: "tan", hair: "chestnut", outfit: "green" },
+  weekend_warrior: { skin: "fair", hair: "black", outfit: "tuxedo" },
+  high_roller: { skin: "medium", hair: "black", outfit: "tuxedo" },
+  convention_goer: { skin: "fair", hair: "chestnut", outfit: "tuxedo" },
+  local: { skin: "tan", hair: "black", outfit: "tuxedo" },
 };
 
 export function defaultAppearance(archetype = "weekend_warrior") {

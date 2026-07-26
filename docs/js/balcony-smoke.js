@@ -10,7 +10,12 @@ import { canAccessHotelRoom } from "./world-cycle.js";
 /** Consumable recorded on each hit from the suite balcony. */
 export const BALCONY_JOINT_ID = "balcony_suite_joint";
 
-export const BALCONY_SMOKE_ROOM_TYPES = ["suite", "penthouse"];
+export const BALCONY_SMOKE_ROOM_TYPES = ["standard", "suite", "penthouse"];
+
+/** Every guest room at Mandalay Bay includes a balcony door. */
+export function roomHasBalcony(hotel) {
+  return BALCONY_SMOKE_ROOM_TYPES.includes(hotel?.roomType ?? "standard");
+}
 
 export const BALCONY_HIT_MAX = 5;
 
@@ -62,12 +67,12 @@ export function attachBalconySmokeToSession(session, data) {
 export function canEnterBalconySmoke(session) {
   const hotel = ensureHotel(session);
   if (!canAccessHotelRoom(session) || !hotel.reachedRoom) {
-    return { ok: false, message: "Reach your suite door first — then the balcony is yours." };
+    return { ok: false, message: "Reach your room door first — then the balcony is yours." };
   }
-  if (!BALCONY_SMOKE_ROOM_TYPES.includes(hotel.roomType)) {
+  if (!roomHasBalcony(hotel)) {
     return {
       ok: false,
-      message: "Strip POV smoke breaks are a suite and penthouse perk. Ask Carmen about an upgrade.",
+      message: "No balcony on this reservation — ask Carmen about an upgrade.",
     };
   }
   const room = getRoomType(hotel);

@@ -37,15 +37,17 @@ export class RewardsPhone {
   /**
    * @param {HTMLElement} mountRoot
    * @param {import("./core.js").PlayerSession} session
-   * @param {{ onPersist?: () => void, compact?: boolean }} [options]
+   * @param {{ onPersist?: () => void, onTierPromoted?: (tierId: string) => void, compact?: boolean }} [options]
    */
   constructor(mountRoot, session, options = {}) {
     this.root = mountRoot;
     this.session = session;
     this.onPersist = options.onPersist ?? (() => {});
+    this.onTierPromoted = options.onTierPromoted ?? (() => {});
     this.compact = options.compact ?? false;
     this.tracker = new RewardsTracker(session, {
       onNotify: (note) => this._showToast(note),
+      onTierPromoted: (tierId) => this.onTierPromoted(tierId),
     });
     this._open = false;
     this._screen = "home";

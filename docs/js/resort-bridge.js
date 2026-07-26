@@ -3,17 +3,23 @@
 import { ensureAmenities } from "./casino-amenities.js";
 import { ensurePoolComplex } from "./pool-complex.js";
 import { ensureHotel } from "./hotel.js";
-import { tierForWagered } from "./rewards.js";
+import { tierForWagered, totalWageredFromWallet } from "./rewards.js";
 import { tierIndex } from "./rewards-perks.js";
 
 function hasAll(haystack, needles) {
   return needles.every((n) => haystack.includes(n));
 }
 
+/** Lifetime wager used for tier gates — wallet is source of truth when rewards lag. */
+export function getEffectiveLifetimeWagered(session) {
+  const rewardsWagered = session.rewards?.lifetimeWagered ?? 0;
+  const walletWagered = totalWageredFromWallet(session.wallet) ?? 0;
+  return Math.max(rewardsWagered, walletWagered);
+}
+
 /** @param {import("./core.js").PlayerSession} session */
 export function getSessionTierIndex(session) {
-  const wagered = session.rewards?.lifetimeWagered ?? 0;
-  return tierIndex(tierForWagered(wagered).id);
+  return tierIndex(tierForWagered(getEffectiveLifetimeWagered(session)).id);
 }
 
 /** @param {import("./core.js").PlayerSession} session */

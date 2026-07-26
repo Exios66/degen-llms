@@ -366,7 +366,8 @@ ends and the next begins, and floating signs name the zone you're standing in.
 
 ### Getting around
 
-Twenty-eight rooms in eight wings. Doors sit on the outer walkable ring of each
+Thirty-two rooms across the Strip, Arrival, Casino, Retail, Bars, Hotel, Pool,
+Attractions, and back-of-house wings. Doors sit on the outer walkable ring of each
 room — walk onto one and you warp, with a placard naming where you landed.
 
 | Wing | What's there |

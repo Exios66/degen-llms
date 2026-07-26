@@ -75,7 +75,8 @@ signs name the room you're in — follow the gold and you can't get lost.
 
 ## The property
 
-Twenty-eight rooms across eight wings, authored as declarative JSON in
+Thirty-two rooms across Strip, Arrival, Casino, Retail, Bars, Hotel, Pool,
+Attractions, and back-of-house wings, authored as declarative JSON in
 `docs/rpg/js/data/maps/` and compiled into tile layers at boot by `MapLoader`.
 Each room has its own spawn point, and doors sit on the outer walkable ring so
 the warp fires as you step onto one.

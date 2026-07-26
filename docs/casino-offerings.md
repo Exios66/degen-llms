@@ -123,7 +123,7 @@ Thoroughbred sim with win/place/show wagering. Real horse names, strength-based 
 
 | Zone | Highlights |
 |------|------------|
-| **Hotel** | Front desk, hallway mini-game, 17 room vignettes, dining overlay entry |
+| **Hotel** | Front desk, hallway mini-game, 17 room vignettes, dining overlay, suite balcony Strip POV smoke-break |
 | **Pool complex** | Wave pool, cabanas, Shark Reef, beach club |
 | **MGM Rewards** | Tier progression, comps, phone hotline |
 

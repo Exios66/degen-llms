@@ -114,6 +114,13 @@
       "stroke": "#684810"
     },
     {
+      "x": 8,
+      "y": 3.4,
+      "text": "VELVET LEDGER ↑",
+      "color": "#ffe890",
+      "stroke": "#684810"
+    },
+    {
       "x": 15,
       "y": 26.2,
       "text": "REGISTRATION ↓",
@@ -180,6 +187,13 @@
       "y": 2,
       "w": 3,
       "h": 3
+    },
+    {
+      "tile": "LOBBY",
+      "x": 7,
+      "y": 2,
+      "w": 3,
+      "h": 3
     }
   ],
   "doors": [
@@ -223,6 +237,15 @@
       "toY": 26,
       "message": "Express to Room 24-118 — key card.",
       "requiresRoomKey": true
+    },
+    {
+      "x": 8,
+      "y": 2,
+      "to": "gentlemans_club",
+      "toX": 15,
+      "toY": 26,
+      "message": "Gentleman's Club — The Velvet Ledger.",
+      "venueGate": "gentlemans_club"
     }
   ]
 }

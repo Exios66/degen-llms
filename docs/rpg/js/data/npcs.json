@@ -638,6 +638,42 @@
       "direction": "left"
     }
   ],
+  "gentlemans_club": [
+    {
+      "id": "club_hostess_viva",
+      "name": "Viva",
+      "x": 15,
+      "y": 10,
+      "sprite": "npc_pink",
+      "dialogueId": "club_hostess_viva_greet",
+      "encounter": "gentlemans_club",
+      "direction": "down"
+    },
+    {
+      "id": "club_bottle_blair",
+      "name": "Blair",
+      "x": 10,
+      "y": 14,
+      "sprite": "npc_gold",
+      "dialogueId": "club_bottle_blair_greet",
+      "encounter": "gentlemans_club",
+      "direction": "right"
+    },
+    {
+      "id": "club_security_sasha",
+      "name": "Sasha",
+      "x": 20,
+      "y": 22,
+      "sprite": "npc_red",
+      "dialogueId": "club_security_sasha_greet",
+      "direction": "left",
+      "sight": {
+        "dir": "left",
+        "range": 3
+      },
+      "challengeDialogueId": "club_security_sasha_challenge"
+    }
+  ],
   "guest_corridor": [
     {
       "id": "housekeeper_hana",

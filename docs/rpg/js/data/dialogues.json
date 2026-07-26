@@ -2822,5 +2822,211 @@
   "row_f_coupe_bye": {
     "speaker": "Row F Coupe",
     "text": "The coupe settles. Somewhere a drip tick-ticks onto concrete."
+  },
+  "club_hostess_viva_greet": {
+    "speaker": "Viva",
+    "text": "Velvet Ledger. Membership is a vibe, not a card. Gold tier, suite key, or the phone line — pick your door.",
+    "choices": [
+      {
+        "label": "Open the club ledger.",
+        "encounter": "gentlemans_club"
+      },
+      {
+        "label": "Where do I make it rain?",
+        "next": "club_hostess_viva_rain"
+      },
+      {
+        "label": "Just looking.",
+        "next": "club_hostess_viva_bye"
+      }
+    ]
+  },
+  "club_hostess_viva_rain": {
+    "speaker": "Viva",
+    "text": "Tip cascade is center stage. Monsoon if you're feeling dramatic. The room tips back when it likes you.",
+    "choices": [
+      {
+        "label": "Who still owes on Row F?",
+        "next": "club_hostess_viva_list"
+      },
+      {
+        "label": "Thanks.",
+        "next": "club_hostess_viva_bye"
+      }
+    ]
+  },
+  "club_hostess_viva_list": {
+    "speaker": "Viva",
+    "text": "Row F coupe guy is still unpaid. Don't be him. You're on the whisper list now.",
+    "setFlag": "egg_velvet_guest_list",
+    "next": "club_hostess_viva_bye"
+  },
+  "club_hostess_viva_bye": {
+    "speaker": "Viva",
+    "text": "No photographs. The LED wall remembers faces anyway. Hit a perfect cascade and it flashes initials.",
+    "choices": [
+      {
+        "label": "I'll aim for perfect.",
+        "next": "club_hostess_viva_cascade"
+      },
+      {
+        "label": "Understood.",
+        "next": "club_hostess_viva_done"
+      }
+    ]
+  },
+  "club_hostess_viva_cascade": {
+    "speaker": "Viva",
+    "text": "Dead center of the green. The wall already practiced your initials.",
+    "setFlag": "egg_perfect_cascade",
+    "next": "club_hostess_viva_done"
+  },
+  "club_hostess_viva_done": {
+    "speaker": "Viva",
+    "text": "Go make weather."
+  },
+  "club_bottle_blair_greet": {
+    "speaker": "Blair",
+    "text": "Bottle captain. Dom, Cristal, Ace, Paradis, Macallan — I can pour them in any order. Can you?",
+    "choices": [
+      {
+        "label": "Show me the club menu.",
+        "encounter": "gentlemans_club"
+      },
+      {
+        "label": "What's off-menu?",
+        "next": "club_bottle_blair_off"
+      },
+      {
+        "label": "Triple Ace — prove it.",
+        "next": "club_bottle_blair_ace"
+      },
+      {
+        "label": "Maybe later.",
+        "next": "club_bottle_blair_bye"
+      }
+    ]
+  },
+  "club_bottle_blair_off": {
+    "speaker": "Blair",
+    "text": "If you have to ask, you tip first. Tonight I'll underline it anyway — off-menu pour, five stars, zero paperwork.",
+    "setFlag": "egg_off_menu_pour",
+    "next": "club_bottle_blair_bye"
+  },
+  "club_bottle_blair_ace": {
+    "speaker": "Blair",
+    "text": "Ace. Ace. Ace. I almost smiled. Almost.",
+    "setFlag": "egg_triple_ace",
+    "next": "club_bottle_blair_bye"
+  },
+  "club_bottle_blair_bye": {
+    "speaker": "Blair",
+    "text": "Sparklers are optional. Louis XIII is not subtle. Five pours and the tab grows a crown.",
+    "choices": [
+      {
+        "label": "About Louis…",
+        "next": "club_bottle_blair_louis"
+      },
+      {
+        "label": "About the tab…",
+        "next": "club_bottle_blair_tab"
+      },
+      {
+        "label": "Later.",
+        "next": "club_bottle_blair_done"
+      }
+    ]
+  },
+  "club_bottle_blair_louis": {
+    "speaker": "Blair",
+    "text": "Louis XIII — the wink is complimentary. The bottle is not.",
+    "setFlag": "egg_louis_toast",
+    "next": "club_bottle_blair_done"
+  },
+  "club_bottle_blair_tab": {
+    "speaker": "Blair",
+    "text": "Five deep and the ledger doodles a crown next to your name.",
+    "setFlag": "egg_velvet_bar_tab",
+    "next": "club_bottle_blair_done"
+  },
+  "club_bottle_blair_done": {
+    "speaker": "Blair",
+    "text": "Ice bucket's waiting."
+  },
+  "club_security_sasha_greet": {
+    "speaker": "Sasha",
+    "text": "Rope stays up for phones. Rope comes down for members who make it rain.",
+    "choices": [
+      {
+        "label": "I'm on the list.",
+        "encounter": "gentlemans_club"
+      },
+      {
+        "label": "Back hallway?",
+        "next": "club_security_sasha_hall"
+      },
+      {
+        "label": "Monsoon receipt?",
+        "next": "club_security_sasha_monsoon"
+      },
+      {
+        "label": "Understood.",
+        "next": "club_security_sasha_bye"
+      }
+    ]
+  },
+  "club_security_sasha_hall": {
+    "speaker": "Sasha",
+    "text": "Service corridor. Unclaimed coats. One gold umbrella nobody claims.",
+    "setFlag": "egg_velvet_back_hall",
+    "next": "club_security_sasha_bye"
+  },
+  "club_security_sasha_monsoon": {
+    "speaker": "Sasha",
+    "text": "Black napkin. Stamped PAID IN WEATHER. Don't lose it.",
+    "setFlag": "egg_monsoon_receipt",
+    "next": "club_security_sasha_bye"
+  },
+  "club_security_sasha_bye": {
+    "speaker": "Sasha",
+    "text": "Keep the camera down. Keep the night up. Tip enough and the ledger underlines you twice.",
+    "choices": [
+      {
+        "label": "Show me the underline.",
+        "next": "club_security_sasha_ledger"
+      },
+      {
+        "label": "Dante's ace?",
+        "next": "club_security_sasha_felt"
+      },
+      {
+        "label": "Copy.",
+        "next": "club_security_sasha_done"
+      }
+    ]
+  },
+  "club_security_sasha_ledger": {
+    "speaker": "Sasha",
+    "text": "Your name. Twice. The Velvet Ledger doesn't do that for tourists.",
+    "setFlag": "egg_velvet_ledger",
+    "next": "club_security_sasha_done"
+  },
+  "club_security_sasha_felt": {
+    "speaker": "Sasha",
+    "text": "Dante flips an ace when he likes your call. Chin tip included.",
+    "setFlag": "egg_felt_ace",
+    "next": "club_security_sasha_done"
+  },
+  "club_security_sasha_done": {
+    "speaker": "Sasha",
+    "text": "Move along, member."
+  },
+  "club_security_sasha_challenge": {
+    "speaker": "Sasha",
+    "text": "Hey — phones face-down. The Velvet Ledger doesn't do encore selfies.",
+    "reputation": {
+      "staff": 1
+    },
+    "next": "club_security_sasha_greet"
   }
 }

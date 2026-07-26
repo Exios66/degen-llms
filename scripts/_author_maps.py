@@ -749,6 +749,7 @@ MAPS_SPEC: list[dict] = [
         "signs": [
             sign(15, 3.4, "GUEST FLOOR \u2191"),
             sign(21, 3.4, "ROOM 24-118 \u2191"),
+            sign(8, 3.4, "VELVET LEDGER \u2191"),
             sign(15, 26.2, "REGISTRATION \u2193", **COOL_SIGN),
         ],
         "scatter": [
@@ -762,6 +763,7 @@ MAPS_SPEC: list[dict] = [
             rect("LOBBY", 2, 14, 3, 3),
             rect("LOBBY", 25, 14, 3, 3),
             rect("LOBBY", 20, 2, 3, 3),
+            rect("LOBBY", 7, 2, 3, 3),
         ],
         "doors": [
             door(15, 27, "registration_lobby", 26, 15, "Down to registration."),
@@ -770,6 +772,47 @@ MAPS_SPEC: list[dict] = [
             door(27, 15, "skyfall_lounge", 15, 26, "Skyfall Lounge, 43rd floor."),
             door(21, 2, "guest_room", 15, 26, "Express to Room 24-118 — key card.",
                  requiresRoomKey=True),
+            door(8, 2, "gentlemans_club", 15, 26, "Gentleman's Club — The Velvet Ledger.",
+                 venueGate="gentlemans_club"),
+        ],
+    },
+    {
+        "id": "gentlemans_club",
+        "label": "Gentleman's Club — Velvet Ledger",
+        "bgm": "secret",
+        "spawn": {"x": 15, "y": 26},
+        "base": "WALL",
+        "rects": [
+            rect("VIP", 2, 2, 26, 26),
+            rect("CARPET", 6, 6, 18, 16),
+            rect("PATH", 14, 4, 2, 22),
+            rect("FELT", 10, 10, 10, 6),
+        ],
+        "decor": [
+            rect("BAR", 8, 8, 14, 1),
+            rect("SCREEN", 4, 4, 1, 8),
+            rect("SCREEN", 25, 4, 1, 8),
+            rect("SLOT", 12, 8, 1, 1),
+            points("PLANT", [(5, 5), (24, 5), (5, 24), (24, 24), (9, 12), (20, 12)]),
+            points("LANTERN", [(7, 9), (22, 9), (11, 20), (18, 20), (15, 7)]),
+        ],
+        "signs": [
+            sign(15, 5.4, "VELVET LEDGER"),
+            sign(15, 25.4, "TOWER \u2193", **COOL_SIGN),
+            sign(8, 9.5, "BOTTLE SERVICE"),
+            sign(22, 9.5, "PRIVATE FELT"),
+        ],
+        "scatter": [
+            {"tile": "FLOWER", "mod": 9, "on": ["VIP", "CARPET"]},
+            {"tile": "LANTERN", "mod": 14, "on": ["VIP"]},
+        ],
+        "clear": [
+            rect("VIP", 14, 25, 3, 3),
+            rect("CARPET", 14, 8, 3, 3),
+            rect("FELT", 13, 12, 4, 3),
+        ],
+        "doors": [
+            door(15, 27, "hotel_tower", 8, 4, "Back to the tower elevators."),
         ],
     },
     {
@@ -1222,6 +1265,7 @@ WINGS: dict[str, str] = {
     "guest_room": "Hotel",
     "delano_wing": "Hotel",
     "spa": "Hotel",
+    "gentlemans_club": "Hotel",
     "mandalay_beach": "Pool",
     "cabana_row": "Pool",
     "beach_club": "Pool",
@@ -1398,6 +1442,15 @@ NPCS: dict[str, list[dict]] = {
          "dialogueId": "clerk_carmen_greet", "encounter": "hotel_front_desk", "direction": "down"},
         {"id": "concierge_cleo", "name": "Concierge Cleo", "x": 21, "y": 12, "sprite": "npc_teal",
          "dialogueId": "concierge_cleo_greet", "encounter": "guest_directory", "direction": "left"},
+    ],
+    "gentlemans_club": [
+        {"id": "club_hostess_viva", "name": "Viva", "x": 15, "y": 10, "sprite": "npc_pink",
+         "dialogueId": "club_hostess_viva_greet", "encounter": "gentlemans_club", "direction": "down"},
+        {"id": "club_bottle_blair", "name": "Blair", "x": 10, "y": 14, "sprite": "npc_gold",
+         "dialogueId": "club_bottle_blair_greet", "encounter": "gentlemans_club", "direction": "right"},
+        {"id": "club_security_sasha", "name": "Sasha", "x": 20, "y": 22, "sprite": "npc_red",
+         "dialogueId": "club_security_sasha_greet", "direction": "left",
+         "sight": {"dir": "left", "range": 3}, "challengeDialogueId": "club_security_sasha_challenge"},
     ],
     "guest_corridor": [
         {"id": "housekeeper_hana", "name": "Housekeeper Hana", "x": 18, "y": 14,

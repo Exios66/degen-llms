@@ -25,7 +25,7 @@ def _session_with_wagered(wagered: int, balance: int = 10_000) -> PlayerSession:
 
 
 def test_rewards_save_roundtrip() -> None:
-    session = _session_with_wagered(600)
+    session = _session_with_wagered(10_000)
     session.slot_id = 1
     session.slot_label = "Slot 1"
     data = session_to_dict(session)
@@ -36,11 +36,11 @@ def test_rewards_save_roundtrip() -> None:
     loaded = session_from_dict(data)
     assert loaded.rewards is not None
     assert loaded.rewards.tier == "pearl"
-    assert loaded.rewards.lifetime_wagered == 600
+    assert loaded.rewards.lifetime_wagered == 10_000
 
 
 def test_sync_rewards_unlocks_room_night_comp() -> None:
-    session = _session_with_wagered(5000)
+    session = _session_with_wagered(200_000, balance=250_000)
     rewards = ensure_rewards(session)
     assert tier_for_wagered(rewards.lifetime_wagered).id == "platinum"
     assert "room_night" in rewards.unlocked_comps
@@ -51,7 +51,7 @@ def test_comp_suite_upgrade() -> None:
     ensure_hotel(session)
     session.rewards = RewardsState(
         tier="noir",
-        lifetime_wagered=10000,
+        lifetime_wagered=500_000,
         unlocked_comps=["welcome_drink", "suite_upgrade"],
         redeemed_comps=["welcome_drink"],
     )
@@ -69,7 +69,7 @@ def test_comp_extend_stay() -> None:
     before = ensure_hotel(session).nights_remaining
     session.rewards = RewardsState(
         tier="platinum",
-        lifetime_wagered=5000,
+        lifetime_wagered=200_000,
         unlocked_comps=["welcome_drink", "room_night"],
         redeemed_comps=["welcome_drink"],
     )
@@ -105,4 +105,5 @@ def test_migrate_v1_save_gets_rewards() -> None:
     loaded = session_from_dict(data)
     assert loaded.rewards is not None
     assert loaded.rewards.lifetime_wagered >= 2500
-    assert loaded.rewards.tier == "gold"
+    # $2,500 lifetime handle is still Sapphire under the raised ladder.
+    assert loaded.rewards.tier == "sapphire"

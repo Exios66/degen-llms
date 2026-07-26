@@ -34,7 +34,7 @@ def test_withdraw_max_scales_with_rewards_tier() -> None:
     session = PlayerSession()
     session.rewards = RewardsState(lifetime_wagered=0)
     assert bank_withdraw_max_for_session(session) == TIER_BANK_WITHDRAW_MAX["sapphire"]
-    session.rewards.lifetime_wagered = 25_000
+    session.rewards.lifetime_wagered = 1_000_000
     assert bank_withdraw_max_for_session(session) == TIER_BANK_WITHDRAW_MAX["chairman"]
 
 

@@ -27,7 +27,7 @@ export const TIER_EXPERIENCE = {
     label: "Pearl",
     speedMultiplier: 0.82,
     tagline: "Express lanes unlock — still satirically overpriced.",
-    monthlyAmortizedCost: "$1,847/mo (waived with $500 lifetime handle)",
+    monthlyAmortizedCost: "$1,847/mo (waived with $10,000 lifetime handle)",
     perks: [
       "Pool cabana — 20% off ($890/day → $712/day)",
       "Priority slot-aisle foot traffic",

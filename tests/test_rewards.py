@@ -9,15 +9,28 @@ from mandalay_bay.rewards import (
     tier_for_wagered,
     total_wagered_from_wallet,
 )
-from mandalay_bay.session import PlayerSession
-
-
 def test_tier_for_wagered_thresholds() -> None:
     assert tier_for_wagered(0).id == "sapphire"
-    assert tier_for_wagered(499).id == "sapphire"
-    assert tier_for_wagered(500).id == "pearl"
-    assert tier_for_wagered(2000).id == "gold"
-    assert tier_for_wagered(25000).id == "chairman"
+    assert tier_for_wagered(9_999).id == "sapphire"
+    assert tier_for_wagered(10_000).id == "pearl"
+    assert tier_for_wagered(49_999).id == "pearl"
+    assert tier_for_wagered(50_000).id == "gold"
+    assert tier_for_wagered(200_000).id == "platinum"
+    assert tier_for_wagered(500_000).id == "noir"
+    assert tier_for_wagered(999_999).id == "noir"
+    assert tier_for_wagered(1_000_000).id == "chairman"
+
+
+def test_documented_tier_thresholds() -> None:
+    by_id = {t.id: t.min_wagered for t in TIERS}
+    assert by_id == {
+        "sapphire": 0,
+        "pearl": 10_000,
+        "gold": 50_000,
+        "platinum": 200_000,
+        "noir": 500_000,
+        "chairman": 1_000_000,
+    }
 
 
 def test_total_wagered_from_wallet() -> None:

@@ -46,13 +46,14 @@ class TierDef:
     comp: str | None = None
 
 
+# Lifetime wager thresholds — keep in sync with docs/js/rewards.js and docs/mgm-rewards.md
 TIERS: tuple[TierDef, ...] = (
     TierDef("sapphire", "Sapphire", 0),
-    TierDef("pearl", "Pearl", 500, "slot_freeplay"),
-    TierDef("gold", "Gold", 2000, "buffet_comp"),
-    TierDef("platinum", "Platinum", 5000, "room_night"),
-    TierDef("noir", "Noir", 10000, "suite_upgrade"),
-    TierDef("chairman", "Chairman", 25000, "penthouse_fantasy"),
+    TierDef("pearl", "Pearl", 10_000, "slot_freeplay"),
+    TierDef("gold", "Gold", 50_000, "buffet_comp"),
+    TierDef("platinum", "Platinum", 200_000, "room_night"),
+    TierDef("noir", "Noir", 500_000, "suite_upgrade"),
+    TierDef("chairman", "Chairman", 1_000_000, "penthouse_fantasy"),
 )
 
 

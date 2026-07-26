@@ -5,10 +5,40 @@
 
 import { recordConsumption } from "./intoxication-effects.js";
 import { adjustRapport } from "./phone-rapport.js";
+import { tierForWagered } from "./rewards.js";
+import { tierIndex } from "./rewards-perks.js";
 
 /** @readonly */
 export const CLUB_NAME = "The Velvet Ledger";
 export const CLUB_TAGLINE = "Private membership lounge — bottle service, tip storms, and no photographs.";
+
+/** Gold+ opens the Gentleman's Club rope (or suite key / phone line). */
+export const GENTLEMANS_CLUB_MIN_REWARDS_TIER_IDX = 2;
+
+/**
+ * Velvet rope check — kept here (not only in venues.js) so club UI can boot
+ * even when a stale cached venues.js is missing this export.
+ * @param {import("./core.js").PlayerSession} session
+ */
+export function canEnterGentlemansClub(session) {
+  const rewardsTier = tierForWagered(session.rewards?.lifetimeWagered ?? 0);
+  const rewardsIdx = tierIndex(rewardsTier.id);
+  const roomType = session.hotel?.roomType;
+  const suiteOrBetter = roomType === "suite" || roomType === "penthouse";
+  const calls = session.hotel?.roomAmenities?.phoneCalls ?? [];
+  const calledClub = calls.includes("gentlemans_club");
+  const clubState = session.gentlemansClub;
+  const priorMember = (clubState?.visits ?? 0) > 0 || (clubState?.rainCount ?? 0) > 0;
+
+  if (rewardsIdx >= GENTLEMANS_CLUB_MIN_REWARDS_TIER_IDX || suiteOrBetter || calledClub || priorMember) {
+    return { ok: true, rewardsTier, suiteOrBetter, calledClub, priorMember };
+  }
+
+  return {
+    ok: false,
+    reason: `${rewardsTier.label} tier — The Velvet Ledger wants Gold+, a suite key, or the club phone line from your room.`,
+  };
+}
 
 export const RAIN_TIERS = [
   { id: "drizzle", label: "Drizzle", amount: 100, tipChance: 0.15, tipBack: [20, 60], rapport: 1 },

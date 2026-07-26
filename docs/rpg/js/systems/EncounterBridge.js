@@ -5,9 +5,9 @@ import { effectiveTableStakes } from "../../../js/stakes.js";
 import {
   HIGH_LIMIT_SALON_CHIP_MIN,
   canEnterFoundationRoom,
-  canEnterGentlemansClub,
   canEnterHighLimitSalon,
-} from "../../../js/venues.js";
+} from "../../../js/venues.js?v=aadf7ac";
+import { canEnterGentlemansClub } from "../../../js/gentlemans-club.js?v=aadf7ac";
 import { createCardSpriteRow } from "../../../js/ui/card-sprites.js";
 import { RouletteOverlay } from "./overlays/RouletteOverlay.js";
 import { HoldemOverlay } from "./overlays/HoldemOverlay.js";

@@ -1,5 +1,5 @@
 // Extracted from app.js — shared by the web terminal and the pixel RPG.
-import { HIGH_LIMIT_SALON_CHIP_MIN, canEnterFoundationRoom, canEnterHighLimitSalon } from "../venues.js";
+import { HIGH_LIMIT_SALON_CHIP_MIN, canEnterFoundationRoom, canEnterHighLimitSalon } from "../venues.js?v=__ASSET_SHA__";
 import {
   SALON_TABLE_GAMES,
   SALON_SPORTS_SCENARIOS,

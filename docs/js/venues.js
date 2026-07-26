@@ -10,6 +10,11 @@ import { getRapport } from "./phone-rapport.js";
 import { getIntoxicationSummary, isHeightenedIntoxication } from "./intoxication-effects.js";
 import { STAKE_TIERS } from "./stakes.js";
 
+export {
+  GENTLEMANS_CLUB_MIN_REWARDS_TIER_IDX,
+  canEnterGentlemansClub,
+} from "./gentlemans-club.js";
+
 /** @readonly */
 export const HIGH_LIMIT_SALON_CHIP_MIN = 10_000;
 
@@ -21,9 +26,6 @@ export const FOUNDATION_MIN_REWARDS_TIER_IDX = 4;
 
 /** Minimum host rapport OR intox path for Foundation Room entry. */
 export const FOUNDATION_MIN_HOST_RAPPORT = 15;
-
-/** Gold+ opens the Gentleman's Club rope (or suite key / phone line). */
-export const GENTLEMANS_CLUB_MIN_REWARDS_TIER_IDX = 2;
 
 /**
  * @param {import("./core.js").PlayerSession} session
@@ -91,29 +93,5 @@ export function canEnterFoundationRoom(session) {
   return {
     ok: false,
     reason: "Velvet rope closed — build host rapport, call the Foundation Room from your suite phone, upgrade to a suite, loosen up at the bar, or buy a VIP host retainer offshore.",
-  };
-}
-
-/**
- * Gentleman's Club (Velvet Ledger) — hotel amenity nightlife lounge.
- * @param {import("./core.js").PlayerSession} session
- */
-export function canEnterGentlemansClub(session) {
-  const rewardsTier = tierForWagered(session.rewards?.lifetimeWagered ?? 0);
-  const rewardsIdx = tierIndex(rewardsTier.id);
-  const roomType = session.hotel?.roomType;
-  const suiteOrBetter = roomType === "suite" || roomType === "penthouse";
-  const calls = session.hotel?.roomAmenities?.phoneCalls ?? [];
-  const calledClub = calls.includes("gentlemans_club");
-  const clubState = session.gentlemansClub;
-  const priorMember = (clubState?.visits ?? 0) > 0 || (clubState?.rainCount ?? 0) > 0;
-
-  if (rewardsIdx >= GENTLEMANS_CLUB_MIN_REWARDS_TIER_IDX || suiteOrBetter || calledClub || priorMember) {
-    return { ok: true, rewardsTier, suiteOrBetter, calledClub, priorMember };
-  }
-
-  return {
-    ok: false,
-    reason: `${rewardsTier.label} tier — The Velvet Ledger wants Gold+, a suite key, or the club phone line from your room.`,
   };
 }

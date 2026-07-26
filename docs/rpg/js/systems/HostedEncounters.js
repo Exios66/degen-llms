@@ -35,7 +35,7 @@ export const HOSTED_ENCOUNTERS = {
   slots_fortune: { view: "slots-play", activityId: "slots", stakeFor: "slots", machineId: "fortune", title: "FORTUNE REELS" },
   slots_high_roller: { view: "slots-play", activityId: "slots", stakeFor: "slots", machineId: "high_roller", title: "HIGH ROLLER" },
   craps: { view: "craps", activityId: "craps", stakeFor: "craps", title: "CRAPS PIT" },
-  lottery: { view: "lottery", activityId: "lottery", title: "LOTTERY COUNTER" },
+  lottery: { view: "lottery", activityId: "lottery", stakeFor: "lottery", title: "LOTTERY COUNTER" },
   sportsbook: { view: "sportsbook", activityId: "sportsbook", stakeFor: "sportsbook", title: "RACE & SPORTS BOOK" },
   predictions: { view: "sportsbook", activityId: "sportsbook", stakeFor: "sportsbook", tab: "predictions", title: "PREDICTION MARKETS" },
   horse_racing: { view: "horse-racing", activityId: "horse_racing", stakeFor: "horse_racing", title: "HORSE RACING" },

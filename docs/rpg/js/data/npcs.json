@@ -145,6 +145,24 @@
         "range": 4
       },
       "challengeDialogueId": "valet_vic_challenge"
+    },
+    {
+      "id": "keys_desk_arcade",
+      "name": "Keys Desk Cabinet",
+      "x": 12,
+      "y": 7,
+      "sprite": "npc_teal",
+      "dialogueId": "keys_desk_arcade_greet",
+      "direction": "down"
+    },
+    {
+      "id": "row_f_coupe",
+      "name": "Row F Coupe",
+      "x": 6,
+      "y": 20,
+      "sprite": "npc_silver",
+      "dialogueId": "row_f_coupe_greet",
+      "direction": "right"
     }
   ],
   "registration_lobby": [

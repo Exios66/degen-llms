@@ -422,7 +422,7 @@ room — walk onto one and you warp, with a placard naming where you landed.
 
 | Wing | What's there |
 |------|--------------|
-| Arrival | The Boulevard, valet garage, registration lobby (Chip Chandler starts you off) |
+| Arrival | The Boulevard, valet garage (Strip Drive cabinet + exits east/south), registration lobby (Chip Chandler starts you off) |
 | Casino | Two casino floors, the race & sports book, High Limit Salon, Foundation Room |
 | Retail | The Shoppes at Mandalay Place, the sky bridge, the convention center |
 | Bars | Betty's Bar and the Skyfall Lounge |

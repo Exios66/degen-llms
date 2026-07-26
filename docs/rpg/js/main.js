@@ -10,6 +10,7 @@ import {
   RouletteOverlay,
   HoldemOverlay,
   RhythmOverlay,
+  VegasStripDriveOverlay,
 } from "./systems/EncounterBridge.js?v=tuxedo-pixel-1";
 import { TerminalHostOverlay } from "./systems/TerminalHostOverlay.js";
 import { QuestManager } from "./systems/QuestManager.js";
@@ -186,6 +187,9 @@ async function startOverworld(activeSession) {
     roulette: new RouletteOverlay(document.getElementById("roulette-overlay"), session, hooks),
     holdem: new HoldemOverlay(document.getElementById("holdem-overlay"), session, hooks),
     rhythm: new RhythmOverlay(document.getElementById("rhythm-overlay"), session, hooks),
+    vegas_strip_drive: new VegasStripDriveOverlay(
+      document.getElementById("vegas-strip-drive-overlay"), session, hooks,
+    ),
   };
 
   terminalHost = new TerminalHostOverlay(document.getElementById("terminal-overlay"), session, {

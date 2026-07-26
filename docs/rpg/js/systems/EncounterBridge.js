@@ -7,6 +7,7 @@ import { createCardSpriteRow } from "../../../js/ui/card-sprites.js";
 import { RouletteOverlay } from "./overlays/RouletteOverlay.js";
 import { HoldemOverlay } from "./overlays/HoldemOverlay.js";
 import { RhythmOverlay } from "./overlays/RhythmOverlay.js";
+import { VegasStripDriveOverlay } from "./overlays/VegasStripDriveOverlay.js";
 import { HOSTED_ENCOUNTERS, TABLE_STAKE_ACTIVITIES, prepareHostedState } from "./HostedEncounters.js";
 
 /**
@@ -322,6 +323,8 @@ const BESPOKE_ALIASES = {
   roulette: "roulette",
   house_of_blues: "rhythm",
   rhythm: "rhythm",
+  vegas_strip_drive: "vegas_strip_drive",
+  strip_drive: "vegas_strip_drive",
 };
 
 /**
@@ -450,4 +453,5 @@ export {
   RouletteOverlay,
   HoldemOverlay,
   RhythmOverlay,
+  VegasStripDriveOverlay,
 };

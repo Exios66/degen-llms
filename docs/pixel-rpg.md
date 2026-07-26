@@ -75,12 +75,13 @@ Three doors are gated: High Limit Salon (chips + stake tier), Foundation Room (N
 
 **The RPG does not reimplement game screens.** Hotel, pool, shops, bars, slots, sportsbook, prediction markets, craps, lottery, racing, equestrian, cashier, bank, and meta screens are written once in `docs/js/ui/` as `buildXRenderers(ctx)` factories. The RPG's `TerminalHostOverlay` mounts the identical functions inside an encounter panel.
 
-The four exceptions are bespoke pixel battle screens: blackjack, hold'em, roulette, and the House of Blues rhythm minigame.
+Bespoke battle screens: blackjack, hold'em, roulette, House of Blues rhythm, and Valet garage Strip Drive (canvas arcade, no wager).
 
 | Encounter | Where it lives | Reached from |
 |-----------|----------------|--------------|
 | `blackjack`, `holdem`, `roulette` | Bespoke pixel overlays | Casino floor pits |
 | `rhythm` | Bespoke pixel overlay | House of Blues stage |
+| `vegas_strip_drive` | Bespoke canvas arcade overlay | Valet Vic / keys-desk cabinet |
 | `craps`, `lottery` | Hosted from `docs/js/ui/` | Stickman Stan, Lottery Lena |
 | `slots`, `sportsbook`, `predictions` | Hosted | Slot aisle, Bookie Blake |
 | `horse_racing`, `dressage`, `jumper`, `horse_stables` | Hosted | Racing pavilion |

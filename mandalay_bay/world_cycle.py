@@ -101,6 +101,8 @@ def _reset_daily_reservation(hotel) -> None:
     hotel.reached_room = False
     hotel.hallway_progress = 0
     hotel.hallway_log.clear()
+    if hasattr(hotel, "carmen_desk_log") and isinstance(hotel.carmen_desk_log, list):
+        hotel.carmen_desk_log.clear()
     hotel.late_checkout_used = False
     hotel.room_evicted = False
     if hotel.room_amenities:
@@ -235,27 +237,31 @@ def grant_room_key_if_reservation_ready(session: PlayerSession) -> bool:
 
 
 def confirm_reservation_at_desk(session: PlayerSession) -> CycleResult:
+    """Carmen's desk terminal completes check-in for any day's rule (except whale gate)."""
     sync_world_cycle(session)
     if not hasattr(session, "hotel") or session.hotel is None:
         session.hotel = default_hotel_state()
     hotel = session.hotel
     req = get_reservation_requirement(session)
+    if hotel.room_evicted or (session.world_cycle and session.world_cycle.room_evicted):
+        return CycleResult(False, "Room locked for overdue charges. Settle the folio first.")
     if req.get("needs_net_positive") and not is_net_positive(session):
-        return CycleResult(False, "Net-positive floor session required today.")
-    if req.get("needs_phone") and not hotel.found_reservation:
-        return CycleResult(False, "Phone locate required first.")
-    if not req.get("needs_desk"):
-        if hotel.found_reservation:
-            grant_room_key_if_reservation_ready(session)
-            return CycleResult(True, "Phone locate is enough today — your key is active.", already=True)
-        return CycleResult(True, "Desk confirmation not required today.")
-    if hotel.reservation_confirmed_desk:
-        grant_room_key_if_reservation_ready(session)
-        return CycleResult(True, "Already confirmed at desk.", already=True)
-    hotel.reservation_confirmed_desk = True
+        return CycleResult(False, "Whale check-in day — finish net-positive on the floor first.")
+    if reservation_access_met(session) and hotel.room_key_active:
+        return CycleResult(
+            True,
+            f"Already checked in — Room {hotel.room_number}. Take the hallway or skip to the door.",
+            already=True,
+        )
     hotel.found_reservation = True
+    hotel.reservation_confirmed_desk = True
     grant_room_key_if_reservation_ready(session)
-    return CycleResult(True, "Desk confirmed. Key active — take the hallway to your door.")
+    return CycleResult(
+        True,
+        f"Got it — Conf {hotel.reservation_code}. "
+        f"{hotel.wing.upper()} tower · Floor {hotel.floor} · Room {hotel.room_number}. "
+        "Key active — take the hallway to your door.",
+    )
 
 
 def settle_hotel_overdue(session: PlayerSession) -> CycleResult:

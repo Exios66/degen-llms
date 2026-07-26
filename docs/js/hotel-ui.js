@@ -41,21 +41,76 @@ export function buildHotelRenderers(ctx) {
     ]);
   }
 
-  function appendResult(log, res) {
-    const prefix = res.ok ? "Carmen: " : "Carmen: ";
-    for (const line of String(res.message).split("\n")) {
-      log.appendChild(el("div", {
-        className: `line ${res.ok ? "success" : "error"}`,
-        textContent: line.startsWith("Carmen:") ? line : `${prefix}${line}`,
+  function ensureCarmenLog(hotel) {
+    if (!Array.isArray(hotel.carmenDeskLog)) hotel.carmenDeskLog = [];
+    return hotel.carmenDeskLog;
+  }
+
+  /** Persist Carmen dialogue so re-renders don't wipe her replies. */
+  function pushCarmenLines(hotel, text, ok = true) {
+    const log = ensureCarmenLog(hotel);
+    const lines = String(text ?? "").split("\n").filter((line) => line.trim().length);
+    if (!lines.length) {
+      log.push({ ok, text: "Carmen: …terminal hiccup. Try that again." });
+      return;
+    }
+    for (const line of lines) {
+      const body = line.startsWith("Carmen:") ? line : `Carmen: ${line}`;
+      log.push({ ok, text: body });
+    }
+    while (log.length > 24) log.shift();
+  }
+
+  function paintCarmenLog(container, hotel) {
+    container.replaceChildren();
+    for (const entry of ensureCarmenLog(hotel).slice(-12)) {
+      container.appendChild(el("div", {
+        className: `line ${entry.ok ? "success" : "error"}`,
+        textContent: entry.text,
       }));
     }
   }
 
+  function appendResult(log, res) {
+    const hotel = ensureHotel(session);
+    pushCarmenLines(hotel, res?.message ?? "No reply from the terminal.", Boolean(res?.ok));
+    paintCarmenLog(log, hotel);
+  }
+
   function carmenLine(log, text, ok = true) {
-    log.appendChild(el("div", {
-      className: `line ${ok ? "success" : "error"}`,
-      textContent: text.startsWith("Carmen:") ? text : `Carmen: ${text}`,
-    }));
+    const hotel = ensureHotel(session);
+    pushCarmenLines(hotel, text, ok);
+    paintCarmenLog(log, hotel);
+  }
+
+  /**
+   * Run a Carmen desk action with visible feedback. Always showStatus + persist log,
+   * then re-render so hallway / key options appear when check-in succeeds.
+   */
+  function carmenAction(log, fn, { notifyTitle = null, navigate = null } = {}) {
+    const hotel = ensureHotel(session);
+    try {
+      const r = fn();
+      const ok = Boolean(r?.ok);
+      const message = r?.message ?? (ok ? "Done." : "That didn't work.");
+      pushCarmenLines(hotel, message, ok);
+      showStatus(String(message).split("\n")[0], ok ? "success" : "error");
+      if (ok && notifyTitle) {
+        try { tracker()?.pushNotification(notifyTitle, message); } catch { /* phone optional */ }
+      }
+      persist();
+      if (navigate && ok) {
+        navigate();
+        return;
+      }
+      render();
+    } catch (err) {
+      const msg = err?.message ? `Terminal glitch — ${err.message}` : "Terminal glitch. Try again.";
+      pushCarmenLines(hotel, msg, false);
+      showStatus(msg, "error");
+      persist();
+      render();
+    }
   }
 
   function renderWorldCycleBanner() {
@@ -197,123 +252,144 @@ export function buildHotelRenderers(ctx) {
 
   function renderHotelFrontDesk() {
     const hotel = ensureHotel(session);
-    recordFrontDeskVisit(session);
     grantRoomKeyIfReservationReady(session);
-    persist();
-    const log = el("div", { className: "log-area" });
+    const log = el("div", { className: "log-area hotel-log carmen-desk-log" });
+    if (!ensureCarmenLog(hotel).length) {
+      recordFrontDeskVisit(session);
+      pushCarmenLines(
+        hotel,
+        `"Welcome back. Carmen at the desk — Conf ${hotel.reservationCode} is on my screen. How can I help?"`,
+        true,
+      );
+      persist();
+    }
+    paintCarmenLog(log, hotel);
     const netPositive = isNetPositive(session);
+    const access = canAccessHotelRoom(session);
+    const req = getReservationRequirement(session);
 
     return el("div", {}, [
       banner("Front Desk — Clerk Carmen"),
       chipLine(),
       el("div", { className: "panel hotel-panel" }, [
         el("p", { className: "subtitle", textContent: "\"Welcome back. Carmen at the desk — how can I comp you today?\"" }),
-        el("p", { className: "dim", textContent: `Conf ${hotel.reservationCode} · ${getRoomType(hotel).label}` }),
+        el("p", { className: "dim", textContent: `Conf ${hotel.reservationCode} · ${getRoomType(hotel).label} · ${req.label}` }),
+        access
+          ? el("p", {
+            className: "success",
+            textContent: hotel.reachedRoom
+              ? `Checked in — Room ${hotel.roomNumber}. Enter when you're ready.`
+              : `Key ready — Room ${hotel.roomNumber}. Find the hallway or skip to the door.`,
+          })
+          : el("p", { className: "warning", textContent: reservationStatusMessage(session) }),
         log,
         el("ul", { className: "menu-list" }, [
           menuBtn("Locate reservation (desk terminal)", () => {
-            const r = findReservationAtDesk(session);
-            grantRoomKeyIfReservationReady(session);
-            appendResult(log, r);
-            if (r.ok) {
-              carmenLine(log, "Your key is active. Take the hallway — or I can skip you to the door.");
-              tracker()?.pushNotification("Desk Check-In", r.message);
-            }
-            persist();
-            render();
+            carmenAction(log, () => {
+              const r = findReservationAtDesk(session);
+              grantRoomKeyIfReservationReady(session);
+              if (r.ok) {
+                return {
+                  ok: true,
+                  message: `${r.message}\nYour key is active. Take the hallway — or I can skip you to the door.`,
+                };
+              }
+              return r;
+            }, { notifyTitle: "Desk Check-In" });
           }),
-          canAccessHotelRoom(session) && !hotel.reachedRoom
+          access && !hotel.reachedRoom
             ? menuBtn("Find my room (hallway)", () => {
-                carmenLine(log, `South? North? Trust the carpet — Room ${hotel.roomNumber} is waiting.`);
-                persist();
-                pushView("hotel-hallway");
+                carmenAction(log, () => ({
+                  ok: true,
+                  message: `South? North? Trust the carpet — Room ${hotel.roomNumber} is waiting.`,
+                }), { navigate: () => pushView("hotel-hallway") });
               })
             : null,
-          canAccessHotelRoom(session) && hotel.roomKeyActive && !hotel.reachedRoom
+          access && hotel.roomKeyActive && !hotel.reachedRoom
             ? menuBtn("Skip hallway — use key to door", () => {
-                const r = useRoomKeyToDoor(session);
-                appendResult(log, r);
-                persist();
-                if (r.ok) pushView("hotel-room");
-                else render();
+                carmenAction(log, () => useRoomKeyToDoor(session), {
+                  navigate: () => pushView("hotel-room"),
+                });
               })
             : null,
-          canAccessHotelRoom(session) && hotel.reachedRoom
+          access && hotel.reachedRoom
             ? menuBtn("Enter your room", () => {
-                carmenLine(log, `Enjoy Room ${hotel.roomNumber}. Don't tip the minibar.`);
-                persist();
-                pushView("hotel-room");
+                carmenAction(log, () => ({
+                  ok: true,
+                  message: `Enjoy Room ${hotel.roomNumber}. Don't tip the minibar.`,
+                }), { navigate: () => pushView("hotel-room") });
               })
             : null,
           menuBtn("Settle overdue resort charges", () => {
-            const r = settleHotelOverdue(session);
-            appendResult(log, r);
-            if (r.ok) carmenLine(log, "Balance clear. The carpet forgives — mostly.");
-            persist();
-            render();
+            carmenAction(log, () => {
+              const r = settleHotelOverdue(session);
+              if (r.ok) {
+                return { ok: true, message: `${r.message}\nBalance clear. The carpet forgives — mostly.` };
+              }
+              return r;
+            });
           }),
           menuBtn("Upgrade to Panorama Suite", () => {
-            const r = upgradeRoom(session, "suite", tracker());
-            appendResult(log, r);
-            if (r.ok) {
-              carmenLine(log, "Suite keys reprinting… check your phone Room tab, then re-locate.");
-              tracker()?.pushNotification("Suite Upgrade", getRoomType(ensureHotel(session)).label);
-            }
-            persist();
-            render();
+            carmenAction(log, () => {
+              const r = upgradeRoom(session, "suite", tracker());
+              if (r.ok) {
+                return {
+                  ok: true,
+                  message: `${r.message}\nSuite keys reprinting… check your phone Room tab, then locate again.`,
+                };
+              }
+              return r;
+            }, { notifyTitle: "Suite Upgrade" });
           }),
           menuBtn("Upgrade to Chairman Penthouse", () => {
-            const r = upgradeRoom(session, "penthouse", tracker());
-            appendResult(log, r);
-            if (r.ok) {
-              carmenLine(log, "Penthouse folio spun. Phone updated — re-confirm check-in for the new door.");
-              tracker()?.pushNotification("Penthouse Upgrade", getRoomType(ensureHotel(session)).label);
-            }
-            persist();
-            render();
+            carmenAction(log, () => {
+              const r = upgradeRoom(session, "penthouse", tracker());
+              if (r.ok) {
+                return {
+                  ok: true,
+                  message: `${r.message}\nPenthouse folio spun. Phone updated — locate again for the new door.`,
+                };
+              }
+              return r;
+            }, { notifyTitle: "Penthouse Upgrade" });
           }),
           menuBtn("Extend stay (+1 night)", () => {
-            const r = extendStay(session, 1, tracker());
-            appendResult(log, r);
-            persist();
-            render();
+            carmenAction(log, () => extendStay(session, 1, tracker()));
           }),
           menuBtn("Review folio (checkout preview)", () => {
-            const r = reviewFolio(session);
-            appendResult(log, r);
-            carmenLine(log, r.ok ? "That's the damage so far — sensors don't lie." : "Folio printer jammed. Try again.");
-            persist();
+            carmenAction(log, () => {
+              const r = reviewFolio(session);
+              return {
+                ok: r.ok,
+                message: r.ok
+                  ? `${r.message}\nThat's the damage so far — sensors don't lie.`
+                  : (r.message || "Folio printer jammed. Try again."),
+              };
+            });
           }),
           menuBtn("Late checkout (+2 hours)", () => {
-            const r = lateCheckout(session, tracker());
-            appendResult(log, r);
-            persist();
-            render();
+            carmenAction(log, () => lateCheckout(session, tracker()));
           }),
           menuBtn("Express checkout (Pearl+)", () => {
-            const r = expressCheckout(session);
-            appendResult(log, r);
-            persist();
-            render();
+            carmenAction(log, () => expressCheckout(session));
           }),
           menuBtn("Standard checkout", () => {
-            const r = checkoutStay(session);
-            appendResult(log, r);
-            persist();
-            render();
+            carmenAction(log, () => checkoutStay(session));
           }),
           hotel.nightsRemaining === 0
             ? el("p", { className: "warning", textContent: "Last night — extend stay or check out before the carpet claims you." })
             : null,
           menuBtn("Guest Directory — sign the lobby book", () => {
-            carmenLine(log, "Leather book, permanent ink — make it count.");
-            persist();
-            pushView("hotel-guest-directory");
+            carmenAction(log, () => ({
+              ok: true,
+              message: "Leather book, permanent ink — make it count.",
+            }), { navigate: () => pushView("hotel-guest-directory") });
           }),
           menuBtn("Resort dining — restaurants & capacity challenge", () => {
-            carmenLine(log, "Three tables worth the reservation. Don't order the wine tower sober.");
-            persist();
-            pushView("hotel-dining");
+            carmenAction(log, () => ({
+              ok: true,
+              message: "Three tables worth the reservation. Don't order the wine tower sober.",
+            }), { navigate: () => pushView("hotel-dining") });
           }),
           netPositive
             ? el("p", { className: "dim", textContent: "Net-positive — paid upgrades available if comps are spent." })

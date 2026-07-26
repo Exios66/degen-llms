@@ -136,6 +136,7 @@ function resetDailyReservation(hotel) {
   hotel.reachedRoom = false;
   hotel.hallwayProgress = 0;
   hotel.hallwayLog = [];
+  hotel.carmenDeskLog = [];
   hotel.lateCheckoutUsed = false;
   hotel.roomEvicted = false;
   if (hotel.roomAmenities) {
@@ -277,41 +278,57 @@ export function locateReservationViaPhone(session) {
   };
 }
 
-/** Front desk reservation step. */
+/**
+ * Front desk reservation step — Carmen's terminal completes check-in for any
+ * day's rule (phone-only, desk-only, or two-step). Whale days still require
+ * net-positive. Does not skip the hallway; activates the room key when ready.
+ */
 export function confirmReservationAtDesk(session) {
   syncWorldCycle(session);
   if (!session.hotel) session.hotel = defaultHotelState();
   const hotel = session.hotel;
   const req = getReservationRequirement(session);
-  if (req.needsNetPositive && !isNetPositive(session)) {
-    return { ok: false, message: "Whale check-in day — finish net-positive on the floor first." };
-  }
-  if (req.needsPhone && !hotel.foundReservation) {
-    return { ok: false, message: "Locate via MGM Rewards phone (P) first — today's two-step check-in." };
-  }
-  if (!req.needsDesk) {
-    if (hotel.foundReservation) {
-      grantRoomKeyIfReservationReady(session);
-      return {
-        ok: true,
-        already: true,
-        message: `${reservationStatusMessage(session)}\nPhone locate is enough today — your key is active.`,
-      };
-    }
+
+  if (hotel.roomEvicted || session.worldCycle?.roomEvicted) {
     return {
       ok: false,
-      message: "Locate via MGM Rewards phone (P → Reservation) first — desk confirmation not required today.",
+      message: "Room locked for overdue charges. Settle the folio first, then I'll re-key you.",
     };
   }
-  if (hotel.reservationConfirmedDesk) {
-    return { ok: true, already: true, message: reservationStatusMessage(session) };
+  if (req.needsNetPositive && !isNetPositive(session)) {
+    return {
+      ok: false,
+      message: "Whale check-in day — finish net-positive on the floor first, then come back to me.",
+    };
   }
-  hotel.reservationConfirmedDesk = true;
+
+  if (reservationAccessMet(session) && hotel.roomKeyActive) {
+    return {
+      ok: true,
+      already: true,
+      message: [
+        reservationStatusMessage(session),
+        `You're already checked in — Room ${hotel.roomNumber}.`,
+        "Take the hallway, or ask me to skip you straight to the door.",
+      ].join("\n"),
+    };
+  }
+
+  // Desk terminal lookup covers phone locate + desk confirm for today's rule.
   hotel.foundReservation = true;
+  hotel.reservationConfirmedDesk = true;
   grantRoomKeyIfReservationReady(session);
+
   return {
     ok: true,
-    message: `${reservationStatusMessage(session)}\nCarmen stamps your folio. Key active — take the hallway to your door.`,
+    message: [
+      `Got it — Conf ${hotel.reservationCode}.`,
+      reservationStatusMessage(session),
+      `${hotel.wing.toUpperCase()} tower · Floor ${hotel.floor} · Room ${hotel.roomNumber}`,
+      hotel.roomKeyActive
+        ? "Key active. Take the hallway to your door — or I can skip you straight there."
+        : "Check-in stamped. Ask me again if the key didn't chirp.",
+    ].join("\n"),
   };
 }
 

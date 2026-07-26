@@ -130,6 +130,8 @@ export function defaultHotelState(overrides = {}) {
     reachedRoom: overrides.reachedRoom ?? false,
     hallwayProgress: overrides.hallwayProgress ?? 0,
     hallwayLog: overrides.hallwayLog ?? [],
+    /** Persists Carmen dialogue across front-desk re-renders. */
+    carmenDeskLog: overrides.carmenDeskLog ?? [],
     frontDeskVisits: overrides.frontDeskVisits ?? 0,
     resortTime: overrides.resortTime ?? 0,
     folioReviewed: overrides.folioReviewed ?? false,

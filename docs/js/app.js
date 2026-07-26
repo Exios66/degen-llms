@@ -16,6 +16,7 @@ import { buildPoolRenderers } from "./pool-complex-ui.js";
 import { buildAmenitiesRenderers } from "./casino-amenities-ui.js";
 import { ensureHotel } from "./hotel.js";
 import { createShell, createRuntime, createViewStack } from "./ui/shell.js";
+import { buildTitleSceneRenderer, shouldSkipCasinoTitle } from "./ui/title-scene.js";
 import { buildStakesRenderers } from "./ui/stakes-ui.js";
 import { buildSlotsRenderers } from "./ui/slots-renderers.js";
 import { buildTableRenderers } from "./ui/table-renderers.js";
@@ -26,6 +27,8 @@ import { buildRacingRenderers } from "./ui/racing-renderers.js";
 import { buildVenueRenderers } from "./ui/venue-renderers.js";
 import { buildCashierRenderers } from "./ui/cashier-renderers.js";
 import { buildMetaRenderers } from "./ui/meta-renderers.js";
+
+const META_VIEWS = new Set(["title-intro", "save-picker", "save-create", "save-delete"]);
 
 const app = document.getElementById("app");
 
@@ -52,14 +55,19 @@ const shell = createShell(ctx);
 const { el, banner, menu, chipLine, statusBanner, showStatus, clearStatus, dealerPanel, videoMachine, machineLog, cardRow, cardTile, formatCardLabel } = shell;
 Object.assign(ctx, shell);
 
-const views = createViewStack({ persist: () => persist(), render: () => render(), initial: [{ name: "save-picker", data: {} }] });
+const skipTitle = shouldSkipCasinoTitle();
+const views = createViewStack({
+  persist: () => persist(),
+  render: () => render(),
+  initial: [{ name: skipTitle ? "save-picker" : "title-intro", data: {} }],
+});
 const viewStack = views.stack;
 const { pushView, popView, goBack, navigateTo, popToView } = views;
 Object.assign(ctx, { pushView, popView, goBack, navigateTo, popToView, viewStack });
 
 
 function isInCasinoView() {
-  return viewStack.some((v) => v.name !== "save-picker" && v.name !== "save-create" && v.name !== "save-delete");
+  return viewStack.some((v) => !META_VIEWS.has(v.name));
 }
 
 function startCasinoTimeTicker() {
@@ -622,8 +630,15 @@ const cashierRenderers = buildCashierRenderers(ctx);
 const metaRenderers = buildMetaRenderers(ctx);
 const crapsRenderers = buildCrapsRenderers(ctx);
 const lotteryRenderers = buildLotteryRenderers(ctx);
+const renderTitleIntro = buildTitleSceneRenderer(ctx, {
+  onComplete: () => {
+    views.reset([{ name: "save-picker", data: {} }]);
+    render();
+  },
+});
 
 const RENDERERS = {
+  "title-intro": renderTitleIntro,
   "save-picker": renderSavePicker,
   "save-create": renderSaveCreate,
   "save-delete": renderSaveDelete,
@@ -707,7 +722,7 @@ if (!applyLaunchParams()) {
 
 document.addEventListener("keydown", (e) => {
   if (e.key === "p" || e.key === "P") {
-    const inCasino = viewStack.some((v) => v.name !== "save-picker" && v.name !== "save-create");
+    const inCasino = isInCasinoView();
     const blackjackNeedsP = viewStack.at(-1)?.name === "blackjack-play" && runtime.blackjackGame?.pendingAction;
     if (inCasino && rewardsPhone && !blackjackNeedsP) {
       rewardsPhone.toggle();

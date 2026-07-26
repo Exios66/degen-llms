@@ -1,0 +1,684 @@
+/* Resort bar overlay — first-person drink POV at every lounge */
+
+:root {
+  --bar-bg: #0c0a10;
+  --bar-rail: #3a2818;
+  --bar-gold: #d4a84b;
+  --bar-cream: #f0e6d4;
+  --bar-neon: #e84888;
+  --bar-ice: #88c8e8;
+}
+
+body.bar-overlay-active {
+  overflow: hidden;
+}
+
+.bar-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9250;
+  display: none;
+  pointer-events: none;
+}
+
+.bar-overlay--open {
+  display: block;
+  pointer-events: auto;
+}
+
+.bar-overlay__backdrop {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  padding: 0.75rem;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(212, 168, 75, 0.15) 0%, transparent 55%),
+    linear-gradient(165deg, #141018 0%, #08060a 50%, #100c14 100%);
+  animation: bar-fade-in 260ms ease-out;
+}
+
+@keyframes bar-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.bar-overlay__shell {
+  width: min(1080px, 100%);
+  max-height: 100%;
+  overflow: auto;
+  margin: auto;
+  background: linear-gradient(180deg, rgba(240, 230, 212, 0.05), transparent 35%), #141018;
+  border: 1px solid rgba(212, 168, 75, 0.3);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+  padding: 1.25rem;
+  color: var(--bar-cream);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+}
+
+.bar-overlay__shell--fpv {
+  width: min(1280px, 100%);
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.bar-overlay__header {
+  margin-bottom: 1rem;
+}
+
+.bar-overlay__eyebrow {
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--bar-gold);
+  margin: 0 0 0.35rem;
+}
+
+.bar-overlay__title {
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 1.75rem;
+  font-weight: 600;
+  margin: 0 0 0.35rem;
+  color: #fff;
+}
+
+.bar-overlay__tagline {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  opacity: 0.85;
+}
+
+.bar-overlay__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.78rem;
+}
+
+.bar-overlay__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(212, 168, 75, 0.2);
+}
+
+.bar-overlay__exit {
+  background: transparent;
+  border: 1px solid rgba(212, 168, 75, 0.5);
+  color: var(--bar-gold);
+  padding: 0.5rem 1rem;
+  font-family: inherit;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+
+.bar-overlay__exit--primary {
+  background: rgba(212, 168, 75, 0.15);
+}
+
+.bar-overlay__exit:hover {
+  background: rgba(212, 168, 75, 0.25);
+}
+
+/* Venue lobby grid */
+.bar-venue-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+.bar-venue-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(212, 168, 75, 0.25);
+  color: var(--bar-cream);
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 160ms, transform 160ms;
+}
+
+.bar-venue-card:hover:not(:disabled) {
+  border-color: var(--bar-gold);
+  transform: translateY(-2px);
+}
+
+.bar-venue-card--locked {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.bar-venue-card__icon {
+  font-size: 1.5rem;
+}
+
+.bar-venue-card--sound-lounge { border-left: 3px solid #e84888; }
+.bar-venue-card--frozen-rail { border-left: 3px solid #48c8e8; }
+.bar-venue-card--live-lounge { border-left: 3px solid #c87830; }
+.bar-venue-card--lobby-bar { border-left: 3px solid #d4a84b; }
+.bar-venue-card--skyline { border-left: 3px solid #6888c8; }
+.bar-venue-card--velvet { border-left: 3px solid #6a1848; }
+.bar-venue-card--pool-deck { border-left: 3px solid #38a878; }
+.bar-venue-card--noir { border-left: 3px solid #282028; }
+
+/* FPV layout */
+.bar-fpv-layout {
+  display: grid;
+  grid-template-columns: 1fr min(340px, 38%);
+  min-height: min(720px, 92vh);
+}
+
+.bar-fpv-layout__stage {
+  position: relative;
+  min-height: 420px;
+  overflow: hidden;
+}
+
+.bar-fpv-layout__panel {
+  padding: 1rem 1.1rem;
+  background: rgba(8, 6, 12, 0.92);
+  border-left: 1px solid rgba(212, 168, 75, 0.2);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* First-person bar stage */
+.bar-fpv {
+  position: absolute;
+  inset: 0;
+  perspective: 900px;
+}
+
+.bar-fpv__ambient {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 20%, rgba(255, 200, 120, 0.12), transparent 60%);
+  pointer-events: none;
+}
+
+.bar-fpv__room {
+  position: absolute;
+  inset: 0 0 38%;
+  background: linear-gradient(180deg, #1a1420 0%, #0e0a14 100%);
+}
+
+.bar-fpv__backbar {
+  position: absolute;
+  top: 8%;
+  left: 5%;
+  right: 5%;
+  height: 55%;
+  background: linear-gradient(180deg, #2a1c14 0%, #1a100c 100%);
+  border-radius: 4px 4px 0 0;
+  box-shadow: inset 0 -8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.bar-fpv__mirror {
+  position: absolute;
+  top: 12%;
+  left: 15%;
+  right: 15%;
+  height: 35%;
+  background: linear-gradient(135deg, rgba(200, 220, 240, 0.15), rgba(100, 120, 140, 0.08));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.bar-fpv__bottle-row {
+  position: absolute;
+  bottom: 8%;
+  left: 8%;
+  right: 8%;
+  height: 45%;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 28px,
+    rgba(180, 140, 80, 0.15) 28px,
+    rgba(180, 140, 80, 0.15) 32px
+  );
+}
+
+.bar-fpv__pendants {
+  position: absolute;
+  top: 4%;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-around;
+  padding: 0 20%;
+}
+
+.bar-fpv__light {
+  width: 12px;
+  height: 28px;
+  background: linear-gradient(180deg, #f0d878, #a87820);
+  border-radius: 2px;
+  box-shadow: 0 0 18px rgba(240, 200, 100, 0.5);
+  animation: bar-light-flicker 4s ease-in-out infinite;
+}
+
+.bar-fpv__light--2 { animation-delay: 1.8s; }
+
+@keyframes bar-light-flicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.75; }
+}
+
+.bar-fpv__rail {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 42%;
+  transform: rotateX(8deg);
+  transform-origin: bottom center;
+}
+
+.bar-fpv__rail-wood {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, #5a3820 0%, #3a2414 40%, #2a180c 100%);
+  border-top: 3px solid #8a6840;
+  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.5);
+}
+
+.bar-fpv__mat {
+  position: absolute;
+  top: 12%;
+  left: 8%;
+  right: 8%;
+  height: 55%;
+  background: #1a1410;
+  border-radius: 2px;
+  opacity: 0.6;
+}
+
+.bar-fpv__glass-well {
+  position: absolute;
+  top: 5%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 180px;
+  height: 200px;
+  z-index: 2;
+}
+
+.bar-fpv__glass-empty {
+  position: absolute;
+  inset: 20% 25%;
+  border: 2px dashed rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+}
+
+.bar-fpv__glass-empty.is-hidden { display: none; }
+
+.bar-fpv__drink {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 280ms ease;
+}
+
+.bar-fpv__drink.is-served .bar-sprite-svg {
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.45));
+}
+
+.bar-fpv__drink.bar-fpv__anim-arrive {
+  animation: bar-drink-arrive 420ms ease-out;
+}
+
+@keyframes bar-drink-arrive {
+  from { transform: translateY(24px) scale(0.9); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.bar-fpv__napkin {
+  position: absolute;
+  bottom: 18%;
+  right: 22%;
+  width: 48px;
+  height: 48px;
+  background: #f0e8d8;
+  transform: rotate(12deg);
+  opacity: 0.85;
+  box-shadow: 1px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.bar-fpv__hands {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 45%;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.bar-fpv__arm {
+  position: absolute;
+  bottom: 0;
+  width: 38%;
+  height: 80%;
+  background: linear-gradient(180deg, #c8a080 0%, #a87858 100%);
+  border-radius: 40% 40% 0 0;
+  opacity: 0.9;
+}
+
+.bar-fpv__arm--left {
+  left: 8%;
+  transform: rotate(-8deg);
+}
+
+.bar-fpv__arm--right {
+  right: 8%;
+  transform: rotate(8deg);
+}
+
+.bar-fpv__hands.is-sipping .bar-fpv__arm--right {
+  animation: bar-sip-arm 680ms ease-in-out;
+}
+
+@keyframes bar-sip-arm {
+  0%, 100% { transform: rotate(8deg) translateY(0); }
+  40% { transform: rotate(-4deg) translateY(-18px); }
+}
+
+.bar-fpv__sip {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 120px;
+  pointer-events: none;
+  z-index: 4;
+  opacity: 0;
+}
+
+.bar-fpv__sip.is-active {
+  animation: bar-sip-pop 680ms ease-out forwards;
+}
+
+@keyframes bar-sip-pop {
+  0% { opacity: 0; transform: translateX(-50%) translateY(20px) scale(0.8); }
+  30% { opacity: 1; transform: translateX(-50%) translateY(-10px) scale(1.05); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-30px) scale(0.9); }
+}
+
+.bar-fpv__vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(0, 0, 0, 0.55) 100%);
+  pointer-events: none;
+  z-index: 5;
+}
+
+.bar-fpv__caption {
+  position: absolute;
+  bottom: 8%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(240, 230, 212, 0.7);
+  z-index: 6;
+  white-space: nowrap;
+}
+
+/* Motif scenery */
+.bar-scenery {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.bar-scenery__neon {
+  position: absolute;
+  top: 18%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.65rem;
+  letter-spacing: 0.35em;
+  color: var(--bar-neon);
+  text-shadow: 0 0 12px currentColor;
+  opacity: 0.85;
+}
+
+.bar-scenery--sound .bar-scenery__dancefloor {
+  position: absolute;
+  bottom: 0;
+  left: 10%;
+  right: 10%;
+  height: 25%;
+  background: repeating-linear-gradient(45deg, #1a1020, #1a1020 8px, #221428 8px, #221428 16px);
+  opacity: 0.6;
+}
+
+.bar-scenery--frozen .bar-scenery__blender {
+  position: absolute;
+  top: 30%;
+  right: 18%;
+  width: 40px;
+  height: 50px;
+  background: #c0c8d0;
+  border-radius: 4px;
+}
+
+.bar-scenery--skyline .bar-scenery__strip {
+  position: absolute;
+  bottom: 20%;
+  left: 0;
+  right: 0;
+  height: 35%;
+  background: linear-gradient(180deg, transparent, rgba(80, 60, 120, 0.4));
+  box-shadow: inset 0 -20px 40px rgba(255, 180, 80, 0.15);
+}
+
+.bar-scenery--pool .bar-scenery__water {
+  position: absolute;
+  bottom: 15%;
+  left: 5%;
+  right: 5%;
+  height: 30%;
+  background: linear-gradient(180deg, #2888a8, #186878);
+  opacity: 0.5;
+  animation: bar-water-shimmer 6s ease-in-out infinite;
+}
+
+@keyframes bar-water-shimmer {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 0.6; }
+}
+
+.bar-scenery--noir .bar-scenery__velvet-wall {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, #0a0808, #141010);
+}
+
+.bar-scenery--noir .bar-scenery__candle {
+  position: absolute;
+  top: 25%;
+  left: 20%;
+  width: 6px;
+  height: 20px;
+  background: #f0d878;
+  box-shadow: 0 0 20px #f0a040;
+}
+
+/* Motif panel tints */
+.bar-motif--sound-lounge .bar-fpv-layout__panel {
+  background: linear-gradient(180deg, rgba(232, 72, 136, 0.08), rgba(8, 6, 12, 0.95));
+}
+
+.bar-motif--frozen-rail .bar-fpv-layout__panel {
+  background: linear-gradient(180deg, rgba(72, 200, 232, 0.08), rgba(8, 6, 12, 0.95));
+}
+
+.bar-motif--pool-deck .bar-fpv-layout__panel {
+  background: linear-gradient(180deg, rgba(56, 168, 120, 0.1), rgba(8, 6, 12, 0.95));
+}
+
+.bar-motif--noir .bar-fpv-layout__panel {
+  background: linear-gradient(180deg, rgba(40, 32, 40, 0.5), rgba(4, 2, 6, 0.98));
+}
+
+/* Menu + HUD */
+.bar-hud {
+  margin-bottom: 0.75rem;
+  padding: 0.5rem 0.65rem;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(212, 168, 75, 0.15);
+  font-size: 0.72rem;
+}
+
+.bar-hud__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 1rem;
+}
+
+.bar-hud__chips {
+  margin-left: auto;
+  color: var(--bar-gold);
+}
+
+.bar-message {
+  font-size: 0.8rem;
+  margin: 0 0 0.75rem;
+  min-height: 2.4em;
+  line-height: 1.4;
+}
+
+.bar-menu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.bar-menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.65rem 0.75rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(212, 168, 75, 0.18);
+  color: var(--bar-cream);
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 140ms, background 140ms;
+}
+
+.bar-menu-item:hover:not(:disabled) {
+  border-color: var(--bar-gold);
+  background: rgba(212, 168, 75, 0.08);
+}
+
+.bar-menu-item:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.bar-menu-item__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.bar-menu-item__price {
+  color: var(--bar-gold);
+  font-size: 0.85rem;
+}
+
+/* Encounters */
+.bar-encounter {
+  position: fixed;
+  inset: 0;
+  z-index: 9300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.65);
+  padding: 1rem;
+}
+
+.bar-encounter__card {
+  max-width: 420px;
+  padding: 1.25rem;
+  background: #1a1418;
+  border: 1px solid var(--bar-gold);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+
+.bar-encounter__cat {
+  font-size: 0.68rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--bar-neon);
+  margin: 0 0 0.5rem;
+}
+
+.bar-encounter__choices {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.bar-encounter__choice {
+  padding: 0.55rem 0.75rem;
+  background: rgba(212, 168, 75, 0.1);
+  border: 1px solid rgba(212, 168, 75, 0.35);
+  color: var(--bar-cream);
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.bar-encounter__choice:hover {
+  background: rgba(212, 168, 75, 0.2);
+}
+
+@media (max-width: 900px) {
+  .bar-fpv-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: min(48vh, 380px) auto;
+  }
+
+  .bar-fpv-layout__panel {
+    border-left: none;
+    border-top: 1px solid rgba(212, 168, 75, 0.2);
+    max-height: 50vh;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bar-fpv__light,
+  .bar-scenery--pool .bar-scenery__water,
+  .bar-fpv__drink.bar-fpv__anim-arrive,
+  .bar-fpv__hands.is-sipping .bar-fpv__arm--right,
+  .bar-fpv__sip.is-active {
+    animation: none !important;
+  }
+}

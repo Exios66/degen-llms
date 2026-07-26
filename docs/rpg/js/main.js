@@ -14,6 +14,7 @@ import {
 } from "./systems/EncounterBridge.js?v=__ASSET_SHA__";
 import { TerminalHostOverlay } from "./systems/TerminalHostOverlay.js";
 import { DiningOverlay } from "../../js/DiningOverlay.js";
+import { BarOverlay } from "../../js/BarOverlay.js";
 import { PoolComplexOverlay } from "../../js/PoolComplexOverlay.js";
 import { BalconySmokeOverlay } from "../../js/BalconySmokeOverlay.js";
 import { QuestManager } from "./systems/QuestManager.js";
@@ -205,9 +206,16 @@ async function startOverworld(activeSession) {
   });
   diningOverlay.setSession(session);
 
+  const barOverlay = new BarOverlay(document.getElementById("bar-overlay"), {
+    onPersist: () => persistAll(),
+    onStatus: (msg) => console.info("[bar]", msg),
+  });
+  barOverlay.setSession(session);
+
   const poolOverlay = new PoolComplexOverlay(document.getElementById("pool-overlay"), {
     onPersist: () => persistAll(),
     onStatus: (msg) => console.info("[pool]", msg),
+    barOverlay,
   });
   poolOverlay.setSession(session);
 
@@ -223,6 +231,7 @@ async function startOverworld(activeSession) {
     onPersist: () => persistAll(),
     rewardsPhone,
     diningOverlay,
+    barOverlay,
     poolOverlay,
     balconySmokeOverlay,
   });
@@ -232,6 +241,7 @@ async function startOverworld(activeSession) {
     overlays,
     terminalHost,
     diningOverlay,
+    barOverlay,
     poolOverlay,
     onPersist: () => persistAll(),
     questManager,

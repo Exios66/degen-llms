@@ -274,8 +274,13 @@ export function buildPoolRenderers(ctx) {
           menuBtn("Enter / show pass ($75 first visit)", () => {
             runAction(log, enterBeachClub(session), { refresh: true });
           }),
-          menuBtn("Pool bar — frozen cocktail ($18)", () => {
-            runAction(log, beachClubAction(session, "bar"), { refresh: true });
+          menuBtn("Pool bar — first-person at the rail", () => {
+            if (ctx.barOverlay) {
+              ctx.barOverlay.setSession(session);
+              ctx.barOverlay.open("pool_beach_club");
+            } else {
+              runAction(log, beachClubAction(session, "bar"), { refresh: true });
+            }
           }),
           menuBtn("Claim a sun deck lounger", () => {
             runAction(log, beachClubAction(session, "sun_deck"));

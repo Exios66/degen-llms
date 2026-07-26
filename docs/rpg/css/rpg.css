@@ -160,6 +160,17 @@ body {
   padding: 16px;
 }
 
+/* A system toast is informational, not a conversation: the player keeps
+   walking, so the overlay must not eat taps meant for the map underneath. */
+#dialogue-overlay.dialogue-overlay--toast {
+  pointer-events: none;
+}
+
+#dialogue-overlay.dialogue-overlay--toast .dialogue-box {
+  pointer-events: auto;
+  width: min(100%, 520px);
+}
+
 .encounter-overlay,
 #blackjack-overlay {
   position: absolute;
@@ -453,6 +464,32 @@ body {
 .character-creator__swatch--active {
   border-color: var(--gold);
   box-shadow: 0 0 0 2px #0a0812, 0 0 0 4px var(--gold);
+}
+
+.character-creator__bodies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.character-creator__body {
+  padding: 2px;
+  min-height: 0;
+  background: #0a0812;
+  border: 3px solid var(--border);
+  cursor: pointer;
+  line-height: 0;
+}
+
+.character-creator__body--active {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 2px #0a0812, 0 0 0 4px var(--gold);
+}
+
+.character-creator__body-thumb {
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
 }
 
 .character-creator__actions {
@@ -1268,6 +1305,11 @@ body {
 body.has-touch-pad .touch-hint {
   top: max(62px, calc(env(safe-area-inset-top) + 62px));
   bottom: auto;
+}
+
+
+body.has-touch-pad #dialogue-overlay.dialogue-overlay--toast {
+  padding-bottom: 190px;
 }
 
 body.has-touch-pad .rewards-phone-root {

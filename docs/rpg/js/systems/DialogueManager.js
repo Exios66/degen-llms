@@ -1,8 +1,8 @@
 /**
  * JSON-driven branching dialogue overlay (Pokémon / DS style).
  */
-import { resolveSpeakerPortrait } from "./CharacterAppearance.js";
-import { drawCharacterToCanvas } from "./TextureFactory.js";
+import { resolveSpeakerLook } from "./CharacterAppearance.js";
+import { drawCharacterToCanvas } from "./CharacterSprites.js";
 
 export class DialogueManager {
   /**
@@ -16,6 +16,7 @@ export class DialogueManager {
     this.flags = {};
     this._resolve = null;
     this._active = false;
+    this._systemOnly = false;
     this._typeDelayMs = 18;
   }
 
@@ -40,6 +41,15 @@ export class DialogueManager {
     return this._active;
   }
 
+  /**
+   * Whether the overlay owns the player's input. A branching conversation does;
+   * a system toast does not, so walking past a zone sign reads the sign without
+   * stopping the player dead for the length of the toast.
+   */
+  isBlocking() {
+    return this._active && !this._systemOnly;
+  }
+
   _buildBox({ speaker, isSystem = false }) {
     const box = document.createElement("div");
     box.className = `dialogue-box dialogue-box--tappable${isSystem ? " dialogue-box--system" : ""}`;
@@ -51,11 +61,10 @@ export class DialogueManager {
     portraitWrap.className = "dialogue-portrait-wrap";
     const portrait = document.createElement("canvas");
     portrait.className = "dialogue-portrait";
-    portrait.width = 64;
-    portrait.height = 88;
+    portrait.width = 56;
+    portrait.height = 77;
     portrait.setAttribute("aria-hidden", "true");
-    const palette = resolveSpeakerPortrait(speaker ?? "Resort");
-    drawCharacterToCanvas(portrait, palette, "down", 0, 2);
+    drawCharacterToCanvas(portrait, resolveSpeakerLook(speaker ?? "Resort"), "down", 0, 3);
     portraitWrap.appendChild(portrait);
 
     const content = document.createElement("div");
@@ -98,7 +107,9 @@ export class DialogueManager {
     }
 
     this._active = true;
+    this._systemOnly = true;
     this.root.hidden = false;
+    this.root.classList.add("dialogue-overlay--toast");
     this.root.innerHTML = "";
 
     const { box, textEl } = this._buildBox({ speaker: opts.speaker ?? "Resort", isSystem: true });
@@ -114,13 +125,18 @@ export class DialogueManager {
         clearTimeout(this._systemTimer);
         this._systemTimer = null;
       }
-      this.root.removeEventListener("pointerdown", onPointer);
+      box.removeEventListener("pointerdown", onPointer);
       this.root.hidden = true;
+      this.root.classList.remove("dialogue-overlay--toast");
       this.root.innerHTML = "";
       this._active = false;
+      this._systemOnly = false;
+      this._dismissSystem = null;
     };
-    // Anywhere on the screen dismisses it, same as advancing a line.
-    this.root.addEventListener("pointerdown", onPointer);
+    this._dismissSystem = dismiss;
+    // Only the toast itself swallows the tap: the rest of the screen stays live
+    // so a route can be tapped while a room placard is still fading.
+    box.addEventListener("pointerdown", onPointer);
 
     const duration = opts.durationMs ?? 2200;
     this._systemTimer = setTimeout(dismiss, duration);
@@ -131,6 +147,8 @@ export class DialogueManager {
    * @returns {Promise<{ action?: string, flag?: string, encounter?: string }>}
    */
   start(dialogueId) {
+    // A conversation outranks a toast that happens to still be on screen.
+    if (this._systemOnly) this._dismissSystem?.();
     if (this._active) return Promise.resolve({});
     const node = this._resolveNode(dialogueId);
     if (!node) return Promise.resolve({});

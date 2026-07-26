@@ -43,9 +43,9 @@ function mix(a, b, t) {
 
 // ─── Pixel writers (Phaser Graphics + HTML Canvas) ─────────────────────────
 
-function px(g, color, x, y, w = 1, h = 1, alpha = 1) {
+function px(g, color, scale, x, y, w = 1, h = 1, alpha = 1) {
   g.fillStyle(color, alpha);
-  g.fillRect(x * SCALE, y * SCALE, w * SCALE, h * SCALE);
+  g.fillRect(x * scale, y * scale, w * scale, h * scale);
 }
 
 function pxCtx(ctx, color, scale, x, y, w = 1, h = 1, alpha = 1) {
@@ -64,7 +64,7 @@ function makeWriter(target, scale = SCALE) {
     };
   }
   return {
-    px: (color, x, y, w, h, alpha) => px(target, color, x, y, w, h, alpha),
+    px: (color, x, y, w, h, alpha) => px(target, color, scale, x, y, w, h, alpha),
   };
 }
 
@@ -805,7 +805,7 @@ function drawCharacterPixels(w, palette, dir, frame) {
   const legs = CHAR_LEGS[frame] ?? CHAR_LEGS[0];
   const body = CHAR_BODY_BY_DIR[dir] ?? CHAR_BODY_BY_DIR.down;
   // Frames 1 and 2 lift a foot, so the upper body rides a pixel higher. The leg
-  // block always starts at row 15, which keeps the waist joined either way.
+  // block always starts at LEGS_TOP, which keeps the waist joined either way.
   const bob = frame === 0 ? 0 : -1;
   paintGrid(w, legs, legend, LEGS_TOP);
   paintGrid(w, body, legend, BODY_TOP + bob);
@@ -824,7 +824,10 @@ export function characterGrids() {
 }
 
 function drawCharacter(g, palette, dir, frame) {
-  drawCharacterPixels(makeWriter(g), palette, dir, frame);
+  // Characters use CHAR_SCALE (1), not the tile SCALE (2). Drawing at tile
+  // scale painted a 64×88 sprite into a 32×44 texture — only the top-left
+  // quarter was visible in the overworld.
+  drawCharacterPixels(makeWriter(g, CHAR_SCALE), palette, dir, frame);
 }
 
 /** Draw character to a 2D canvas (for previews and dialogue portraits). */

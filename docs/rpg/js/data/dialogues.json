@@ -570,8 +570,15 @@
     "text": "Pulling your conf now — front desk terminal has the full stay menu once you're checked in. Phone locate counts too if you already used MGM Rewards.",
     "setFlag": "met_carmen",
     "choices": [
-      { "label": "Open front desk terminal", "encounter": "hotel", "setFlag": "hotel_tower_visit" },
-      { "label": "I'm all set", "next": "clerk_carmen_bye" }
+      {
+        "label": "Open front desk terminal",
+        "encounter": "hotel",
+        "setFlag": "hotel_tower_visit"
+      },
+      {
+        "label": "I'm all set",
+        "next": "clerk_carmen_bye"
+      }
     ]
   },
   "clerk_carmen_room": {
@@ -579,8 +586,14 @@
     "text": "Once your reservation is located — phone or desk — your key activates. Open front desk services for your full room menu.",
     "setFlag": "hotel_tower_visit",
     "choices": [
-      { "label": "Open hotel services", "encounter": "hotel" },
-      { "label": "Thanks", "next": "clerk_carmen_bye" }
+      {
+        "label": "Open hotel services",
+        "encounter": "hotel"
+      },
+      {
+        "label": "Thanks",
+        "next": "clerk_carmen_bye"
+      }
     ]
   },
   "clerk_carmen_bye": {
@@ -2469,5 +2482,358 @@
     "speaker": "Reef Guide",
     "text": "Golden crocodile. Two of them, both beige, both convinced they're furniture. Half the guests walk past and photograph a rock.",
     "next": "shark_reef_guide_bye"
+  },
+  "one_usher_ora_greet": {
+    "speaker": "Usher Ora",
+    "text": "Orchestra left, orchestra right, and a gold aisle straight up the middle so nobody has to climb over anybody. House opens thirty minutes before curtain.",
+    "choices": [
+      {
+        "label": "Where does everything else live?",
+        "encounter": "guest_directory"
+      },
+      {
+        "label": "What's the show like?",
+        "next": "one_usher_ora_show"
+      },
+      {
+        "label": "Just looking around.",
+        "next": "one_usher_ora_bye"
+      }
+    ]
+  },
+  "one_usher_ora_show": {
+    "speaker": "Usher Ora",
+    "text": "Two hundred and sixty speakers, seven of them in your seat. People arrive skeptical and leave holding the armrest. I've stopped trying to explain it.",
+    "setFlag": "met_usher_ora",
+    "next": "one_usher_ora_bye"
+  },
+  "one_usher_ora_bye": {
+    "speaker": "Usher Ora",
+    "text": "Aisle's clear, seats are numbered, and the casino is back out the east doors."
+  },
+  "one_aerialist_greet": {
+    "speaker": "The Aerialist",
+    "text": "I spend most of the evening forty feet up, so forgive me for looking at people sideways. Everything here is counted in eights.",
+    "choices": [
+      {
+        "label": "Can I keep an eight count?",
+        "encounter": "one_show"
+      },
+      {
+        "label": "Forty feet up on what?",
+        "next": "one_aerialist_rig"
+      },
+      {
+        "label": "I'll let you rehearse.",
+        "next": "one_aerialist_bye"
+      }
+    ]
+  },
+  "one_aerialist_rig": {
+    "speaker": "The Aerialist",
+    "text": "Wire, mostly. Trust, technically. The rig weighs more than the truck that brought it and I still check every clip myself.",
+    "setFlag": "met_one_aerialist",
+    "next": "one_aerialist_bye"
+  },
+  "one_aerialist_bye": {
+    "speaker": "The Aerialist",
+    "text": "If you hear the count in your head walking out, that's the show working."
+  },
+  "one_aerialist_challenge": {
+    "speaker": "The Aerialist",
+    "text": "Stop right there — you crossed the stage on the beat and you didn't even notice. That's either training or luck. Let's find out which.",
+    "reputation": {
+      "staff": 1
+    },
+    "encounter": "one_show"
+  },
+  "one_merch_milo_greet": {
+    "speaker": "Merch Milo",
+    "text": "Programs, shirts, one very expensive glove replica that I am contractually required to call a collectible.",
+    "choices": [
+      {
+        "label": "Show me the stand.",
+        "encounter": "shops"
+      },
+      {
+        "label": "Does the glove sell?",
+        "next": "one_merch_milo_glove"
+      },
+      {
+        "label": "Maybe after the show.",
+        "next": "one_merch_milo_bye"
+      }
+    ]
+  },
+  "one_merch_milo_glove": {
+    "speaker": "Merch Milo",
+    "text": "Twice a night, and both times to somebody who swore they were only browsing. The lobby does something to people.",
+    "next": "one_merch_milo_bye"
+  },
+  "one_merch_milo_bye": {
+    "speaker": "Merch Milo",
+    "text": "Stand's open till the house clears. So am I, unfortunately."
+  },
+  "ice_bartender_bex_greet": {
+    "speaker": "Bartender Bex",
+    "text": "Everything you can see is ice. The bar, the glass, the sofa you were about to sit on. Parka's on the hook, and yes, you'll want it.",
+    "choices": [
+      {
+        "label": "Pour me something.",
+        "encounter": "bar"
+      },
+      {
+        "label": "How cold is it in here?",
+        "next": "ice_bartender_bex_cold"
+      },
+      {
+        "label": "I'll just look.",
+        "next": "ice_bartender_bex_bye"
+      }
+    ]
+  },
+  "ice_bartender_bex_cold": {
+    "speaker": "Bartender Bex",
+    "text": "Minus five, all day, every day. The sculptures get recarved every few weeks. I've watched a swan become an eagle become a very apologetic duck.",
+    "setFlag": "met_bartender_bex",
+    "next": "ice_bartender_bex_bye"
+  },
+  "ice_bartender_bex_bye": {
+    "speaker": "Bartender Bex",
+    "text": "Don't lean on the walls. They remember."
+  },
+  "parka_pam_greet": {
+    "speaker": "Parka Pam",
+    "text": "Coat check in reverse: I hand them out, and I get them back a lot damper than they left.",
+    "choices": [
+      {
+        "label": "What else are you selling?",
+        "encounter": "shops"
+      },
+      {
+        "label": "People try to keep them?",
+        "next": "parka_pam_keep"
+      },
+      {
+        "label": "I run warm.",
+        "next": "parka_pam_bye"
+      }
+    ]
+  },
+  "parka_pam_keep": {
+    "speaker": "Parka Pam",
+    "text": "Every night. I've stopped chasing anyone past the Shoppes — the desert does my collections for me.",
+    "next": "parka_pam_bye"
+  },
+  "parka_pam_bye": {
+    "speaker": "Parka Pam",
+    "text": "Twenty minutes is the limit, and twenty minutes is plenty."
+  },
+  "maitre_d_marco_greet": {
+    "speaker": "Maitre d' Marco",
+    "text": "Four kitchens, one concourse, and a waitlist I keep in my head because the tablet keeps lying to me. Marco. What are we eating?",
+    "choices": [
+      {
+        "label": "Get me a table.",
+        "encounter": "hotel_dining"
+      },
+      {
+        "label": "Which one's best?",
+        "next": "maitre_d_marco_best"
+      },
+      {
+        "label": "Still deciding.",
+        "next": "maitre_d_marco_bye"
+      }
+    ]
+  },
+  "maitre_d_marco_best": {
+    "speaker": "Maitre d' Marco",
+    "text": "Border Grill before a session, StripSteak after a good one, Kumi when you're pretending the night is still young, Libertine when it very much isn't.",
+    "setFlag": "met_maitre_d_marco",
+    "next": "maitre_d_marco_bye"
+  },
+  "maitre_d_marco_bye": {
+    "speaker": "Maitre d' Marco",
+    "text": "Row's open late. Later than you'll want it to be."
+  },
+  "grill_chef_gabi_greet": {
+    "speaker": "Chef Gabi",
+    "text": "Border Grill. Everything on that counter was made this morning by somebody who was awake before the last table left last night.",
+    "choices": [
+      {
+        "label": "What else does the resort comp?",
+        "encounter": "amenities"
+      },
+      {
+        "label": "You feed the staff too?",
+        "next": "grill_chef_gabi_staff"
+      },
+      {
+        "label": "Smells incredible.",
+        "next": "grill_chef_gabi_bye"
+      }
+    ]
+  },
+  "grill_chef_gabi_staff": {
+    "speaker": "Chef Gabi",
+    "text": "Dealers at four, security at six, the count room whenever they surface. I can tell how the floor is doing by what time the pit eats.",
+    "setFlag": "met_chef_gabi",
+    "next": "grill_chef_gabi_bye"
+  },
+  "grill_chef_gabi_bye": {
+    "speaker": "Chef Gabi",
+    "text": "Eat something before you gamble. That's the only system that works."
+  },
+  "sommelier_sabine_greet": {
+    "speaker": "Sommelier Sabine",
+    "text": "Two thousand labels and one honest question: are we celebrating, or are we recovering?",
+    "choices": [
+      {
+        "label": "Pick something for me.",
+        "encounter": "bar"
+      },
+      {
+        "label": "Can you tell which is which?",
+        "next": "sommelier_sabine_tell"
+      },
+      {
+        "label": "Neither, yet.",
+        "next": "sommelier_sabine_bye"
+      }
+    ]
+  },
+  "sommelier_sabine_tell": {
+    "speaker": "Sommelier Sabine",
+    "text": "Always. Celebrating orders by name. Recovering orders by price. Recovering tips better, which tells you something about both.",
+    "next": "sommelier_sabine_bye"
+  },
+  "sommelier_sabine_bye": {
+    "speaker": "Sommelier Sabine",
+    "text": "The list is long and the night is longer. Come back either way."
+  },
+  "sommelier_sabine_challenge": {
+    "speaker": "Sommelier Sabine",
+    "text": "You walked the whole row without reading a single menu. That's a person who already knows what they want. Sit — let me prove you wrong.",
+    "reputation": {
+      "staff": 1
+    },
+    "encounter": "bar"
+  },
+  "tube_wrangler_tony_greet": {
+    "speaker": "Tube Wrangler Tony",
+    "text": "Quarter mile of current, one direction, no decisions required. Tube's free, the float is the whole activity.",
+    "choices": [
+      {
+        "label": "Send me round.",
+        "encounter": "pool_wave"
+      },
+      {
+        "label": "How long is a lap?",
+        "next": "tube_wrangler_tony_lap"
+      },
+      {
+        "label": "Just walking the deck.",
+        "next": "tube_wrangler_tony_bye"
+      }
+    ]
+  },
+  "tube_wrangler_tony_lap": {
+    "speaker": "Tube Wrangler Tony",
+    "text": "Eleven minutes if the pumps are honest. People come off it having made decisions they'd been avoiding for a week. It's the only ride that thinks for you.",
+    "setFlag": "met_tube_wrangler_tony",
+    "next": "tube_wrangler_tony_bye"
+  },
+  "tube_wrangler_tony_bye": {
+    "speaker": "Tube Wrangler Tony",
+    "text": "Cabanas are north, beach club is east, and the river will still be going either way."
+  },
+  "river_guard_rae_greet": {
+    "speaker": "Lifeguard Rae",
+    "text": "Rae. I watch a circle of water go round in a circle. It is more interesting than it sounds, and much less interesting than it looks.",
+    "choices": [
+      {
+        "label": "What's out on the deck today?",
+        "encounter": "pool"
+      },
+      {
+        "label": "Busiest hour?",
+        "next": "river_guard_rae_busy"
+      },
+      {
+        "label": "Carry on.",
+        "next": "river_guard_rae_bye"
+      }
+    ]
+  },
+  "river_guard_rae_busy": {
+    "speaker": "Lifeguard Rae",
+    "text": "Two in the afternoon, everyone at once, and then it empties like somebody pulled a plug. After dark it's just the current and the lights.",
+    "next": "river_guard_rae_bye"
+  },
+  "river_guard_rae_bye": {
+    "speaker": "Lifeguard Rae",
+    "text": "Walk on the deck, float in the river. Not the other way round."
+  },
+  "tram_conductor_cy_greet": {
+    "speaker": "Conductor Cy",
+    "text": "Free tram, north platform to the front of the property, no ticket, no schedule worth printing. Cy. I keep the doors honest.",
+    "choices": [
+      {
+        "label": "What connects to what?",
+        "encounter": "guest_directory"
+      },
+      {
+        "label": "How often does it run?",
+        "next": "tram_conductor_cy_often"
+      },
+      {
+        "label": "I'll wait on the platform.",
+        "next": "tram_conductor_cy_bye"
+      }
+    ]
+  },
+  "tram_conductor_cy_often": {
+    "speaker": "Conductor Cy",
+    "text": "Every few minutes, all day. Faster than the walk, and considerably faster than the walk back with shopping bags.",
+    "setFlag": "met_conductor_cy",
+    "next": "tram_conductor_cy_bye"
+  },
+  "tram_conductor_cy_bye": {
+    "speaker": "Conductor Cy",
+    "text": "West platform for the Boulevard, south stairs for the convention hall. Mind the gap that isn't there."
+  },
+  "platform_pete_greet": {
+    "speaker": "Platform Pete",
+    "text": "I ride it both directions most days. Not going anywhere — it's air conditioned and nobody asks me to gamble.",
+    "choices": [
+      {
+        "label": "That's a whole hobby.",
+        "next": "platform_pete_hobby"
+      },
+      {
+        "label": "Seen anything strange?",
+        "next": "platform_pete_strange"
+      },
+      {
+        "label": "Enjoy the ride.",
+        "next": "platform_pete_bye"
+      }
+    ]
+  },
+  "platform_pete_hobby": {
+    "speaker": "Platform Pete",
+    "text": "Cheapest one in this town. Eleven laps yesterday. The driver waves now, which I'm choosing to read as friendship.",
+    "next": "platform_pete_bye"
+  },
+  "platform_pete_strange": {
+    "speaker": "Platform Pete",
+    "text": "Last car, late shift, somebody in a dealer's vest riding with a full rack of chips and no escort. Got off at the north end and walked toward the loading dock. Not my business. Might be yours.",
+    "setFlag": "hint_north_wall",
+    "next": "platform_pete_bye"
+  },
+  "platform_pete_bye": {
+    "speaker": "Platform Pete",
+    "text": "Doors on both sides. Pick one, they both end up somewhere."
   }
 }

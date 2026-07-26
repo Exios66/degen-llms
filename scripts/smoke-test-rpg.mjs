@@ -59,7 +59,7 @@ const doors = MAP_IDS.flatMap((mapId) =>
   doorsForMap(mapId).map((d) => ({ ...d, mapId })));
 
 /** Bespoke pixel overlays, mirrored from EncounterBridge's alias table. */
-const BESPOKE = ["blackjack", "holdem", "roulette", "house_of_blues", "rhythm"];
+const BESPOKE = ["blackjack", "holdem", "roulette", "house_of_blues", "rhythm", "one_show"];
 const ENCOUNTER_IDS = new Set([
   ...BESPOKE, ...Object.keys(HOSTED_ENCOUNTERS), ...Object.keys(TABLE_STAKE_ACTIVITIES),
 ]);

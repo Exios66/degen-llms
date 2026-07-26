@@ -1,0 +1,127 @@
+{
+  "id": "minus5_icebar",
+  "label": "Minus5 Icebar",
+  "wing": "Bars",
+  "bgm": "secret",
+  "spawn": {
+    "x": 26,
+    "y": 15
+  },
+  "base": "WALL",
+  "rects": [
+    {
+      "tile": "ICE",
+      "x": 4,
+      "y": 4,
+      "w": 22,
+      "h": 22
+    },
+    {
+      "tile": "PATH",
+      "x": 4,
+      "y": 14,
+      "w": 22,
+      "h": 3
+    },
+    {
+      "tile": "PATH",
+      "x": 14,
+      "y": 4,
+      "w": 3,
+      "h": 22
+    }
+  ],
+  "decor": [
+    {
+      "tile": "BAR",
+      "x": 9,
+      "y": 8,
+      "w": 12,
+      "h": 1
+    },
+    {
+      "tile": "GLASS",
+      "x": 6,
+      "y": 6,
+      "w": 1,
+      "h": 4
+    },
+    {
+      "tile": "GLASS",
+      "x": 23,
+      "y": 6,
+      "w": 1,
+      "h": 4
+    },
+    {
+      "tile": "GLASS",
+      "x": 6,
+      "y": 20,
+      "w": 1,
+      "h": 4
+    },
+    {
+      "tile": "GLASS",
+      "x": 23,
+      "y": 20,
+      "w": 1,
+      "h": 4
+    },
+    {
+      "tile": "GLASS",
+      "x": 10,
+      "y": 21,
+      "w": 1,
+      "h": 3
+    },
+    {
+      "tile": "GLASS",
+      "x": 19,
+      "y": 21,
+      "w": 1,
+      "h": 3
+    }
+  ],
+  "signs": [
+    {
+      "x": 15,
+      "y": 7.4,
+      "text": "ICE BAR",
+      "color": "#a8e8ff",
+      "stroke": "#184868"
+    },
+    {
+      "x": 15,
+      "y": 24.4,
+      "text": "− 5 ° C",
+      "color": "#a8e8ff",
+      "stroke": "#184868"
+    },
+    {
+      "x": 25.5,
+      "y": 12.5,
+      "text": "SHOPPES →",
+      "color": "#ffe890",
+      "stroke": "#684810"
+    }
+  ],
+  "clear": [
+    {
+      "tile": "ICE",
+      "x": 25,
+      "y": 14,
+      "w": 3,
+      "h": 3
+    }
+  ],
+  "doors": [
+    {
+      "x": 27,
+      "y": 15,
+      "to": "mandalay_place",
+      "toX": 26,
+      "toY": 15,
+      "message": "Back out into the warm."
+    }
+  ]
+}

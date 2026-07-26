@@ -1,0 +1,164 @@
+{
+  "id": "lazy_river",
+  "label": "The Lazy River",
+  "wing": "Pool",
+  "bgm": "lobby",
+  "spawn": {
+    "x": 26,
+    "y": 15
+  },
+  "base": "WALL",
+  "rects": [
+    {
+      "tile": "SAND",
+      "x": 2,
+      "y": 2,
+      "w": 26,
+      "h": 26
+    },
+    {
+      "tile": "WATER",
+      "x": 6,
+      "y": 6,
+      "w": 18,
+      "h": 18
+    },
+    {
+      "tile": "SAND",
+      "x": 10,
+      "y": 10,
+      "w": 10,
+      "h": 10
+    },
+    {
+      "tile": "PATH",
+      "x": 14,
+      "y": 2,
+      "w": 3,
+      "h": 9
+    },
+    {
+      "tile": "PATH",
+      "x": 14,
+      "y": 19,
+      "w": 3,
+      "h": 9
+    },
+    {
+      "tile": "PATH",
+      "x": 2,
+      "y": 14,
+      "w": 4,
+      "h": 3
+    },
+    {
+      "tile": "PATH",
+      "x": 24,
+      "y": 14,
+      "w": 4,
+      "h": 3
+    }
+  ],
+  "decor": [
+    {
+      "tile": "BAR",
+      "x": 12,
+      "y": 12,
+      "w": 6,
+      "h": 1
+    },
+    {
+      "tile": "PLANT",
+      "points": [
+        [
+          11,
+          17
+        ],
+        [
+          18,
+          17
+        ],
+        [
+          4,
+          4
+        ],
+        [
+          25,
+          4
+        ],
+        [
+          4,
+          25
+        ],
+        [
+          25,
+          25
+        ]
+      ]
+    }
+  ],
+  "signs": [
+    {
+      "x": 15,
+      "y": 5.4,
+      "text": "LAZY RIVER",
+      "color": "#a8e8ff",
+      "stroke": "#184868"
+    },
+    {
+      "x": 15,
+      "y": 11.4,
+      "text": "TUBE RENTAL",
+      "color": "#ffe890",
+      "stroke": "#684810"
+    },
+    {
+      "x": 15,
+      "y": 2.4,
+      "text": "CABANAS ↑",
+      "color": "#a8e8ff",
+      "stroke": "#184868"
+    },
+    {
+      "x": 25.5,
+      "y": 12.5,
+      "text": "BEACH CLUB →",
+      "color": "#a8e8ff",
+      "stroke": "#184868"
+    }
+  ],
+  "clear": [
+    {
+      "tile": "PATH",
+      "x": 14,
+      "y": 2,
+      "w": 3,
+      "h": 3
+    },
+    {
+      "tile": "SAND",
+      "x": 25,
+      "y": 14,
+      "w": 3,
+      "h": 3
+    }
+  ],
+  "doors": [
+    {
+      "x": 15,
+      "y": 2,
+      "to": "cabana_row",
+      "toX": 15,
+      "toY": 26,
+      "message": "Back up to the cabanas."
+    },
+    {
+      "x": 27,
+      "y": 15,
+      "to": "beach_club",
+      "toX": 3,
+      "toY": 15,
+      "message": "Round to Moorea Beach Club."
+    }
+  ]
+}

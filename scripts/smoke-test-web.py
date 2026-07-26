@@ -282,15 +282,39 @@ def rpg_phone(browser, base, failures: list[str]) -> None:
     step("tap_walks", bool(arrived) and (arrived["x"], arrived["y"]) == (target["x"], target["y"]),
          f"tapping {target} ended at {arrived}")
 
-    # Tap a guest: walk over, then talk. Then tap anywhere to read on.
+    # A room placard is informational: it must not take the controls away.
+    toast = page.evaluate("""() => {
+      const d = window.__rpg.dialogue;
+      if (d.isActive()) (d._dismissSystem || d.close).call(d);
+      d.showSystemMessage('Placard test.');
+      return { active: d.isActive(), blocking: d.isBlocking() };
+    }""")
+    page.wait_for_timeout(300)
+    step("toast_keeps_controls",
+         toast["active"] and not toast["blocking"]
+         and not page.evaluate(
+             "() => document.getElementById('touch-pad')"
+             ".classList.contains('touch-pad--hidden')")
+         and page.evaluate("() => window.__rpg.scene.canMove"),
+         "a system placard froze the player or hid the thumb pad")
+
+    # Tap a guest: walk over, then talk. Then tap anywhere to read on. Any room
+    # placard still on screen is dismissed first — it no longer holds the
+    # player, but it would still refuse a conversation while it is up.
     page.evaluate("""() => {
+      const d = window.__rpg.dialogue;
+      if (d.isActive()) (d._dismissSystem || d.close).call(d);
       const s = window.__rpg.scene;
       const npc = s.currentNpcs[0];
-      s.player.setPosition((npc.x + 1) * s.tileSize + s.tileSize / 2, npc.y * s.tileSize);
+      // body.reset() rather than setPosition(): the collision body is what
+      // playerTile() reads, and it only catches up on the next physics step.
+      const at = s._footTarget(npc.x + 1, npc.y);
+      s.player.setPosition(at.x, at.y);
+      s.player.body.reset(at.x, at.y);
       s.walkTo(npc.x, npc.y);
     }""")
     page.wait_for_timeout(1500)
-    step("tap_talks", page.evaluate("() => window.__rpg.dialogue.isActive()"),
+    step("tap_talks", page.evaluate("() => window.__rpg.dialogue.isBlocking()"),
          "tapping a guest did not start a conversation")
     step("pad_yields", page.evaluate(
         "() => document.getElementById('touch-pad').classList.contains('touch-pad--hidden')"),

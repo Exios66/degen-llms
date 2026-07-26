@@ -1,0 +1,190 @@
+{
+  "id": "mj_one_theatre",
+  "label": "Michael Jackson ONE Theatre",
+  "wing": "Attractions",
+  "bgm": "encounter",
+  "spawn": {
+    "x": 26,
+    "y": 15
+  },
+  "base": "WALL",
+  "rects": [
+    {
+      "tile": "CARPET",
+      "x": 2,
+      "y": 2,
+      "w": 26,
+      "h": 26
+    },
+    {
+      "tile": "STAGE",
+      "x": 7,
+      "y": 3,
+      "w": 17,
+      "h": 7
+    },
+    {
+      "tile": "TRIM",
+      "x": 6,
+      "y": 2,
+      "w": 19,
+      "h": 1
+    },
+    {
+      "tile": "TRIM",
+      "x": 6,
+      "y": 10,
+      "w": 19,
+      "h": 1
+    },
+    {
+      "tile": "TRIM",
+      "x": 6,
+      "y": 3,
+      "w": 1,
+      "h": 7
+    },
+    {
+      "tile": "TRIM",
+      "x": 24,
+      "y": 3,
+      "w": 1,
+      "h": 7
+    },
+    {
+      "tile": "VIP",
+      "x": 8,
+      "y": 13,
+      "w": 6,
+      "h": 8
+    },
+    {
+      "tile": "VIP",
+      "x": 17,
+      "y": 13,
+      "w": 6,
+      "h": 8
+    },
+    {
+      "tile": "PATH",
+      "x": 14,
+      "y": 11,
+      "w": 3,
+      "h": 16
+    },
+    {
+      "tile": "PATH",
+      "x": 3,
+      "y": 14,
+      "w": 24,
+      "h": 3
+    }
+  ],
+  "decor": [
+    {
+      "tile": "SCREEN",
+      "x": 12,
+      "y": 2,
+      "w": 7,
+      "h": 1
+    },
+    {
+      "tile": "BAR",
+      "x": 4,
+      "y": 24,
+      "w": 5,
+      "h": 1
+    },
+    {
+      "tile": "BAR",
+      "x": 22,
+      "y": 24,
+      "w": 5,
+      "h": 1
+    },
+    {
+      "tile": "PLANT",
+      "points": [
+        [
+          4,
+          12
+        ],
+        [
+          26,
+          12
+        ],
+        [
+          4,
+          20
+        ],
+        [
+          26,
+          20
+        ]
+      ]
+    }
+  ],
+  "signs": [
+    {
+      "x": 15,
+      "y": 10.4,
+      "text": "ONE STAGE",
+      "color": "#ffe890",
+      "stroke": "#684810"
+    },
+    {
+      "x": 11,
+      "y": 12.4,
+      "text": "ORCHESTRA",
+      "color": "#a8e8ff",
+      "stroke": "#184868"
+    },
+    {
+      "x": 20,
+      "y": 12.4,
+      "text": "ORCHESTRA",
+      "color": "#a8e8ff",
+      "stroke": "#184868"
+    },
+    {
+      "x": 4.5,
+      "y": 12.5,
+      "text": "LOBBY",
+      "color": "#a8e8ff",
+      "stroke": "#184868"
+    },
+    {
+      "x": 25.5,
+      "y": 12.5,
+      "text": "CASINO →",
+      "color": "#ffe890",
+      "stroke": "#684810"
+    }
+  ],
+  "clear": [
+    {
+      "tile": "CARPET",
+      "x": 25,
+      "y": 14,
+      "w": 3,
+      "h": 3
+    },
+    {
+      "tile": "CARPET",
+      "x": 14,
+      "y": 25,
+      "w": 3,
+      "h": 3
+    }
+  ],
+  "doors": [
+    {
+      "x": 27,
+      "y": 15,
+      "to": "casino_floor_south",
+      "toX": 4,
+      "toY": 15,
+      "message": "Back onto the casino floor."
+    }
+  ]
+}

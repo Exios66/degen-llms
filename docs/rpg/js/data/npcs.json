@@ -779,5 +779,162 @@
       "encounter": "bank",
       "direction": "right"
     }
+  ],
+  "mj_one_theatre": [
+    {
+      "id": "one_usher_ora",
+      "name": "Usher Ora",
+      "x": 15,
+      "y": 22,
+      "sprite": "npc_silver",
+      "dialogueId": "one_usher_ora_greet",
+      "encounter": "guest_directory",
+      "direction": "up",
+      "schedule": {
+        "late": {
+          "x": 20,
+          "y": 22
+        }
+      }
+    },
+    {
+      "id": "one_aerialist",
+      "name": "The Aerialist",
+      "x": 15,
+      "y": 11,
+      "sprite": "npc_pink",
+      "dialogueId": "one_aerialist_greet",
+      "challengeDialogueId": "one_aerialist_challenge",
+      "encounter": "one_show",
+      "direction": "down",
+      "sight": {
+        "dir": "down",
+        "range": 5
+      }
+    },
+    {
+      "id": "one_merch_milo",
+      "name": "Merch Milo",
+      "x": 6,
+      "y": 24,
+      "sprite": "npc_orange",
+      "dialogueId": "one_merch_milo_greet",
+      "encounter": "shops",
+      "direction": "down"
+    }
+  ],
+  "minus5_icebar": [
+    {
+      "id": "ice_bartender_bex",
+      "name": "Bartender Bex",
+      "x": 15,
+      "y": 9,
+      "sprite": "npc_teal",
+      "dialogueId": "ice_bartender_bex_greet",
+      "encounter": "bar",
+      "direction": "down"
+    },
+    {
+      "id": "parka_pam",
+      "name": "Parka Pam",
+      "x": 20,
+      "y": 15,
+      "sprite": "npc_silver",
+      "dialogueId": "parka_pam_greet",
+      "encounter": "shops",
+      "direction": "left"
+    }
+  ],
+  "restaurant_row": [
+    {
+      "id": "maitre_d_marco",
+      "name": "Maitre d' Marco",
+      "x": 15,
+      "y": 12,
+      "sprite": "npc_gold",
+      "dialogueId": "maitre_d_marco_greet",
+      "encounter": "hotel_dining",
+      "direction": "down",
+      "schedule": {
+        "late": {
+          "x": 15,
+          "y": 19
+        }
+      }
+    },
+    {
+      "id": "grill_chef_gabi",
+      "name": "Chef Gabi",
+      "x": 8,
+      "y": 9,
+      "sprite": "npc_green",
+      "dialogueId": "grill_chef_gabi_greet",
+      "encounter": "amenities",
+      "direction": "down"
+    },
+    {
+      "id": "sommelier_sabine",
+      "name": "Sommelier Sabine",
+      "x": 22,
+      "y": 20,
+      "sprite": "npc_red",
+      "dialogueId": "sommelier_sabine_greet",
+      "challengeDialogueId": "sommelier_sabine_challenge",
+      "encounter": "bar",
+      "direction": "up",
+      "sight": {
+        "dir": "up",
+        "range": 4
+      }
+    }
+  ],
+  "lazy_river": [
+    {
+      "id": "tube_wrangler_tony",
+      "name": "Tube Wrangler Tony",
+      "x": 15,
+      "y": 14,
+      "sprite": "npc_orange",
+      "dialogueId": "tube_wrangler_tony_greet",
+      "encounter": "pool_wave",
+      "direction": "down"
+    },
+    {
+      "id": "river_guard_rae",
+      "name": "Lifeguard Rae",
+      "x": 4,
+      "y": 15,
+      "sprite": "npc_red",
+      "dialogueId": "river_guard_rae_greet",
+      "encounter": "pool",
+      "direction": "right",
+      "schedule": {
+        "late": {
+          "x": 26,
+          "y": 15
+        }
+      }
+    }
+  ],
+  "tram_station": [
+    {
+      "id": "tram_conductor_cy",
+      "name": "Conductor Cy",
+      "x": 15,
+      "y": 20,
+      "sprite": "npc_teal",
+      "dialogueId": "tram_conductor_cy_greet",
+      "encounter": "guest_directory",
+      "direction": "down"
+    },
+    {
+      "id": "platform_pete",
+      "name": "Platform Pete",
+      "x": 22,
+      "y": 6,
+      "sprite": "npc_silver",
+      "dialogueId": "platform_pete_greet",
+      "direction": "down"
+    }
   ]
 }

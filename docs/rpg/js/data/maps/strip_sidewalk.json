@@ -105,6 +105,29 @@
       "h": 1
     }
   ],
+  "signs": [
+    {
+      "x": 15,
+      "y": 3.4,
+      "text": "MANDALAY BAY ↑",
+      "color": "#ffe890",
+      "stroke": "#684810"
+    },
+    {
+      "x": 4.5,
+      "y": 24.5,
+      "text": "← VALET",
+      "color": "#a8e8ff",
+      "stroke": "#184868"
+    },
+    {
+      "x": 25,
+      "y": 19.5,
+      "text": "TRAM →",
+      "color": "#a8e8ff",
+      "stroke": "#184868"
+    }
+  ],
   "doors": [
     {
       "x": 15,
@@ -121,6 +144,14 @@
       "toX": 26,
       "toY": 15,
       "message": "Valet ramp, level P1."
+    },
+    {
+      "x": 28,
+      "y": 19,
+      "to": "tram_station",
+      "toX": 3,
+      "toY": 17,
+      "message": "The free tram, north end of the property."
     }
   ]
 }

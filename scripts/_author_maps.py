@@ -80,9 +80,15 @@ MAPS_SPEC: list[dict] = [
             rect("SCREEN", 20, 3, 2, 1),
             rect("BAR", 11, 26, 4, 1),
         ],
+        "signs": [
+            sign(15, 3.4, "MANDALAY BAY \u2191"),
+            sign(4.5, 24.5, "\u2190 VALET", **COOL_SIGN),
+            sign(25, 19.5, "TRAM \u2192", **COOL_SIGN),
+        ],
         "doors": [
             door(15, 3, "registration_lobby", 15, 27, "Through the gold doors — Mandalay Bay."),
             door(2, 24, "valet_garage", 26, 15, "Valet ramp, level P1."),
+            door(28, 19, "tram_station", 3, 17, "The free tram, north end of the property."),
         ],
     },
     {
@@ -239,6 +245,7 @@ MAPS_SPEC: list[dict] = [
             sign(5, 22.5, "\u2190 SHOPPES"),
             sign(25, 22.5, "HOB \u2192"),
             sign(15, 26.2, "POOL \u2193", **COOL_SIGN),
+            sign(4.5, 12.5, "\u2190 ONE", **COOL_SIGN),
         ],
         "clear": [
             rect("CARPET", 14, 1, 3, 4),
@@ -246,6 +253,7 @@ MAPS_SPEC: list[dict] = [
             rect("LOBBY", 25, 22, 3, 3),
             rect("CARPET", 25, 6, 3, 3),
             rect("LOBBY", 14, 26, 3, 3),
+            rect("PATH", 2, 14, 7, 3),
         ],
         "doors": [
             door(15, 2, "main_resort", 15, 26, "Casino floor — north."),
@@ -253,6 +261,7 @@ MAPS_SPEC: list[dict] = [
             door(27, 23, "house_of_blues", 15, 26, "House of Blues stage door."),
             door(27, 7, "ultra_arena", 15, 26, "Michelob ULTRA Arena concourse."),
             door(15, 27, "mandalay_beach", 15, 3, "Out to the eleven acres."),
+            door(2, 15, "mj_one_theatre", 26, 15, "Michael Jackson ONE theatre doors."),
         ],
     },
     {
@@ -339,10 +348,21 @@ MAPS_SPEC: list[dict] = [
             rect("BAR", 8, 13, 2, 1),
             rect("BAR", 20, 13, 2, 1),
         ],
-        "clear": [rect("CARPET", 14, 26, 3, 3), rect("LOBBY", 14, 2, 3, 3)],
+        "signs": [
+            sign(15, 26.2, "CASINO \u2193", **COOL_SIGN),
+            sign(15, 3.4, "SKY BRIDGE \u2191", **COOL_SIGN),
+            sign(4.5, 12.5, "\u2190 DINING"),
+            sign(25.5, 12.5, "ICEBAR \u2192", **COOL_SIGN),
+        ],
+        "clear": [
+            rect("CARPET", 14, 26, 3, 3), rect("LOBBY", 14, 2, 3, 3),
+            rect("LOBBY", 2, 14, 4, 3), rect("LOBBY", 24, 14, 4, 3),
+        ],
         "doors": [
             door(15, 27, "casino_floor_south", 3, 23, "Back to the casino floor."),
             door(15, 2, "sky_bridge", 15, 26, "Sky bridge to the convention wing."),
+            door(2, 15, "restaurant_row", 26, 15, "Restaurant row."),
+            door(27, 15, "minus5_icebar", 26, 15, "Minus5 Icebar — parkas provided."),
         ],
     },
     {
@@ -382,10 +402,19 @@ MAPS_SPEC: list[dict] = [
             rect("BAR", 20, 15, 4, 1),
             rect("SCREEN", 13, 4, 4, 1),
         ],
-        "clear": [rect("LOBBY", 14, 26, 3, 3), rect("LOBBY", 2, 14, 3, 3)],
+        "signs": [
+            sign(15, 26.2, "SKY BRIDGE \u2193", **COOL_SIGN),
+            sign(4.5, 12.5, "\u2190 ARENA"),
+            sign(15, 3.4, "TRAM \u2191", **COOL_SIGN),
+        ],
+        "clear": [
+            rect("LOBBY", 14, 26, 3, 3), rect("LOBBY", 2, 14, 3, 3),
+            rect("LOBBY", 14, 2, 3, 4),
+        ],
         "doors": [
             door(15, 27, "sky_bridge", 15, 3, "Back across the sky bridge."),
             door(2, 15, "ultra_arena", 26, 15, "Arena service concourse."),
+            door(15, 2, "tram_station", 15, 26, "Up to the tram platform."),
         ],
     },
     {
@@ -575,10 +604,17 @@ MAPS_SPEC: list[dict] = [
         ],
         "decor": [
             rect("BAR", 13, 13, 4, 2),
-            points("PLANT", [(14, 4), (14, 25), (4, 14), (25, 14)]),
+            points("PLANT", [(14, 4), (4, 14), (25, 14)]),
         ],
-        "clear": [rect("SAND", 2, 14, 3, 3)],
-        "doors": [door(2, 15, "mandalay_beach", 26, 15, "Back to the wave pool.")],
+        "signs": [
+            sign(4.5, 12.5, "\u2190 WAVE POOL", **COOL_SIGN),
+            sign(15, 26.2, "LAZY RIVER \u2193", **COOL_SIGN),
+        ],
+        "clear": [rect("SAND", 2, 14, 3, 3), rect("PATH", 14, 16, 3, 12)],
+        "doors": [
+            door(2, 15, "mandalay_beach", 26, 15, "Back to the wave pool."),
+            door(15, 27, "lazy_river", 15, 3, "Down to the lazy river."),
+        ],
     },
     {
         "id": "beach_club",
@@ -595,10 +631,19 @@ MAPS_SPEC: list[dict] = [
             rect("BAR", 18, 22, 6, 1),
             points("PLANT", [(4, 5), (25, 5), (4, 25), (25, 25)]),
         ],
-        "clear": [rect("SAND", 14, 1, 3, 4), rect("SAND", 25, 14, 3, 3)],
+        "signs": [
+            sign(15, 2.4, "BEACH \u2191", **COOL_SIGN),
+            sign(25.5, 12.5, "RAVE \u2192"),
+            sign(4.5, 12.5, "\u2190 LAZY RIVER", **COOL_SIGN),
+        ],
+        "clear": [
+            rect("SAND", 14, 1, 3, 4), rect("SAND", 25, 14, 3, 3),
+            rect("SAND", 2, 14, 3, 3),
+        ],
         "doors": [
             door(15, 2, "mandalay_beach", 15, 26, "Back to the beach."),
             door(27, 15, "rave_stage", 15, 26, "The rave stage, after dark."),
+            door(2, 15, "lazy_river", 26, 15, "Round to the lazy river."),
         ],
     },
     {
@@ -733,6 +778,183 @@ MAPS_SPEC: list[dict] = [
         "clear": [rect("CARPET", 14, 26, 3, 3)],
         "doors": [door(15, 27, "main_resort", 15, 3, "Slip back onto the floor.")],
     },
+    {
+        "id": "mj_one_theatre",
+        "label": "Michael Jackson ONE Theatre",
+        "bgm": "encounter",
+        "spawn": {"x": 26, "y": 15},
+        "base": "WALL",
+        # A raked house: stage north, two seating blocks, and a gold aisle
+        # running down the middle so the walk to a seat is never a maze.
+        "rects": [
+            rect("CARPET", 2, 2, 26, 26),
+            rect("STAGE", 7, 3, 17, 7),
+            *trim_ring(6, 2, 19, 9),
+            rect("VIP", 8, 13, 6, 8),
+            rect("VIP", 17, 13, 6, 8),
+            rect("PATH", 14, 11, 3, 16),
+            rect("PATH", 3, 14, 24, 3),
+        ],
+        "decor": [
+            rect("SCREEN", 12, 2, 7, 1),
+            rect("BAR", 4, 24, 5, 1),
+            rect("BAR", 22, 24, 5, 1),
+            points("PLANT", [(4, 12), (26, 12), (4, 20), (26, 20)]),
+        ],
+        "signs": [
+            sign(15, 10.4, "ONE STAGE"),
+            sign(11, 12.4, "ORCHESTRA", **COOL_SIGN),
+            sign(20, 12.4, "ORCHESTRA", **COOL_SIGN),
+            sign(4.5, 12.5, "LOBBY", **COOL_SIGN),
+            sign(25.5, 12.5, "CASINO \u2192"),
+        ],
+        "clear": [rect("CARPET", 25, 14, 3, 3), rect("CARPET", 14, 25, 3, 3)],
+        "doors": [
+            door(27, 15, "casino_floor_south", 4, 15, "Back onto the casino floor."),
+        ],
+    },
+    {
+        "id": "minus5_icebar",
+        "label": "Minus5 Icebar",
+        "bgm": "secret",
+        "spawn": {"x": 26, "y": 15},
+        "base": "WALL",
+        # Everything is carved ice, so the floor is ICE and the sculptures are
+        # GLASS. A single warm gold aisle keeps the room readable.
+        "rects": [
+            rect("ICE", 4, 4, 22, 22),
+            rect("PATH", 4, 14, 22, 3),
+            rect("PATH", 14, 4, 3, 22),
+        ],
+        "decor": [
+            rect("BAR", 9, 8, 12, 1),
+            rect("GLASS", 6, 6, 1, 4),
+            rect("GLASS", 23, 6, 1, 4),
+            rect("GLASS", 6, 20, 1, 4),
+            rect("GLASS", 23, 20, 1, 4),
+            rect("GLASS", 10, 21, 1, 3),
+            rect("GLASS", 19, 21, 1, 3),
+        ],
+        "signs": [
+            sign(15, 7.4, "ICE BAR", **COOL_SIGN),
+            sign(15, 24.4, "\u2212 5 \u00b0 C", **COOL_SIGN),
+            sign(25.5, 12.5, "SHOPPES \u2192"),
+        ],
+        "clear": [rect("ICE", 25, 14, 3, 3)],
+        "doors": [
+            door(27, 15, "mandalay_place", 26, 15, "Back out into the warm."),
+        ],
+    },
+    {
+        "id": "restaurant_row",
+        "label": "Restaurant Row",
+        "bgm": "lobby",
+        "spawn": {"x": 26, "y": 15},
+        "base": "WALL",
+        # Four counters facing a single concourse: the row reads at a glance
+        # instead of making the player check every doorway.
+        "rects": [
+            rect("LOBBY", 2, 2, 26, 26),
+            rect("CARPET", 4, 6, 9, 7),
+            rect("CARPET", 17, 6, 9, 7),
+            rect("CARPET", 4, 18, 9, 7),
+            rect("CARPET", 17, 18, 9, 7),
+            rect("PATH", 3, 14, 24, 3),
+            rect("PATH", 14, 3, 3, 24),
+        ],
+        "decor": [
+            rect("BAR", 5, 8, 6, 1),
+            rect("BAR", 19, 8, 6, 1),
+            rect("BAR", 5, 22, 6, 1),
+            rect("BAR", 19, 22, 6, 1),
+            points("PLANT", [(13, 5), (18, 5), (13, 26), (18, 26)]),
+        ],
+        # Placards sit below each counter so an NPC's name plate never lands
+        # on top of the restaurant they work for.
+        "signs": [
+            sign(8, 11.6, "BORDER GRILL", **FELT_SIGN),
+            sign(22, 11.6, "STRIPSTEAK"),
+            sign(8, 23.6, "KUMI", **COOL_SIGN),
+            sign(22, 23.6, "LIBERTINE"),
+            sign(25.5, 12.5, "SHOPPES \u2192"),
+        ],
+        "clear": [rect("LOBBY", 25, 14, 3, 3)],
+        "doors": [
+            door(27, 15, "mandalay_place", 3, 15, "Back to the Shoppes."),
+        ],
+    },
+    {
+        "id": "lazy_river",
+        "label": "The Lazy River",
+        "bgm": "lobby",
+        "spawn": {"x": 26, "y": 15},
+        "base": "WALL",
+        # A ring of water around a sand island, with two plank bridges so the
+        # tube stand in the middle is reachable from either bank. The deck is a
+        # full loop, so both doors stay reachable whichever way you walk.
+        "rects": [
+            rect("SAND", 2, 2, 26, 26),
+            rect("WATER", 6, 6, 18, 18),
+            rect("SAND", 10, 10, 10, 10),
+            rect("PATH", 14, 2, 3, 9),
+            rect("PATH", 14, 19, 3, 9),
+            rect("PATH", 2, 14, 4, 3),
+            rect("PATH", 24, 14, 4, 3),
+        ],
+        "decor": [
+            rect("BAR", 12, 12, 6, 1),
+            points("PLANT", [(11, 17), (18, 17), (4, 4), (25, 4), (4, 25), (25, 25)]),
+        ],
+        "signs": [
+            sign(15, 5.4, "LAZY RIVER", **COOL_SIGN),
+            sign(15, 11.4, "TUBE RENTAL"),
+            sign(15, 2.4, "CABANAS \u2191", **COOL_SIGN),
+            sign(25.5, 12.5, "BEACH CLUB \u2192", **COOL_SIGN),
+        ],
+        "clear": [rect("PATH", 14, 2, 3, 3), rect("SAND", 25, 14, 3, 3)],
+        "doors": [
+            door(15, 2, "cabana_row", 15, 26, "Back up to the cabanas."),
+            door(27, 15, "beach_club", 3, 15, "Round to Moorea Beach Club."),
+        ],
+    },
+    {
+        "id": "tram_station",
+        "label": "Mandalay Bay Tram Station",
+        "bgm": "lobby",
+        "spawn": {"x": 15, "y": 26},
+        "base": "WALL",
+        # Two platforms either side of a track, joined by a gold concourse.
+        # The tram itself is the shortcut back to the front of the property.
+        "rects": [
+            rect("LOBBY", 2, 2, 26, 26),
+            rect("ROAD", 3, 9, 24, 5),
+            rect("PATH", 14, 14, 3, 13),
+            rect("PATH", 3, 16, 24, 3),
+            rect("PATH", 3, 5, 24, 3),
+        ],
+        "decor": [
+            rect("GLASS", 3, 8, 10, 1),
+            rect("GLASS", 17, 8, 10, 1),
+            rect("GLASS", 3, 14, 10, 1),
+            rect("GLASS", 17, 14, 10, 1),
+            rect("SCREEN", 13, 4, 4, 1),
+            rect("SCREEN", 13, 20, 4, 1),
+            rect("BAR", 6, 22, 5, 1),
+            rect("BAR", 19, 22, 5, 1),
+            points("PLANT", [(4, 21), (25, 21), (4, 25), (25, 25)]),
+        ],
+        "signs": [
+            sign(15, 6.4, "NORTHBOUND", **COOL_SIGN),
+            sign(15, 17.4, "SOUTHBOUND", **COOL_SIGN),
+            sign(15, 26.2, "CONVENTION \u2193"),
+            sign(4.5, 17.5, "\u2190 BLVD TRAM", **COOL_SIGN),
+        ],
+        "clear": [rect("LOBBY", 14, 26, 3, 3), rect("LOBBY", 2, 16, 3, 3)],
+        "doors": [
+            door(15, 27, "convention_center", 15, 3, "Down to the convention concourse."),
+            door(2, 17, "strip_sidewalk", 26, 19, "Tram to the front of the property."),
+        ],
+    },
 ]
 
 # Which part of the property each room belongs to. Kept out of the specs above
@@ -749,8 +971,11 @@ WINGS: dict[str, str] = {
     "mandalay_place": "Retail",
     "sky_bridge": "Retail",
     "convention_center": "Retail",
+    "tram_station": "Retail",
     "betty_bar": "Bars",
     "skyfall_lounge": "Bars",
+    "minus5_icebar": "Bars",
+    "restaurant_row": "Dining",
     "hotel_tower": "Hotel",
     "guest_corridor": "Hotel",
     "guest_room": "Hotel",
@@ -760,11 +985,13 @@ WINGS: dict[str, str] = {
     "cabana_row": "Pool",
     "beach_club": "Pool",
     "rave_stage": "Pool",
+    "lazy_river": "Pool",
     "reef_tunnel": "Attractions",
     "shark_reef": "Attractions",
     "house_of_blues": "Attractions",
     "hob_green_room": "Attractions",
     "ultra_arena": "Attractions",
+    "mj_one_theatre": "Attractions",
     "staff_corridor": "Back of house",
 }
 
@@ -977,6 +1204,48 @@ NPCS: dict[str, list[dict]] = {
          "dialogueId": "janitor_joe_greet", "direction": "down"},
         {"id": "count_room_cal", "name": "Count Room Cal", "x": 8, "y": 14, "sprite": "npc_gold",
          "dialogueId": "count_room_cal_greet", "encounter": "bank", "direction": "right"},
+    ],
+    "mj_one_theatre": [
+        {"id": "one_usher_ora", "name": "Usher Ora", "x": 15, "y": 22, "sprite": "npc_silver",
+         "dialogueId": "one_usher_ora_greet", "encounter": "guest_directory", "direction": "up",
+         "schedule": {"late": {"x": 20, "y": 22}}},
+        {"id": "one_aerialist", "name": "The Aerialist", "x": 15, "y": 11, "sprite": "npc_pink",
+         "dialogueId": "one_aerialist_greet", "challengeDialogueId": "one_aerialist_challenge",
+         "encounter": "one_show", "direction": "down", "sight": {"dir": "down", "range": 5}},
+        {"id": "one_merch_milo", "name": "Merch Milo", "x": 6, "y": 24, "sprite": "npc_orange",
+         "dialogueId": "one_merch_milo_greet", "encounter": "shops", "direction": "down"},
+    ],
+    "minus5_icebar": [
+        {"id": "ice_bartender_bex", "name": "Bartender Bex", "x": 15, "y": 9, "sprite": "npc_teal",
+         "dialogueId": "ice_bartender_bex_greet", "encounter": "bar", "direction": "down"},
+        {"id": "parka_pam", "name": "Parka Pam", "x": 20, "y": 15, "sprite": "npc_silver",
+         "dialogueId": "parka_pam_greet", "encounter": "shops", "direction": "left"},
+    ],
+    "restaurant_row": [
+        {"id": "maitre_d_marco", "name": "Maitre d' Marco", "x": 15, "y": 12, "sprite": "npc_gold",
+         "dialogueId": "maitre_d_marco_greet", "encounter": "hotel_dining", "direction": "down",
+         "schedule": {"late": {"x": 15, "y": 19}}},
+        {"id": "grill_chef_gabi", "name": "Chef Gabi", "x": 8, "y": 9, "sprite": "npc_green",
+         "dialogueId": "grill_chef_gabi_greet", "encounter": "amenities", "direction": "down"},
+        {"id": "sommelier_sabine", "name": "Sommelier Sabine", "x": 22, "y": 20,
+         "sprite": "npc_red", "dialogueId": "sommelier_sabine_greet",
+         "challengeDialogueId": "sommelier_sabine_challenge",
+         "encounter": "bar", "direction": "up", "sight": {"dir": "up", "range": 4}},
+    ],
+    "lazy_river": [
+        {"id": "tube_wrangler_tony", "name": "Tube Wrangler Tony", "x": 15, "y": 14,
+         "sprite": "npc_orange", "dialogueId": "tube_wrangler_tony_greet",
+         "encounter": "pool_wave", "direction": "down"},
+        {"id": "river_guard_rae", "name": "Lifeguard Rae", "x": 4, "y": 15, "sprite": "npc_red",
+         "dialogueId": "river_guard_rae_greet", "encounter": "pool", "direction": "right",
+         "schedule": {"late": {"x": 26, "y": 15}}},
+    ],
+    "tram_station": [
+        {"id": "tram_conductor_cy", "name": "Conductor Cy", "x": 15, "y": 20,
+         "sprite": "npc_teal", "dialogueId": "tram_conductor_cy_greet",
+         "encounter": "guest_directory", "direction": "down"},
+        {"id": "platform_pete", "name": "Platform Pete", "x": 22, "y": 6, "sprite": "npc_silver",
+         "dialogueId": "platform_pete_greet", "direction": "down"},
     ],
 }
 

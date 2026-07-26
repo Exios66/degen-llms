@@ -180,6 +180,13 @@
       "text": "POOL ↓",
       "color": "#a8e8ff",
       "stroke": "#184868"
+    },
+    {
+      "x": 4.5,
+      "y": 12.5,
+      "text": "← ONE",
+      "color": "#a8e8ff",
+      "stroke": "#184868"
     }
   ],
   "clear": [
@@ -216,6 +223,13 @@
       "x": 14,
       "y": 26,
       "w": 3,
+      "h": 3
+    },
+    {
+      "tile": "PATH",
+      "x": 2,
+      "y": 14,
+      "w": 7,
       "h": 3
     }
   ],
@@ -259,6 +273,14 @@
       "toX": 15,
       "toY": 3,
       "message": "Out to the eleven acres."
+    },
+    {
+      "x": 2,
+      "y": 15,
+      "to": "mj_one_theatre",
+      "toX": 26,
+      "toY": 15,
+      "message": "Michael Jackson ONE theatre doors."
     }
   ]
 }

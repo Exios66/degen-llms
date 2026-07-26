@@ -55,6 +55,7 @@ const FOOTSTEP_SFX = {
   [TILE.AQUA]: "foot_water",
   [TILE.WATER]: "foot_water",
   [TILE.SAND]: "foot_lobby",
+  [TILE.ICE]: "foot_lobby",
   [TILE.ROAD]: "foot_lobby",
   [TILE.STAGE]: "foot_vip",
   [TILE.SPA]: "foot_water",
@@ -295,6 +296,11 @@ export class OverworldScene extends Phaser.Scene {
     this.movePath = [];
     this.pendingTalk = null;
     this._stalledFor = 0;
+    // Phaser reuses the scene instance across restarts, so a challenge that was
+    // still running when the player walked through a door would otherwise leave
+    // this latched and silence every challenger for the rest of the session.
+    this._challengeRunning = false;
+    this._gateBusy = false;
     this._touchInteractRadius = TILE_SIZE * 1.75;
     this._setupTouchInput();
     this.events.on("postupdate", this._resolveCollision, this);
@@ -1038,6 +1044,9 @@ export class OverworldScene extends Phaser.Scene {
 
     if (sprite) {
       await new Promise((resolve) => {
+        // A restart destroys the tween without firing onComplete, so listen for
+        // the shutdown too or the challenge hangs here forever.
+        this.events.once("shutdown", resolve);
         this.tweens.add({
           targets: sprite,
           x: this.player.x,

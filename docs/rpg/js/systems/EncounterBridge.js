@@ -311,6 +311,17 @@ const BESPOKE_ALIASES = {
   roulette: "roulette",
   house_of_blues: "rhythm",
   rhythm: "rhythm",
+  one_show: "rhythm",
+};
+
+/** Overlays that stand in for more than one venue open with these defaults. */
+const BESPOKE_VENUES = {
+  one_show: {
+    title: "MICHAEL JACKSON ONE",
+    beats: ["Toe", "Spin", "Freeze"],
+    clearFlag: "one_show_cleared",
+    prompt: "Hold the eight count: Toe / Spin / Freeze",
+  },
 };
 
 /**
@@ -420,7 +431,7 @@ export class EncounterBridge {
       return { net: 0 };
     }
 
-    const openOpts = { ...context };
+    const openOpts = { ...BESPOKE_VENUES[encounterId], ...context };
     const stakeActivity = TABLE_STAKE_ACTIVITIES[encounterId];
     if (stakeActivity && this.terminalHost) {
       const tier = await this.terminalHost.pickStakeTier(stakeActivity);

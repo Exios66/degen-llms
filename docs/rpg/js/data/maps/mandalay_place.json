@@ -68,6 +68,36 @@
       "h": 1
     }
   ],
+  "signs": [
+    {
+      "x": 15,
+      "y": 26.2,
+      "text": "CASINO ↓",
+      "color": "#a8e8ff",
+      "stroke": "#184868"
+    },
+    {
+      "x": 15,
+      "y": 3.4,
+      "text": "SKY BRIDGE ↑",
+      "color": "#a8e8ff",
+      "stroke": "#184868"
+    },
+    {
+      "x": 4.5,
+      "y": 12.5,
+      "text": "← DINING",
+      "color": "#ffe890",
+      "stroke": "#684810"
+    },
+    {
+      "x": 25.5,
+      "y": 12.5,
+      "text": "ICEBAR →",
+      "color": "#a8e8ff",
+      "stroke": "#184868"
+    }
+  ],
   "clear": [
     {
       "tile": "CARPET",
@@ -81,6 +111,20 @@
       "x": 14,
       "y": 2,
       "w": 3,
+      "h": 3
+    },
+    {
+      "tile": "LOBBY",
+      "x": 2,
+      "y": 14,
+      "w": 4,
+      "h": 3
+    },
+    {
+      "tile": "LOBBY",
+      "x": 24,
+      "y": 14,
+      "w": 4,
       "h": 3
     }
   ],
@@ -100,6 +144,22 @@
       "toX": 15,
       "toY": 26,
       "message": "Sky bridge to the convention wing."
+    },
+    {
+      "x": 2,
+      "y": 15,
+      "to": "restaurant_row",
+      "toX": 26,
+      "toY": 15,
+      "message": "Restaurant row."
+    },
+    {
+      "x": 27,
+      "y": 15,
+      "to": "minus5_icebar",
+      "toX": 26,
+      "toY": 15,
+      "message": "Minus5 Icebar — parkas provided."
     }
   ]
 }

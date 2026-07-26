@@ -7,28 +7,42 @@ export class RhythmOverlay extends OverlayBase {
     this.sequence = [];
     this.step = 0;
     this.status = "";
+    this.venue = null;
   }
 
+  /**
+   * @param {{ title?: string, beats?: string[], clearFlag?: string,
+   *   prompt?: string }} [options] the venue this stage is standing in for
+   */
   open(options = {}) {
-    this.sequence = [0, 1, 2, 1].map(() => Math.floor(Math.random() * 3));
+    this.venue = {
+      title: options.title ?? "HOUSE OF BLUES",
+      beats: options.beats ?? ["Kick", "Snare", "Hat"],
+      clearFlag: options.clearFlag ?? "hob_cleared",
+      prompt: options.prompt ?? null,
+    };
+    this.sequence = this._newSequence();
     this.step = 0;
-    this.status = "Match the beat: Kick / Snare / Hat";
+    this.status = this.venue.prompt ?? `Match the beat: ${this.venue.beats.join(" / ")}`;
     return super.open(options);
   }
 
+  _newSequence() {
+    return [0, 1, 2, 1].map(() => Math.floor(Math.random() * this.venue.beats.length));
+  }
+
   _render() {
-    const panel = this._panel("HOUSE OF BLUES");
+    const panel = this._panel(this.venue.title);
     this._msg(panel, this.status);
-    const labels = ["Kick", "Snare", "Hat"];
     actionRow(panel, [
-      ...labels.map((label, i) => ({
+      ...this.venue.beats.map((label, i) => ({
         label,
         primary: i === 0,
         onClick: () => {
           if (this.sequence[this.step] !== i) {
             this.status = "Off beat! Try again.";
             this.step = 0;
-            this.sequence = [0, 1, 2, 1].map(() => Math.floor(Math.random() * 3));
+            this.sequence = this._newSequence();
             this._render();
             return;
           }
@@ -36,10 +50,10 @@ export class RhythmOverlay extends OverlayBase {
           if (this.step >= this.sequence.length) {
             this.session.wallet.credit(30, "house_of_blues", "Rhythm clear");
             this.sessionNet += 30;
-            this.session.ensureRpgState().flags.hob_cleared = true;
+            this.session.ensureRpgState().flags[this.venue.clearFlag] = true;
             this.status = "Encore! +$30";
             this.step = 0;
-            this.sequence = [0, 1, 2, 1].map(() => Math.floor(Math.random() * 3));
+            this.sequence = this._newSequence();
           } else {
             this.status = `On beat! ${this.step}/${this.sequence.length}`;
           }

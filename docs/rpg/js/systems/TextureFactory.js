@@ -477,6 +477,30 @@ function drawGlassTile(g) {
   w.px(0x3a6878, 0, 1, 16, 1, 0.6);
 }
 
+function drawIceTile(g) {
+  const w = makeWriter(g);
+  // Minus5 floor: milky carved ice. Pale enough to read as cold next to the
+  // navy aquarium acrylic, with a frost bloom and two cleaved facets.
+  w.px(0x9fd8f0, 0, 0, 16, 16);
+  ditherWeave(w, 0, 0, 16, 16, 0xaee3f8, 0x93cfe8);
+  w.px(0xd8f4ff, 0, 0, 16, 1);
+  w.px(0xcaeeff, 0, 0, 1, 16);
+  w.px(0x74b4d4, 0, 15, 16, 1);
+  w.px(0x82bedc, 15, 0, 1, 16);
+  // Cleaved facets catching the light from the top-left.
+  w.px(0x8ac9e6, 3, 4, 7, 5);
+  w.px(0xd4f2ff, 3, 4, 7, 1);
+  w.px(0xd4f2ff, 3, 4, 1, 5);
+  w.px(0x86c6e4, 9, 10, 5, 4);
+  w.px(0xc6ecfc, 9, 10, 5, 1);
+  // Frost bloom and a couple of trapped bubbles.
+  w.px(0xffffff, 6, 2, 3, 1, 0.5);
+  w.px(0xffffff, 12, 6, 1, 3, 0.4);
+  w.px(0xffffff, 5, 12, 2, 1, 0.35);
+  w.px(0x6ca8c8, 11, 3, 1, 1);
+  w.px(0x6ca8c8, 4, 11, 1, 1);
+}
+
 function drawRopeTile(g) {
   const w = makeWriter(g);
   // Velvet rope stanchion on the carpet it guards.
@@ -524,6 +548,7 @@ const TILE_DRAWERS = {
   [TILE.SPA]: drawSpaTile,
   [TILE.GLASS]: drawGlassTile,
   [TILE.ROPE]: drawRopeTile,
+  [TILE.ICE]: drawIceTile,
   [TILE.PATH]: drawPathTile,
   [TILE.TRIM]: drawTrimTile,
 };
@@ -536,7 +561,7 @@ const TILE_DRAWERS = {
  */
 const SCUFFED_FLOORS = new Set([
   TILE.LOBBY, TILE.CARPET, TILE.FELT, TILE.VIP,
-  TILE.ROAD, TILE.SAND, TILE.SPA, TILE.PATH,
+  TILE.ROAD, TILE.SAND, TILE.SPA, TILE.PATH, TILE.ICE,
 ]);
 
 const SCUFFS = [
@@ -583,6 +608,13 @@ const FLOOR_ACCENTS = {
   [TILE.SAND]: (w) => {
     w.px(0x000000, 4, 4, 2, 3, 0.1);
     w.px(0x000000, 9, 9, 2, 3, 0.1);
+  },
+  // A hairline crack in the ice with meltwater sitting in it.
+  [TILE.ICE]: (w) => {
+    w.px(0x6ea8c6, 2, 11, 5, 1);
+    w.px(0x6ea8c6, 7, 10, 4, 1);
+    w.px(0xeaf8ff, 2, 10, 5, 1, 0.6);
+    w.px(0xffffff, 12, 2, 2, 2, 0.45);
   },
 };
 

@@ -181,6 +181,13 @@ export const PHONE_CALLS = {
     roomTypes: ["suite", "penthouse"],
     minTierIndex: 4,
   },
+  gentlemans_club: {
+    id: "gentlemans_club",
+    label: "Call Gentleman's Club — Velvet Ledger",
+    destination: "Private membership lounge",
+    flavor: "\"Gold members and suite keys welcome. Make it rain responsibly. No photographs.\"",
+    minTierIndex: 2,
+  },
   delano_tower: {
     id: "delano_tower",
     label: "Call Delano sister property",
@@ -327,6 +334,12 @@ export const ROOM_EVENTS = {
     label: "Foundation After Dark",
     narrative: "Noir velvet rope, penthouse champagne, recreational herb menu — no photos, all vibes.",
     requires: { calls: ["foundation_room"], minibar: ["champagne_split"], minTierIndex: 4, roomTypes: ["penthouse"] },
+  },
+  velvet_ledger_night: {
+    id: "velvet_ledger_night",
+    label: "Velvet Ledger Night",
+    narrative: "You made it rain, memorized three bottles, and somehow still found the elevator. The folio pretends not to notice.",
+    requires: { calls: ["gentlemans_club"], minTierIndex: 2 },
   },
   sky_bridge_haul: {
     id: "sky_bridge_haul",

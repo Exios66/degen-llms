@@ -32,6 +32,7 @@ import { PoolComplexOverlay } from "./PoolComplexOverlay.js";
 import { BalconySmokeOverlay } from "./BalconySmokeOverlay.js";
 import { buildRacingRenderers } from "./ui/racing-renderers.js";
 import { buildVenueRenderers } from "./ui/venue-renderers.js";
+import { buildGentlemansClubRenderers } from "./ui/gentlemans-club-renderers.js";
 import { buildCashierRenderers } from "./ui/cashier-renderers.js";
 import { buildMetaRenderers } from "./ui/meta-renderers.js";
 
@@ -724,6 +725,7 @@ const tradingDeskRenderers = buildTradingDeskRenderers(ctx);
 const arcadeRenderers = buildArcadeRenderers(ctx);
 const { renderHorsePaddock, ...racingRenderers } = buildRacingRenderers(ctx);
 const venueRenderers = buildVenueRenderers(ctx);
+const gentlemansClubRenderers = buildGentlemansClubRenderers(ctx);
 const cashierRenderers = buildCashierRenderers(ctx);
 const metaRenderers = buildMetaRenderers(ctx);
 const crapsRenderers = buildCrapsRenderers(ctx);
@@ -753,6 +755,7 @@ const RENDERERS = {
   ...arcadeRenderers,
   ...racingRenderers,
   ...venueRenderers,
+  ...gentlemansClubRenderers,
   ...cashierRenderers,
   ...metaRenderers,
   ...hotelRenderers,

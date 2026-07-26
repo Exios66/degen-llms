@@ -246,6 +246,11 @@ def session_to_dict(session: PlayerSession) -> dict:
         payload["rewards"] = asdict(session.rewards)
     if hasattr(session, "amenities") and session.amenities is not None:
         payload["amenities"] = asdict(session.amenities)
+    if hasattr(session, "gentlemans_club") and session.gentlemans_club is not None:
+        from dataclasses import is_dataclass
+
+        club = session.gentlemans_club
+        payload["gentlemans_club"] = asdict(club) if is_dataclass(club) else club
     if hasattr(session, "world_cycle") and session.world_cycle is not None:
         payload["world_cycle"] = asdict(session.world_cycle)
     if hasattr(session, "bank") and session.bank is not None:
@@ -334,6 +339,11 @@ def session_from_dict(data: dict) -> PlayerSession:
         session.amenities = CasinoAmenitiesState(**data["amenities"])
     else:
         ensure_amenities(session)
+    if "gentlemans_club" in data and isinstance(data["gentlemans_club"], dict):
+        from mandalay_bay.gentlemans_club import ensure_club
+
+        session.gentlemans_club = data["gentlemans_club"]
+        ensure_club(session)
     if "world_cycle" in data:
         session.world_cycle = WorldCycleState(**data["world_cycle"])
     else:

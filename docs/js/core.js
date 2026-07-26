@@ -1,6 +1,7 @@
 import { attachRewardsToSession } from "./rewards.js";
 import { attachHotelToSession } from "./hotel.js";
 import { attachAmenitiesToSession } from "./casino-amenities.js";
+import { attachClubToSession } from "./gentlemans-club.js";
 import { attachPoolComplexToSession } from "./pool-complex.js";
 import { attachWorldCycleToSession } from "./world-cycle.js";
 import { attachBankToSession } from "./bank-account.js";
@@ -292,6 +293,7 @@ export class PlayerSession {
     this.rewards = null;
     this.hotel = null;
     this.amenities = null;
+    this.gentlemansClub = null;
     this.poolComplex = null;
     this.worldCycle = null;
     this.intoxication = null;
@@ -353,6 +355,7 @@ export class PlayerSession {
     if (this.rewards) payload.rewards = this.rewards;
     if (this.hotel) payload.hotel = this.hotel;
     if (this.amenities) payload.amenities = this.amenities;
+    if (this.gentlemansClub) payload.gentlemansClub = this.gentlemansClub;
     if (this.poolComplex) payload.poolComplex = this.poolComplex;
     if (this.worldCycle) payload.worldCycle = this.worldCycle;
     if (this.intoxication) payload.intoxication = this.intoxication;
@@ -383,6 +386,7 @@ export class PlayerSession {
     attachRewardsToSession(s, data);
     attachHotelToSession(s, data);
     attachAmenitiesToSession(s, data);
+    attachClubToSession(s, data);
     attachPoolComplexToSession(s, data);
     attachWorldCycleToSession(s, data);
     attachBankToSession(s, data);

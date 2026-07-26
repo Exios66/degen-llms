@@ -47,7 +47,7 @@ The project riffs on real Vegas mechanics:
 | **Resort dining** | Aureole, Border Grill, Stripsteak — eat/drink capacity minigame + encounters |
 | **Hotel tower** | Front desk, hallway mini-game, in-room TV/phone/minibar |
 | **Pool complex** | Wave pool, hot tubs, cabanas, beach club, aquarium |
-| **VIP venues** | High Limit salon, Foundation Room (chip- and tier-gated) |
+| **VIP venues** | High Limit salon, Foundation Room, Gentleman's Club / Velvet Ledger (chip- and tier-gated) |
 
 ## Tone
 

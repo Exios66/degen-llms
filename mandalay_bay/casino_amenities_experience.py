@@ -30,11 +30,12 @@ def run_casino_floor(session: PlayerSession, ui: TerminalUI) -> None:
                 "Full Service Bar — choose your lounge",
                 "Resort dining — Aureole, Border Grill, Stripsteak",
                 "View shopping bag",
+                "Gentleman's Club — The Velvet Ledger",
                 "Back to lobby",
             ],
             title="On the casino floor:",
         )
-        if choice == 0 or choice == 5:
+        if choice == 0 or choice == 6:
             return
         if choice == 1:
             run_shopping_mall(session, ui)
@@ -46,6 +47,10 @@ def run_casino_floor(session: PlayerSession, ui: TerminalUI) -> None:
             run_dining_lobby(session, ui)
         elif choice == 4:
             _show_bag(session, ui)
+        elif choice == 5:
+            from mandalay_bay.gentlemans_club import run_gentlemans_club
+
+            run_gentlemans_club(session, ui)
 
 
 def run_shopping_mall(session: PlayerSession, ui: TerminalUI) -> None:

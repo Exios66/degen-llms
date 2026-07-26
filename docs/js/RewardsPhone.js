@@ -5,7 +5,7 @@ import {
 import {
   getActivityTiming, getTierExperience, RESORT_OFFERS, tierIndex,
 } from "./rewards-perks.js";
-import { ensureHotel, findReservation, reservationHint, getRoomType, upgradeRoom } from "./hotel.js";
+import { ensureHotel, findReservation, reservationHint, getRoomType, upgradeRoom, extendStay } from "./hotel.js";
 import { getReservationRequirement, reservationStatusMessage, grantRoomKeyIfReservationReady } from "./world-cycle.js";
 import {
   advanceDialogue,
@@ -27,6 +27,7 @@ import {
   syncContactIntros,
 } from "./phone-contacts.js";
 import { isHeightenedIntoxication } from "./intoxication-effects.js";
+import { ensureDining } from "./dining.js";
 
 /**
  * Era-styled flip-phone DOM widget for the MGM Rewards app.
@@ -69,10 +70,20 @@ export class RewardsPhone {
     else this.open();
   }
 
+  /** Hooks for phone dialogue/call side-effects that need hotel helpers. */
+  _phoneEffectHooks() {
+    return {
+      redeemComp: (id) => this.tracker.redeemComp(id),
+      upgradeRoom: (target) => upgradeRoom(this.session, target, this.tracker),
+      extendStay: (nights) => extendStay(this.session, nights, this.tracker),
+    };
+  }
+
   open(screen = "home") {
     this._open = true;
     this._screen = screen;
-    if (screen === "home" || screen === "connect" || screen === "inbox" || screen === "card" || screen === "reservation") {
+    if (screen === "home" || screen === "connect" || screen === "inbox" || screen === "card"
+      || screen === "reservation" || screen === "comps" || screen === "offers" || screen === "perks") {
       if (screen !== "thread" && screen !== "call") {
         this._threadContactId = null;
         this._callContactId = null;
@@ -82,9 +93,10 @@ export class RewardsPhone {
     }
     this.tracker.syncFromWallet();
     syncContactIntros(this.session);
-    onIntoxicationChange(this.session);
+    const intoxDirty = onIntoxicationChange(this.session);
     this._phoneEl.hidden = false;
     this.root?.classList.add("is-open");
+    if (intoxDirty) this.onPersist();
     this._renderScreen();
   }
 
@@ -103,10 +115,12 @@ export class RewardsPhone {
     }
     this.tracker.syncFromWallet();
     syncContactIntros(this.session);
-    onIntoxicationChange(this.session);
+    const intoxDirty = onIntoxicationChange(this.session);
     this._phoneEl.hidden = false;
     this.root?.classList.add("is-open");
+    this.onPersist();
     this._renderScreen();
+    this._updateBadge();
   }
 
   openReservation() {
@@ -225,16 +239,16 @@ export class RewardsPhone {
     }
 
     const tabs = [
-      ["home", "Home"],
-      ["connect", "Connect"],
-      ["reservation", "Room"],
-      ["inbox", "Inbox"],
-      ["card", "Card"],
+      ["home", "Home", ["home", "comps", "offers", "perks"]],
+      ["connect", "Connect", ["connect", "thread", "call"]],
+      ["reservation", "Room", ["reservation"]],
+      ["inbox", "Inbox", ["inbox"]],
+      ["card", "Card", ["card"]],
     ];
-    for (const [id, label] of tabs) {
+    for (const [id, label, activeFor] of tabs) {
       const btn = document.createElement("button");
       btn.type = "button";
-      btn.className = "rewards-tab" + (this._screen === id ? " active" : "");
+      btn.className = "rewards-tab" + (activeFor.includes(this._screen) ? " active" : "");
       btn.textContent = label;
       btn.onclick = () => { this._screen = id; this._renderScreen(); };
       nav.appendChild(btn);
@@ -280,6 +294,20 @@ export class RewardsPhone {
     if (easterEggCount(this.session) > 0) {
       body.appendChild(this._line(`${easterEggCount(this.session)} Easter egg(s) found in Connect`, "dim"));
     }
+    const dining = ensureDining(this.session);
+    if ((dining.buffetCompCredits ?? 0) > 0) {
+      body.appendChild(this._line(`${dining.buffetCompCredits} buffet course credit(s) ready`, "dim"));
+    }
+    const shortcuts = document.createElement("div");
+    shortcuts.className = "rewards-home-actions";
+    for (const [id, label] of [["comps", "Comps"], ["offers", "Offers"], ["perks", "Perks"]]) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = label;
+      btn.onclick = () => { this._screen = id; this._renderScreen(); };
+      shortcuts.appendChild(btn);
+    }
+    body.appendChild(shortcuts);
   }
 
   _screenHeaderLabel() {
@@ -338,7 +366,10 @@ export class RewardsPhone {
       body.appendChild(this._line("No contact selected."));
       return;
     }
+    const threadBefore = getThread(this.session, contactId);
+    const hadUnread = (threadBefore?.messages ?? []).some((m) => m.dir === "in" && !m.read);
     markThreadRead(this.session, contactId);
+    if (hadUnread) this.onPersist();
     body.appendChild(this._line(`${def.emoji ?? ""} ${def.resolveName(this.session)}`, ""));
     body.appendChild(this._line(def.resolveRole(this.session), "dim"));
 
@@ -377,10 +408,13 @@ export class RewardsPhone {
         btn.textContent = `↳ ${choice.label}`;
         const idx = i;
         btn.onclick = () => {
-          const r = advanceDialogue(this.session, contactId, idx);
+          const r = advanceDialogue(this.session, contactId, idx, this._phoneEffectHooks());
           if (!r.ok) {
             this._showToast({ title: "Message failed", body: r.message ?? "" });
             return;
+          }
+          if (r.effectNotes?.length) {
+            this._showToast({ title: "Action applied", body: r.effectNotes.join(" · ") });
           }
           this.onPersist();
           this._renderScreen();
@@ -419,10 +453,13 @@ export class RewardsPhone {
         ].filter(Boolean).join(" ");
         btn.textContent = `💬 ${opt.label}`;
         btn.onclick = () => {
-          const r = sendText(this.session, contactId, opt.key);
+          const r = sendText(this.session, contactId, opt.key, this._phoneEffectHooks());
           if (!r.ok) {
             this._showToast({ title: "Text failed", body: r.message ?? "" });
             return;
+          }
+          if (r.effectNotes?.length) {
+            this._showToast({ title: "Action applied", body: r.effectNotes.join(" · ") });
           }
           this.onPersist();
           this._renderScreen();
@@ -468,12 +505,20 @@ export class RewardsPhone {
         btn.type = "button";
         btn.textContent = choice.label;
         btn.onclick = () => {
-          const r = resolveCallChoice(this.session, contactId, i);
+          const r = resolveCallChoice(
+            this.session,
+            contactId,
+            i,
+            this._callScript,
+            this._phoneEffectHooks(),
+          );
           this._callChoicePending = true;
           this.onPersist();
           this._renderCall(body);
           if (r.egg) {
             this._showToast({ title: "Easter egg!", body: "Hidden dialog unlocked." });
+          } else if (r.effectNotes?.length) {
+            this._showToast({ title: "Action applied", body: r.effectNotes.join(" · ") });
           }
         };
         body.appendChild(btn);
@@ -526,6 +571,10 @@ export class RewardsPhone {
   _renderComps(body) {
     const rewards = this.tracker.ensureRewards();
     body.innerHTML = "";
+    const dining = ensureDining(this.session);
+    if ((dining.buffetCompCredits ?? 0) > 0) {
+      body.appendChild(this._line(`${dining.buffetCompCredits} dining course credit(s) ready`, "dim"));
+    }
     if (!rewards.unlockedComps.length) {
       body.appendChild(this._line("No comps yet — keep playing!"));
       return;
@@ -542,7 +591,9 @@ export class RewardsPhone {
         btn.type = "button";
         btn.textContent = compId === "suite_upgrade" || compId === "penthouse_fantasy"
           ? "Redeem → Upgrade room"
-          : "Redeem";
+          : compId === "room_night"
+            ? "Redeem → Extend stay"
+            : "Redeem";
         btn.onclick = () => {
           if (compId === "suite_upgrade" || compId === "penthouse_fantasy") {
             const target = compId === "suite_upgrade" ? "suite" : "penthouse";
@@ -551,11 +602,25 @@ export class RewardsPhone {
               result.ok ? "Room Upgraded" : "Upgrade Held",
               result.message,
             );
-            if (result.ok) {
-              this._showToast?.({ title: "Room Upgraded", body: result.message });
-            }
+            this._showToast({
+              title: result.ok ? "Room Upgraded" : "Upgrade Held",
+              body: result.message,
+            });
+          } else if (compId === "room_night") {
+            const result = extendStay(this.session, 1, this.tracker);
+            this.tracker.pushNotification(
+              result.ok ? "Stay Extended" : "Extend Held",
+              result.message,
+            );
+            this._showToast({
+              title: result.ok ? "Stay Extended" : "Extend Held",
+              body: result.message,
+            });
           } else {
-            this.tracker.redeemComp(compId);
+            const result = this.tracker.redeemComp(compId);
+            if (result?.effectNote) {
+              this._showToast({ title: "Comp Redeemed", body: result.effectNote.trim() });
+            }
           }
           this.onPersist();
           this._renderScreen();
@@ -613,7 +678,9 @@ export class RewardsPhone {
     if (hotel.reachedRoom) {
       body.appendChild(this._line("Door reached — enter from the hotel lobby or Carmen's desk.", "dim"));
     } else if (hotel.roomKeyActive || (hotel.foundReservation && (!req.needsDesk || hotel.reservationConfirmedDesk))) {
+      const keyBefore = hotel.roomKeyActive;
       grantRoomKeyIfReservationReady(this.session);
+      if (!keyBefore && hotel.roomKeyActive) this.onPersist();
       body.appendChild(this._line(reservationHint(hotel), "dim"));
       body.appendChild(this._line("Key active — take the hotel hallway (or ask Carmen to skip) to unlock your room.", "dim"));
     } else if (req.needsPhone && !hotel.foundReservation) {
@@ -631,6 +698,29 @@ export class RewardsPhone {
       body.appendChild(btn);
     } else if (req.needsDesk && !hotel.reservationConfirmedDesk) {
       body.appendChild(this._line("Visit Clerk Carmen at the front desk to confirm your reservation.", "dim"));
+    }
+    const rewards = this.tracker.ensureRewards();
+    const hasRoomNight = rewards.unlockedComps.includes("room_night")
+      && !rewards.redeemedComps.includes("room_night");
+    if (hasRoomNight) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = "Redeem room-night → Extend";
+      btn.onclick = () => {
+        const result = extendStay(this.session, 1, this.tracker);
+        this.tracker.pushNotification(
+          result.ok ? "Stay Extended" : "Extend Held",
+          result.message,
+        );
+        this._showToast({
+          title: result.ok ? "Stay Extended" : "Extend Held",
+          body: result.message,
+        });
+        this.onPersist();
+        this._renderScreen();
+        this._updateBadge();
+      };
+      body.appendChild(btn);
     }
   }
 

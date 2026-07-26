@@ -16,7 +16,8 @@ import {
   getDialogueNode, getDynamicCallScript, getDynamicIntro, getDynamicTextOptions,
   getTierRankUpMessages, INTOX_UNLOCK_MESSAGES, getSessionSwingMessages,
 } from "./phone-dialogue-data.js";
-import { isHeightenedIntoxication } from "./intoxication-effects.js";
+import { isHeightenedIntoxication, recordConsumption } from "./intoxication-effects.js";
+import { ensureDining } from "./dining.js";
 
 function nowIso() {
   return new Date().toISOString();
@@ -280,11 +281,14 @@ export function onActivityVisit(session, activityId) {
   }
 }
 
-/** Send hidden-line unlock texts when player first hits heightened intoxication. */
+/**
+ * Send hidden-line unlock texts when player first hits heightened intoxication.
+ * @returns {boolean} true if new messages were written (caller should persist)
+ */
 export function onIntoxicationChange(session) {
-  if (!isHeightenedIntoxication(session)) return;
+  if (!isHeightenedIntoxication(session)) return false;
   const pb = ensurePhoneBook(session);
-  if (!pb || pb.intoxSecretsSent) return;
+  if (!pb || pb.intoxSecretsSent) return false;
   pb.intoxSecretsSent = true;
   recordEasterEgg(session, "intox_hidden_lines");
   for (const [contactId, body] of Object.entries(INTOX_UNLOCK_MESSAGES)) {
@@ -292,6 +296,67 @@ export function onIntoxicationChange(session) {
     appendMessage(session, contactId, "in", body, { read: false });
     adjustRapport(session, contactId, 3);
   }
+  return true;
+}
+
+/**
+ * Apply infrastructure side-effects declared on text/call/dialogue choices.
+ * Room upgrade / stay extend go through optional tracker hooks to avoid
+ * circular imports with hotel.js.
+ * @param {import("./core.js").PlayerSession} session
+ * @param {object|null|undefined} effect
+ * @param {{
+ *   redeemComp?: (id: string) => unknown,
+ *   upgradeRoom?: (target: string) => { ok: boolean, message: string },
+ *   extendStay?: (nights: number) => { ok: boolean, message: string },
+ * }|null} [tracker]
+ * @returns {string[]} human-readable notes
+ */
+export function applyPhoneEffect(session, effect, tracker = null) {
+  if (!effect || typeof effect !== "object") return [];
+  const notes = [];
+
+  if (effect.drink) {
+    const r = recordConsumption(session, effect.drink, { source: "phone" });
+    if (r.ok) notes.push(`Pour logged (+${r.added} intox)`);
+  }
+  if (typeof effect.chips === "number" && effect.chips !== 0 && session.wallet) {
+    if (effect.chips > 0) {
+      session.wallet.credit(effect.chips, "phone", effect.chipReason ?? "Phone comp");
+      notes.push(`+${effect.chips} chips`);
+    } else {
+      const owed = Math.abs(effect.chips);
+      if (session.wallet.debit(owed, "phone", effect.chipReason ?? "Phone charge")) {
+        notes.push(`-${owed} chips`);
+      } else {
+        notes.push("Insufficient chips for phone charge");
+      }
+    }
+  }
+  if (effect.buffetCredit) {
+    const dining = ensureDining(session);
+    dining.buffetCompCredits = (dining.buffetCompCredits ?? 0) + Number(effect.buffetCredit);
+    notes.push("Dining course credit queued");
+  }
+  if (effect.flag) {
+    session.rpg = session.rpg ?? {};
+    session.rpg.flags = session.rpg.flags ?? {};
+    session.rpg.flags[effect.flag] = true;
+  }
+  if (effect.extendStay && tracker?.extendStay) {
+    const r = tracker.extendStay(Number(effect.extendStay) || 1);
+    notes.push(r.message);
+  }
+  if (effect.upgradeRoom && tracker?.upgradeRoom) {
+    const r = tracker.upgradeRoom(effect.upgradeRoom);
+    notes.push(r.message);
+  }
+  if (effect.redeemComp && tracker?.redeemComp) {
+    const r = tracker.redeemComp(effect.redeemComp);
+    if (r) notes.push(`Comp redeemed: ${effect.redeemComp}`);
+  }
+
+  return notes;
 }
 
 /** Send tier rank-up texts from key contacts. */
@@ -376,7 +441,7 @@ export function clearDialogueState(session, contactId) {
  * @param {string} contactId
  * @param {number} choiceIndex
  */
-export function advanceDialogue(session, contactId, choiceIndex) {
+export function advanceDialogue(session, contactId, choiceIndex, tracker = null) {
   const thread = ensureThread(session, contactId);
   const state = thread?.dialogueState;
   if (!state) return { ok: false, message: "No active conversation." };
@@ -389,6 +454,7 @@ export function advanceDialogue(session, contactId, choiceIndex) {
   appendMessage(session, contactId, "out", choice.label);
   if (choice.rapport) adjustRapport(session, contactId, choice.rapport);
   if (choice.egg) recordEasterEgg(session, choice.egg);
+  const effectNotes = applyPhoneEffect(session, choice.effect, tracker);
 
   if (choice.next) {
     const nextNode = getDialogueNode(contactId, state.treeId, choice.next, ctx);
@@ -399,16 +465,16 @@ export function advanceDialogue(session, contactId, choiceIndex) {
         thread.dialogueState = null;
       }
       bumpTextStats(session, contactId, 0);
-      return { ok: true, ended: !thread.dialogueState };
+      return { ok: true, ended: !thread.dialogueState, effectNotes };
     }
   }
 
   thread.dialogueState = null;
   bumpTextStats(session, contactId, 0);
-  return { ok: true, ended: true };
+  return { ok: true, ended: true, effectNotes };
 }
 
-export function sendText(session, contactId, optionKey) {
+export function sendText(session, contactId, optionKey, tracker = null) {
   if (!isContactUnlocked(session, contactId)) {
     return { ok: false, message: "Contact not unlocked yet." };
   }
@@ -425,6 +491,7 @@ export function sendText(session, contactId, optionKey) {
   if (opt.onceKey) thread.topicsSeen.push(opt.onceKey);
 
   appendMessage(session, contactId, "out", opt.label);
+  const effectNotes = applyPhoneEffect(session, opt.effect, tracker);
 
   if (opt.startTree) {
     const node = getDialogueNode(contactId, opt.startTree.treeId, opt.startTree.nodeId, ctx);
@@ -433,7 +500,7 @@ export function sendText(session, contactId, optionKey) {
       appendMessage(session, contactId, "in", node.text, { read: false });
       if (node.end || !node.choices?.length) thread.dialogueState = null;
       bumpTextStats(session, contactId, opt.rapport ?? 3);
-      return { ok: true, startedTree: true, ended: !thread.dialogueState };
+      return { ok: true, startedTree: true, ended: !thread.dialogueState, effectNotes };
     }
   }
 
@@ -441,7 +508,7 @@ export function sendText(session, contactId, optionKey) {
   appendMessage(session, contactId, "in", reply, { read: false });
   if (opt.egg) recordEasterEgg(session, opt.egg);
   bumpTextStats(session, contactId, opt.rapport ?? 2);
-  return { ok: true, reply, egg: opt.egg };
+  return { ok: true, reply, egg: opt.egg, effectNotes };
 }
 
 export function getTextOptions(session, contactId) {
@@ -487,17 +554,27 @@ export function startCall(session, contactId) {
   return { ok: true, script };
 }
 
-export function resolveCallChoice(session, contactId, choiceIndex) {
+/**
+ * Resolve a call menu choice. Pass `activeScript` from startCall so fallback /
+ * filtered choice indexes stay aligned with what the LCD showed.
+ * @param {import("./core.js").PlayerSession} session
+ * @param {string} contactId
+ * @param {number} choiceIndex
+ * @param {object|null} [activeScript]
+ * @param {{ redeemComp?: Function }|null} [tracker]
+ */
+export function resolveCallChoice(session, contactId, choiceIndex, activeScript = null, tracker = null) {
   const ctx = buildDialogueContext(session, contactId);
-  const script = getDynamicCallScript(contactId, ctx);
+  const script = activeScript ?? getDynamicCallScript(contactId, ctx);
   const choices = script?.choices ?? [];
   const choice = choices[choiceIndex];
-  if (!choice) return { response: "…Call dropped.", egg: null };
+  if (!choice) return { response: "…Call dropped.", egg: null, effectNotes: [] };
   if (choice.egg) recordEasterEgg(session, choice.egg);
   if (choice.rapport) adjustRapport(session, contactId, choice.rapport);
   else adjustRapport(session, contactId, 5);
+  const effectNotes = applyPhoneEffect(session, choice.effect, tracker);
   appendMessage(session, contactId, "in", `[Call] ${choice.response}`, { read: false });
-  return { response: choice.response, egg: choice.egg };
+  return { response: choice.response, egg: choice.egg, effectNotes };
 }
 
 export function dialWrongNumber(session) {

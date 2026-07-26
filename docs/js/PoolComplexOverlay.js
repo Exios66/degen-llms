@@ -496,8 +496,13 @@ export class PoolComplexOverlay {
         this._actionBtn("Enter / show pass · $75 first visit", () => {
           this._run(enterBeachClub(this.session), { fx: "sun" });
         }, { primary: true }),
-        this._actionBtn("Pool bar — frozen cocktail · $18", () => {
-          this._run(beachClubAction(this.session, "bar"), { fx: "sun" });
+        this._actionBtn("Pool bar — first-person at the rail", () => {
+          if (this.hooks.barOverlay) {
+            this.hooks.barOverlay.setSession(this.session);
+            this.hooks.barOverlay.open("pool_beach_club");
+          } else {
+            this._run(beachClubAction(this.session, "bar"), { fx: "sun" });
+          }
         }),
         this._actionBtn("Claim a sun deck lounger", () => {
           this._run(beachClubAction(this.session, "sun_deck"), { fx: "sun" });

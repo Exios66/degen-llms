@@ -1,7 +1,7 @@
 import {
   MALL_NAME, MALL_TAGLINE, FLAGSHIP_DESIGNER_STORES, MANDALAY_PLACE_STORES,
-  CASINO_BARS, ensureAmenities, purchaseShopItem, orderBarDrink, listPurchasedItems,
-  barForDrink, getStoreById, getBarById,
+  ensureAmenities, purchaseShopItem, listPurchasedItems,
+  barForDrink, getStoreById,
 } from "./casino-amenities.js";
 import { fmtChips } from "./core.js";
 
@@ -41,7 +41,14 @@ export function buildAmenitiesRenderers(ctx) {
         el("p", { className: "dim", textContent: "Gaming, designer shopping, and full-service bars — all within steps on the floor." }),
         el("ul", { className: "menu-list" }, [
           menuBtn(`<span class="num">1)</span> ${MALL_NAME}`, () => pushView("mall-lobby")),
-          menuBtn("<span class=\"num\">2)</span> Full Service Bar — choose your lounge", () => pushView("bar-select")),
+          menuBtn("<span class=\"num\">2)</span> Full Service Bar — first-person at the rail", () => {
+            if (!ctx.barOverlay) {
+              showStatus("Bar overlay not ready.", "error");
+              return;
+            }
+            ctx.barOverlay.setSession(session);
+            ctx.barOverlay.open();
+          }),
           menuBtn("<span class=\"num\">3)</span> Resort dining — Aureole, Border Grill, Stripsteak", () => {
             if (!ctx.diningOverlay) {
               showStatus("Dining overlay not ready.", "error");
@@ -170,19 +177,25 @@ export function buildAmenitiesRenderers(ctx) {
     ]);
   }
 
+  function openBar(venueId = null) {
+    if (!ctx.barOverlay) {
+      showStatus("Bar overlay not ready.", "error");
+      return;
+    }
+    ctx.barOverlay.setSession(session);
+    ctx.barOverlay.open(venueId);
+  }
+
   function renderBarSelect() {
     return el("div", {}, [
       statusBanner(),
       banner("Full Service Bar"),
       chipLine(),
       el("div", { className: "panel amenities-panel" }, [
-        el("p", { className: "subtitle", textContent: "Three lounges on the Mandalay Bay casino floor" }),
-        el("p", { className: "dim", textContent: "Pick where you'd like to drink — mirroring the real property layout." }),
+        el("p", { className: "subtitle", textContent: "Eight lounges — FPV at the rail" }),
+        el("p", { className: "dim", textContent: "Casino floor, Betty's, Skyfall, Velvet Ledger, Beach Club, and Noir." }),
         el("ul", { className: "menu-list" }, [
-          ...CASINO_BARS.map((bar, i) => menuBtn(
-            `<span class="num">${i + 1})</span> <strong>${bar.name}</strong><br><span class="dim" style="padding-left:1.75rem;font-size:0.85rem;">${bar.location}</span>`,
-            () => pushView("bar-menu", { barId: bar.id }),
-          )),
+          menuBtn("Open bar overlay (pick your lounge)", () => openBar()),
           menuBtn('<span class="num">0)</span> Back', goBack, true),
         ]),
       ]),
@@ -190,39 +203,9 @@ export function buildAmenitiesRenderers(ctx) {
   }
 
   function renderBarMenu({ barId }) {
-    const bar = getBarById(barId);
-    if (!bar) return el("div", { className: "panel" }, [
-      el("p", { className: "error", textContent: "Bar not found." }),
-      el("ul", { className: "menu-list" }, [menuBtn('<span class="num">0)</span> Back', goBack, true)]),
-    ]);
-    const log = el("div", { className: "log-area" });
-
-    return el("div", {}, [
-      statusBanner(),
-      banner(bar.name),
-      chipLine(),
-      el("div", { className: "panel amenities-panel" }, [
-        el("p", { className: "dim", textContent: bar.location }),
-        el("p", { textContent: bar.vibe }),
-        log,
-        el("ul", { className: "menu-list" }, [
-          ...bar.drinks.map((drink, i) => menuBtn(
-            `<span class="num">${i + 1})</span> ${drink.name} — ${fmtChips(drink.price)}<br><span class="dim" style="padding-left:1.75rem;font-size:0.85rem;">${drink.description}</span>`,
-            () => {
-              const result = orderBarDrink(session, drink.id);
-              appendResult(log, result);
-              if (result.ok) {
-                showStatus(result.message);
-                persist();
-                render();
-              }
-            },
-          )),
-          menuBtn("Choose another bar", () => navigateTo("bar-select")),
-          menuBtn('<span class="num">0)</span> Back to casino floor', () => navigateTo("casino-floor"), true),
-        ]),
-        el("p", { className: "footer-note dim", textContent: "Full service — drinks tendered in chips." }),
-      ]),
+    openBar(barId);
+    return el("div", { className: "panel" }, [
+      el("p", { className: "dim", textContent: "Opening bar overlay…" }),
     ]);
   }
 

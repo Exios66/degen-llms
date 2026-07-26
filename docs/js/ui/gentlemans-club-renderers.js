@@ -16,7 +16,7 @@ import {
   playFeltFlip,
   clubSummary,
   canEnterGentlemansClub,
-} from "../gentlemans-club.js?v=aadf7ac";
+} from "../gentlemans-club.js?v=ae04ebc";
 import { fmtChips } from "../core.js";
 
 /**
@@ -81,7 +81,14 @@ export function buildGentlemansClubRenderers(ctx) {
         el("ul", { className: "menu-list" }, [
           menuBtn("<span class=\"num\">1)</span> Make it rain — tip the room", () => pushView("gentlemans-club-rain")),
           menuBtn("<span class=\"num\">2)</span> Encounters — hosts, felt, bottle captain", () => pushView("gentlemans-club-encounters")),
-          menuBtn("<span class=\"num\">3)</span> The Ledger Bar — insanely stocked", () => pushView("gentlemans-club-bar")),
+          menuBtn("<span class=\"num\">3)</span> The Ledger Bar — first-person FPV", () => {
+            if (ctx.barOverlay) {
+              ctx.barOverlay.setSession(session);
+              ctx.barOverlay.open("velvet_ledger");
+            } else {
+              pushView("gentlemans-club-bar");
+            }
+          }),
           menuBtn("<span class=\"num\">4)</span> Minigames — cascade, bottles, felt", () => pushView("gentlemans-club-minigames")),
           menuBtn("<span class=\"num\">5)</span> Club ledger — stats & secrets", () => pushView("gentlemans-club-ledger")),
           menuBtn("<span class=\"num\">0)</span> Leave the velvet rope", () => goBack(), true),
@@ -116,6 +123,13 @@ export function buildGentlemansClubRenderers(ctx) {
   }
 
   function renderBar() {
+    if (ctx.barOverlay) {
+      ctx.barOverlay.setSession(session);
+      ctx.barOverlay.open("velvet_ledger");
+      return el("div", { className: "panel" }, [
+        el("p", { className: "dim", textContent: "Opening The Ledger Bar overlay…" }),
+      ]);
+    }
     const log = el("div", { className: "log-area" });
     return el("div", {}, [
       statusBanner(),

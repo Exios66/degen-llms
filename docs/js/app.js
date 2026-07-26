@@ -32,11 +32,12 @@ import { buildTradingDeskRenderers } from "./ui/trading-desk-renderers.js";
 import { buildArcadeRenderers } from "./ui/arcade-renderers.js";
 import { ArcadeCabinetOverlay } from "./arcade/ArcadeCabinetOverlay.js";
 import { DiningOverlay } from "./DiningOverlay.js";
+import { BarOverlay } from "./BarOverlay.js";
 import { PoolComplexOverlay } from "./PoolComplexOverlay.js";
 import { BalconySmokeOverlay } from "./BalconySmokeOverlay.js";
 import { buildRacingRenderers } from "./ui/racing-renderers.js";
 import { buildVenueRenderers } from "./ui/venue-renderers.js";
-import { buildGentlemansClubRenderers } from "./ui/gentlemans-club-renderers.js?v=aadf7ac";
+import { buildGentlemansClubRenderers } from "./ui/gentlemans-club-renderers.js?v=ae04ebc";
 import { buildCashierRenderers } from "./ui/cashier-renderers.js";
 import { buildMetaRenderers } from "./ui/meta-renderers.js";
 
@@ -48,6 +49,7 @@ let session = new PlayerSession();
 let rewardsPhone = null;
 let arcadeOverlay = null;
 let diningOverlay = null;
+let barOverlay = null;
 let poolOverlay = null;
 let balconySmokeOverlay = null;
 let casinoTimeTicker = null;
@@ -64,6 +66,7 @@ const ctx = {
   get rewardsPhone() { return rewardsPhone; },
   get arcadeOverlay() { return arcadeOverlay; },
   get diningOverlay() { return diningOverlay; },
+  get barOverlay() { return barOverlay; },
   get poolOverlay() { return poolOverlay; },
   get balconySmokeOverlay() { return balconySmokeOverlay; },
   runtime,
@@ -184,6 +187,25 @@ function mountDiningOverlay() {
   diningOverlay.setSession(session);
 }
 
+function mountBarOverlay() {
+  const root = document.getElementById("bar-overlay");
+  if (!root) return;
+  barOverlay = new BarOverlay(root, {
+    onPersist: () => persist(),
+    onStatus: (msg, kind) => showStatus(msg, kind),
+    onClosed: () => render(),
+    onChipDelta: () => {
+      const line = document.querySelector(".chip-line");
+      if (line) {
+        line.classList.remove("chip-pulse--up", "chip-pulse--down");
+        void line.offsetWidth;
+        line.classList.add("chip-pulse", "chip-pulse--down");
+      }
+    },
+  });
+  barOverlay.setSession(session);
+}
+
 function mountPoolOverlay() {
   const root = document.getElementById("pool-overlay");
   if (!root) return;
@@ -191,6 +213,7 @@ function mountPoolOverlay() {
     onPersist: () => persist(),
     onStatus: (msg, kind) => showStatus(msg, kind),
     onClosed: () => render(),
+    barOverlay,
     onChipDelta: () => {
       const line = document.querySelector(".chip-line");
       if (line) {
@@ -237,6 +260,7 @@ function enterCasino(nextSession) {
   mountRewardsPhone();
   mountArcadeOverlay();
   mountDiningOverlay();
+  mountBarOverlay();
   mountPoolOverlay();
   mountBalconySmokeOverlay();
   syncContactIntros(nextSession);
@@ -251,6 +275,7 @@ function returnToSavePicker() {
   rewardsPhone?.close();
   arcadeOverlay?.close();
   diningOverlay?.close();
+  barOverlay?.close();
   poolOverlay?.close();
   balconySmokeOverlay?.close();
   runtime.sportsbook = new SportsbookState();
@@ -785,6 +810,7 @@ function render() {
     window.setTimeout(() => app.classList.remove("view-transition"), 240);
   }
   diningOverlay?.setSession(session);
+  barOverlay?.setSession(session);
   poolOverlay?.setSession(session);
   arcadeOverlay?.setSession(session);
   balconySmokeOverlay?.setSession(session);

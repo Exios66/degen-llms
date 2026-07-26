@@ -31,7 +31,15 @@ export const HOSTED_ENCOUNTERS = {
   amenities: { view: "casino-floor", activityId: "amenities", title: "RESORT AMENITIES" },
   shops: { view: "mall-lobby", activityId: "amenities", title: "MANDALAY PLACE" },
   mall_bag: { view: "mall-bag", title: "SHOPPING BAG" },
-  bar: { view: "bar-select", activityId: "amenities", title: "BARS" },
+  bar: { view: "bar-select", activityId: "bar", title: "BARS" },
+  bar_eyecandy: { view: "bar-menu", activityId: "bar", title: "EYECANDY", venueId: "eyecandy" },
+  bar_big_chill: { view: "bar-menu", activityId: "bar", title: "BIG CHILL", venueId: "big_chill" },
+  bar_rhythm: { view: "bar-menu", activityId: "bar", title: "RHYTHM & RIFFS", venueId: "rhythm_riiffs" },
+  bar_betty: { view: "bar-menu", activityId: "bar", title: "BETTY'S BAR", venueId: "betty_bar" },
+  bar_skyfall: { view: "bar-menu", activityId: "bar", title: "SKYFALL LOUNGE", venueId: "skyfall_lounge" },
+  bar_velvet: { view: "bar-menu", activityId: "bar", title: "LEDGER BAR", venueId: "velvet_ledger" },
+  bar_beach_club: { view: "pool-beach-club", activityId: "bar", title: "BEACH CLUB BAR", venueId: "pool_beach_club" },
+  bar_foundation: { view: "foundation-room", activityId: "bar", title: "FOUNDATION BAR", venueId: "foundation_room" },
 
   // ── Gambling floors ──────────────────────────────────────────────────────
   slots: { view: "slots-menu", activityId: "slots", stakeFor: "slots", title: "SLOT FLOOR" },

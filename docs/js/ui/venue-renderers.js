@@ -1,5 +1,5 @@
 // Extracted from app.js — shared by the web terminal and the pixel RPG.
-import { HIGH_LIMIT_SALON_CHIP_MIN, canEnterFoundationRoom, canEnterHighLimitSalon } from "../venues.js?v=aadf7ac";
+import { HIGH_LIMIT_SALON_CHIP_MIN, canEnterFoundationRoom, canEnterHighLimitSalon } from "../venues.js?v=ae04ebc";
 import {
   SALON_TABLE_GAMES,
   SALON_SPORTS_SCENARIOS,
@@ -131,7 +131,7 @@ export function buildVenueRenderers(ctx) {
       menu(
         [
           "Whisper with Alexandra (host line)",
-          "Order Foundation Room edible",
+          "Order at the Foundation Room bar (FPV)",
           "Return to casino floor",
         ],
         "Noir lounge:",
@@ -142,13 +142,18 @@ export function buildVenueRenderers(ctx) {
             showStatus("Alexandra: 'Velvet rope noted. You're on the whisper list — don't make me regret it.'");
             persist?.();
           } else if (choice === 2) {
-            const r = recordConsumption(ctx.session, "foundation_edible", { source: "foundation_room" });
-            showStatus(
-              r.ok
-                ? "Foundation edible arrives on a black napkin. The room softens. No photos."
-                : "Edible narrative queued — atmosphere only tonight.",
-            );
-            persist?.();
+            if (ctx.barOverlay) {
+              ctx.barOverlay.setSession(ctx.session);
+              ctx.barOverlay.open("foundation_room");
+            } else {
+              const r = recordConsumption(ctx.session, "foundation_edible", { source: "foundation_room" });
+              showStatus(
+                r.ok
+                  ? "Foundation edible arrives on a black napkin. The room softens. No photos."
+                  : "Edible narrative queued — atmosphere only tonight.",
+              );
+              persist?.();
+            }
           } else if (choice === 3) {
             navigateTo("casino-floor");
           }

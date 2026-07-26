@@ -108,14 +108,16 @@ its renderer table; the RPG's `TerminalHostOverlay` builds the same context and
 mounts the identical functions inside an encounter panel. A feature shipped to
 the terminal appears in the RPG with no RPG-side work.
 
-The four exceptions are the bespoke pixel "battle screens" that read better
-in-world — blackjack, hold'em, roulette, and the House of Blues rhythm
-minigame. They still take their bet limits from the shared stake-tier picker.
+The bespoke pixel "battle screens" that read better in-world are blackjack,
+hold'em, roulette, the House of Blues rhythm minigame, and Valet Vic's Strip
+Drive arcade cabinet. Table games still take bet limits from the shared
+stake-tier picker; Strip Drive is a timed tip-chase with no wager.
 
 | Encounter | Where it lives | Reached from |
 |-----------|----------------|--------------|
 | `blackjack`, `holdem`, `roulette` | Bespoke pixel overlays | Casino floor pits |
 | `rhythm` | Bespoke pixel overlay | House of Blues stage |
+| `vegas_strip_drive` | Bespoke canvas arcade overlay | Valet Vic / keys-desk cabinet |
 | `craps`, `lottery` | Hosted from `docs/js/ui/` | Stickman Stan's rail, Lottery Lena's counter |
 | `slots`, `sportsbook`, `predictions` | Hosted | Slot aisle, Bookie Blake's board |
 | `horse_racing`, `dressage`, `jumper`, `horse_stables` | Hosted | Racing pavilion |
@@ -208,7 +210,7 @@ resort clock turns.
 | Wing | Room | Who you'll meet |
 |------|------|-----------------|
 | Arrival | Las Vegas Blvd | Doorman Dante, Cab Line Carl |
-| Arrival | Valet & Parking | Valet Vic |
+| Arrival | Valet & Parking | Valet Vic, Keys Desk Cabinet, Row F Coupe |
 | Arrival | Registration Lobby | Chip Chandler, Golden Statue, Tourist Tina, Bell Desk Bruno |
 | Casino | Casino Floor North | Blackjack Pit, Hold'em Pit, Roulette Pit, Stickman Stan, Spinster Sal, Cashier Carmen, Security Sam, High Limit Host, Shop Clerk |
 | Casino | Casino Floor South | Pavilion Paula, Arena Alex, Slot Tech Tessa, Cocktail Cora |

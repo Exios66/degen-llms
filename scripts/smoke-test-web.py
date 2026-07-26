@@ -133,6 +133,26 @@ def rpg_journey(page, base, failures: list[str], errors: list[str]) -> None:
     step("door_chain", chain_map == "strip_sidewalk" and tuple(chain_tile) == (15, 4),
          f"ended on {chain_map}@{chain_tile}, expected strip_sidewalk@(15,4)")
 
+    # Valet garage chain: strip → garage → lobby elevators → garage → strip.
+    page.evaluate("""async () => {
+      const s = window.__rpg.scene;
+      const hops = [
+        ['valet_garage', 26, 15],
+        ['registration_lobby', 15, 4],
+        ['valet_garage', 15, 26],
+        ['strip_sidewalk', 3, 22],
+      ];
+      for (const [mapId, x, y] of hops) {
+        s._transitionMap(mapId, x, y, null);
+        await new Promise((r) => setTimeout(r, 400));
+      }
+    }""")
+    page.wait_for_timeout(2200)
+    valet_map = page.evaluate("() => window.__rpg.scene.currentMapId")
+    valet_tile = page.evaluate(PLAYER_TILE)
+    step("valet_door_chain", valet_map == "strip_sidewalk" and tuple(valet_tile) == (3, 22),
+         f"ended on {valet_map}@{valet_tile}, expected strip_sidewalk@(3,22)")
+
     # Walk onto the lobby door from spawn side and confirm the warp fires via feet.
     page.evaluate("""() => {
       const s = window.__rpg.scene;

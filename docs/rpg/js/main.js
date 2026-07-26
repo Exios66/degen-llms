@@ -1,6 +1,6 @@
 import Phaser from "phaser";
-import { OverworldScene } from "./scenes/GameScenes.js?v=title-boot-1";
-import { TitleScreen, renderHud, renderTrainerCard } from "./scenes/TitleScreen.js?v=title-boot-1";
+import { OverworldScene } from "./scenes/GameScenes.js?v=pr89-main-1";
+import { TitleScreen, renderHud, renderTrainerCard } from "./scenes/TitleScreen.js?v=pr89-main-1";
 import { DialogueManager } from "./systems/DialogueManager.js";
 import { SaveAdapter } from "./systems/SaveAdapter.js";
 import { defaultAppearance } from "./systems/CharacterAppearance.js";
@@ -10,7 +10,7 @@ import {
   RouletteOverlay,
   HoldemOverlay,
   RhythmOverlay,
-} from "./systems/EncounterBridge.js";
+} from "./systems/EncounterBridge.js?v=pr89-main-1";
 import { TerminalHostOverlay } from "./systems/TerminalHostOverlay.js";
 import { QuestManager } from "./systems/QuestManager.js";
 import { MenuOverlay } from "./systems/MenuOverlay.js";
@@ -18,18 +18,16 @@ import { loadEggRegistry, syncEggsFromFlags, discoverEgg, eggForFlag } from "./s
 import { RPG_ITEMS, giveItem } from "./systems/Inventory.js";
 import { audioManager } from "./systems/AudioManager.js";
 import {
-  TILE_SIZE, MAP_WIDTH, MAP_HEIGHT, installWorld, DEFAULT_MAP_ID,
+  installWorld, DEFAULT_MAP_ID,
 } from "./systems/MapData.js";
 import { loadWorld } from "./systems/MapLoader.js";
+import { TouchControls, prefersTouchControls } from "./systems/TouchControls.js";
 import { RewardsPhone } from "../../js/RewardsPhone.js";
 import { syncRewardsFlags } from "../../js/rewards.js";
 import { enterZone, ensurePoolComplex } from "../../js/pool-complex.js";
 import { startCasinoClock } from "../../js/casino-time.js";
 import { syncContactIntros } from "../../js/phone-contacts.js";
 import { recordConsumption, applyIntoxicationEffects } from "../../js/intoxication-effects.js";
-
-const GAME_WIDTH = MAP_WIDTH * TILE_SIZE;
-const GAME_HEIGHT = MAP_HEIGHT * TILE_SIZE;
 
 let game = null;
 let session = null;
@@ -39,6 +37,7 @@ let questManager = null;
 let encounters = null;
 let terminalHost = null;
 let menu = null;
+let touchPad = null;
 
 const hudRoot = document.getElementById("hud");
 const rewardsRoot = document.getElementById("rewards-phone");
@@ -236,8 +235,6 @@ async function startOverworld(activeSession) {
 
   game = new Phaser.Game({
     type: Phaser.AUTO,
-    width: GAME_WIDTH,
-    height: GAME_HEIGHT,
     parent: "phaser-root",
     backgroundColor: "#0a0812",
     pixelArt: true,
@@ -256,9 +253,14 @@ async function startOverworld(activeSession) {
       default: "arcade",
       arcade: { gravity: { y: 0 }, debug: false },
     },
+    // RESIZE, not FIT: the world is square and phones are not, so FIT letterboxed
+    // the game into a band. The canvas takes the whole shell and the camera
+    // decides how much of the property fits (see OverworldScene._fitCamera).
     scale: {
-      mode: Phaser.Scale.FIT,
-      autoCenter: Phaser.Scale.CENTER_BOTH,
+      mode: Phaser.Scale.RESIZE,
+      autoCenter: Phaser.Scale.NO_CENTER,
+      width: "100%",
+      height: "100%",
     },
     scene: [OverworldScene],
   });
@@ -275,6 +277,8 @@ async function startOverworld(activeSession) {
     get menu() { return menu; },
   };
 
+  touchPad = mountTouchControls();
+
   game.scene.start("OverworldScene", {
     session,
     saveAdapter,
@@ -284,6 +288,7 @@ async function startOverworld(activeSession) {
     triggers,
     questManager,
     audio: audioManager,
+    touchPad,
     onOpenMenu: (page) => menu?.open(page),
     isMenuOpen: () => Boolean(menu?.isActive()),
     onMapBanner: (label, phaseLabel) => showMapBanner(label, phaseLabel),
@@ -306,6 +311,22 @@ async function startOverworld(activeSession) {
         });
       }
     },
+  });
+}
+
+/**
+ * Give phones a d-pad, a talk button and a menu button. Desktop players have
+ * the keyboard, so the pad never appears for them.
+ */
+function mountTouchControls() {
+  const root = document.getElementById("touch-pad");
+  if (!root || !prefersTouchControls()) return null;
+  if (touchPad) touchPad.destroy();
+  root.hidden = false;
+  document.body.classList.add("has-touch-pad");
+  return new TouchControls(root, {
+    onInteract: () => game?.scene?.getScene("OverworldScene")?.touchInteract?.(),
+    onMenu: () => menu?.open(),
   });
 }
 

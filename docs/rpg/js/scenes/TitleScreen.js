@@ -13,10 +13,14 @@ import { getActiveProfileSummary, getActiveSlotId } from "../../../js/profileCac
 import { getWorldCycleState } from "../../../js/world-cycle.js";
 import { SaveAdapter, initSessionRpg } from "../systems/SaveAdapter.js";
 import { renderCharacterCreator } from "../systems/CharacterCreator.js";
-import { archetypeLabel, normalizeAppearance } from "../systems/CharacterAppearance.js";
-import { resolvePlayerSprite, drawCharacterToCanvas } from "../systems/CharacterSprites.js";
+import { archetypeLabel, normalizeAppearance, resolvePalette } from "../systems/CharacterAppearance.js";
+import { drawCharacterToCanvas } from "../systems/TextureFactory.js";
+import { prefersTouchControls } from "../systems/TouchControls.js";
 
 const INTRO_AUTO_MS = 3200;
+
+/** Phone players have no Enter key, so the prompts say "tap" instead. */
+const TOUCH = prefersTouchControls();
 
 /**
  * DOM-based title / save picker before entering the overworld.
@@ -106,7 +110,7 @@ export class TitleScreen {
       <div class="attract-screen">
         <p class="attract-insert">INSERT COIN</p>
         <h1>${CASINO_NAME}</h1>
-        <p class="attract-blink">Press Enter · Play blackjack · Slots · Sports · Racing</p>
+        <p class="attract-blink">${TOUCH ? "Tap to play" : "Press Enter"} · Blackjack · Slots · Sports · Racing</p>
         <p class="attract-hint">Arcade cabinet mode · Epic Furious vibes</p>
       </div>
     `;
@@ -145,7 +149,7 @@ export class TitleScreen {
         <h1 class="title-intro-logo">${CASINO_NAME}</h1>
         <div class="title-intro-rule" aria-hidden="true"></div>
         <p class="title-intro-tagline">Pixel RPG · Open World Resort</p>
-        <p class="title-intro-hint">Press Enter or click to begin</p>
+        <p class="title-intro-hint">${TOUCH ? "Tap to begin" : "Press Enter or click to begin"}</p>
       </div>
       <div class="title-intro-chips" aria-hidden="true">
         <span class="chip chip-a">♠</span>
@@ -276,11 +280,7 @@ export class TitleScreen {
     const guestBtn = document.createElement("button");
     guestBtn.type = "button";
     guestBtn.textContent = "Guest visit (no save)";
-    guestBtn.onclick = () => {
-      const guest = createGuestSession();
-      initSessionRpg(guest);
-      this._promptArchetype(guest);
-    };
+    guestBtn.onclick = () => this._promptArchetype(initSessionRpg(createGuestSession()));
     actions.appendChild(guestBtn);
     panel.appendChild(actions);
 
@@ -451,7 +451,7 @@ export function renderTrainerCard(root, saveAdapter, questManager, hooks = {}) {
   `;
   const portrait = root.querySelector("#trainer-portrait");
   if (portrait) {
-    drawCharacterToCanvas(portrait, resolvePlayerSprite(appearance), "down", 0, 3);
+    drawCharacterToCanvas(portrait, resolvePalette(appearance), "down", 0, 3);
   }
   root.querySelector("#trainer-wardrobe")?.addEventListener("click", () => {
     root.dataset.wardrobe = "1";

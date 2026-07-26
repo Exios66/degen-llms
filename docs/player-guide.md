@@ -345,6 +345,13 @@ terminal's own screens rather than reimplementing them.
 | T | Trainer Card and wardrobe |
 | P | MGM Rewards phone |
 
+On a phone the game fills the screen and a thumb pad appears in the bottom
+corners: a d-pad on the left, **B** to run, **A** to talk, and **☰** for the
+START menu. You can ignore the pad entirely and just tap — tap a tile to walk
+there, tap somebody to walk over and talk to them, and tap anywhere on the
+screen to advance dialogue. The pad gets out of the way whenever a conversation
+or a panel is on screen.
+
 Gold walkways are the resort's wayfinding: follow them and they connect the
 entrance, the pits, the aisles, and every door. Dark trim marks where one floor
 ends and the next begins, and floating signs name the zone you're standing in.

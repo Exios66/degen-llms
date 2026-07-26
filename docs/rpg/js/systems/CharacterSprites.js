@@ -1,6 +1,6 @@
 /**
- * CC0 top-down character sprites — Fry hero + Danilo Mattos Sora.
- * Replaces procedural chibi sprites with production pixel-art sheets.
+ * Character sprites — Fry hero (player) + Jephed staff/dealer sheets.
+ * See docs/rpg/assets/characters/ATTRIBUTION.md.
  */
 import {
   appearanceTextureBase,
@@ -22,22 +22,25 @@ const HERO = {
   scale: 0.75,
   originY: 0.82,
   rows: { walkDown: 0, walkRight: 1, walkUp: 2, idle: 3 },
-  walkCols: [0, 2, 4],
-  idleCols: { down: 0, up: 1, right: 3 },
+  // Full walk cycle from the sheet; left uses walkRight + flipX
+  walkCols: [0, 1, 2, 3, 4, 5],
+  // Sheet idle row: col0=down, col1=right, col2=up
+  idleCols: { down: 0, up: 2, right: 1 },
 };
 
-const SORA_SHEETS = {
-  walkDown: { key: "char_sora_walk_down", file: "sora/IdleDownWalking.png", frames: 4 },
-  walkUp: { key: "char_sora_walk_up", file: "sora/IdleUpWalking.png", frames: 4 },
-  walkRight: { key: "char_sora_walk_right", file: "sora/Walking_Right.png", frames: 4 },
-  idleDown: { key: "char_sora_idle_down", file: "sora/IdleDown.png", frames: 2 },
-  idleUp: { key: "char_sora_idle_up", file: "sora/IdleUp.png", frames: 2 },
-  idleRight: { key: "char_sora_idle_right", file: "sora/IdleLeft.png", frames: 8 },
+/** Jephed top-down staff sheets: 20×32 frames, 3×4 (down/left/right/up × walk/idle/walk). */
+const STAFF = {
+  frameWidth: 20,
+  frameHeight: 32,
+  columns: 3,
+  rows: 4,
+  scale: 1.5,
+  originY: 0.88,
+  // row: 0 down, 1 left, 2 right, 3 up
+  rowForDir: { down: 0, left: 1, right: 2, up: 3 },
+  idleCol: 1,
+  walkCols: [0, 1, 2],
 };
-
-const SORA_FRAME = 64;
-const SORA_SCALE = 0.5;
-const SORA_ORIGIN_Y = 0.85;
 
 const OUTFIT_TINT = {
   teal: 0xb8f0ff,
@@ -49,16 +52,32 @@ const OUTFIT_TINT = {
   coral: 0xffd0a0,
 };
 
-/** NPC sprite bases — hero (Fry) or sora with optional tint. */
-export const NPC_SPRITE_CONFIG = {
-  npc_gold: { base: "hero", tint: 0xfff0b0 },
-  npc_orange: { base: "hero", tint: 0xffcc88 },
-  npc_pink: { base: "hero", tint: 0xffb8e8 },
-  npc_red: { base: "hero", tint: 0xff9999 },
-  npc_silver: { base: "hero", tint: 0xd0d8e8 },
-  npc_teal: { base: "sora", tint: 0xffffff },
-  npc_green: { base: "sora", tint: 0x98ffcc },
-};
+/** Unique staff/dealer sheets under assets/characters/staff/. */
+const STAFF_SHEETS = [
+  "npc_gold",
+  "npc_orange",
+  "npc_pink",
+  "npc_red",
+  "npc_silver",
+  "npc_teal",
+  "npc_green",
+  "dealer_steve",
+  "dealer_meryl",
+  "dealer_judi",
+  "dealer_jennifer",
+  "dealer_sofia",
+  "dealer_octavia",
+  "dealer_nicole",
+];
+
+function staffKey(id) {
+  return `char_${id}`;
+}
+
+/** NPC sprite config — each key maps to a unique sheet (no tinted hero clones). */
+export const NPC_SPRITE_CONFIG = Object.fromEntries(
+  STAFF_SHEETS.map((id) => [id, { base: "staff", sheet: id, tint: 0xffffff }])
+);
 
 export function resolvePlayerSprite(appearance) {
   const a = normalizeAppearance({ appearance });
@@ -86,6 +105,10 @@ function heroFrameIndex(row, col) {
   return row * HERO.columns + col;
 }
 
+function staffFrameIndex(row, col) {
+  return row * STAFF.columns + col;
+}
+
 function getHeroFrameRect(dir, frame = 0, moving = false) {
   if (!moving) {
     const col = HERO.idleCols[dir === "left" ? "right" : dir] ?? 0;
@@ -106,23 +129,16 @@ function getHeroFrameRect(dir, frame = 0, moving = false) {
   };
 }
 
-function getSoraSheetKey(dir, moving) {
-  if (!moving) {
-    if (dir === "down") return SORA_SHEETS.idleDown.key;
-    if (dir === "up") return SORA_SHEETS.idleUp.key;
-    return SORA_SHEETS.idleRight.key;
-  }
-  if (dir === "down") return SORA_SHEETS.walkDown.key;
-  if (dir === "up") return SORA_SHEETS.walkUp.key;
-  return SORA_SHEETS.walkRight.key;
-}
-
-function getSoraFrameIndex(dir, frame, moving) {
-  if (!moving) {
-    if (dir === "right" || dir === "left") return 0;
-    return 0;
-  }
-  return frame % 4;
+function getStaffFrameRect(dir, frame = 0, moving = false) {
+  const facing = dir === "left" || dir === "right" || dir === "up" || dir === "down" ? dir : "down";
+  const row = STAFF.rowForDir[facing] ?? 0;
+  const col = moving ? STAFF.walkCols[frame % STAFF.walkCols.length] : STAFF.idleCol;
+  return {
+    x: col * STAFF.frameWidth,
+    y: row * STAFF.frameHeight,
+    w: STAFF.frameWidth,
+    h: STAFF.frameHeight,
+  };
 }
 
 export function preloadCharacterAssets(scene) {
@@ -131,10 +147,10 @@ export function preloadCharacterAssets(scene) {
     frameHeight: HERO.frameHeight,
   });
 
-  for (const sheet of Object.values(SORA_SHEETS)) {
-    scene.load.spritesheet(sheet.key, assetUrl(sheet.file), {
-      frameWidth: SORA_FRAME,
-      frameHeight: SORA_FRAME,
+  for (const id of STAFF_SHEETS) {
+    scene.load.spritesheet(staffKey(id), assetUrl(`staff/${id}.png`), {
+      frameWidth: STAFF.frameWidth,
+      frameHeight: STAFF.frameHeight,
     });
   }
 }
@@ -147,8 +163,8 @@ function rememberPortraitImage(key, scene) {
 
 export function cachePortraitImages(scene) {
   rememberPortraitImage(HERO.key, scene);
-  for (const sheet of Object.values(SORA_SHEETS)) {
-    rememberPortraitImage(sheet.key, scene);
+  for (const id of STAFF_SHEETS) {
+    rememberPortraitImage(staffKey(id), scene);
   }
 }
 
@@ -179,40 +195,40 @@ function createHeroAnims(scene, prefix) {
   }
 }
 
-function createSoraAnims(scene, prefix) {
+function createStaffAnims(scene, prefix, sheetId) {
   if (scene.anims.exists(`${prefix}_walk_down`)) return;
+  const key = staffKey(sheetId);
 
-  const dirs = [
-    { dir: "down", walk: SORA_SHEETS.walkDown, idle: SORA_SHEETS.idleDown },
-    { dir: "up", walk: SORA_SHEETS.walkUp, idle: SORA_SHEETS.idleUp },
-    { dir: "right", walk: SORA_SHEETS.walkRight, idle: SORA_SHEETS.idleRight },
-  ];
-
-  for (const { dir, walk, idle } of dirs) {
+  for (const dir of ["down", "up", "left", "right"]) {
+    const row = STAFF.rowForDir[dir];
+    const walkFrames = STAFF.walkCols.map((col) => ({
+      key,
+      frame: staffFrameIndex(row, col),
+    }));
     scene.anims.create({
       key: `${prefix}_walk_${dir}`,
-      frames: scene.anims.generateFrameNumbers(walk.key, { start: 0, end: walk.frames - 1 }),
-      frameRate: 10,
+      frames: walkFrames,
+      frameRate: 8,
       repeat: -1,
     });
     scene.anims.create({
       key: `${prefix}_idle_${dir}`,
-      frames: [{ key: idle.key, frame: 0 }],
+      frames: [{ key, frame: staffFrameIndex(row, STAFF.idleCol) }],
       frameRate: 1,
       repeat: 0,
     });
   }
 }
 
-function ensureAnims(scene, prefix, base) {
-  if (base === "sora") createSoraAnims(scene, prefix);
+function ensureAnims(scene, prefix, spec) {
+  if (spec.base === "staff") createStaffAnims(scene, prefix, spec.sheet);
   else createHeroAnims(scene, prefix);
 }
 
 export function applySpriteAppearance(sprite, spec) {
   const base = spec.base ?? "hero";
-  const scale = base === "sora" ? SORA_SCALE : HERO.scale;
-  const originY = base === "sora" ? SORA_ORIGIN_Y : HERO.originY;
+  const scale = base === "staff" ? STAFF.scale : HERO.scale;
+  const originY = base === "staff" ? STAFF.originY : HERO.originY;
   sprite.setScale(scale);
   sprite.setOrigin(0.5, originY);
   if (spec.tint && spec.tint !== 0xffffff) sprite.setTint(spec.tint);
@@ -221,19 +237,37 @@ export function applySpriteAppearance(sprite, spec) {
 
 export function ensurePlayerTextures(scene, appearance) {
   const spec = resolvePlayerSprite(appearance);
-  ensureAnims(scene, spec.prefix, spec.base);
+  ensureAnims(scene, spec.prefix, spec);
   return spec.prefix;
 }
 
-export function setupNpcSprite(scene, sprite, npcTextureKey) {
+/**
+ * @param {Phaser.Scene} scene
+ * @param {Phaser.GameObjects.Sprite} sprite
+ * @param {string} npcTextureKey
+ * @param {string} [facing]
+ */
+export function setupNpcSprite(scene, sprite, npcTextureKey, facing = "down") {
   const spec = resolveNpcSprite(npcTextureKey);
   const prefix = npcTextureKey;
-  ensureAnims(scene, prefix, spec.base);
+  ensureAnims(scene, prefix, spec);
 
-  const sheetKey = spec.base === "sora" ? SORA_SHEETS.idleDown.key : HERO.key;
-  const frame = spec.base === "sora" ? 0 : heroFrameIndex(HERO.rows.idle, HERO.idleCols.down);
-  sprite.setTexture(sheetKey, frame);
+  const dir = ["down", "up", "left", "right"].includes(facing) ? facing : "down";
+  if (spec.base === "staff") {
+    const key = staffKey(spec.sheet);
+    const row = STAFF.rowForDir[dir] ?? 0;
+    sprite.setTexture(key, staffFrameIndex(row, STAFF.idleCol));
+    sprite.setFlipX(false);
+  } else {
+    sprite.setTexture(HERO.key, heroFrameIndex(HERO.rows.idle, HERO.idleCols.down));
+    sprite.setFlipX(dir === "left");
+  }
   applySpriteAppearance(sprite, spec);
+
+  const idleKey = `${prefix}_idle_${dir === "left" && spec.base !== "staff" ? "right" : dir}`;
+  if (scene.anims.exists(idleKey)) {
+    sprite.anims.play(idleKey, true);
+  }
 }
 
 export function playerTextureKey(rpgOrArchetype, facing = "down") {
@@ -243,11 +277,6 @@ export function playerTextureKey(rpgOrArchetype, facing = "down") {
       : { archetype: rpgOrArchetype ?? "weekend_warrior" }
   );
   const dir = facing === "left" ? "right" : facing;
-  const rowKey = dir === "down" ? "walkDown" : dir === "up" ? "walkUp" : "walkRight";
-  if (spec.base === "sora") {
-    const idleKey = dir === "down" ? SORA_SHEETS.idleDown.key : dir === "up" ? SORA_SHEETS.idleUp.key : SORA_SHEETS.idleRight.key;
-    return { key: idleKey, frame: 0, flipX: facing === "left" };
-  }
   return {
     key: HERO.key,
     frame: heroFrameIndex(HERO.rows.idle, HERO.idleCols[dir] ?? 0),
@@ -261,6 +290,7 @@ export function playerAnimKey(rpgOrArchetype, facing, moving) {
       ? rpgOrArchetype
       : { archetype: rpgOrArchetype ?? "weekend_warrior" }
   );
+  // Hero sheet has no left column — remap + flip in the scene
   const dir = facing === "left" ? "right" : facing;
   const kind = moving ? "walk" : "idle";
   return `${spec.prefix}_${kind}_${dir}`;
@@ -270,20 +300,20 @@ export function playerAnimKey(rpgOrArchetype, facing, moving) {
 export function drawCharacterToCanvas(canvas, spec, dir = "down", frame = 0, pixelScale = 3) {
   const ctx = canvas.getContext("2d");
   const base = spec.base ?? "hero";
-  const facing = dir === "left" ? "right" : dir;
   let img;
   let rect;
+  let flip = false;
 
-  if (base === "sora") {
-    const sheetKey = getSoraSheetKey(facing, frame > 0);
-    img = portraitImages.get(sheetKey);
-    const fw = SORA_FRAME;
-    const fh = SORA_FRAME;
-    const idx = getSoraFrameIndex(facing, frame, frame > 0);
-    rect = { x: idx * fw, y: 0, w: fw, h: fh };
+  if (base === "staff") {
+    const sheetId = spec.sheet ?? "npc_gold";
+    img = portraitImages.get(staffKey(sheetId));
+    const facing = ["down", "up", "left", "right"].includes(dir) ? dir : "down";
+    rect = getStaffFrameRect(facing, frame, frame > 0);
   } else {
     img = portraitImages.get(HERO.key);
+    const facing = dir === "left" ? "right" : dir;
     rect = getHeroFrameRect(facing, frame, frame > 0);
+    flip = dir === "left";
   }
 
   if (!img || !rect) return;
@@ -293,7 +323,7 @@ export function drawCharacterToCanvas(canvas, spec, dir = "down", frame = 0, pix
   ctx.imageSmoothingEnabled = false;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  if (dir === "left") {
+  if (flip) {
     ctx.translate(canvas.width, 0);
     ctx.scale(-1, 1);
   }
@@ -317,10 +347,10 @@ function bootPortraitCache() {
     const img = new Image();
     img.src = assetUrl(HERO.file);
     portraitImages.set(HERO.key, img);
-    for (const sheet of Object.values(SORA_SHEETS)) {
-      const soraImg = new Image();
-      soraImg.src = assetUrl(sheet.file);
-      portraitImages.set(sheet.key, soraImg);
+    for (const id of STAFF_SHEETS) {
+      const staffImg = new Image();
+      staffImg.src = assetUrl(`staff/${id}.png`);
+      portraitImages.set(staffKey(id), staffImg);
     }
   } catch (err) {
     console.warn("Character portrait cache warm-up failed", err);

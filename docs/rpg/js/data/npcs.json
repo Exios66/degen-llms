@@ -496,7 +496,7 @@
     {
       "id": "clerk_carmen",
       "name": "Clerk Carmen",
-      "x": 15,
+      "x": 12,
       "y": 9,
       "sprite": "npc_pink",
       "dialogueId": "clerk_carmen_greet",
@@ -518,8 +518,8 @@
     {
       "id": "housekeeper_hana",
       "name": "Housekeeper Hana",
-      "x": 15,
-      "y": 12,
+      "x": 18,
+      "y": 14,
       "sprite": "npc_green",
       "dialogueId": "housekeeper_hana_greet",
       "direction": "down",
@@ -538,12 +538,30 @@
     {
       "id": "hotel_room_door",
       "name": "Room 24-118",
-      "x": 12,
-      "y": 8,
+      "x": 15,
+      "y": 3,
       "sprite": "npc_gold",
       "dialogueId": "hotel_room_door",
       "encounter": "hotel_hallway",
+      "direction": "down"
+    },
+    {
+      "id": "neighbor_ned",
+      "name": "Neighbor Ned",
+      "x": 7,
+      "y": 5,
+      "sprite": "npc_silver",
+      "dialogueId": "tourist_tina",
       "direction": "right"
+    },
+    {
+      "id": "neighbor_nora",
+      "name": "Neighbor Nora",
+      "x": 23,
+      "y": 5,
+      "sprite": "npc_pink",
+      "dialogueId": "tourist_tina",
+      "direction": "left"
     }
   ],
   "guest_room": [

@@ -229,19 +229,19 @@ export class DiningOverlay {
     const drinks = venue.menu.filter((m) => m.kind === "drink");
     const extras = venue.menu.filter((m) => m.kind === "extra");
 
-    const stage = buildFpvStage(venue.motif);
+    const stage = buildFpvStage(venue.motif, { venueName: venue.name });
     this._fpv = stage;
-    syncFpvSprites(stage, { foodId: null, drinkId: null, caption: "Your place setting awaits" });
+    syncFpvSprites(stage, { foodId: null, drinkId: null, caption: `${venue.name} · place setting` });
 
     const shell = el("div", {
-      className: `dining-overlay__shell dining-overlay__shell--table dining-overlay__shell--fpv dining-motif--${venue.motif}`,
+      className: `dining-overlay__shell dining-overlay__shell--table dining-overlay__shell--fpv dining-motif--${venue.motif} dining-venue--${venue.id}`,
     });
 
-    const layout = el("div", { className: "dining-fpv-layout" });
+    const layout = el("div", { className: `dining-fpv-layout dining-fpv-layout--${venue.motif}` });
     const stageWrap = el("div", { className: "dining-fpv-layout__stage" });
     stageWrap.appendChild(stage);
 
-    const panel = el("aside", { className: "dining-fpv-layout__panel" }, [
+    const panel = el("aside", { className: `dining-fpv-layout__panel dining-fpv-layout__panel--${venue.motif}` }, [
       el("header", { className: "dining-overlay__header" }, [
         el("p", { className: "dining-overlay__eyebrow", textContent: `${venue.icon} ${venue.name}` }),
         el("h2", { className: "dining-overlay__title", textContent: venue.chef }),

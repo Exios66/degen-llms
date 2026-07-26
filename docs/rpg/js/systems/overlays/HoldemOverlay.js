@@ -1,6 +1,7 @@
 import { OverlayBase, actionRow } from "../OverlayBase.js";
 import { HoldemTable, BettingAction, STREET_ORDER } from "../../../../js/holdem/game.js";
 import { fmtChips } from "../../../../js/core.js";
+import { createCardSpriteRow } from "../../../../js/ui/card-sprites.js";
 
 export class HoldemOverlay extends OverlayBase {
   constructor(root, session, hooks) {
@@ -82,23 +83,47 @@ export class HoldemOverlay extends OverlayBase {
       `${this._streetLabel(t.street)} · Stack ${fmtChips(t.human.stack)} · Session ${sessionDelta >= 0 ? "+" : ""}${sessionDelta}`,
     );
     const board = document.createElement("div");
-    board.className = "bj-table";
-    const uni = this.session.useUnicode;
-    const rows = t.players.map((p) => {
-      const cards = p.isHuman || t.handOver
-        ? p.hole.map((c) => c.label(uni)).join(" ")
-        : "?? ??";
+    board.className = "bj-table holdem-sprite-table";
+
+    const boardHeading = document.createElement("div");
+    boardHeading.className = "bj-hand-heading";
+    boardHeading.textContent = "Board";
+    board.appendChild(boardHeading);
+    const boardCards = [];
+    for (let i = 0; i < 5; i++) boardCards.push(t.community[i] ?? null);
+    board.appendChild(createCardSpriteRow(boardCards, { slots: 5, rowId: "rpg-holdem-board" }));
+
+    for (const p of t.players) {
+      const row = document.createElement("div");
+      row.className = "bj-row bj-row--sprites" + (p.isHuman ? " highlight" : "");
       const acting = !t.handOver && t.players[t.actionIndex] === p ? " · ACTING" : "";
       const bet = p.betThisStreet > 0 ? ` · bet ${fmtChips(p.betThisStreet)}` : "";
-      return `<div class="bj-row${p.isHuman ? " highlight" : ""}">${p.name}${acting}: ${cards} · stack ${fmtChips(p.stack)}${bet}${p.folded ? " [FOLD]" : ""}${p.allIn ? " [ALL-IN]" : ""}</div>`;
-    }).join("");
-    const log = (t.actionLog || this.log).slice(-8).map((line) => `<div class="bj-row dim">${line}</div>`).join("");
-    board.innerHTML = `
-      <div class="bj-dealer">Board: ${t.community.map((c) => c.label(uni)).join(" ") || "—"}</div>
-      ${rows}
-      <div class="bj-dealer">${t.lastMessage || ""}</div>
-      ${log}
-    `;
+      const heading = document.createElement("div");
+      heading.className = "bj-hand-heading";
+      heading.textContent = `${p.name}${acting} · stack ${fmtChips(p.stack)}${bet}${p.folded ? " [FOLD]" : ""}${p.allIn ? " [ALL-IN]" : ""}`;
+      row.appendChild(heading);
+      const hole = p.isHuman || t.handOver ? p.hole : p.hole.map(() => null);
+      row.appendChild(
+        createCardSpriteRow(hole, {
+          hiddenMask: (_, c) => !c,
+          rowId: `rpg-holdem-hole-${p.name}`,
+        })
+      );
+      board.appendChild(row);
+    }
+
+    if (t.lastMessage) {
+      const msg = document.createElement("div");
+      msg.className = "bj-dealer";
+      msg.textContent = t.lastMessage;
+      board.appendChild(msg);
+    }
+    for (const line of (t.actionLog || this.log).slice(-8)) {
+      const logLine = document.createElement("div");
+      logLine.className = "bj-row dim";
+      logLine.textContent = line;
+      board.appendChild(logLine);
+    }
     panel.appendChild(board);
 
     if (t.handOver) {

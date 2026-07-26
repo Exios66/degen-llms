@@ -3,6 +3,7 @@ import { fmtChips } from "../../../js/core.js";
 import { pickQuip } from "../../../js/dealers.js";
 import { effectiveTableStakes } from "../../../js/stakes.js";
 import { HIGH_LIMIT_SALON_CHIP_MIN, canEnterFoundationRoom, canEnterHighLimitSalon } from "../../../js/venues.js";
+import { createCardSpriteRow } from "../../../js/ui/card-sprites.js";
 import { RouletteOverlay } from "./overlays/RouletteOverlay.js";
 import { HoldemOverlay } from "./overlays/HoldemOverlay.js";
 import { RhythmOverlay } from "./overlays/RhythmOverlay.js";
@@ -166,23 +167,33 @@ export class BlackjackOverlay {
 
     if (snapshot.dealer) {
       const dealerRow = document.createElement("div");
-      dealerRow.className = "bj-dealer";
-      const cards = snapshot.dealer.cards.map((c) => (c ? c.label(this.session.useUnicode) : "??")).join(" ");
-      dealerRow.textContent = `${this.dealerName}: ${cards} (${snapshot.dealer.value})`;
+      dealerRow.className = "bj-dealer bj-dealer--sprites";
+      const label = document.createElement("div");
+      label.className = "bj-hand-heading";
+      label.textContent = `${this.dealerName} (${snapshot.dealer.value})`;
+      dealerRow.appendChild(label);
+      dealerRow.appendChild(
+        createCardSpriteRow(snapshot.dealer.cards, { rowId: "rpg-bj-dealer" })
+      );
       table.appendChild(dealerRow);
     }
 
     for (const row of snapshot.rows) {
       const div = document.createElement("div");
-      div.className = "bj-row" + (row.highlight ? " highlight" : "");
-      const cards = row.cards.map((c) => c.label(this.session.useUnicode)).join(" ");
+      div.className = "bj-row bj-row--sprites" + (row.highlight ? " highlight" : "");
       let suffix = "";
       if (row.blackjack) {
         suffix = " [BJ]";
         this.hooks.onNatural21?.();
       } else if (row.bust) suffix = " [BUST]";
       else if (row.surrendered) suffix = " [SURR]";
-      div.textContent = `${row.label}: ${cards} (${row.value}) — bet $${row.bet}${suffix}`;
+      const heading = document.createElement("div");
+      heading.className = "bj-hand-heading";
+      heading.textContent = `${row.label} (${row.value}) — bet $${row.bet}${suffix}`;
+      div.appendChild(heading);
+      div.appendChild(
+        createCardSpriteRow(row.cards, { rowId: `rpg-bj-${row.seat}-${row.label}` })
+      );
       table.appendChild(div);
     }
 

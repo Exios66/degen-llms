@@ -43,8 +43,10 @@ body {
   align-items: center;
   justify-content: center;
   background:
-    radial-gradient(ellipse at 50% 0%, rgba(232, 197, 71, 0.08) 0%, transparent 55%),
-    var(--bg);
+    radial-gradient(ellipse at 50% 12%, rgba(232, 197, 71, 0.14) 0%, transparent 42%),
+    radial-gradient(ellipse at 20% 80%, rgba(57, 197, 207, 0.06) 0%, transparent 40%),
+    radial-gradient(ellipse at 80% 75%, rgba(198, 120, 221, 0.05) 0%, transparent 38%),
+    linear-gradient(180deg, #120e1c 0%, var(--bg) 45%, #08060e 100%);
 }
 
 #game-shell.arcade-cabinet {
@@ -669,13 +671,36 @@ body {
 }
 
 /* --- Title intro cinematic --- */
+.title-boot-fallback {
+  position: relative;
+  width: min(100%, 560px);
+  text-align: center;
+  padding: 32px 20px;
+}
+
+.title-boot-fallback .title-intro-eyebrow,
+.title-boot-fallback .title-intro-logo,
+.title-boot-fallback .title-intro-tagline {
+  opacity: 1;
+  animation: none;
+}
+
+.title-boot-error,
+.title-boot-note {
+  color: var(--magenta, #c678dd);
+  font-size: 8px;
+  line-height: 1.6;
+  margin: 12px 0 16px;
+}
+
 .title-intro {
   position: relative;
   width: min(100%, 560px);
   text-align: center;
   padding: 32px 20px;
-  opacity: 0;
-  transform: scale(0.96);
+  /* Stay readable even if the play class never lands (background tabs / rAF delay). */
+  opacity: 1;
+  transform: scale(1);
   transition: opacity 0.45s ease, transform 0.45s ease;
 }
 
@@ -709,8 +734,8 @@ body {
   letter-spacing: 0.2em;
   text-transform: uppercase;
   margin: 0 0 12px;
-  opacity: 0;
-  animation: titleFadeUp 0.7s ease 0.15s forwards;
+  opacity: 1;
+  animation: titleFadeUp 0.7s ease 0.15s both;
 }
 
 .title-intro-logo {
@@ -718,8 +743,8 @@ body {
   font-size: 16px;
   line-height: 1.5;
   margin: 0 0 16px;
-  opacity: 0;
-  animation: titleFadeUp 0.8s ease 0.35s forwards, titleLogoShimmer 2.4s ease 1s infinite;
+  opacity: 1;
+  animation: titleFadeUp 0.8s ease 0.35s both, titleLogoShimmer 2.4s ease 1s infinite;
 }
 
 .title-intro-rule {
@@ -734,17 +759,16 @@ body {
   color: var(--magenta);
   font-size: 8px;
   margin: 0 0 24px;
-  opacity: 0;
-  animation: titleFadeUp 0.7s ease 1s forwards;
+  opacity: 1;
+  animation: titleFadeUp 0.7s ease 1s both;
 }
 
 .title-intro-hint {
   color: var(--dim);
   font-size: 8px;
   margin: 0;
-  animation: blink 1.2s step-end infinite;
-  opacity: 0;
-  animation: titleFadeUp 0.6s ease 1.35s forwards, blink 1.2s step-end 1.8s infinite;
+  opacity: 1;
+  animation: titleFadeUp 0.6s ease 1.35s both, blink 1.2s step-end 1.8s infinite;
 }
 
 .title-intro-chips {
@@ -813,8 +837,9 @@ body {
 
 /* --- Title menu panel --- */
 .title-panel--enter {
-  opacity: 0;
-  transform: translateY(18px);
+  /* Visible by default so a missed rAF never leaves a blank title screen. */
+  opacity: 1;
+  transform: translateY(0);
   transition: opacity 0.5s ease, transform 0.5s ease;
 }
 
@@ -1013,6 +1038,30 @@ body {
 
 .bj-row {
   margin: 4px 0;
+}
+
+.bj-hand-heading {
+  color: var(--gold);
+  font-size: 8px;
+  margin-bottom: 6px;
+}
+
+.bj-dealer--sprites,
+.bj-row--sprites,
+.holdem-sprite-table {
+  margin-bottom: 10px;
+}
+
+.blackjack-panel .playing-card,
+.holdem-sprite-table .playing-card {
+  width: 2.6rem;
+  height: 3.5rem;
+}
+
+.blackjack-panel .card-row--sprites,
+.holdem-sprite-table .card-row--sprites {
+  gap: 0.3rem;
+  margin-bottom: 6px;
 }
 
 .bj-row.highlight {

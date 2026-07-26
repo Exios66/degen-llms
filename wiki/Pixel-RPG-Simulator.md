@@ -365,11 +365,12 @@ erases pixel progress.
 | **SFX** | Footsteps by tile type, blackjack natural 21 shake, slot reel stops |
 | **Cabinet bezel** | CSS arcade frame around `#game-shell` |
 | **Konami code** | Secret room Easter egg |
-| **Procedural textures** | `TextureFactory.js` generates pixel art at runtime |
+| **Vendored tiles** | Online pixel tilesets under `assets/tiles/` (LPC floors, Jephed casino props, Kenney outdoor) loaded by `EnvironmentTextures.js` |
+| **Character sheets** | Fry hero + Jephed unique dealer/staff sheets under `assets/characters/` |
 
 ### Art pipeline
 
-There is no sprite sheet to download — `TextureFactory.js` draws everything at
+There is no sprite sheet required — `TextureFactory.js` draws everything at
 boot on a 16-pixel grid and blits it at 2×, so a tile is 32 screen pixels and one
 art pixel is always exactly two. Tiles light from the top left without exception,
 and the wide floors register three faintly scuffed variants that `groundTileKey()`
@@ -382,8 +383,11 @@ the legs and drops the body a pixel. Right-facing is the left grid mirrored.
 Editing a sprite means editing the strings; the smoke test rejects a row that is
 not 16 characters or uses a letter outside the legend.
 
-Layouts are already data (`js/data/maps/*.json`). Swapping the procedural
-drawers for an Aseprite tileset later would not change a single map record.
+Layouts are already data (`js/data/maps/*.json`). Optional vendored ground/decor
+PNGs under `assets/tiles/` (via `EnvironmentTextures.js`) and staff sheets under
+`assets/characters/` (via `CharacterSprites.js`) map onto the same `TILE` enum
+and NPC roster without changing map JSON. FX icons (glows, interact marker)
+remain small procedural textures in `TextureFactory.js`.
 
 ---
 

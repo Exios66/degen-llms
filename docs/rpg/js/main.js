@@ -1,6 +1,6 @@
 import Phaser from "phaser";
-import { OverworldScene } from "./scenes/GameScenes.js?v=texture-quality-1";
-import { TitleScreen, renderHud, renderTrainerCard } from "./scenes/TitleScreen.js";
+import { OverworldScene } from "./scenes/GameScenes.js?v=pr89-main-1";
+import { TitleScreen, renderHud, renderTrainerCard } from "./scenes/TitleScreen.js?v=pr89-main-1";
 import { DialogueManager } from "./systems/DialogueManager.js";
 import { SaveAdapter } from "./systems/SaveAdapter.js";
 import { defaultAppearance } from "./systems/CharacterAppearance.js";
@@ -10,7 +10,7 @@ import {
   RouletteOverlay,
   HoldemOverlay,
   RhythmOverlay,
-} from "./systems/EncounterBridge.js";
+} from "./systems/EncounterBridge.js?v=pr89-main-1";
 import { TerminalHostOverlay } from "./systems/TerminalHostOverlay.js";
 import { QuestManager } from "./systems/QuestManager.js";
 import { MenuOverlay } from "./systems/MenuOverlay.js";
@@ -353,15 +353,29 @@ function showMapBanner(label, phaseLabel) {
   }, 2200);
 }
 
-const title = new TitleScreen(titleRoot, (s) => {
-  audioManager.unlock();
-  audioManager.playBgm("lobby");
-  startOverworld(s).catch((err) => {
-    console.error(err);
-    alert(`Could not start game: ${err.message}`);
-  });
-}, parseRpgLaunchParams());
-title.show();
+let title = null;
+try {
+  if (!titleRoot) throw new Error("Missing #title-overlay — RPG shell failed to render");
+  title = new TitleScreen(titleRoot, (s) => {
+    audioManager.unlock();
+    audioManager.playBgm("lobby");
+    startOverworld(s).catch((err) => {
+      console.error(err);
+      title?.showMenu(err?.message || "Could not start the overworld.");
+      alert(`Could not start game: ${err.message}`);
+    });
+  }, parseRpgLaunchParams());
+  title.show();
+} catch (err) {
+  console.error(err);
+  const bootErr = document.getElementById("title-boot-error");
+  if (bootErr) {
+    bootErr.hidden = false;
+    bootErr.textContent = err?.message || "Could not load Pixel RPG.";
+  } else {
+    alert(`Could not load Pixel RPG: ${err.message}`);
+  }
+}
 
 function parseRpgLaunchParams() {
   const params = new URLSearchParams(window.location.search);

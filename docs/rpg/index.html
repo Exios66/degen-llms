@@ -12,8 +12,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
   <!-- Terminal styles come first so the RPG's pixel skin overrides them. -->
-  <link rel="stylesheet" href="../css/casino.css">
-  <link rel="stylesheet" href="css/rpg.css">
+  <link rel="stylesheet" href="../css/casino.css?v=pr89-main-1">
+  <link rel="stylesheet" href="css/rpg.css?v=pr89-main-1">
   <link rel="stylesheet" href="../css/intoxication-effects.css">
   <link rel="stylesheet" href="../css/rewards-phone.css">
   <script type="importmap">
@@ -40,8 +40,33 @@
     <div id="rhythm-overlay" class="encounter-overlay" hidden aria-live="polite"></div>
     <div id="terminal-overlay" class="encounter-overlay" hidden aria-live="polite"></div>
     <div id="menu-overlay" class="encounter-overlay" hidden aria-live="polite"></div>
-    <div id="title-overlay" aria-live="polite"></div>
+    <div id="title-overlay" class="title-overlay--intro" aria-live="polite">
+      <div class="title-boot-fallback" id="title-boot-fallback">
+        <p class="title-intro-eyebrow">Welcome to</p>
+        <h1 class="title-intro-logo">The Mandalay Bay</h1>
+        <p class="title-intro-tagline">Pixel RPG · Loading…</p>
+        <p class="title-boot-error" id="title-boot-error" hidden></p>
+      </div>
+    </div>
   </div>
-  <script type="module" src="js/main.js?v=ds-sprites-1"></script>
+  <script type="module" src="js/main.js?v=pr89-main-1"></script>
+  <script>
+    // Surface module-load failures that would otherwise leave a blank title.
+    window.addEventListener("error", (event) => {
+      const el = document.getElementById("title-boot-error");
+      const overlay = document.getElementById("title-overlay");
+      if (!el || !overlay || overlay.hidden) return;
+      if (!event.message && !event.error) return;
+      el.hidden = false;
+      el.textContent = "Could not load Pixel RPG. Refresh, or open Terminal casino mode.";
+    });
+    window.addEventListener("unhandledrejection", () => {
+      const el = document.getElementById("title-boot-error");
+      const overlay = document.getElementById("title-overlay");
+      if (!el || !overlay || overlay.hidden) return;
+      el.hidden = false;
+      el.textContent = "Could not load Pixel RPG. Refresh, or open Terminal casino mode.";
+    });
+  </script>
 </body>
 </html>

@@ -19,7 +19,7 @@ export function buildTableRenderers(ctx) {
       const d = snapshot.dealer;
       const dealerRow = el("div", { className: "bj-dealer-row" }, [
         el("span", { className: "bj-role-label", textContent: runtime.activeTableDealer?.name ?? "Dealer" }),
-        cardRow(d.cards),
+        cardRow(d.cards, { rowId: "bj-dealer" }),
         el("span", { className: "bj-hand-value", textContent: `(${d.value})` }),
       ]);
       container.appendChild(dealerRow);
@@ -40,7 +40,7 @@ export function buildTableRenderers(ctx) {
             textContent: `${fmtChips(row.bankroll)} · bet ${fmtChips(row.bet)}`,
           }),
         ]),
-        cardRow(row.cards),
+        cardRow(row.cards, { rowId: `bj-seat-${row.seat}-${row.label}` }),
         el("span", { className: "bj-hand-value", textContent: `(${row.value})` }),
         ...badges,
       ]);
@@ -57,7 +57,7 @@ export function buildTableRenderers(ctx) {
 
     const boardCards = [];
     for (let i = 0; i < 5; i++) boardCards.push(table.community[i] ?? null);
-    felt.appendChild(cardRow(boardCards, { slots: 5 }));
+    felt.appendChild(cardRow(boardCards, { slots: 5, rowId: "holdem-board" }));
 
     const playersEl = el("div", { className: "holdem-players" });
     for (const p of table.players) {
@@ -75,7 +75,12 @@ export function buildTableRenderers(ctx) {
       }, [
         el("div", { className: "holdem-seat-name", textContent: p.name }),
         el("div", { className: "holdem-seat-stack", textContent: `${fmtChips(p.stack)}${p.folded ? " · folded" : ""}${p.allIn ? " · all-in" : ""}` }),
-        el("div", { className: "holdem-hole-cards" }, [cardRow(holeCards, { hiddenMask: (_, c) => !c })]),
+        el("div", { className: "holdem-hole-cards" }, [
+          cardRow(holeCards, {
+            hiddenMask: (_, c) => !c,
+            rowId: `holdem-hole-${p.name}`,
+          }),
+        ]),
       ]);
       playersEl.appendChild(seat);
     }

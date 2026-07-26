@@ -28,9 +28,15 @@ export function buildPoolRenderers(ctx) {
   } = ctx;
 
   function openOverlay(zoneId) {
-    const overlay = ctx.poolOverlay;
+    if (typeof ctx.openPoolComplexVisual === "function" && !ctx.poolOverlay?.active) {
+      return ctx.openPoolComplexVisual(zoneId, { returnView: "hotel-lobby" });
+    }
+    const overlay = typeof ctx.ensurePoolOverlay === "function"
+      ? ctx.ensurePoolOverlay()
+      : ctx.poolOverlay;
     if (!overlay) return false;
     overlay.setSession(session);
+    overlay.returnView = "hotel-lobby";
     if (overlay.active) overlay.openZone(zoneId);
     else overlay.open(zoneId);
     return true;

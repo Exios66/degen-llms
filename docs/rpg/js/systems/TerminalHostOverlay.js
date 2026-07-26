@@ -36,6 +36,7 @@ export class TerminalHostOverlay {
    * @param {{ onClose?: (r: { net: number }) => void, onPersist?: () => void,
    *           onView?: (view: string) => void, rewardsPhone?: object,
    *           diningOverlay?: import("../../../js/DiningOverlay.js").DiningOverlay,
+   *           poolOverlay?: import("../../../js/PoolComplexOverlay.js").PoolComplexOverlay,
    *           balconySmokeOverlay?: import("../../../js/BalconySmokeOverlay.js").BalconySmokeOverlay }} hooks
    */
   constructor(root, session, hooks = {}) {
@@ -55,6 +56,7 @@ export class TerminalHostOverlay {
       get session() { return session; },
       get rewardsPhone() { return hooks.rewardsPhone ?? null; },
       get diningOverlay() { return hooks.diningOverlay ?? null; },
+      get poolOverlay() { return hooks.poolOverlay ?? null; },
       get balconySmokeOverlay() { return hooks.balconySmokeOverlay ?? null; },
       runtime: this.runtime,
       persist: () => this.persist(),

@@ -347,6 +347,7 @@ export class EncounterBridge {
     this.overlays = deps.overlays;
     this.terminalHost = deps.terminalHost ?? null;
     this.diningOverlay = deps.diningOverlay ?? null;
+    this.poolOverlay = deps.poolOverlay ?? null;
     this.onPersist = deps.onPersist;
     this.questManager = deps.questManager ?? null;
     this.onEncounterEnd = deps.onEncounterEnd ?? null;
@@ -356,6 +357,7 @@ export class EncounterBridge {
   isAnyActive() {
     if (this.terminalHost?.isActive()) return true;
     if (this.diningOverlay?.active) return true;
+    if (this.poolOverlay?.active) return true;
     return Object.values(this.overlays).some((o) => o?.isActive?.());
   }
 
@@ -413,6 +415,9 @@ export class EncounterBridge {
     if (spec.activityId === "dining" && this.diningOverlay) {
       return this._startDining(spec);
     }
+    if (spec.activityId === "pool_complex" && this.poolOverlay) {
+      return this._startPool(spec);
+    }
     if (!this.terminalHost) {
       console.warn(`No terminal host available for "${encounterId}"`);
       return { net: 0 };
@@ -441,6 +446,19 @@ export class EncounterBridge {
         resolve({ net });
       });
       this.diningOverlay.open(spec.venueId ?? null);
+    });
+  }
+
+  _startPool(spec) {
+    const chipsAtOpen = this.session.wallet.balance;
+    return new Promise((resolve) => {
+      this.poolOverlay.setSession(this.session);
+      this.poolOverlay.onceClosed(() => {
+        const net = this.session.wallet.balance - chipsAtOpen;
+        this.onPersist();
+        resolve({ net });
+      });
+      this.poolOverlay.open(spec.zoneId ?? "hub");
     });
   }
 

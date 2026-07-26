@@ -167,6 +167,8 @@ export function getActivityTiming(tierId) {
     slotsReel2: Math.max(160, Math.round(700 * mult)),
     slotsReel3: Math.max(240, Math.round(1050 * mult)),
     rouletteSpin: Math.max(200, Math.round(1200 * mult)),
+    lotteryBallStep: Math.max(100, Math.round(220 * mult)),
+    lotteryScratch: Math.max(350, Math.round(850 * mult)),
   };
 }
 

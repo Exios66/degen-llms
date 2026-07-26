@@ -2,15 +2,23 @@
 
 State-lottery-style tickets at the **Lottery Counter** floor.
 
+Stake tiers (Penny → No Limit) scale **ticket prices** and **fixed prize tables** using the same payout boosts as slots. Pick games already pay as a multiple of the charged price.
+
 ## Ticket types
 
-| Ticket | Cost | Description |
-|--------|------|-------------|
-| **Strip Pick 3** | 1 chip | 3-digit draw — straight or box |
+| Ticket | Base cost | Description |
+|--------|-----------|-------------|
+| **Strip Pick 3** | 2 chips | 3-digit draw — straight or box |
 | **Neon Pick 4** | 2 chips | 4-digit draw — straight or box |
-| **Mandalay Mega** | 5 chips | 5 main numbers + Mega Ball |
-| **Quick Scratcher** | 3 chips | Instant-win scratch ticket |
-| **Gold Scratcher** | 10 chips | Premium instant-win ticket |
+| **Mandalay Mega** | 5 chips | 5 lucky numbers + Powerball |
+| **Gold Rush Scratcher** | 5 chips | Instant-win scratch ticket |
+| **Wild Card Scratcher** | 10 chips | Higher-stakes instant ticket |
+| **High Limit Pick 3** | 25 chips | High-limit 3-digit draw |
+| **High Limit Pick 4** | 25 chips | High-limit 4-digit draw |
+| **High Limit Mega** | 50 chips | 10× Mega prize table |
+| **Platinum Scratcher** | 50 chips | Premium instant ticket |
+| **Salon Powerball** | 500 chips | 100× Mega prize table |
+| **Diamond Scratcher** | 250 chips | Salon instant ticket |
 
 ## Pick 3 / Pick 4
 
@@ -23,35 +31,38 @@ State-lottery-style tickets at the **Lottery Counter** floor.
 
 ### Number entry
 
-- **Quick pick** — random digits generated
-- **Manual entry** — type your numbers
+- **Lucky number selector** — tap digits 0–9 into slots
+- **Quick Pick** — random digits generated
 
-## Mandalay Mega
+## Mandalay Mega / Powerball
 
-Pick 5 numbers (1–70) plus a Mega Ball (1–25). Prizes scale with matches:
+Pick **5 lucky numbers (1–70)** plus a **Powerball (1–25)**. Use the on-screen ball grids or Quick Pick. Prizes scale with matches:
 
 | Matches | Payout tier |
 |---------|-------------|
-| 5 + Mega | Jackpot |
+| 5 + Powerball | Jackpot |
 | 5 | Major |
-| 4 + Mega | Large |
-| 4 / 3 + Mega / 3 | Medium |
-| 2 + Mega / 1 + Mega / Mega only | Small |
+| 4 + Powerball | Large |
+| 4 / 3 + Powerball / 3 | Medium |
+| 2 + Powerball / 1 + Powerball / Powerball only | Small |
+
+High Limit Mega and Salon Powerball use the same draw with larger prize multipliers.
 
 ## Scratchers
 
-Instant resolution — scratch to reveal symbols. Match patterns for prizes. Gold scratchers have higher top prizes.
+Instant resolution with a foil reveal animation. Weighted prize tiers — Platinum and Diamond raise the top prizes.
 
 ## Game flow
 
 ```
-Lottery Counter → Select ticket type → Quick pick or enter numbers → Draw/scratch → Results
+Stake tier → Lottery Counter → Select ticket → Lucky numbers / Powerball (or Quick Pick) → Draw/scratch overlay → Results
 ```
 
 ## Pixel RPG
 
 Talk to **Lottery Lena** at the counter in The Shoppes at Mandalay Place. The
-counter is the same screen the terminal shows, mounted in an encounter panel.
+counter is the same screen the terminal shows, mounted in an encounter panel
+(stake tier picker first).
 
 ## Implementation
 

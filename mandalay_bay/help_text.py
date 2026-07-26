@@ -180,16 +180,18 @@ Hardways stay working until they hit hard or lose to a soft/seven.
 LOTTERY_HELP = """
 MANDALAY LOTTERY — TICKET COUNTER
 =================================
-Strip Pick 3 / Neon Pick 4:
-  • Straight (exact order) or Box (any order) prizes
-  • Quick Pick or choose your digits
+Stake tiers scale ticket prices and fixed prizes (same boosts as slots).
 
-Mandalay Mega:
-  • 5 balls (1–45) + Mega ball (1–20)
-  • Tiered prizes for matches + mega
+Strip Pick 3 / Neon Pick 4 (+ High Limit variants):
+  • Straight (exact order) or Box (any order) prizes
+  • Lucky-number digit pad or Quick Pick
+
+Mandalay Mega / High Limit Mega / Salon Powerball:
+  • 5 lucky numbers (1–70) + Powerball (1–25)
+  • Tiered prizes for matches + Powerball
 
 Scratchers:
-  • Gold Rush ($5) and Wild Card ($10) instant tickets
+  • Gold Rush, Wild Card, Platinum, and Diamond instant tickets
 """
 
 HORSE_RACING_HELP = """

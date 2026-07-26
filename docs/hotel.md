@@ -21,9 +21,10 @@ MGM Rewards tier comps can cover upgrades and room nights. See [MGM Rewards](mgm
 ## Hotel flow
 
 1. **Front desk (Clerk Carmen)** — locate reservation, settle overdue charges, upgrade rooms, review folios, checkout, **resort dining**
-2. **Room key** — activates as soon as the day's check-in requirement is satisfied, whether the phone or the desk finished it; the desk then offers your hallway or your door directly
-3. **Hallway mini-game** — three beats of directional choices to reach your door (wrong turns are comedic; a dining food coma forces one zig)
-4. **Your room** — TV, minibar, phone, balcony decisions, unlockable Vegas vignettes
+2. **Room key** — activates as soon as the day's check-in requirement is satisfied (phone and/or desk). The key does **not** skip the hallway by itself — Carmen and the lobby still offer **Find my room** plus an optional **Use key — skip to door** courtesy
+3. **Hallway mini-game** — three beats of directional choices to reach your door (wrong turns are comedic; a dining food coma forces one zig). Reaching the door sets `reachedRoom` and unlocks in-room amenities
+4. **Suite / penthouse upgrades** — reprint a new room number on your MGM Rewards phone (Home, Card, Room tabs). You must re-locate / re-confirm check-in, then walk (or skip) to the new door
+5. **Your room** — TV, minibar, phone, balcony decisions, unlockable Vegas vignettes. Foundation Room phone line unlocks from a suite or penthouse (Noir+)
 
 ## Resort dining
 

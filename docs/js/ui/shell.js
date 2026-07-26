@@ -250,6 +250,8 @@ export function createShell(ctx) {
 export function createRuntime(overrides = {}) {
   return {
     stakeTier: null,
+    venue: null,
+    salonActivityMin: null,
     activeTableDealer: null,
     sportsbook: null,
     tradingDesk: null,

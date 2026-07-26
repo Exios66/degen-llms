@@ -47,9 +47,15 @@ export function eventFromScenario(scenario, index = 0) {
   };
 }
 
-/** Page through the stored scenario DB (wraps). Falls back to [] if empty. */
-export function boardFromScenarios(scenarioDb, cursor = 0, count = null) {
-  const scenarios = scenarioDb?.scenarios ?? [];
+/**
+ * Page through the stored scenario DB (wraps). Falls back to [] if empty.
+ * @param {{ includeSalonOnly?: boolean }} [opts] — main floor excludes salonOnly rows.
+ */
+export function boardFromScenarios(scenarioDb, cursor = 0, count = null, opts = {}) {
+  const raw = scenarioDb?.scenarios ?? [];
+  const scenarios = opts.includeSalonOnly
+    ? raw
+    : raw.filter((s) => !s.salonOnly);
   if (!scenarios.length) return { events: [], nextCursor: 0 };
   const boardSize = count ?? scenarioDb.boardSize ?? 10;
   const events = [];

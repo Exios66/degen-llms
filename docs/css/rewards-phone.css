@@ -234,6 +234,13 @@
   color: #5a9c5a;
 }
 
+.rewards-member-room {
+  margin-top: 4px;
+  font-size: 6px;
+  color: #e8c547;
+  letter-spacing: 0.02em;
+}
+
 .rewards-member-card--noir {
   border-color: #c678dd;
 }

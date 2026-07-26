@@ -47,12 +47,18 @@ def run_hotel_lobby(session: PlayerSession, ui: TerminalUI) -> None:
             ui.print("Locate your reservation via MGM Rewards or the front desk.")
         if is_net_positive(session):
             ui.success(f"Floor net: {session_net_chips(session):+,} — upgrades available.")
+        from mandalay_bay.world_cycle import can_access_hotel_room, grant_room_key_if_reservation_ready
+
+        grant_room_key_if_reservation_ready(session)
         options = [
             "Front Desk — Clerk Carmen",
             "Guest Directory — lobby guest book",
-            "Find my room (hallway)",
-            "Pool Complex — 11-acre expansion pack",
         ]
+        if can_access_hotel_room(session) and not hotel.reached_room:
+            options.append("Find my room (hallway)")
+        if can_access_hotel_room(session) and hotel.room_key_active and not hotel.reached_room:
+            options.append("Use key — go straight to your door")
+        options.append("Pool Complex — 11-acre expansion pack")
         if hotel.reached_room:
             options.append("Enter room")
         options.append("Return to casino floor")
@@ -66,6 +72,13 @@ def run_hotel_lobby(session: PlayerSession, ui: TerminalUI) -> None:
             run_guest_directory(session, ui)
         elif label.startswith("Find my room"):
             run_hallway(session, ui)
+        elif label.startswith("Use key"):
+            from mandalay_bay.hotel import use_room_key_to_door
+
+            res = use_room_key_to_door(session)
+            ui.success(res.message) if res.ok else ui.error(res.message)
+            if res.ok:
+                run_room(session, ui)
         elif label.startswith("Pool Complex"):
             from mandalay_bay.pool_experience import run_pool_complex
 
@@ -82,10 +95,22 @@ def run_front_desk(session: PlayerSession, ui: TerminalUI) -> None:
     while True:
         ui.banner("Front Desk — Clerk Carmen")
         ui.print(f"Conf {hotel.reservation_code} · {get_room_type(hotel)['label']}")
-        choice = ui.menu_choice(
+        from mandalay_bay.world_cycle import can_access_hotel_room, grant_room_key_if_reservation_ready
+        from mandalay_bay.hotel import use_room_key_to_door
+
+        grant_room_key_if_reservation_ready(session)
+        options = [
+            "Locate reservation (phone — see MGM Rewards)",
+            "Confirm reservation (desk terminal)",
+        ]
+        if can_access_hotel_room(session) and not hotel.reached_room:
+            options.append("Find my room (hallway)")
+        if can_access_hotel_room(session) and hotel.room_key_active and not hotel.reached_room:
+            options.append("Skip hallway — use key to door")
+        if can_access_hotel_room(session) and hotel.reached_room:
+            options.append("Enter your room")
+        options.extend(
             [
-                "Locate reservation (phone — see MGM Rewards)",
-                "Confirm reservation (desk terminal)",
                 "Settle overdue resort charges",
                 "Upgrade to Panorama Suite",
                 "Upgrade to Chairman Penthouse",
@@ -97,48 +122,66 @@ def run_front_desk(session: PlayerSession, ui: TerminalUI) -> None:
                 "Guest Directory — sign the lobby book",
                 "Resort dining — restaurants & capacity challenge",
                 "Back",
-            ],
-            title="Clerk Carmen:",
+            ]
         )
+        choice = ui.menu_choice(options, title="Clerk Carmen:")
         if choice == 0:
             return
-        if choice == 1:
+        label = options[choice - 1]
+        if label.startswith("Locate reservation"):
             result = find_reservation(session)
             ui.print(result.hint)
             if result.clue:
                 ui.success(result.clue)
-        elif choice == 2:
+            if result.clue and "Located" in (result.clue or ""):
+                ui.print("Carmen: Your key is active. Take the hallway — or I can skip you to the door.")
+        elif label.startswith("Confirm reservation"):
             result = find_reservation_at_desk(session)
             ui.print(result.hint)
             if result.clue:
                 ui.success(result.clue)
-        elif choice == 3:
+            ui.print("Carmen: Key active. Trust the carpet — or skip straight to the door.")
+        elif label.startswith("Find my room"):
+            ui.print(f"Carmen: South? North? Trust the carpet — Room {hotel.room_number} is waiting.")
+            run_hallway(session, ui)
+            continue
+        elif label.startswith("Skip hallway"):
+            res = use_room_key_to_door(session)
+            ui.success(res.message) if res.ok else ui.error(res.message)
+            if res.ok:
+                run_room(session, ui)
+                continue
+        elif label.startswith("Enter your room"):
+            ui.print(f"Carmen: Enjoy Room {hotel.room_number}. Don't tip the minibar.")
+            run_room(session, ui)
+            continue
+        elif label.startswith("Settle overdue"):
             res = settle_hotel_overdue(session)
             ui.success(res.message) if res.ok else ui.error(res.message)
-        elif choice == 4:
+        elif label.startswith("Upgrade to Panorama"):
             res = upgrade_room(session, "suite")
             ui.success(res.message) if res.ok else ui.error(res.message)
-        elif choice == 5:
+        elif label.startswith("Upgrade to Chairman"):
             res = upgrade_room(session, "penthouse")
             ui.success(res.message) if res.ok else ui.error(res.message)
-        elif choice == 6:
+        elif label.startswith("Extend stay"):
             res = extend_stay(session, 1)
             ui.success(res.message) if res.ok else ui.error(res.message)
-        elif choice == 7:
+        elif label.startswith("Review folio"):
             res = review_folio(session)
             ui.success(res.message)
-        elif choice == 8:
+        elif label.startswith("Late checkout"):
             res = late_checkout(session)
             ui.success(res.message) if res.ok else ui.error(res.message)
-        elif choice == 9:
+        elif label.startswith("Express checkout"):
             res = express_checkout(session)
             ui.success(res.message) if res.ok else ui.error(res.message)
-        elif choice == 10:
+        elif label.startswith("Standard checkout"):
             res = checkout_stay(session)
             ui.success(res.message) if res.ok else ui.error(res.message)
-        elif choice == 11:
+        elif label.startswith("Guest Directory"):
             run_guest_directory(session, ui)
-        elif choice == 12:
+        elif label.startswith("Resort dining"):
             from mandalay_bay.dining_experience import run_dining_lobby
 
             run_dining_lobby(session, ui)
@@ -194,6 +237,10 @@ def run_hallway(session: PlayerSession, ui: TerminalUI) -> None:
 
     from mandalay_bay.hotel import current_hallway_beat
 
+    from mandalay_bay.hotel import use_room_key_to_door
+    from mandalay_bay.world_cycle import grant_room_key_if_reservation_ready
+
+    grant_room_key_if_reservation_ready(session)
     while not hotel.reached_room:
         beat = current_hallway_beat(session)
         if beat is None:
@@ -201,10 +248,16 @@ def run_hallway(session: PlayerSession, ui: TerminalUI) -> None:
             break
         ui.print(beat.text)
         labels = [c.label for c in beat.choices]
+        if hotel.room_key_active:
+            labels.append("Use key — skip to door")
         pick = ui.menu_choice(labels, title="Which way?")
         if pick == 0:
             reset_hallway(session)
             return
+        if hotel.room_key_active and pick == len(labels):
+            res = use_room_key_to_door(session)
+            ui.success(res.message) if res.ok else ui.error(res.message)
+            break
         result = hallway_choice(session, pick - 1)
         if result.quip:
             ui.dim(result.quip)

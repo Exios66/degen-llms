@@ -7,6 +7,7 @@ import { HAND_CLASS_NAMES } from "../holdem/hand_eval.js";
 import { applyTierSpeedCss, getActivityTiming } from "../rewards-perks.js";
 import { BET_TYPES, RED_NUMBERS, appendSpinHistory, resolveBet, spinWheel, wheelColor } from "../roulette.js";
 import { effectiveTableStakes, formatStakeRange } from "../stakes.js";
+import { resolveActivityMin } from "../salon-exclusives.js";
 
 export function buildTableRenderers(ctx) {
   const { el, statusBanner, showStatus, menu, dealerPanel, videoMachine, cardRow, machineLog, pushView, popView, goBack, popToView, render, persist, recordActivityVisit, recordActivityResult } = ctx;
@@ -181,9 +182,10 @@ export function buildTableRenderers(ctx) {
     recordActivityVisit("blackjack");
     persist();
     const tier = runtime.stakeTier;
+    const activityMin = resolveActivityMin(runtime, act.minBet);
     const tableStakes = tier
-      ? effectiveTableStakes(tier, ctx.session.wallet.balance, act.minBet)
-      : { minBet: act.minBet, maxBet: ctx.session.wallet.balance };
+      ? effectiveTableStakes(tier, ctx.session.wallet.balance, activityMin)
+      : { minBet: activityMin, maxBet: ctx.session.wallet.balance };
     return videoMachine("blackjack", {
       title: "BLACKJACK",
       screenChildren: [
@@ -282,9 +284,10 @@ export function buildTableRenderers(ctx) {
     recordActivityVisit("holdem");
     persist();
     const tier = runtime.stakeTier;
+    const activityMin = resolveActivityMin(runtime, act.minBet);
     const buyInStakes = tier
-      ? effectiveTableStakes(tier, ctx.session.wallet.balance, act.minBet)
-      : { minBet: act.minBet, maxBet: ctx.session.wallet.balance };
+      ? effectiveTableStakes(tier, ctx.session.wallet.balance, activityMin)
+      : { minBet: activityMin, maxBet: ctx.session.wallet.balance };
     const buyInInput = el("input", {
       type: "number",
       min: String(buyInStakes.minBet),
@@ -560,9 +563,10 @@ export function buildTableRenderers(ctx) {
     const tier = runtime.roulette.tier ?? runtime.stakeTier;
     if (tier) applyTierSpeedCss(tier.id);
     const spinMs = tier ? getActivityTiming(tier.id).rouletteSpin : 1200;
+    const activityMin = resolveActivityMin(runtime, act.minBet);
     const wagerStakes = tier
-      ? effectiveTableStakes(tier, ctx.session.wallet.balance, act.minBet)
-      : { minBet: act.minBet, maxBet: ctx.session.wallet.balance };
+      ? effectiveTableStakes(tier, ctx.session.wallet.balance, activityMin)
+      : { minBet: activityMin, maxBet: ctx.session.wallet.balance };
 
     const betSelect = el("select", {}, BET_TYPES.map((b, i) =>
       el("option", { value: String(i), textContent: b.label })

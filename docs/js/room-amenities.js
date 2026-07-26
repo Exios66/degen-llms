@@ -177,8 +177,8 @@ export const PHONE_CALLS = {
     id: "foundation_room",
     label: "Call Foundation Room direct line",
     destination: "Noir lounge — velvet rope",
-    flavor: "\"Your penthouse key works as a membership card tonight. No photos.\"",
-    roomTypes: ["penthouse"],
+    flavor: "\"Your suite key works as a membership card tonight. No photos.\"",
+    roomTypes: ["suite", "penthouse"],
     minTierIndex: 4,
   },
   delano_tower: {

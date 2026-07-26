@@ -66,6 +66,14 @@ If your balance drops below **$50**, a warning appears suggesting a Cashier visi
 
 ---
 
+## Cabinet title scene (web)
+
+The browser terminal opens on a **digital table-game cabinet** attract screen — felt oval, chrome bezel, LED marquee, and a “Press Start” prompt — in the same spirit as the pixel RPG loading intro. It advances automatically after a few seconds, or immediately on **Enter** / click / tap.
+
+Skip it with `?skipIntro=1` (or `?skipTitle=1`). Deep links (`?guest=1`, `?slot=N`) also skip straight into play.
+
+---
+
 ## Save library (entry screen)
 
 Before the casino floor, you manage save slots:

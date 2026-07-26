@@ -39,7 +39,8 @@ const { CHARACTER_SHEETS } = await import(join(rpgRoot, "js/data/character-sheet
 const { CHAR_METRICS, FOOT_DROP, buildColorMap, lookKey } = await import(
   join(rpgRoot, "js/systems/CharacterSprites.js"));
 const { DEALER_ROSTER } = await import(join(here, "..", "docs", "js", "dealers.js"));
-const { PlayerSession, RPG_START_MAP, SAVE_VERSION, defaultRpgState } = await import(
+const { PlayerSession, RPG_START_MAP, SAVE_VERSION, defaultRpgState,
+  bootstrapSessionForRpg, hasCasinoProfileProgress, isCasinoOnlyProfile } = await import(
   join(here, "..", "docs", "js", "core.js"));
 
 const readJson = (rel) => JSON.parse(readFileSync(join(rpgRoot, rel), "utf8"));
@@ -483,6 +484,35 @@ for (const [collection, entries] of Object.entries(DEX_REGISTRY)) {
   check(fresh.mapId === RPG_START_MAP, "new games should start at the arrival map");
   check(MAP_IDS.includes(fresh.mapId), `start map "${fresh.mapId}" is not in the world`);
   check(connected(fresh.mapId, fresh.x, fresh.y), "new-game spawn is not walkable");
+}
+
+// A web-terminal save with no RPG blob must keep casino progress and be
+// adoptable into pixel mode without resetting the wallet.
+{
+  const terminalOnly = {
+    version: SAVE_VERSION,
+    playerName: "Floor Regular",
+    slotId: 3,
+    slotLabel: "Terminal Run",
+    wallet: { balance: 8800, transactions: [] },
+    activityStats: { blackjack: { visits: 2, handsOrBets: 14, netWinnings: 400 } },
+    casinoTimeMs: 45 * 60 * 1000,
+    rewards: { tier: "pearl", lifetimeWagered: 2500, notifications: [] },
+    hotel: { foundReservation: true, reservationCode: "MB-9001" },
+  };
+  const loaded = PlayerSession.fromJSON(terminalOnly);
+  check(loaded.rpg == null, "terminal save should not fabricate RPG state on load");
+  check(isCasinoOnlyProfile(loaded), "terminal-only profile was not detected");
+  check(hasCasinoProfileProgress(loaded), "casino profile progress missing");
+  const { importedFromCasino, needsCharacterSetup } = bootstrapSessionForRpg(loaded);
+  check(importedFromCasino, "terminal profile was not marked for RPG import");
+  check(needsCharacterSetup, "terminal profile should still need character setup");
+  check(loaded.wallet.balance === 8800, "wallet balance was reset during RPG bootstrap");
+  check(loaded.hotel?.foundReservation === true, "hotel state was lost during RPG bootstrap");
+  loaded.rpg.archetype = "high_roller";
+  const saved = PlayerSession.fromJSON(loaded.toJSON());
+  check(saved.rpg.archetype === "high_roller", "RPG progress did not round-trip into the shared slot");
+  check(saved.wallet.balance === 8800, "wallet balance changed after RPG round-trip");
 }
 
 // ── Hosted encounters ─────────────────────────────────────────────────────

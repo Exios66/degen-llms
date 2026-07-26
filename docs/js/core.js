@@ -91,6 +91,62 @@ export function migrateRpgState(rpg, legacyRpgData = null) {
   return merged;
 }
 
+/** True when a slot already has meaningful pixel-RPG progress. */
+export function hasRpgProgress(rpg) {
+  if (!rpg) return false;
+  if (rpg.archetype) return true;
+  const visits = rpg.mapVisits && Object.keys(rpg.mapVisits).length > 0;
+  const eggs = rpg.eggs && Object.keys(rpg.eggs).length > 0;
+  const flags = rpg.flags && Object.keys(rpg.flags).length > 0;
+  const quests = rpg.quests && Object.values(rpg.quests).some(
+    (q) => q?.complete || (q?.progress ?? 0) > 0,
+  );
+  return visits || eggs || flags || quests;
+}
+
+/** True when the session has casino-terminal progress worth carrying into RPG. */
+export function hasCasinoProfileProgress(session) {
+  if (!session) return false;
+  const stats = session.activityStats ?? {};
+  if (Object.values(stats).some((s) => (s?.visits ?? 0) > 0 || (s?.handsOrBets ?? 0) > 0)) {
+    return true;
+  }
+  if ((session.casinoTimeMs ?? 0) > 0) return true;
+  if (session.hotel?.foundReservation || session.hotel?.reachedRoom) return true;
+  if ((session.rewards?.lifetimeWagered ?? 0) > 0) return true;
+  if ((session.amenities?.purchasedItems?.length ?? 0) > 0) return true;
+  return false;
+}
+
+/** Slot was played in the web terminal but has not entered the overworld yet. */
+export function isCasinoOnlyProfile(session) {
+  return hasCasinoProfileProgress(session) && !hasRpgProgress(session.rpg);
+}
+
+/**
+ * Prepare a shared save slot for pixel RPG without erasing casino progress.
+ * @returns {{ session: PlayerSession, importedFromCasino: boolean, needsCharacterSetup: boolean }}
+ */
+export function bootstrapSessionForRpg(session) {
+  const needsCharacterSetup = !hasRpgProgress(session.rpg);
+  const importedFromCasino = needsCharacterSetup && hasCasinoProfileProgress(session);
+  const rpg = session.ensureRpgState();
+  // defaultRpgState() fills archetype/appearance; strip them for first-time RPG
+  // entry so casino-only slots stay "needs setup" until the character creator runs.
+  if (needsCharacterSetup) {
+    rpg.archetype = null;
+    rpg.appearance = null;
+  }
+  if (rpg.worldTime == null) rpg.worldTime = 720;
+  if (!rpg.reputation) rpg.reputation = { whales: 0, staff: 0, tourists: 0 };
+  if (!Array.isArray(rpg.inventory)) rpg.inventory = [];
+  for (const key of ["dex", "eggs", "mapVisits"]) {
+    if (!rpg[key] || typeof rpg[key] !== "object") rpg[key] = {};
+  }
+  if (!rpg.options) rpg.options = { ...defaultRpgState().options };
+  return { session, importedFromCasino, needsCharacterSetup };
+}
+
 export const TransactionKind = {
   BUY_IN: "buy_in",
   CASH_OUT: "cash_out",
@@ -410,6 +466,7 @@ function updateSummary(lib, session) {
     balance: session.wallet.balance,
     updatedAt: new Date().toISOString(),
     casinoTimeMs: session.casinoTimeMs ?? 0,
+    hasRpgProgress: hasRpgProgress(session.rpg),
   };
 }
 
@@ -427,6 +484,7 @@ export function listSlots() {
       balance: meta.balance ?? 0,
       updatedAt: meta.updatedAt ?? null,
       casinoTimeMs: meta.casinoTimeMs ?? 0,
+      hasRpgProgress: meta.hasRpgProgress ?? false,
       occupied,
     });
   }

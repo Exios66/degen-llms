@@ -187,7 +187,6 @@ export class TitleScreen {
     this.root.classList.add("title-overlay--menu");
 
     setTimeout(() => {
-<<<<<<< HEAD
       try {
         if (this.launchGuest) {
           const guest = createGuestSession(
@@ -200,16 +199,6 @@ export class TitleScreen {
             return;
           }
           this._promptArchetype(guest);
-=======
-      if (this.launchGuest) {
-        const guest = createGuestSession(
-          this.launchChips != null ? { chips: this.launchChips } : {},
-        );
-        initSessionRpg(guest);
-        if (this.launchArchetype) {
-          this._applyArchetype(guest, this.launchArchetype);
-          this._start(guest);
->>>>>>> 69d4994 (Fix initSessionRpg return value breaking guest and slot boot)
           return;
         }
         if (this.launchSlotId != null) {

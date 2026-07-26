@@ -113,11 +113,36 @@ export const MACHINE_UI = {
     icon: "🐯",
     reelFrame: "themed",
   },
+  salon_obsidian: {
+    themeClass: "slot-theme-high-limit",
+    category: "Salon Exclusive",
+    playstyle: "Private black-glass reels",
+    badge: "Salon Only",
+    icon: "⬛",
+    reelFrame: "mechanical",
+  },
+  salon_whale_watch: {
+    themeClass: "slot-theme-high-limit",
+    category: "Salon Exclusive",
+    playstyle: "Salon linked progressive",
+    badge: "Salon JP",
+    icon: "🐋",
+    reelFrame: "progressive",
+  },
+  salon_chairman_vault: {
+    themeClass: "slot-theme-high-limit",
+    category: "Salon Exclusive",
+    playstyle: "Chairman vault multipliers",
+    badge: "Chairman",
+    icon: "🔐",
+    reelFrame: "video",
+  },
 };
 
 export const SLOT_CATEGORIES = [
   { id: "Classic", label: "Classic & Reel Slots" },
   { id: "High Limit", label: "High Limit Room" },
+  { id: "Salon Exclusive", label: "High Limit Salon Exclusives" },
   { id: "Progressive", label: "Legendary Progressives" },
   { id: "Video", label: "Video Slots" },
   { id: "Themed", label: "Themed Adventures" },

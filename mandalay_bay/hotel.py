@@ -53,6 +53,7 @@ class HotelState:
     room_number: int = 23017
     nights_remaining: int = 2
     found_reservation: bool = False
+    room_key_active: bool = False
     reached_room: bool = False
     hallway_progress: int = 0
     hallway_log: list[str] = field(default_factory=list)
@@ -226,6 +227,28 @@ def reset_hallway(session: PlayerSession) -> None:
     hotel.hallway_progress = 0
     hotel.hallway_log.clear()
     hotel.reached_room = False
+    # Key stays active — guest can retry the hallway or skip to the door.
+
+
+def use_room_key_to_door(session: PlayerSession) -> ActionResult:
+    """Skip the hallway once today's check-in has activated the key."""
+    from mandalay_bay.world_cycle import (
+        can_access_hotel_room,
+        grant_room_key_if_reservation_ready,
+        reservation_status_message,
+    )
+
+    if not can_access_hotel_room(session):
+        return ActionResult(False, reservation_status_message(session))
+    hotel = ensure_hotel(session)
+    if not hotel.room_key_active and not grant_room_key_if_reservation_ready(session):
+        return ActionResult(False, "Your key isn't active yet — finish today's check-in first.")
+    hotel.room_key_active = True
+    hotel.reached_room = True
+    return ActionResult(
+        True,
+        f"Key works on the first try — Room {hotel.room_number}. Carmen pretends not to be impressed.",
+    )
 
 
 def upgrade_room(session: PlayerSession, target: str) -> ActionResult:
@@ -278,6 +301,7 @@ def _apply_room(session: PlayerSession, room_type: str, spec: dict) -> None:
     hotel.room_number = _generate_room_number(spec["floor"])
     hotel.found_reservation = False
     hotel.reservation_confirmed_desk = False
+    hotel.room_key_active = False
     hotel.reached_room = False
     hotel.hallway_progress = 0
     hotel.hallway_log.clear()
@@ -324,11 +348,12 @@ def late_checkout(session: PlayerSession) -> ActionResult:
     hotel = ensure_hotel(session)
     if hotel.late_checkout_used:
         return ActionResult(False, "You already negotiated late checkout.")
-    hotel.late_checkout_used = True
     if is_net_positive(session):
+        hotel.late_checkout_used = True
         return ActionResult(True, "Carmen comps an extra two hours. The minibar sensor sleeps.")
     cost = 75
     if session.wallet.debit(cost, "hotel", "Late checkout"):
+        hotel.late_checkout_used = True
         return ActionResult(True, f"Paid {fmt_chips(cost)} for two extra hours. Worth it.")
     return ActionResult(False, f"Need {fmt_chips(cost)} or net-positive floor status.")
 

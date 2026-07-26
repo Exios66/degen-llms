@@ -132,6 +132,7 @@ export function getDailyChargeTotal(hotel, tierIndex = 0) {
 function resetDailyReservation(hotel) {
   hotel.foundReservation = false;
   hotel.reservationConfirmedDesk = false;
+  hotel.roomKeyActive = false;
   hotel.reachedRoom = false;
   hotel.hallwayProgress = 0;
   hotel.hallwayLog = [];
@@ -310,7 +311,7 @@ export function confirmReservationAtDesk(session) {
   grantRoomKeyIfReservationReady(session);
   return {
     ok: true,
-    message: `${reservationStatusMessage(session)}\nCarmen stamps your folio. Hallway access granted.`,
+    message: `${reservationStatusMessage(session)}\nCarmen stamps your folio. Key active — take the hallway to your door.`,
   };
 }
 
@@ -323,14 +324,13 @@ export function canAccessHotelRoom(session) {
 
 /**
  * When check-in requirements are satisfied (phone, desk, or both — per today's rule),
- * grant in-room access so amenities unlock regardless of which path completed last.
+ * activate the room key. Does NOT skip the hallway — guests still walk to the door
+ * (or ask Carmen to skip) before in-room amenities unlock.
  */
 export function grantRoomKeyIfReservationReady(session) {
   if (!canAccessHotelRoom(session)) return false;
   const hotel = ensureHotel(session);
-  if (!hotel.reachedRoom) {
-    hotel.reachedRoom = true;
-  }
+  hotel.roomKeyActive = true;
   return true;
 }
 

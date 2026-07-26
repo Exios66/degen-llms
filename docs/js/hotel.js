@@ -124,6 +124,9 @@ export function defaultHotelState(overrides = {}) {
     roomNumber,
     nightsRemaining: overrides.nightsRemaining ?? 2,
     foundReservation: overrides.foundReservation ?? false,
+    /** Key is active once today's check-in requirement is met (phone/desk). */
+    roomKeyActive: overrides.roomKeyActive ?? false,
+    /** True only after the hallway mini-game (or an explicit skip) reaches the door. */
     reachedRoom: overrides.reachedRoom ?? false,
     hallwayProgress: overrides.hallwayProgress ?? 0,
     hallwayLog: overrides.hallwayLog ?? [],
@@ -204,7 +207,13 @@ export function findReservationAtDesk(session) {
   return confirmReservationAtDesk(session);
 }
 
-export { getWorldCycleSummary, settleHotelOverdue, reservationStatusMessage, canAccessHotelRoom, grantRoomKeyIfReservationReady };
+export {
+  getWorldCycleSummary,
+  settleHotelOverdue,
+  reservationStatusMessage,
+  canAccessHotelRoom,
+  grantRoomKeyIfReservationReady,
+};
 
 /**
  * @returns {{ success: boolean, quip?: string, done?: boolean }}
@@ -266,16 +275,11 @@ export function upgradeRoom(session, targetType, rewardsTracker) {
   }
   if (hasComp) {
     redeemRoomComp(session, rewardsTracker, target.compId);
-    hotel.roomType = targetType;
-    hotel.wing = target.wing;
-    hotel.floor = target.floor;
-    hotel.roomNumber = generateRoomNumber(target.floor);
-    hotel.foundReservation = false;
-    hotel.reservationConfirmedDesk = false;
-    hotel.reachedRoom = false;
-    hotel.hallwayProgress = 0;
-    hotel.hallwayLog = [];
-    return { ok: true, message: `Comp applied! Upgraded to ${target.label}. Check MGM Rewards for your new room.` };
+    applyRoomUpgrade(hotel, targetType, target);
+    return {
+      ok: true,
+      message: `Comp applied! Upgraded to ${target.label}. Your phone shows the new room — locate again, then take the hallway.`,
+    };
   }
   if (netPositive && targetType === "suite") {
     const cost = 500;
@@ -283,16 +287,8 @@ export function upgradeRoom(session, targetType, rewardsTracker) {
       return { ok: false, message: `Need ${fmtChips(cost)} on your card for a suite upgrade.` };
     }
     session.wallet.debit(cost, "hotel", "Suite upgrade");
-    hotel.roomType = targetType;
-    hotel.wing = target.wing;
-    hotel.floor = target.floor;
-    hotel.roomNumber = generateRoomNumber(target.floor);
-    hotel.foundReservation = false;
-    hotel.reservationConfirmedDesk = false;
-    hotel.reachedRoom = false;
-    hotel.hallwayProgress = 0;
-    hotel.hallwayLog = [];
-    return { ok: true, message: `Paid ${fmtChips(cost)} — welcome to the ${target.label}.` };
+    applyRoomUpgrade(hotel, targetType, target);
+    return { ok: true, message: `Paid ${fmtChips(cost)} — welcome to the ${target.label}. Re-locate, then find your new door.` };
   }
   if (netPositive && targetType === "penthouse") {
     const cost = 2000;
@@ -300,18 +296,40 @@ export function upgradeRoom(session, targetType, rewardsTracker) {
       return { ok: false, message: `The penthouse requires ${fmtChips(cost)} or a Chairman comp.` };
     }
     session.wallet.debit(cost, "hotel", "Penthouse upgrade");
-    hotel.roomType = targetType;
-    hotel.wing = target.wing;
-    hotel.floor = target.floor;
-    hotel.roomNumber = generateRoomNumber(target.floor);
-    hotel.foundReservation = false;
-    hotel.reservationConfirmedDesk = false;
-    hotel.reachedRoom = false;
-    hotel.hallwayProgress = 0;
-    hotel.hallwayLog = [];
-    return { ok: true, message: `The penthouse is yours. Try not to let it go to your head.` };
+    applyRoomUpgrade(hotel, targetType, target);
+    return { ok: true, message: `The penthouse is yours. Re-confirm check-in, then walk the hallway — try not to let it go to your head.` };
   }
   return { ok: false, message: "Earn comps on the floor or finish net-positive before upgrading." };
+}
+
+function applyRoomUpgrade(hotel, targetType, target) {
+  hotel.roomType = targetType;
+  hotel.wing = target.wing;
+  hotel.floor = target.floor;
+  hotel.roomNumber = generateRoomNumber(target.floor);
+  hotel.foundReservation = false;
+  hotel.reservationConfirmedDesk = false;
+  hotel.roomKeyActive = false;
+  hotel.reachedRoom = false;
+  hotel.hallwayProgress = 0;
+  hotel.hallwayLog = [];
+}
+
+/** Skip hallway once the key is active (Carmen or lobby courtesy). */
+export function useRoomKeyToDoor(session) {
+  if (!canAccessHotelRoom(session)) {
+    return { ok: false, message: reservationStatusMessage(session) };
+  }
+  const hotel = ensureHotel(session);
+  if (!hotel.roomKeyActive && !grantRoomKeyIfReservationReady(session)) {
+    return { ok: false, message: "Your key isn't active yet — finish today's check-in first." };
+  }
+  hotel.roomKeyActive = true;
+  hotel.reachedRoom = true;
+  return {
+    ok: true,
+    message: `Key works on the first try — Room ${hotel.roomNumber}. Carmen pretends not to be impressed.`,
+  };
 }
 
 /** @returns {{ ok: boolean, message: string }} */
@@ -348,6 +366,7 @@ export function resetHallway(session) {
   hotel.hallwayProgress = 0;
   hotel.hallwayLog = [];
   hotel.reachedRoom = false;
+  // Key stays active — guest can retry the hallway or skip to the door.
 }
 
 /** Build satirical folio lines for checkout. */
@@ -388,12 +407,13 @@ export function lateCheckout(session, rewardsTracker) {
   if (hotel.lateCheckoutUsed) {
     return { ok: false, message: "You already negotiated late checkout." };
   }
-  hotel.lateCheckoutUsed = true;
   if (isNetPositive(session)) {
+    hotel.lateCheckoutUsed = true;
     return { ok: true, message: "Carmen comps an extra two hours. The minibar sensor sleeps." };
   }
   const cost = 75;
   if (session.wallet.debit(cost, "hotel", "Late checkout")) {
+    hotel.lateCheckoutUsed = true;
     return { ok: true, message: `Paid ${fmtChips(cost)} for two extra hours. Worth it.` };
   }
   return { ok: false, message: `Need ${fmtChips(cost)} or net-positive floor status.` };

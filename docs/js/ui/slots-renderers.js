@@ -2,6 +2,7 @@
 import { ACTIVITIES, fmtChips, signedChips } from "../core.js";
 import { applyTierSpeedCss, getActivityTiming } from "../rewards-perks.js";
 import { SLOT_CATEGORIES, getMachineUI, paytableEntries } from "../slots-ui.js";
+import { isSalonOnlySlot, isSalonVenue } from "../salon-exclusives.js";
 import { MACHINES, calculatePayout, contributeToProgressive, displaySymbol, progressivePool, randomSymbol, spinReels, tryJackpot } from "../slots.js";
 import { effectiveSlotStakes, getTier, getTierPayoutBoost } from "../stakes.js";
 
@@ -178,19 +179,33 @@ export function buildSlotsRenderers(ctx) {
     recordActivityVisit("slots");
     persist();
     const tier = runtime.slots.tier ?? runtime.stakeTier;
+    const salon = isSalonVenue(runtime) || runtime.slots?.salonOnly;
 
     const floor = el("div", { className: "slot-floor" }, [
-      banner("Slot Machines — Mandalay Bay"),
-      el("p", { className: "dim", textContent: tier ? `${tier.name}: ${tier.description}` : "Penny slots to high-limit progressives — pick your machine." }),
+      banner(salon ? "High Limit Salon — Exclusive Slots" : "Slot Machines — Mandalay Bay"),
+      el("p", {
+        className: "dim",
+        textContent: salon
+          ? "Velvet-rope cabinets — these reels never see the main floor."
+          : (tier ? `${tier.name}: ${tier.description}` : "Penny slots to high-limit progressives — pick your machine."),
+      }),
       chipLine(),
       el("p", {
         className: "slot-floor-intro",
-        textContent: "Penny slots to high-limit progressives — each machine has its own cabinet theme and playstyle.",
+        textContent: salon
+          ? "Obsidian Vault, Whale Watch, and Chairman Vault — salon stake limits apply."
+          : "Penny slots to high-limit progressives — each machine has its own cabinet theme and playstyle.",
       }),
     ]);
 
     for (const cat of SLOT_CATEGORIES) {
-      const machines = MACHINES.filter((m) => getMachineUI(m).category === cat.id);
+      if (salon && cat.id !== "Salon Exclusive" && cat.id !== "High Limit") continue;
+      if (!salon && cat.id === "Salon Exclusive") continue;
+      const machines = MACHINES.filter((m) => {
+        if (getMachineUI(m).category !== cat.id) return false;
+        if (salon) return isSalonOnlySlot(m) || cat.id === "High Limit";
+        return !isSalonOnlySlot(m) && !m.salonOnly;
+      });
       if (!machines.length) continue;
       const section = el("div", { className: "slot-category" }, [
         el("h3", { className: "slot-category-title", textContent: cat.label }),

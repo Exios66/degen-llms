@@ -285,6 +285,7 @@ export class PlayerSession {
     this.slotLabel = slotLabel;
     this.sportsbookData = null;
     this.tradingDeskData = null;
+    this.arcadeData = null;
     this.rpg = null;
     this.rewards = null;
     this.hotel = null;
@@ -335,6 +336,7 @@ export class PlayerSession {
       activityStats: this.activityStats,
       sportsbook: this.sportsbookData ?? null,
       tradingDesk: this.tradingDeskData ?? null,
+      arcade: this.arcadeData ?? null,
       progressivePools: this.progressivePools ?? {},
       horseRacingCustomNames: this.horseRacingCustomNames ?? null,
       horseRacingNameOffset: this.horseRacingNameOffset ?? 0,
@@ -366,6 +368,7 @@ export class PlayerSession {
     s.activityStats = data.activityStats ?? {};
     s.sportsbookData = data.sportsbook ?? null;
     s.tradingDeskData = data.tradingDesk ?? null;
+    s.arcadeData = data.arcade ?? null;
     s.progressivePools = data.progressivePools ?? {};
     s.horseRacingCustomNames = data.horseRacingCustomNames ?? null;
     s.horseRacingNameOffset = data.horseRacingNameOffset ?? 0;
@@ -642,6 +645,13 @@ export const ACTIVITIES = {
     minBet: 25,
     description: "Futures and call/put options on NYSE equities, commodities, and crypto contracts.",
   },
+  arcade: {
+    id: "arcade",
+    name: "Mandalay Arcade",
+    floor: "Arcade Alley",
+    minBet: 5,
+    description: "Vegas-styled CRT cabinets — Strip Cross, Neon Invaders, Breakout, Showgirl Beat.",
+  },
   horse_racing: {
     id: "horse_racing",
     name: "Mandalay Racing",
@@ -671,6 +681,7 @@ export const FLOOR_ORDER = [
   "Lottery Counter",
   "Sports Book",
   "Trading Floor",
+  "Arcade Alley",
   "Racing Pavilion",
   "Equestrian Arena",
 ];

@@ -25,6 +25,8 @@ import { buildCrapsRenderers } from "./ui/craps-renderers.js";
 import { buildLotteryRenderers } from "./ui/lottery-renderers.js";
 import { buildSportsbookRenderers } from "./ui/sportsbook-renderers.js";
 import { buildTradingDeskRenderers } from "./ui/trading-desk-renderers.js";
+import { buildArcadeRenderers } from "./ui/arcade-renderers.js";
+import { ArcadeCabinetOverlay } from "./arcade/ArcadeCabinetOverlay.js";
 import { buildRacingRenderers } from "./ui/racing-renderers.js";
 import { buildVenueRenderers } from "./ui/venue-renderers.js";
 import { buildCashierRenderers } from "./ui/cashier-renderers.js";
@@ -36,6 +38,7 @@ const app = document.getElementById("app");
 
 let session = new PlayerSession();
 let rewardsPhone = null;
+let arcadeOverlay = null;
 let casinoTimeTicker = null;
 
 const runtime = createRuntime({
@@ -48,6 +51,7 @@ const ctx = {
   get session() { return session; },
   set session(next) { session = next; },
   get rewardsPhone() { return rewardsPhone; },
+  get arcadeOverlay() { return arcadeOverlay; },
   runtime,
   persist,
   render,
@@ -132,6 +136,21 @@ function mountRewardsPhone() {
   rewardsPhone.sync();
 }
 
+function mountArcadeOverlay() {
+  const root = document.getElementById("arcade-overlay");
+  if (!root) return;
+  arcadeOverlay = new ArcadeCabinetOverlay(root, {
+    onPersist: () => persist(),
+    onStatus: (msg, kind) => showStatus(msg, kind),
+    onPlayResult: ({ net }) => {
+      runtime.arcade.sessionNet += net;
+      runtime.arcade.plays += 1;
+    },
+    onClosed: () => render(),
+  });
+  arcadeOverlay.setSession(session);
+}
+
 
 
 
@@ -152,6 +171,7 @@ function enterCasino(nextSession) {
   if (session.slotId != null) startCasinoClock();
   startCasinoTimeTicker();
   mountRewardsPhone();
+  mountArcadeOverlay();
   syncContactIntros(nextSession);
   applyIntoxicationEffects(session);
   render();
@@ -162,6 +182,7 @@ function returnToSavePicker() {
   stopCasinoClock();
   stopCasinoTimeTicker();
   rewardsPhone?.close();
+  arcadeOverlay?.close();
   runtime.sportsbook = new SportsbookState();
   runtime.tradingDesk = new TradingDeskState();
   runtime.blackjackGame = null;
@@ -566,6 +587,7 @@ function renderFloor({ floor }) {
     else if (act.id === "lottery") pushView("stake-tier", { activityId: "lottery", nextView: "lottery" });
     else if (act.id === "sportsbook") pushView("stake-tier", { activityId: "sportsbook", nextView: "sportsbook" });
     else if (act.id === "trading_desk") pushView("stake-tier", { activityId: "trading_desk", nextView: "trading-desk" });
+    else if (act.id === "arcade") pushView("arcade-menu");
     else if (act.id === "horse_racing") pushView("stake-tier", { activityId: "horse_racing", nextView: "horse-racing" });
     else if (act.id === "dressage") pushView("stake-tier", { activityId: "dressage", nextView: "dressage" });
     else if (act.id === "jumper") pushView("stake-tier", { activityId: "jumper", nextView: "jumper" });
@@ -634,6 +656,7 @@ const { clearSlotsSpinTimers, slotMachineCard, ...slotsRenderers } = buildSlotsR
 const { finishBlackjack, finishHoldem, startBlackjack, ...tableRenderers } = buildTableRenderers(ctx);
 const sportsbookRenderers = buildSportsbookRenderers(ctx);
 const tradingDeskRenderers = buildTradingDeskRenderers(ctx);
+const arcadeRenderers = buildArcadeRenderers(ctx);
 const { renderHorsePaddock, ...racingRenderers } = buildRacingRenderers(ctx);
 const venueRenderers = buildVenueRenderers(ctx);
 const cashierRenderers = buildCashierRenderers(ctx);
@@ -662,6 +685,7 @@ const RENDERERS = {
   ...lotteryRenderers,
   ...sportsbookRenderers,
   ...tradingDeskRenderers,
+  ...arcadeRenderers,
   ...racingRenderers,
   ...venueRenderers,
   ...cashierRenderers,

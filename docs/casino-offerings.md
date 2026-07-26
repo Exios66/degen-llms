@@ -2,7 +2,7 @@
 
 A complete catalog of everything on the Mandalay Bay casino floor and resort.
 
-Seven floors, eleven activities, one chip wallet:
+Eight floors, twelve activities, one chip wallet:
 
 | Floor | Activities | Min bet |
 |-------|------------|---------|
@@ -11,6 +11,7 @@ Seven floors, eleven activities, one chip wallet:
 | **Lottery Counter** | Pick 3, Pick 4, Mega draw, scratchers | Varies |
 | **Sports Book** | Scenario board, parlays/futures + prediction markets | 10 chips |
 | **Trading Floor** | Futures & call/put options (NYSE, commodities, crypto) | 25 chips |
+| **Arcade Alley** | CRT cabinets — Strip Cross, Neon Invaders, Breakout, Showgirl Beat | 5 chips |
 | **Racing Pavilion** | Mandalay Racing (thoroughbred sim) | 5 chips |
 | **Equestrian Arena** | Dressage competition, show jumping | 10 chips |
 
@@ -82,6 +83,12 @@ Stored scenario board (≥125 events) across NFL, NBA, MLB, MLS, NHL, NCAA, UFC,
 Mandalay Markets — long-only futures and call/put options on NYSE equities, commodities, and crypto from a stored contract catalog.
 
 → [Trading Floor](trading-floor.md)
+
+## Arcade Alley
+
+Vegas-styled classic arcade cabinets in a fullscreen CRT overlay — skill play for chips and redeemable tickets, without entering the pixel RPG.
+
+→ [Arcade Alley](arcade.md)
 
 ## Racing Pavilion
 

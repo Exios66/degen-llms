@@ -12,13 +12,14 @@ Main lobby options:
   3) Lottery Counter   — Pick 3/4, Mega draws, scratchers
   4) Sports Book       — Stored scenario board, parlays/futures, prediction markets
   5) Trading Floor     — Futures & call/put options (NYSE, commodities, crypto)
-  6) Racing Pavilion   — Thoroughbred win / place / show
-  7) Equestrian Arena  — Dressage competition & Show Jumping
-  8) Cashier           — Buy chips, cash out, view ledger
-  9) Player Stats      — Visits, bets, net winnings per activity
- 10) Save Game         — Write progress to your save slot
- 11) Casino Guide      — Rules and controls reference
- 12) Leave Casino      — Auto-saves and exits
+  6) Arcade Alley      — CRT cabinet overlays (web) — Frogger, Invaders, Breakout, rhythm
+  7) Racing Pavilion   — Thoroughbred win / place / show
+  8) Equestrian Arena  — Dressage competition & Show Jumping
+  9) Cashier           — Buy chips, cash out, view ledger
+ 10) Player Stats      — Visits, bets, net winnings per activity
+ 11) Save Game         — Write progress to your save slot
+ 12) Casino Guide      — Rules and controls reference
+ 13) Leave Casino      — Auto-saves and exits
 
 Save system:
   • Pick or create a save slot when entering the casino
@@ -257,6 +258,23 @@ Storage: ~/.mandalay_bay/saves/ (override with MANDALAY_BAY_SAVE_DIR or --save-d
 Browser: localStorage per slot at https://exios66.github.io/degen-llms/
 """
 
+ARCADE_HELP = """
+ARCADE ALLEY — CRT CABINETS (WEB)
+=================================
+Vegas-styled classic minigames in a fullscreen CRT overlay.
+Play on the web terminal (CLI lists cabinets only).
+
+Cabinets:
+  Strip Cross      — 5 chips  — Frogger across Las Vegas Blvd
+  Neon Invaders    — 10 chips — blast descending neon signs
+  High-Roller Breakout — 10 chips — felt paddle vs card bricks
+  Showgirl Beat    — 15 chips — kick / snare / hat rhythm
+
+Earn arcade tickets from score; redeem for small chip packs,
+a free-spin voucher flag, or a welcome-drink refill.
+ESC or EXIT leaves the cabinet overlay.
+"""
+
 SECTIONS = {
     "overview": CASINO_OVERVIEW,
     "blackjack": BLACKJACK_HELP,
@@ -267,6 +285,7 @@ SECTIONS = {
     "lottery": LOTTERY_HELP,
     "sportsbook": SPORTSBOOK_HELP,
     "trading_desk": TRADING_DESK_HELP,
+    "arcade": ARCADE_HELP,
     "horse_racing": HORSE_RACING_HELP,
     "equestrian": EQUESTRIAN_HELP,
     "dressage": EQUESTRIAN_HELP,

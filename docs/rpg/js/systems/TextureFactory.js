@@ -1466,10 +1466,11 @@ function drawFringe(g, kind, dir) {
   const horizontal = dir === "n" || dir === "s";
   const atStart = dir === "n" || dir === "w";
   // Keep the contact band mostly opaque — Phaser generateTexture drops
-  // near-transparent-only Graphics, which made fringes invisible in-game.
+  // near-transparent-only Graphics. Band is 3 art-px thick so shorelines
+  // read clearly at 2× zoom (not a 1px hairline).
   const band = horizontal
-    ? { x: 0, y: atStart ? 0 : 14, bw: 16, bh: 2 }
-    : { x: atStart ? 0 : 14, y: 0, bw: 2, bh: 16 };
+    ? { x: 0, y: atStart ? 0 : 13, bw: 16, bh: 3 }
+    : { x: atStart ? 0 : 13, y: 0, bw: 3, bh: 16 };
 
   if (kind === "foam") {
     w.px(0xc8f8ff, band.x, band.y, band.bw, band.bh);

@@ -213,7 +213,7 @@
     },
     {
       "tile": "FLOWER",
-      "mod": 9,
+      "mod": 8,
       "on": [
         "LOBBY"
       ],
@@ -226,7 +226,7 @@
     },
     {
       "tile": "LANTERN",
-      "mod": 19,
+      "mod": 17,
       "on": [
         "LOBBY"
       ],

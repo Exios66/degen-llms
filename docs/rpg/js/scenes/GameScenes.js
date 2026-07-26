@@ -57,12 +57,13 @@ const FOOTSTEP_SFX = {
   [TILE.SPA]: "foot_water",
 };
 
-/** Screen wash per world-cycle day phase, indexed by WORLD_PHASES id. */
+/** Screen wash per world-cycle day phase, indexed by WORLD_PHASES id.
+ *  Soft resort light: warm dawn, gentle midday gold, peach dusk, indigo night. */
 const PHASE_WASH = [
-  { bg: "#120e18", tint: 0xffb066, alpha: 0.14 },
-  { bg: "#0a0812", tint: 0x000000, alpha: 0 },
-  { bg: "#0c0818", tint: 0x6a1a70, alpha: 0.22 },
-  { bg: "#080610", tint: 0x1a0a40, alpha: 0.3 },
+  { bg: "#18120e", tint: 0xffc078, alpha: 0.12 },
+  { bg: "#100c0a", tint: 0xffe8b0, alpha: 0.04 },
+  { bg: "#140e10", tint: 0xe87850, alpha: 0.16 },
+  { bg: "#0a0c14", tint: 0x284868, alpha: 0.22 },
 ];
 
 /** Decor props are drawn from the same tile vocabulary as the ground. */
@@ -81,7 +82,7 @@ const DECOR_KEYS = {
 /** Props that cast a soft ground shadow (reference lived-in density). */
 const SHADOW_DECOR = new Set([
   TILE.PLANT, TILE.BAR, TILE.SLOT, TILE.SCREEN, TILE.ROPE,
-  TILE.ROCK, TILE.LANTERN, TILE.GLASS,
+  TILE.ROCK, TILE.LANTERN, TILE.GLASS, TILE.FLOWER,
 ]);
 
 /** Neon / lamp props that gently pulse for atmospheric life. */
@@ -94,12 +95,18 @@ const GLOW_DECOR = new Set([TILE.SLOT, TILE.SCREEN, TILE.LANTERN]);
 const FRINGE_RULES = [
   { tile: TILE.WATER, neighbor: TILE.SAND, kind: "foam" },
   { tile: TILE.WATER, neighbor: TILE.AQUA, kind: "foam" },
+  { tile: TILE.WATER, neighbor: TILE.SPA, kind: "foam" },
   { tile: TILE.SAND, neighbor: TILE.WATER, kind: "wet" },
+  { tile: TILE.SPA, neighbor: TILE.WATER, kind: "wet" },
   { tile: TILE.AQUA, neighbor: TILE.WATER, kind: "pool" },
   { tile: TILE.CARPET, neighbor: TILE.PATH, kind: "path" },
   { tile: TILE.LOBBY, neighbor: TILE.PATH, kind: "path" },
+  { tile: TILE.SAND, neighbor: TILE.PATH, kind: "path" },
   { tile: TILE.PATH, neighbor: TILE.CARPET, kind: "path" },
   { tile: TILE.PATH, neighbor: TILE.LOBBY, kind: "path" },
+  { tile: TILE.PATH, neighbor: TILE.SAND, kind: "path" },
+  { tile: TILE.CARPET, neighbor: TILE.LOBBY, kind: "path" },
+  { tile: TILE.LOBBY, neighbor: TILE.CARPET, kind: "path" },
 ];
 
 const FRINGE_DIRS = [

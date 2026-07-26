@@ -94,9 +94,12 @@ the map so a ballroom does not read as wallpaper. Water registers three animated
 frames; the overworld cycles them. Neighbor-edge fringe overlays (foam, wet sand,
 path, pool) soften tile seams. Decor and characters cast soft contact shadows;
 slots, screens, and lanterns pulse. Walkable `FLOWER` clutter plus blocking
-`ROCK` / `LANTERN` props densify outdoor maps. `EnvironmentTextures.js` can also
-map vendored PNGs under `assets/tiles/` onto the same `TILE` enum without
-changing map JSON.
+`ROCK` / `LANTERN` props densify outdoor maps. Hotel and Pool wings lean into a
+cozy resort read — warm wood walls, rosewood carpet, honey travertine, fluffy
+planters, boardwalk path rings, and soft amber day/night wash — while casino
+floors keep their neon pit identity. `EnvironmentTextures.js` can also map
+vendored PNGs under `assets/tiles/` onto the same `TILE` enum without changing
+map JSON.
 
 Characters come from **vendored sprite sheets** under `assets/characters/`,
 repainted at runtime by `CharacterSprites.js`. Each sheet's palette is sorted

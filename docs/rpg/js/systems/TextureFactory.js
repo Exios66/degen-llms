@@ -8,7 +8,8 @@ import {
 /**
  * Procedural pixel textures for the ground, decor and UI cues — 16px art grid,
  * 2× upscale. Consistent top-left lighting, clustered dither, selective
- * colored outlines, and animated water — Chrono Trigger / modern SNES-era polish.
+ * colored outlines, and animated water — Chrono Trigger / modern SNES-era polish
+ * with a cozy Mandalay Bay resort palette (warm wood, honey stone, lagoon teal).
  *
  * Overworld characters are 32×44 procedural tuxedo sprites (see CHAR_METRICS);
  * environment tiles, fringes, and shadows are authored below.
@@ -232,67 +233,66 @@ function makeTex(scene, key, draw, w = TILE_SIZE, h = TILE_SIZE) {
 function drawLobbyTile(g) {
   const w = makeWriter(g);
   const fine = fineWriter(g);
-  // Polished cream marble with denser veins. The gold medallion that used to
-  // sit in every tile turned concourses into polka dots, so it lives on the
-  // occasional FLOOR_ACCENTS variant instead.
-  marbleVeins(w, 0xe8e0d0, 0xc8b8a0, 0xd8c8b0);
-  w.px(0xb8a890, 5, 6, 4, 1);
-  w.px(0xd8c8b0, 6, 6, 2, 1);
-  w.px(0xc8b8a0, 12, 11, 1, 3);
-  w.px(0xd8c8b0, 13, 12, 1, 1);
-  groutGrid(w, 0xb8a890, 8);
-  w.px(0xfff8f0, 2, 2, 3, 2);
-  w.px(0xfff8f0, 10, 9, 3, 2);
-  w.px(0xd0c0a8, 0, 0, 16, 1);
-  w.px(0xd0c0a8, 0, 0, 1, 16);
-  w.px(0xa89478, 15, 0, 1, 16);
-  w.px(0xa89478, 0, 15, 16, 1);
-  sparkle(fine, [[6, 5], [20, 8], [14, 18]], 0xffffff, 0.5);
+  // Warm resort travertine — honey cream marble with amber veins (boutique
+  // lobby, not cold museum stone). Medallions stay on FLOOR_ACCENTS variants.
+  marbleVeins(w, 0xf0e4c8, 0xd4b890, 0xe4d0a8);
+  w.px(0xc4a878, 5, 6, 4, 1);
+  w.px(0xe4d0a8, 6, 6, 2, 1);
+  w.px(0xd4b890, 12, 11, 1, 3);
+  w.px(0xe4d0a8, 13, 12, 1, 1);
+  groutGrid(w, 0xc4a878, 8);
+  w.px(0xfff8e8, 2, 2, 3, 2);
+  w.px(0xfff8e8, 10, 9, 3, 2);
+  w.px(0xdcc8a0, 0, 0, 16, 1);
+  w.px(0xdcc8a0, 0, 0, 1, 16);
+  w.px(0xb09060, 15, 0, 1, 16);
+  w.px(0xb09060, 0, 15, 16, 1);
+  sparkle(fine, [[6, 5], [20, 8], [14, 18], [24, 22]], 0xfff6dc, 0.55);
   speckle(fine, 0, 0, TILE_SIZE, TILE_SIZE, [
-    [0xf8f0e0, 0.38], [0xa89478, 0.3], [0xffffff, 0.42], [0xc8b898, 0.2],
-  ], 0.26, 11);
-  ambientLight(fine, TILE_SIZE, TILE_SIZE, { lift: 0.11, drop: 0.05 });
-  glow(fine, 15, 15, [{ r: 7, alpha: 0.09 }, { r: 3, alpha: 0.16 }], 0xfff6dc);
+    [0xfff4dc, 0.4], [0xb09060, 0.28], [0xffffff, 0.38], [0xd8b888, 0.22],
+  ], 0.28, 11);
+  ambientLight(fine, TILE_SIZE, TILE_SIZE, { lift: 0.12, drop: 0.045 });
+  glow(fine, 15, 15, [{ r: 8, alpha: 0.1 }, { r: 3, alpha: 0.18 }], 0xffe8b0);
 }
 
 function drawCarpetTile(g) {
   const w = makeWriter(g);
   const fine = fineWriter(g);
-  // Ornate casino carpet: plush maroon field, gold scrollwork, cut-pile nap.
-  tileFrame(w, 0x4a0828, 0x6a1840, 0x2a0418);
-  ditherWeave(w, 1, 1, 14, 14, 0x6a1038, 0x5a0c30);
-  w.px(0x801848, 2, 2, 12, 12);
-  // Scroll rings around the medallion (busy floral read without cluttering UI).
-  w.px(0x982058, 3, 3, 10, 10);
-  w.px(0x801848, 4, 4, 8, 8);
-  w.px(0xc8a030, 3, 5, 1, 6);
-  w.px(0xc8a030, 12, 5, 1, 6);
-  w.px(0xc8a030, 5, 3, 6, 1);
-  w.px(0xc8a030, 5, 12, 6, 1);
-  w.px(0xe8c547, 4, 4, 1, 1);
-  w.px(0xe8c547, 11, 4, 1, 1);
-  w.px(0xe8c547, 4, 11, 1, 1);
-  w.px(0xe8c547, 11, 11, 1, 1);
-  // Ornate medallion
-  w.px(0xc8a030, 5, 5, 6, 6);
-  w.px(0xe8c547, 6, 6, 4, 4);
-  w.px(0xffe890, 7, 7, 2, 2);
-  w.px(0x982058, 7, 7, 2, 2);
-  w.px(0xfff0b0, 7, 7, 1, 1);
+  // Boutique hotel carpet: warm rosewood field, soft amber scrollwork, plush nap.
+  tileFrame(w, 0x4a1818, 0x6a2828, 0x2a0c0c);
+  ditherWeave(w, 1, 1, 14, 14, 0x6a2420, 0x5a1c18);
+  w.px(0x7a3028, 2, 2, 12, 12);
+  // Soft floral rings around the medallion — lived-in suite, not pit aisle.
+  w.px(0x8a4030, 3, 3, 10, 10);
+  w.px(0x7a3028, 4, 4, 8, 8);
+  w.px(0xd4a848, 3, 5, 1, 6);
+  w.px(0xd4a848, 12, 5, 1, 6);
+  w.px(0xd4a848, 5, 3, 6, 1);
+  w.px(0xd4a848, 5, 12, 6, 1);
+  w.px(0xe8c868, 4, 4, 1, 1);
+  w.px(0xe8c868, 11, 4, 1, 1);
+  w.px(0xe8c868, 4, 11, 1, 1);
+  w.px(0xe8c868, 11, 11, 1, 1);
+  // Soft medallion
+  w.px(0xd4a848, 5, 5, 6, 6);
+  w.px(0xe8c868, 6, 6, 4, 4);
+  w.px(0xfff0b0, 7, 7, 2, 2);
+  w.px(0x8a4030, 7, 7, 2, 2);
+  w.px(0xfff8d0, 7, 7, 1, 1);
   // Corner flourishes
-  w.px(0xc8a030, 2, 2, 2, 2);
-  w.px(0xc8a030, 12, 2, 2, 2);
-  w.px(0xc8a030, 2, 12, 2, 2);
-  w.px(0xc8a030, 12, 12, 2, 2);
+  w.px(0xd4a848, 2, 2, 2, 2);
+  w.px(0xd4a848, 12, 2, 2, 2);
+  w.px(0xd4a848, 2, 12, 2, 2);
+  w.px(0xd4a848, 12, 12, 2, 2);
   w.px(0xffe890, 3, 3, 1, 1);
   w.px(0xffe890, 13, 13, 1, 1);
-  w.px(0x3a0618, 0, 0, 16, 1);
-  w.px(0x3a0618, 0, 15, 16, 1);
+  w.px(0x3a1010, 0, 0, 16, 1);
+  w.px(0x3a1010, 0, 15, 16, 1);
   speckle(fine, 2, 2, 28, 28, [
-    [0x9a2860, 0.32], [0x5c0a30, 0.34], [0xb84878, 0.2], [0xe8c547, 0.1],
-  ], 0.24, 23);
-  glow(fine, 16, 16, [{ r: 9, alpha: 0.09 }, { r: 5, alpha: 0.14 }, { r: 2, alpha: 0.2 }], 0xffe890);
-  ambientLight(fine, TILE_SIZE, TILE_SIZE, { lift: 0.07, drop: 0.07 });
+    [0x9a4840, 0.3], [0x5c2018, 0.32], [0xb86850, 0.18], [0xe8c868, 0.12],
+  ], 0.26, 23);
+  glow(fine, 16, 16, [{ r: 9, alpha: 0.1 }, { r: 5, alpha: 0.15 }, { r: 2, alpha: 0.22 }], 0xffe8a0);
+  ambientLight(fine, TILE_SIZE, TILE_SIZE, { lift: 0.09, drop: 0.06 });
 }
 
 function drawFeltTile(g) {
@@ -333,31 +333,30 @@ function drawFeltTile(g) {
 function drawWallTile(g) {
   const w = makeWriter(g);
   const fine = fineWriter(g);
-  w.px(0x0c1018, 0, 0, 16, 16);
-  w.px(0x141c28, 1, 1, 14, 14);
+  // Warm timber-framed resort wall — mahogany panels, amber crown, soft sconce.
+  w.px(0x18100c, 0, 0, 16, 16);
+  w.px(0x241810, 1, 1, 14, 14);
   // Crown molding
-  w.px(0xc8a030, 0, 0, 16, 2);
-  w.px(0xe8c547, 0, 0, 16, 1);
-  w.px(0xffe890, 1, 0, 14, 1);
-  w.px(0x8a6018, 0, 2, 16, 1);
-  // Panel recesses
-  w.px(0x1a2438, 2, 4, 5, 9);
-  w.px(0x1a2438, 9, 4, 5, 9);
-  w.px(0x243048, 3, 5, 3, 7);
-  w.px(0x243048, 10, 5, 3, 7);
-  w.px(0x304060, 4, 6, 1, 5);
-  w.px(0x304060, 11, 6, 1, 5);
-  // Sconce glow
-  w.px(0xe8c547, 7, 5, 2, 1);
-  w.px(0xffe890, 7, 5, 1, 1, 0.8);
-  w.px(0xffe890, 6, 6, 4, 2, 0.15);
-  w.px(0xc8a030, 0, 14, 16, 2);
-  w.px(0x8a6018, 0, 15, 16, 1);
-  // Brushed-plaster grain plus a real bloom under the sconce instead of a
-  // flat translucent rectangle.
-  speckle(fine, 2, 6, 28, 20, [[0x1c2638, 0.25], [0x0a0e16, 0.28]], 0.16, 5);
-  glow(fine, 15, 11, [{ r: 8, alpha: 0.1 }, { r: 5, alpha: 0.16 }, { r: 2, alpha: 0.3 }], 0xffe890);
-  ambientLight(fine, TILE_SIZE, TILE_SIZE, { lift: 0.05, drop: 0.08 });
+  w.px(0xd4a848, 0, 0, 16, 2);
+  w.px(0xe8c868, 0, 0, 16, 1);
+  w.px(0xfff0b0, 1, 0, 14, 1);
+  w.px(0x8a5820, 0, 2, 16, 1);
+  // Wood panel recesses
+  w.px(0x2a1c14, 2, 4, 5, 9);
+  w.px(0x2a1c14, 9, 4, 5, 9);
+  w.px(0x3a2820, 3, 5, 3, 7);
+  w.px(0x3a2820, 10, 5, 3, 7);
+  w.px(0x4a3830, 4, 6, 1, 5);
+  w.px(0x4a3830, 11, 6, 1, 5);
+  // Warm sconce glow
+  w.px(0xe8c868, 7, 5, 2, 1);
+  w.px(0xfff0b0, 7, 5, 1, 1, 0.85);
+  w.px(0xffe090, 6, 6, 4, 2, 0.2);
+  w.px(0xd4a848, 0, 14, 16, 2);
+  w.px(0x8a5820, 0, 15, 16, 1);
+  speckle(fine, 2, 6, 28, 20, [[0x3a2820, 0.28], [0x140c08, 0.3], [0x6a4830, 0.14]], 0.18, 5);
+  glow(fine, 15, 11, [{ r: 9, alpha: 0.12 }, { r: 5, alpha: 0.18 }, { r: 2, alpha: 0.32 }], 0xffe090);
+  ambientLight(fine, TILE_SIZE, TILE_SIZE, { lift: 0.07, drop: 0.07 });
 }
 
 function drawPathTile(g) {
@@ -413,21 +412,21 @@ function drawWaterTile(g, frame = 0) {
   const w = makeWriter(g);
   const fine = fineWriter(g);
   const f = ((frame % WATER_FRAMES) + WATER_FRAMES) % WATER_FRAMES;
-  // Deep lagoon base with layered depth — dark floor, mid-water, sunlit cyan.
-  w.px(0x0a2840, 0, 0, 16, 16);
-  w.px(0x0e3858, 0, 0, 16, 5);
-  w.px(0x145878, 0, 4, 16, 5);
-  w.px(0x186888, 0, 8, 16, 4);
-  w.px(0x124868, 0, 12, 16, 4);
-  clusterDither(w, 1, 1, 14, 14, 0x145878, 0x186888, 17 + f);
+  // Rich lagoon teal — deep floor, sunlit cyan, dense sparkle (resort pool).
+  w.px(0x0a3048, 0, 0, 16, 16);
+  w.px(0x0e4868, 0, 0, 16, 5);
+  w.px(0x186888, 0, 4, 16, 5);
+  w.px(0x1e8098, 0, 8, 16, 4);
+  w.px(0x146078, 0, 12, 16, 4);
+  clusterDither(w, 1, 1, 14, 14, 0x186888, 0x1e8098, 17 + f);
   // Scaly ripple lattice — phase-shifted per frame so the pool breathes.
   const ox = f;
   const oy = f === 2 ? 1 : 0;
   for (let y = 1; y < 15; y += 3) {
     for (let x = ((y % 6 === 1 ? 0 : 2) + ox) % 14; x <= 13; x += 4) {
       const yy = Math.min(14, y + oy);
-      w.px(0x1a7090, x, yy, 3, 1);
-      w.px(0x2a98b0, x + 1, yy, 1, 1);
+      w.px(0x28a0b8, x, yy, 3, 1);
+      w.px(0x48c8d8, x + 1, yy, 1, 1);
     }
   }
   // Bright caustic streaks travel with the frame.
@@ -435,25 +434,26 @@ function drawWaterTile(g, frame = 0) {
     [1 + f, 2, 5], [8 - (f % 2), 1, 6], [3 + f, 7, 7], [10 - f, 10, 5],
   ];
   for (const [sx, sy, sw] of streaks) {
-    w.px(0x4ad4de, sx, sy, sw, 1);
-    w.px(0x80f8ff, sx + 1, sy, Math.max(1, sw - 2), 1);
+    w.px(0x58e0e8, sx, sy, sw, 1);
+    w.px(0xa0fcff, sx + 1, sy, Math.max(1, sw - 2), 1);
   }
-  w.px(0x2a90a8, 0, 5, 16, 1, 0.45);
-  w.px(0x2a90a8, 1, 13, 14, 1, 0.4);
-  w.px(0xa8f0f8, 0, 15, 16, 1, 0.35);
-  w.px(0x6ae8f0, 2 + f, 14, 3, 1, 0.5);
-  w.px(0x6ae8f0, 9 - (f % 2), 14, 4, 1, 0.45);
+  w.px(0x38b0c0, 0, 5, 16, 1, 0.45);
+  w.px(0x38b0c0, 1, 13, 14, 1, 0.4);
+  w.px(0xc0f8ff, 0, 15, 16, 1, 0.4);
+  w.px(0x80f0f8, 2 + f, 14, 3, 1, 0.55);
+  w.px(0x80f0f8, 9 - (f % 2), 14, 4, 1, 0.5);
   const sparks = [
     [6 + f * 2, 5], [14, 3 + (f % 2)], [22 - f * 2, 9],
     [10 + f, 15], [26, 19 - f], [4 + f * 3, 22],
+    [18, 12 + f], [8, 20], [28 - f, 6],
   ];
-  sparkle(fine, sparks, 0xffffff, 0.65);
+  sparkle(fine, sparks, 0xffffff, 0.72);
   speckle(fine, 0, 0, TILE_SIZE, TILE_SIZE, [
-    [0x8af0ff, 0.28], [0x082030, 0.32], [0x4ad4de, 0.22], [0xffffff, 0.2],
-  ], 0.18, 29 + f);
-  glow(fine, 10 + f * 2, 6, [{ r: 8, alpha: 0.09 }, { r: 4, alpha: 0.16 }], 0x9ef6ff);
-  glow(fine, 24 - f * 2, 20, [{ r: 7, alpha: 0.08 }, { r: 3, alpha: 0.14 }], 0x9ef6ff);
-  ambientLight(fine, TILE_SIZE, TILE_SIZE, { lift: 0.1, drop: 0.05 });
+    [0xa0f8ff, 0.3], [0x0a2838, 0.3], [0x58e0e8, 0.24], [0xffffff, 0.22],
+  ], 0.22, 29 + f);
+  glow(fine, 10 + f * 2, 6, [{ r: 9, alpha: 0.1 }, { r: 4, alpha: 0.18 }], 0xb0fcff);
+  glow(fine, 24 - f * 2, 20, [{ r: 8, alpha: 0.09 }, { r: 3, alpha: 0.16 }], 0xb0fcff);
+  ambientLight(fine, TILE_SIZE, TILE_SIZE, { lift: 0.11, drop: 0.045 });
 }
 
 function drawVipTile(g) {
@@ -668,12 +668,12 @@ function drawRoadTile(g) {
 function drawSandTile(g) {
   const w = makeWriter(g);
   const fine = fineWriter(g);
-  // Nevada heat: sun-bleached ochre sand with wind ripples and warm glare.
-  w.px(0xc4a060, 0, 0, 16, 16);
-  clusterDither(w, 0, 0, 16, 16, 0xd8b878, 0xc8a868, 41);
+  // Cozy beach deck: sun-warmed sand with soft moss flecks and wind ripples.
+  w.px(0xc8a868, 0, 0, 16, 16);
+  clusterDither(w, 0, 0, 16, 16, 0xdcc888, 0xc8b070, 41);
   // Hot-spot bands — brighter toward the sunlit top.
-  w.px(0xe8d090, 0, 0, 16, 3, 0.45);
-  w.px(0xf0dc9c, 0, 0, 16, 1, 0.5);
+  w.px(0xf0dc9c, 0, 0, 16, 3, 0.4);
+  w.px(0xffe8b0, 0, 0, 16, 1, 0.45);
   w.px(0xa88848, 0, 14, 16, 2);
   w.px(0x987838, 0, 15, 16, 1);
   // Wind-carved ripples (organic, not grid-aligned).
@@ -684,7 +684,7 @@ function drawSandTile(g) {
     w.px(0xb89450, i, wave + 8, 1, 1);
     w.px(0xe0c888, i, wave + 9, 1, 1);
   }
-  // Shell flecks + darker grit pockets.
+  // Shell flecks, grit pockets, and soft landscaping moss.
   w.px(0xfff0c8, 3, 5, 1, 1);
   w.px(0xfff8e0, 4, 5, 1, 1);
   w.px(0xfff0c8, 11, 11, 1, 1);
@@ -692,12 +692,14 @@ function drawSandTile(g) {
   w.px(0x886828, 8, 13, 2, 1);
   w.px(0xf0e0b8, 13, 3, 2, 1);
   w.px(0xd8a858, 1, 10, 1, 1);
-  // Dense grain + desert heat haze lift.
+  w.px(0x6a9848, 5, 12, 1, 1); // moss tuft
+  w.px(0x50a058, 14, 7, 1, 1);
+  w.px(0x8ab868, 2, 3, 1, 1);
   speckle(fine, 0, 0, TILE_SIZE, TILE_SIZE, [
-    [0xfff4cc, 0.42], [0x9a7438, 0.32], [0xe8d090, 0.24], [0xffffff, 0.18],
-  ], 0.32, 157);
-  glow(fine, 8, 4, [{ r: 10, alpha: 0.06 }], 0xffe8a0);
-  ambientLight(fine, TILE_SIZE, TILE_SIZE, { lift: 0.14, drop: 0.04 });
+    [0xfff4cc, 0.42], [0x9a7438, 0.3], [0xe8d090, 0.24], [0xffffff, 0.2], [0x70b060, 0.1],
+  ], 0.34, 157);
+  glow(fine, 8, 4, [{ r: 10, alpha: 0.07 }], 0xffe8a0);
+  ambientLight(fine, TILE_SIZE, TILE_SIZE, { lift: 0.13, drop: 0.045 });
 }
 
 function drawStageTile(g) {
@@ -731,30 +733,30 @@ function drawStageTile(g) {
 function drawSpaTile(g) {
   const w = makeWriter(g);
   const fine = fineWriter(g);
-  // Bathhouse / pool-adjacent honed stone: wet sheen, cool mist tones.
-  w.px(0x3a4a50, 0, 0, 16, 16);
+  // Warm bathhouse limestone — soft cream stone with misty wet sheen.
+  w.px(0x4a4a40, 0, 0, 16, 16);
   const stones = [[1, 1], [9, 1], [1, 9], [9, 9]];
   for (const [sx, sy] of stones) {
-    w.px(0x5c6d74, sx, sy, 6, 6);
-    w.px(0x6e8188, sx, sy, 6, 1);
-    w.px(0x6e8188, sx, sy, 1, 5);
-    w.px(0x4a5a60, sx + 5, sy, 1, 6);
-    w.px(0x4a5a60, sx, sy + 5, 6, 1);
-    w.px(0x82949a, sx + 1, sy + 1, 2, 1);
-    w.px(0x9ab0b8, sx + 1, sy + 2, 1, 1);
+    w.px(0x7a7870, sx, sy, 6, 6);
+    w.px(0x908e84, sx, sy, 6, 1);
+    w.px(0x908e84, sx, sy, 1, 5);
+    w.px(0x5a584e, sx + 5, sy, 1, 6);
+    w.px(0x5a584e, sx, sy + 5, 6, 1);
+    w.px(0xa8a698, sx + 1, sy + 1, 2, 1);
+    w.px(0xc0b8a8, sx + 1, sy + 2, 1, 1);
   }
-  groutGrid(w, 0x2e3c42, 8);
-  w.px(0x2e3c42, 0, 0, 16, 1);
-  w.px(0x2e3c42, 0, 0, 1, 16);
-  w.px(0xa8c0c8, 3, 3, 1, 1, 0.55);
-  w.px(0xa8c0c8, 11, 11, 1, 1, 0.45);
-  w.px(0x9ab8c8, 12, 4, 2, 1, 0.35);
-  w.px(0xc0d8e0, 4, 10, 2, 1, 0.3);
-  sparkle(fine, [[7, 7], [23, 23], [9, 22]], 0xffffff, 0.45);
-  speckle(fine, 2, 2, 28, 28, [[0x7a929a, 0.26], [0x2c3a40, 0.28], [0xc0d8e0, 0.14]], 0.2, 167);
-  glow(fine, 8, 8, [{ r: 6, alpha: 0.09 }], 0xd0e8ec);
-  glow(fine, 22, 22, [{ r: 6, alpha: 0.09 }], 0xd0e8ec);
-  ambientLight(fine, TILE_SIZE, TILE_SIZE, { lift: 0.08, drop: 0.05 });
+  groutGrid(w, 0x3a3830, 8);
+  w.px(0x3a3830, 0, 0, 16, 1);
+  w.px(0x3a3830, 0, 0, 1, 16);
+  w.px(0xd0c8b8, 3, 3, 1, 1, 0.55);
+  w.px(0xd0c8b8, 11, 11, 1, 1, 0.45);
+  w.px(0xb8d0d0, 12, 4, 2, 1, 0.35);
+  w.px(0xe0d8c8, 4, 10, 2, 1, 0.3);
+  sparkle(fine, [[7, 7], [23, 23], [9, 22]], 0xffffff, 0.5);
+  speckle(fine, 2, 2, 28, 28, [[0x9a9888, 0.26], [0x3a3830, 0.28], [0xe0d8c8, 0.16]], 0.22, 167);
+  glow(fine, 8, 8, [{ r: 6, alpha: 0.1 }], 0xf0e8d0);
+  glow(fine, 22, 22, [{ r: 6, alpha: 0.1 }], 0xd0e8ec);
+  ambientLight(fine, TILE_SIZE, TILE_SIZE, { lift: 0.1, drop: 0.05 });
 }
 
 function drawGlassTile(g) {
@@ -1075,7 +1077,7 @@ function drawBarDecor(g) {
 function drawPlantDecor(g) {
   const w = makeWriter(g);
   const fine = fineWriter(g);
-  // Tropical planter: terracotta pot + layered palm canopy (resort greenery).
+  // Tropical planter: terracotta pot + round fluffy canopy (cozy resort greenery).
   w.px(OUTLINE, 3, 10, 10, 6);
   w.px(0x5c3a1a, 4, 11, 8, 5);
   w.px(0x7a5030, 4, 10, 8, 2);
@@ -1087,60 +1089,67 @@ function drawPlantDecor(g) {
   w.px(OUTLINE, 7, 7, 2, 4);
   w.px(0x4a3020, 7, 7, 2, 3);
   w.px(0x6a4828, 7, 7, 1, 2);
-  // Frond clusters — deep shadow under, bright tip on top (reference canopy).
-  w.px(OUTLINE, 2, 2, 12, 9);
+  // Soft rounded canopy — layered tufts, dappled top-light.
+  w.px(OUTLINE, 2, 1, 12, 10);
   w.px(0x145028, 3, 4, 10, 7);
-  w.px(0x1a5a30, 3, 3, 10, 6);
+  w.px(0x1a6a38, 3, 3, 10, 6);
   w.px(0x2d8a48, 4, 2, 8, 6);
-  w.px(0x4acc68, 5, 1, 6, 5);
-  w.px(0x70f090, 6, 0, 4, 4);
-  w.px(0x90ffb0, 7, 0, 2, 3);
-  w.px(0xb0ffc8, 7, 0, 1, 1);
-  w.px(0xc8ffe0, 8, 0, 1, 1);
-  // Side fronds
-  w.px(0x1a5a30, 1, 5, 3, 3);
-  w.px(0x2d8a48, 1, 4, 2, 2);
-  w.px(0x4acc68, 0, 3, 2, 2);
-  w.px(0x70f090, 0, 3, 1, 1);
-  w.px(0x1a5a30, 12, 5, 3, 3);
-  w.px(0x2d8a48, 13, 4, 2, 2);
-  w.px(0x4acc68, 14, 3, 2, 2);
-  w.px(0x70f090, 15, 3, 1, 1);
+  w.px(0x48c060, 5, 1, 6, 5);
+  w.px(0x70e080, 6, 0, 4, 4);
+  w.px(0x98f0a8, 7, 0, 2, 3);
+  w.px(0xb8ffc8, 7, 0, 1, 1);
+  w.px(0xd0ffe0, 8, 0, 1, 1);
+  // Side frond tufts (bubbly silhouette)
+  w.px(0x1a6a38, 1, 4, 3, 4);
+  w.px(0x2d8a48, 0, 3, 3, 3);
+  w.px(0x48c060, 0, 2, 2, 2);
+  w.px(0x70e080, 0, 2, 1, 1);
+  w.px(0x1a6a38, 12, 4, 3, 4);
+  w.px(0x2d8a48, 13, 3, 3, 3);
+  w.px(0x48c060, 14, 2, 2, 2);
+  w.px(0x70e080, 15, 2, 1, 1);
   w.px(0x145028, 5, 8, 6, 2);
-  // Color pops tucked into the canopy — pink bloom + gold fruit fleck.
+  // Color pops — pink bloom, gold fruit, bluebell tucked in canopy.
   w.px(0xe86890, 5, 4, 1, 1);
   w.px(0xf0c050, 11, 5, 1, 1);
-  sparkle(fine, [[13, 3], [15, 6], [11, 1], [17, 8], [21, 4], [6, 8]], 0xc8ffd0, 0.55);
-  glow(fine, 16, 6, [{ r: 7, alpha: 0.07 }], 0xa0f0b0);
-  glow(fine, 10, 22, [{ r: 4, alpha: 0.14 }], 0xf0dcb0);
-  ambientLight(fine, TILE_SIZE, TILE_SIZE, { lift: 0.08, drop: 0.05 });
+  w.px(0x68a0e0, 8, 3, 1, 1);
+  sparkle(fine, [[13, 3], [15, 6], [11, 1], [17, 8], [21, 4], [6, 8], [24, 5]], 0xc8ffd0, 0.6);
+  glow(fine, 16, 6, [{ r: 8, alpha: 0.09 }], 0xa0f0b0);
+  glow(fine, 10, 22, [{ r: 4, alpha: 0.16 }], 0xf0dcb0);
+  ambientLight(fine, TILE_SIZE, TILE_SIZE, { lift: 0.09, drop: 0.05 });
 }
 
-/** Walkable flower cluster — bluebells / desert blooms for lived-in density. */
+/** Walkable flower cluster — bluebells, poppies, daisies for lived-in density. */
 function drawFlowerDecor(g) {
   const w = makeWriter(g);
   const fine = fineWriter(g);
-  // Stem tufts
+  // Stem tufts + soft grass base
   w.px(0x2d6a38, 4, 10, 1, 4);
   w.px(0x2d6a38, 8, 9, 1, 5);
   w.px(0x2d6a38, 11, 11, 1, 3);
+  w.px(0x2d6a38, 6, 12, 1, 2);
   w.px(0x4acc68, 4, 10, 1, 1);
   w.px(0x4acc68, 8, 9, 1, 1);
-  // Bloom heads — bright palette pops against sand/lobby.
+  w.px(0x3a8040, 5, 13, 6, 1, 0.5);
+  // Bloom heads — bluebell, pink lotus, yellow daisy, orange poppy.
   w.px(OUTLINE, 3, 7, 3, 3);
   w.px(0x4a80d0, 3, 7, 3, 3);
   w.px(0x80b0f0, 3, 7, 2, 1);
   w.px(0xffffff, 4, 8, 1, 1);
   w.px(OUTLINE, 7, 5, 3, 3);
-  w.px(0xe05070, 7, 5, 3, 3);
-  w.px(0xf090a8, 7, 5, 2, 1);
+  w.px(0xe86898, 7, 5, 3, 3);
+  w.px(0xf0a0b8, 7, 5, 2, 1);
   w.px(0xfff0c0, 8, 6, 1, 1);
   w.px(OUTLINE, 10, 8, 3, 3);
   w.px(0xf0d050, 10, 8, 3, 3);
   w.px(0xffe890, 10, 8, 2, 1);
   w.px(0xffffff, 11, 9, 1, 1, 0.7);
-  glow(fine, 16, 14, [{ r: 5, alpha: 0.08 }], 0xf0d0a0);
-  ambientLight(fine, TILE_SIZE, TILE_SIZE, { lift: 0.06, drop: 0.04 });
+  w.px(OUTLINE, 5, 8, 2, 2);
+  w.px(0xe86830, 5, 8, 2, 2);
+  w.px(0xf0a050, 5, 8, 1, 1);
+  glow(fine, 16, 14, [{ r: 6, alpha: 0.1 }], 0xf0d0a0);
+  sparkle(fine, [[8, 12], [20, 16], [14, 10]], 0xffffff, 0.45);
+  ambientLight(fine, TILE_SIZE, TILE_SIZE, { lift: 0.08, drop: 0.04 });
 }
 
 /** Blocking boulder with moss and top-left bevel. */
@@ -1174,21 +1183,22 @@ function drawLanternDecor(g) {
   // Lantern body
   w.px(OUTLINE, 4, 2, 8, 7);
   w.px(0x3a2a18, 5, 3, 6, 5);
-  w.px(0xc8a030, 5, 2, 6, 1);
-  w.px(0xe8c547, 5, 2, 4, 1);
+  w.px(0xd4a848, 5, 2, 6, 1);
+  w.px(0xe8c868, 5, 2, 4, 1);
   w.px(0xffe890, 6, 4, 4, 3);
   w.px(0xfff6c8, 7, 4, 2, 2);
-  w.px(0xffffff, 7, 4, 1, 1, 0.7);
+  w.px(0xffffff, 7, 4, 1, 1, 0.75);
   // Cap + base
   w.px(OUTLINE, 5, 1, 6, 2);
   w.px(0x8a6018, 6, 1, 4, 1);
   w.px(OUTLINE, 5, 14, 6, 2);
   w.px(0x5c3a1a, 6, 14, 4, 1);
+  // Wide cozy spill — path lanterns that warm the sand at dusk.
   glow(fine, 16, 10, [
-    { r: 12, alpha: 0.08 }, { r: 8, alpha: 0.12 }, { r: 4, alpha: 0.2 },
-  ], 0xffe090);
-  sparkle(fine, [[14, 8], [18, 10]], 0xffffff, 0.55);
-  ambientLight(fine, TILE_SIZE, TILE_SIZE, { lift: 0.05, drop: 0.06 });
+    { r: 14, alpha: 0.1 }, { r: 10, alpha: 0.14 }, { r: 6, alpha: 0.22 }, { r: 3, alpha: 0.3 },
+  ], 0xffd878);
+  sparkle(fine, [[14, 8], [18, 10], [12, 12]], 0xffffff, 0.6);
+  ambientLight(fine, TILE_SIZE, TILE_SIZE, { lift: 0.06, drop: 0.05 });
 }
 
 /** Soft elliptical contact shadow under decor / characters. */

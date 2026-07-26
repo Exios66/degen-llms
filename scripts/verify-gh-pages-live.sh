@@ -60,8 +60,9 @@ curl_check() {
 }
 
 curl_check "index" "index.html" "$GBP_DEBUG_VERIFY_INDEX" '<script type="module" src="js/app\.js' || true
-curl_check "app_js" "js/app.js" "$GBP_DEBUG_VERIFY_APP_JS" 'createHorseSpriteCanvas' || true
-curl_check "horse_sprites_js" "js/horse-sprites.js" "$GBP_DEBUG_VERIFY_HORSE_SPRITES" 'HORSE_SPRITE_ROSTER' || true
+# app.js wires renderers; horse canvas helpers live in horse-sprites.js.
+curl_check "app_js" "js/app.js" "$GBP_DEBUG_VERIFY_APP_JS" 'buildRacingRenderers|createRuntime' || true
+curl_check "horse_sprites_js" "js/horse-sprites.js" "$GBP_DEBUG_VERIFY_HORSE_SPRITES" 'createHorseSpriteCanvas|HORSE_SPRITE_ROSTER' || true
 curl_check "casino_css" "css/casino.css" "$GBP_DEBUG_VERIFY_CSS" 'horse-sprite-canvas' || true
 
 tmp_index="$(mktemp)"

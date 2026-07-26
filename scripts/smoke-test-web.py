@@ -73,6 +73,10 @@ VISIBLE_OVERLAY_TEXT = """() => {
 
 PLAYER_TILE = """() => {
   const s = window.__rpg.scene;
+  if (typeof s.playerTile === 'function') {
+    const t = s.playerTile();
+    return [t.x, t.y];
+  }
   const size = s.tileSize;
   return [Math.floor(s.player.x / size), Math.floor(s.player.y / size)];
 }"""
@@ -108,6 +112,44 @@ def rpg_journey(page, base, failures: list[str], errors: list[str]) -> None:
     page.wait_for_timeout(200)
     moved = page.evaluate(PLAYER_TILE)
     step("movement", moved != start, f"player never left {start}")
+
+    # Casino door chain: strip → lobby → casino → lobby → strip (feet tiles).
+    page.evaluate("""async () => {
+      const s = window.__rpg.scene;
+      const hops = [
+        ['registration_lobby', 15, 26],
+        ['main_resort', 15, 26],
+        ['registration_lobby', 15, 4],
+        ['strip_sidewalk', 15, 4],
+      ];
+      for (const [mapId, x, y] of hops) {
+        s._transitionMap(mapId, x, y, null);
+        await new Promise((r) => setTimeout(r, 400));
+      }
+    }""")
+    page.wait_for_timeout(2200)
+    chain_map = page.evaluate("() => window.__rpg.scene.currentMapId")
+    chain_tile = page.evaluate(PLAYER_TILE)
+    step("door_chain", chain_map == "strip_sidewalk" and tuple(chain_tile) == (15, 4),
+         f"ended on {chain_map}@{chain_tile}, expected strip_sidewalk@(15,4)")
+
+    # Walk onto the lobby door from spawn side and confirm the warp fires via feet.
+    page.evaluate("""() => {
+      const s = window.__rpg.scene;
+      s._transitionMap('strip_sidewalk', 15, 26, null);
+    }""")
+    page.wait_for_timeout(500)
+    page.evaluate("""() => {
+      const s = window.__rpg.scene;
+      const size = s.tileSize;
+      // Stand on the north door tile (15,3) at feet.
+      s.player.setPosition(15 * size + size / 2, 3 * size + size / 2);
+      s._lastDoorTile = null;
+    }""")
+    page.wait_for_timeout(400)
+    entered = page.evaluate("() => window.__rpg.scene.currentMapId")
+    step("door_enter_lobby", entered == "registration_lobby",
+         f"standing on strip door left map as {entered}")
 
     # Line-of-sight challenge: stand in Valet Vic's cone and let update() see us.
     page.evaluate("""() => {

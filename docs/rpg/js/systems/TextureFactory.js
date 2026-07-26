@@ -112,25 +112,36 @@ function drawLobbyTile(g) {
 
 function drawCarpetTile(g) {
   const w = makeWriter(g);
-  tileFrame(w, 0x4a0828, 0x6a1840, 0x2a0418);
-  ditherWeave(w, 1, 1, 14, 14, 0x6a1038, 0x5a0c30);
-  w.px(0x801848, 2, 2, 12, 12);
-  // Ornate medallion
-  w.px(0xc8a030, 4, 4, 8, 8);
-  w.px(0xe8c547, 5, 5, 6, 6);
-  w.px(0xffe890, 6, 6, 4, 4);
-  w.px(0xfff0b0, 7, 7, 2, 2);
-  w.px(0x982058, 7, 7, 2, 2);
-  // Corner flourishes
-  w.px(0xc8a030, 2, 2, 2, 2);
-  w.px(0xc8a030, 12, 2, 2, 2);
-  w.px(0xc8a030, 2, 12, 2, 2);
-  w.px(0xc8a030, 12, 12, 2, 2);
-  w.px(0xffe890, 3, 3, 1, 1);
-  w.px(0xffe890, 13, 13, 1, 1);
-  // Fringe
-  w.px(0x3a0618, 0, 0, 16, 1);
-  w.px(0x3a0618, 0, 15, 16, 1);
+  // Patterned casino carpet. The motif used to be a filled 8×8 gold block in
+  // the middle of every tile, which tiled a whole room into a gold-and-crimson
+  // chequerboard on an exact 32px grid. It is now an outlined fleuron with the
+  // field showing through it, and the corner marks are quarters of one rosette
+  // that four neighbouring tiles complete — so the pattern reads as a woven
+  // lattice rather than a page of stamps.
+  const gold = 0x9c7628;
+  const lit = 0xc9a049;
+  tileFrame(w, 0x5a0c30, 0x6a1840, 0x3e0620);
+  ditherWeave(w, 1, 1, 14, 14, 0x64103a, 0x580c2e);
+  // Fleuron: a diamond outline, lit down its top-left edge.
+  w.px(lit, 7, 4, 2, 1);
+  w.px(lit, 6, 5, 1, 1);
+  w.px(gold, 9, 5, 1, 1);
+  w.px(lit, 5, 6, 1, 1);
+  w.px(gold, 10, 6, 1, 1);
+  w.px(lit, 4, 7, 1, 2);
+  w.px(gold, 11, 7, 1, 2);
+  w.px(lit, 5, 9, 1, 1);
+  w.px(gold, 10, 9, 1, 1);
+  w.px(gold, 6, 10, 1, 1);
+  w.px(gold, 9, 10, 1, 1);
+  w.px(gold, 7, 11, 2, 1);
+  w.px(gold, 7, 7, 2, 2);
+  w.px(lit, 7, 7, 1, 1);
+  // Quarter rosettes at the corners.
+  for (const [x, y] of [[0, 0], [14, 0], [0, 14], [14, 14]]) {
+    w.px(gold, x, y, 2, 2);
+  }
+  w.px(lit, 0, 0, 1, 1);
 }
 
 function drawFeltTile(g) {
@@ -245,25 +256,28 @@ function drawWaterTile(g) {
 
 function drawVipTile(g) {
   const w = makeWriter(g);
-  w.px(0x060408, 0, 0, 16, 16);
-  w.px(0x0c0810, 1, 1, 14, 14);
-  w.px(0x121018, 2, 2, 12, 12);
-  // Gold veining on black marble
-  w.px(0xc8a030, 2, 3, 5, 1);
-  w.px(0xe8c547, 3, 3, 2, 1);
-  w.px(0xc8a030, 8, 2, 1, 4);
-  w.px(0xe8c547, 8, 4, 1, 1);
-  w.px(0xc8a030, 4, 9, 8, 1);
-  w.px(0xe8c547, 6, 9, 3, 1);
-  w.px(0xc8a030, 11, 7, 1, 5);
-  // Gold frame border
-  w.px(0xe8c547, 2, 2, 12, 1);
-  w.px(0xe8c547, 2, 13, 12, 1);
-  w.px(0xe8c547, 2, 2, 1, 12);
-  w.px(0xe8c547, 13, 2, 1, 12);
-  w.px(0xffe890, 7, 7, 2, 2);
-  w.px(0xfff0b0, 7, 7, 1, 1);
-  w.px(0x1a1520, 5, 5, 6, 6);
+  // Black marble with gold inlay. Every tile used to carry a full bright-gold
+  // rectangle inset from its own edge, which hung a picture frame around each
+  // of the nine hundred slabs in the salon. The inlay now runs along two edges
+  // only, so a slab shares each line with its neighbour and the floor reads as
+  // one grid of stone rather than a wall of frames. The stone itself was near
+  // black, which read as a hole; it is charcoal now, and the veins run off the
+  // edges so they carry into the next slab.
+  w.px(0x14111c, 0, 0, 16, 16);
+  ditherWeave(w, 0, 0, 16, 16, 0x181422, 0x121018);
+  w.px(0x5f4a12, 0, 4, 6, 1);
+  w.px(0x8a6c18, 2, 4, 3, 1);
+  w.px(0x5f4a12, 6, 4, 1, 5);
+  w.px(0x5f4a12, 6, 9, 10, 1);
+  w.px(0x8a6c18, 9, 9, 3, 1);
+  w.px(0x5f4a12, 11, 9, 1, 7);
+  w.px(0x221d2e, 1, 1, 4, 2, 0.7);
+  w.px(0x0d0b14, 12, 12, 3, 3, 0.5);
+  w.px(0x6a5214, 0, 0, 16, 1);
+  w.px(0x6a5214, 0, 0, 1, 16);
+  w.px(0x9c7628, 0, 0, 3, 1);
+  w.px(0x9c7628, 0, 0, 1, 3);
+  w.px(0xc9a049, 0, 0, 1, 1);
 }
 
 function drawAquaTile(g) {

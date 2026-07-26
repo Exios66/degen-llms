@@ -2,7 +2,12 @@ import { BlackjackGame, Action } from "../../../js/blackjack/game.js";
 import { fmtChips } from "../../../js/core.js";
 import { pickQuip } from "../../../js/dealers.js";
 import { effectiveTableStakes } from "../../../js/stakes.js";
-import { HIGH_LIMIT_SALON_CHIP_MIN, canEnterFoundationRoom, canEnterHighLimitSalon } from "../../../js/venues.js";
+import {
+  HIGH_LIMIT_SALON_CHIP_MIN,
+  canEnterFoundationRoom,
+  canEnterGentlemansClub,
+  canEnterHighLimitSalon,
+} from "../../../js/venues.js";
 import { createCardSpriteRow } from "../../../js/ui/card-sprites.js";
 import { RouletteOverlay } from "./overlays/RouletteOverlay.js";
 import { HoldemOverlay } from "./overlays/HoldemOverlay.js";
@@ -375,12 +380,15 @@ export class EncounterBridge {
    * venue screens enforce. The salon also needs a qualifying stake tier, so a
    * player who clears the chip bar is offered the shared tier picker at the
    * rope rather than being bounced.
-   * @param {"high_limit_salon" | "foundation_room"} gateId
+   * @param {"high_limit_salon" | "foundation_room" | "gentlemans_club"} gateId
    * @returns {Promise<{ ok: boolean, reason?: string }>}
    */
   async checkVenue(gateId) {
     if (gateId === "foundation_room") {
       return canEnterFoundationRoom(this.session);
+    }
+    if (gateId === "gentlemans_club") {
+      return canEnterGentlemansClub(this.session);
     }
     if (gateId !== "high_limit_salon") return { ok: true };
 

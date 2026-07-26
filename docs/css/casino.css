@@ -816,6 +816,25 @@ body {
   border-left: 3px solid var(--teal-accent, #2a9d8f);
 }
 
+.amenities-panel.gentlemans-club {
+  border-left-color: rgba(212, 175, 55, 0.85);
+  background:
+    radial-gradient(ellipse at 20% 0%, rgba(120, 40, 60, 0.18), transparent 55%),
+    radial-gradient(ellipse at 90% 100%, rgba(40, 20, 50, 0.22), transparent 50%),
+    rgba(18, 10, 16, 0.35);
+}
+
+.gc-meter {
+  font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, monospace;
+  letter-spacing: 0.08em;
+  font-size: 1.1rem;
+  padding: 0.65rem 0.75rem;
+  margin: 0.75rem 0;
+  color: #e8c547;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(232, 197, 71, 0.28);
+}
+
 .amenities-shortcuts {
   margin-top: 0.75rem;
   border-left: 3px solid var(--teal-accent, #2a9d8f);

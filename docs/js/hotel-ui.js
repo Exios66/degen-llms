@@ -238,6 +238,7 @@ export function buildHotelRenderers(ctx) {
               })
             : null,
           menuBtn("Pool Complex — 11-acre expansion pack", () => openPoolComplex("hub")),
+          menuBtn("Gentleman's Club — The Velvet Ledger", () => pushView("gentlemans-club")),
           menuBtn("Horse Stables — meet the residents", () => pushView("horse-stables")),
           hotel.reachedRoom ? menuBtn("Enter your room", () => pushView("hotel-room")) : null,
           !canAccessHotelRoom(session) || !hotel.reachedRoom

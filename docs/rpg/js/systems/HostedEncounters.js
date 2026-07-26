@@ -55,6 +55,7 @@ export const HOSTED_ENCOUNTERS = {
   // ── Gated venues ─────────────────────────────────────────────────────────
   high_limit_salon: { view: "high-limit-salon", title: "HIGH LIMIT SALON" },
   foundation_room_lounge: { view: "foundation-room", title: "FOUNDATION ROOM" },
+  gentlemans_club: { view: "gentlemans-club", activityId: "gentlemans_club", title: "GENTLEMAN'S CLUB" },
 };
 
 /** Encounters that keep their bespoke pixel battle screen but pick stakes first. */

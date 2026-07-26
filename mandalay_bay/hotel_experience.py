@@ -59,6 +59,7 @@ def run_hotel_lobby(session: PlayerSession, ui: TerminalUI) -> None:
         if can_access_hotel_room(session) and hotel.room_key_active and not hotel.reached_room:
             options.append("Use key — go straight to your door")
         options.append("Pool Complex — 11-acre expansion pack")
+        options.append("Gentleman's Club — The Velvet Ledger")
         if hotel.reached_room:
             options.append("Enter room")
         options.append("Return to casino floor")
@@ -72,6 +73,10 @@ def run_hotel_lobby(session: PlayerSession, ui: TerminalUI) -> None:
             run_guest_directory(session, ui)
         elif label.startswith("Find my room"):
             run_hallway(session, ui)
+        elif label.startswith("Gentleman"):
+            from mandalay_bay.gentlemans_club import run_gentlemans_club
+
+            run_gentlemans_club(session, ui)
         elif label.startswith("Use key"):
             from mandalay_bay.hotel import use_room_key_to_door
 

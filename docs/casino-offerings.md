@@ -116,6 +116,7 @@ Thoroughbred sim with win/place/show wagering. Real horse names, strength-based 
 | **Staff Manifest** | Editable dealer roster with session overrides |
 | **High Limit salon** | Chip-gated VIP venue (web + RPG) — private shoe tables, salon-only slots (Obsidian / Whale / Chairman), and a whale sports desk with exclusive tickets |
 | **Foundation Room** | Noir+ lounge (web + RPG) — host whisper, Foundation edible; open via host rapport, suite stay, phone call, or bar atmosphere |
+| **Gentleman's Club** | Velvet Ledger (web + RPG + CLI) — make it rain, encounters, insanely stocked bar, Tip Cascade / Bottle Memory / Felt Flip, ledger easter eggs; Gold+, suite key, or club phone line |
 
 → [Resort Dining](dining.md)
 

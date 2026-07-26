@@ -359,7 +359,8 @@ From the front desk or **Casino Floor → Resort dining**, open Aureole, Border 
 |---------|------------|
 | TV | Shark Reef (ch. 47), wave pool cam, ULTRA Arena boxing, House of Blues (Gold+) |
 | Minibar | Sensor-enabled charges; concierge suggests items |
-| Phone | Concierge, bookie, Foundation Room (Noir+ penthouse), spa, Delano |
+| Phone | Concierge, bookie, Foundation Room (Noir+ penthouse), Gentleman's Club / Velvet Ledger (Gold+), spa, Delano |
+| Gentleman's Club | Hotel lobby / casino amenities — tip storms, stocked bar, encounters, Tip Cascade / Bottle Memory / Felt Flip, ledger eggs |
 | Decisions | Balcony, sky bridge to Mandalay Place, suite/penthouse perks, wake-up roulette |
 
 **17 unlockable room events** chain across pool visits, shopping (LUSH bath bomb), tier status, and bad decisions. Locked events show cryptic hints in the event log.
@@ -428,6 +429,7 @@ room — walk onto one and you warp, with a placard naming where you landed.
 |------|--------------|
 | Arrival | The Boulevard, valet garage (Strip Drive cabinet + exits east/south), registration lobby (Chip Chandler starts you off) |
 | Casino | Two casino floors, the race & sports book, High Limit Salon, Foundation Room |
+| Hotel nightlife | Gentleman's Club — The Velvet Ledger (Gold+ / suite / phone line) |
 | Retail | The Shoppes at Mandalay Place, the sky bridge, the convention center |
 | Bars | Betty's Bar and the Skyfall Lounge |
 | Hotel | Tower elevators, guest corridor, your room, the Delano wing, the bathhouse |
@@ -435,9 +437,10 @@ room — walk onto one and you warp, with a placard naming where you landed.
 | Attractions | Shark Reef tunnel and exhibit, House of Blues (+ green room), ULTRA Arena |
 | Back of house | The staff corridor, if you can find the way in |
 
-Two doors are gated: the High Limit Salon checks chips and stake tier at the
-rope, and the Foundation Room wants Noir standing. Your own room door stops
-working if the folio goes unpaid.
+Three doors are gated: the High Limit Salon checks chips and stake tier at the
+rope, the Foundation Room wants Noir standing, and the Gentleman's Club
+(Velvet Ledger off the hotel tower) wants Gold+, a suite key, or the club
+phone line. Your own room door stops working if the folio goes unpaid.
 
 ### The START menu
 

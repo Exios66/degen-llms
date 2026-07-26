@@ -149,7 +149,7 @@ for (const door of doors) {
   check(!landDoor,
     `${at}: lands on a door tile in ${door.targetMap} (${door.targetX},${door.targetY}) — bounce-back loop`);
   if (door.venueGate) {
-    check(["high_limit_salon", "foundation_room"].includes(door.venueGate),
+    check(["high_limit_salon", "foundation_room", "gentlemans_club"].includes(door.venueGate),
       `${at}: unknown venue gate "${door.venueGate}"`);
   }
 }

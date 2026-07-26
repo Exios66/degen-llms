@@ -10,6 +10,7 @@ import { buildRacingRenderers } from "../../../js/ui/racing-renderers.js";
 import { buildCashierRenderers } from "../../../js/ui/cashier-renderers.js";
 import { buildMetaRenderers } from "../../../js/ui/meta-renderers.js";
 import { buildVenueRenderers } from "../../../js/ui/venue-renderers.js";
+import { buildGentlemansClubRenderers } from "../../../js/ui/gentlemans-club-renderers.js";
 import { buildHotelRenderers } from "../../../js/hotel-ui.js";
 import { buildPoolRenderers } from "../../../js/pool-complex-ui.js";
 import { buildAmenitiesRenderers } from "../../../js/casino-amenities-ui.js";
@@ -105,6 +106,7 @@ export class TerminalHostOverlay {
       ...buildCashierRenderers(ctx),
       ...buildMetaRenderers(ctx),
       ...buildVenueRenderers(ctx),
+      ...buildGentlemansClubRenderers(ctx),
       ...buildHotelRenderers(ctx),
       ...buildPoolRenderers(ctx),
       ...buildAmenitiesRenderers(ctx),

@@ -24,7 +24,7 @@ MGM Rewards tier comps can cover upgrades and room nights. See [MGM Rewards](mgm
 2. **Room key** — activates as soon as check-in is satisfied. The key does **not** skip the hallway by itself — Carmen and the lobby still offer **Find my room** plus an optional **Use key — skip to door** courtesy
 3. **Hallway mini-game** — three beats of directional choices to reach your door (wrong turns are comedic; a dining food coma forces one zig). Reaching the door sets `reachedRoom` and unlocks in-room amenities
 4. **Suite / penthouse upgrades** — reprint a new room number on your MGM Rewards phone (Home, Card, Room tabs). You must re-locate / re-confirm check-in, then walk (or skip) to the new door
-5. **Your room** — TV, minibar, phone, balcony decisions, unlockable Vegas vignettes. Foundation Room phone line unlocks from a suite or penthouse (Noir+)
+5. **Your room** — TV, minibar, phone, balcony decisions, unlockable Vegas vignettes. Foundation Room phone line unlocks from a suite or penthouse (Noir+). Gentleman's Club (**The Velvet Ledger**) opens from Gold+, a suite key, or the club phone line
 
 ## Resort dining
 
@@ -38,7 +38,8 @@ Carmen books the three tables that matter: **Aureole**, **Border Grill**, and **
 |---------|------------|
 | **TV** | Shark Reef (ch. 47), wave pool cam, ULTRA Arena boxing, House of Blues (Gold+ tier) |
 | **Minibar** | Sensor-enabled charges; concierge suggests items |
-| **Phone** | Concierge, bookie, Foundation Room (Noir+), spa, Delano |
+| **Phone** | Concierge, bookie, Foundation Room (Noir+), Gentleman's Club / Velvet Ledger (Gold+), spa, Delano |
+| **Gentleman's Club** | Hotel lobby amenity — make it rain, encounters, stocked bar, minigames, ledger easter eggs |
 | **Decisions** | Balcony, sky bridge to Mandalay Place, suite/penthouse perks, wake-up roulette |
 | **Suite balcony POV** | Fullscreen Strip vista smoke-break overlay (suite/penthouse) — take hits, savor the view, step inside |
 
@@ -116,6 +117,8 @@ Press **P** in the web app for:
 | `mandalay_bay/hotel.py` | Hotel state machine |
 | `mandalay_bay/hotel_experience.py` | CLI flows |
 | `mandalay_bay/room_amenities.py` | TV, minibar, phone, events |
+| `mandalay_bay/gentlemans_club.py` | Velvet Ledger CLI (rain, bar, encounters, minigames) |
+| `docs/js/gentlemans-club.js` / `docs/js/ui/gentlemans-club-renderers.js` | Browser + RPG hosted venue |
 | `docs/js/hotel.js` / `docs/js/hotel-ui.js` | Browser mirror |
 | `docs/js/hotel-ui.js` → `buildHotelRenderers(ctx)` | Screens the RPG mounts too |
 

@@ -70,5 +70,65 @@
     "hint": "Backstage has a guest list. You are not on it.",
     "reveal": "The House of Blues green room rider, entirely in green M&Ms.",
     "flag": "egg_green_room"
+  },
+  "egg_velvet_guest_list": {
+    "label": "Velvet guest list",
+    "hint": "Ask the floor hostess who still owes on Row F.",
+    "reveal": "Viva's whisper list — unpaid coupes and better tables.",
+    "flag": "egg_velvet_guest_list"
+  },
+  "egg_off_menu_pour": {
+    "label": "Off-menu pour",
+    "hint": "The bottle captain keeps a pour that isn't printed.",
+    "reveal": "Blair's off-ledger toast — five stars, zero paperwork.",
+    "flag": "egg_off_menu_pour"
+  },
+  "egg_velvet_back_hall": {
+    "label": "Velvet back hall",
+    "hint": "Make it rain, then ask security about the service door.",
+    "reveal": "A hallway of unclaimed coats and one gold umbrella.",
+    "flag": "egg_velvet_back_hall"
+  },
+  "egg_monsoon_receipt": {
+    "label": "Monsoon receipt",
+    "hint": "Make it monsoon more than once.",
+    "reveal": "A black napkin receipt stamped PAID IN WEATHER.",
+    "flag": "egg_monsoon_receipt"
+  },
+  "egg_velvet_ledger": {
+    "label": "The ledger itself",
+    "hint": "Tip enough that the room starts keeping score.",
+    "reveal": "Your name underlined in the Velvet Ledger — twice.",
+    "flag": "egg_velvet_ledger"
+  },
+  "egg_louis_toast": {
+    "label": "Louis toast",
+    "hint": "Order the bottle that requires a spine.",
+    "reveal": "Louis XIII — the bartender winks off-books.",
+    "flag": "egg_louis_toast"
+  },
+  "egg_velvet_bar_tab": {
+    "label": "Bar tab mosaic",
+    "hint": "Keep ordering until the tab looks like art.",
+    "reveal": "Five pours deep — the ledger draws a little crown.",
+    "flag": "egg_velvet_bar_tab"
+  },
+  "egg_perfect_cascade": {
+    "label": "Perfect cascade",
+    "hint": "Stop Tip Cascade dead-center in the green.",
+    "reveal": "The LED wall flashes your initials in gold rain.",
+    "flag": "egg_perfect_cascade"
+  },
+  "egg_triple_ace": {
+    "label": "Triple Ace",
+    "hint": "Nail Bottle Memory when Blair stacks Ace three times.",
+    "reveal": "Blair almost smiles. Almost.",
+    "flag": "egg_triple_ace"
+  },
+  "egg_felt_ace": {
+    "label": "Felt ace",
+    "hint": "Win Dante's Felt Flip on an ace.",
+    "reveal": "Ace in the hole — Dante tips his chin.",
+    "flag": "egg_felt_ace"
   }
 }

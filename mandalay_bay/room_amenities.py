@@ -112,6 +112,12 @@ PHONE_CALLS = {
         "room_types": ["penthouse"],
         "min_tier_index": 4,
     },
+    "gentlemans_club": {
+        "label": "Call Gentleman's Club — Velvet Ledger",
+        "destination": "Private membership lounge",
+        "flavor": "Gold members and suite keys welcome. No photographs.",
+        "min_tier_index": 2,
+    },
     "delano_tower": {
         "label": "Call Delano sister property",
         "destination": "Delano Las Vegas",
@@ -210,6 +216,11 @@ ROOM_EVENTS = {
             "min_tier_index": 4,
             "room_types": ["penthouse"],
         },
+    },
+    "velvet_ledger_night": {
+        "label": "Velvet Ledger Night",
+        "narrative": "You made it rain, memorized three bottles, and somehow still found the elevator.",
+        "requires": {"calls": ["gentlemans_club"], "min_tier_index": 2},
     },
     "sky_bridge_haul": {
         "label": "Sky Bridge Haul",

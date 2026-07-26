@@ -17,12 +17,12 @@ degen-llms/
 │   ├── resort_completion.py
 │   ├── casino_amenities.py
 │   ├── rewards.py / rewards_perks.py
-│   ├── craps.py / lottery.py / prediction_markets.py
+│   ├── craps.py / lottery.py / prediction_markets.py / trading_desk.py
 │   └── activities/
 │       ├── base.py        # Activity ABC
 │       ├── registry.py    # Activity catalog
 │       ├── blackjack.py / holdem.py / roulette.py / craps.py
-│       ├── slots.py / lottery.py / sportsbook.py
+│       ├── slots.py / lottery.py / sportsbook.py / trading_desk.py
 │       └── horse_racing.py / equestrian.py
 ├── blackjack/             # Blackjack engine
 │   ├── table.py           # Round orchestration

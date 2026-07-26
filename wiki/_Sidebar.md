@@ -27,6 +27,7 @@
 - [[Slot-Machines]]
 - [[Lottery-Counter]]
 - [[Sports-Book-and-Prediction-Markets]]
+- [[Trading-Floor]]
 - [[Racing-and-Equestrian]]
 
 ### 🕹️ Pixel RPG

@@ -17,6 +17,7 @@ project:
     - docs/slots.md
     - docs/lottery.md
     - docs/sportsbook.md
+    - docs/trading-floor.md
     - docs/racing.md
     - docs/hotel.md
     - docs/pool-complex.md
@@ -81,6 +82,8 @@ website:
             text: Lottery Counter
           - href: docs/sportsbook.md
             text: Sports Book
+          - href: docs/trading-floor.md
+            text: Trading Floor
           - href: docs/racing.md
             text: Racing & Equestrian
       - text: Developer
@@ -149,6 +152,7 @@ website:
           - docs/slots.md
           - docs/lottery.md
           - docs/sportsbook.md
+          - docs/trading-floor.md
           - docs/racing.md
       - section: "Developer Docs"
         contents:

@@ -7,8 +7,8 @@ Technical overview of the **degen-llms** codebase.
 ```
 degen-llms/
 ├── mandalay_bay/              # Python source of truth — hub, resort systems, CLI activities
-│   ├── activities/            # Blackjack, Hold'em, roulette, slots, sportsbook, racing, equestrian, craps, lottery
-│   ├── craps.py / lottery.py / prediction_markets.py
+│   ├── activities/            # Blackjack, Hold'em, roulette, slots, sportsbook, trading, racing, equestrian, craps, lottery
+│   ├── craps.py / lottery.py / prediction_markets.py / trading_desk.py
 │   ├── hotel*.py / pool*.py / rewards*.py / casino_amenities*.py
 │   ├── hub.py / session.py / chips.py / saves.py
 │   └── data/                  # Sports catalog, staff manifest, guest directory, horse names

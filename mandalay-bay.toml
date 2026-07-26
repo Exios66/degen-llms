@@ -17,7 +17,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "mandalay-bay"
 version = "1.0.0"
-description = "The Mandalay Bay — digital resort CLI (tables, craps, slots, lottery, sportsbook, racing, hotel, pool, rewards)"
+description = "The Mandalay Bay — digital resort CLI (tables, craps, slots, lottery, sportsbook, trading, racing, hotel, pool, rewards)"
 readme = "mandalay_bay/README.md"
 license = "MIT"
 requires-python = ">=3.11"

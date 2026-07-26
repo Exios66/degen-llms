@@ -37,14 +37,15 @@ python3 -m pytest -v                     # 200+ tests
 
 ### Casino floor
 
-Six floors, ten activities, one chip wallet:
+Seven floors, eleven activities, one chip wallet:
 
 | Floor | Activities | Min bet |
 |-------|------------|---------|
 | **Table Games** | Blackjack, Texas Hold'em, Mandalay Roulette, Craps | 10 chips |
 | **Slot Machines** | 14 machines incl. Megabucks & linked progressives | 1 chip |
 | **Lottery Counter** | Pick 3, Pick 4, Mega draw, scratchers | Varies |
-| **Sports Book** | Moneyline, spread, prediction markets | 10 chips |
+| **Sports Book** | Scenario board, parlays/futures + prediction markets | 10 chips |
+| **Trading Floor** | Futures & call/put options (NYSE, commodities, crypto) | 25 chips |
 | **Racing Pavilion** | Mandalay Racing (thoroughbred sim) | 5 chips |
 | **Equestrian Arena** | Dressage & show jumping | 10 chips |
 
@@ -172,7 +173,8 @@ Full docs in [`docs/`](docs/README.md) and on the **[GitHub Wiki](https://github
 | [Table Games](docs/table-games.md) | Hold'em, roulette, craps |
 | [Slot Machines](docs/slots.md) | Machines, paytables, progressives |
 | [Lottery](docs/lottery.md) | Pick 3/4, Mega, scratchers |
-| [Sports Book](docs/sportsbook.md) | Events, moneyline, spread, prediction markets |
+| [Sports Book](docs/sportsbook.md) | Scenario board, parlays, prediction markets |
+| [Trading Floor](docs/trading-floor.md) | Futures & options (NYSE, commodities, crypto) |
 | [Racing](docs/racing.md) | Thoroughbred + equestrian |
 | [Hotel](docs/hotel.md) / [Pool](docs/pool-complex.md) / [Rewards](docs/mgm-rewards.md) | Resort off the floor |
 | [Architecture](docs/architecture.md) | Packages, data flow, activity system |

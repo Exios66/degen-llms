@@ -42,7 +42,7 @@ The project riffs on real Vegas mechanics:
 
 | Zone | Highlights |
 |------|------------|
-| **Casino floor** | Table games, slots, lottery, sports book, racing, equestrian |
+| **Casino floor** | Table games, slots, lottery, sports book, trading floor, racing, equestrian |
 | **Casino amenities** | Shoppes at Mandalay Place, three bars, intoxication tracking |
 | **Hotel tower** | Front desk, hallway mini-game, in-room TV/phone/minibar |
 | **Pool complex** | Wave pool, hot tubs, cabanas, beach club, aquarium |
@@ -61,7 +61,8 @@ The project began as a digital blackjack CLI and grew into a multi-surface resor
 3. **Phase 3** — Pool complex, MGM Rewards, world day/night cycle
 4. **Phase 4** — Pixel RPG overworld with full activity encounters
 5. **Phase 5** — Craps, lottery counter, no-limit Hold'em, prediction markets
-6. **Ongoing** — Expanded prediction markets, art polish, and new resort vignettes
+6. **Phase 6** — Trading Floor (Mandalay Markets), stored sports/prediction scenario DBs
+7. **Ongoing** — Art polish, new resort vignettes, and market catalog expansion
 
 ## See also
 

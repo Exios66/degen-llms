@@ -16,7 +16,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const rpgRoot = join(here, "..", "docs", "rpg");
 
 const {
-  COLLISION, MAP_HEIGHT, MAP_WIDTH, DEFAULT_MAP_ID,
+  COLLISION, MAP_HEIGHT, MAP_WIDTH, MAP_ZONE_SIGNS, TILE_SIZE, DEFAULT_MAP_ID,
   buildMapLayersForId, doorsForMap, getMapDefinition, getNpcsForMap,
   installWorld, resolveNpcPosition,
 } = await import(join(rpgRoot, "js/systems/MapData.js"));
@@ -27,8 +27,9 @@ const { DEX_REGISTRY } = await import(join(rpgRoot, "js/systems/Dex.js"));
 const { ART_UNIT } = await import(join(rpgRoot, "js/systems/MapTiles.js"));
 const { findPath, nearestReachable, smoothPath } = await import(
   join(rpgRoot, "js/systems/Pathfinder.js"));
-const { artKeys, drawArtToCanvas, groundTextureKeys, groundTileKey } = await import(
-  join(rpgRoot, "js/systems/TextureFactory.js"));
+const {
+  NPC_PROPS, artHeightUnits, artKeys, drawArtToCanvas, groundTextureKeys, groundTileKey,
+} = await import(join(rpgRoot, "js/systems/TextureFactory.js"));
 const {
   BODIES, HAIR_COLORS, LEG_COLORS, OUTFIT_COLORS, SKIN_TONES, SPEAKER_LOOKS,
   defaultAppearance, indexSpeakerLooks, resolveDealerLook, resolveNpcLook,
@@ -200,6 +201,7 @@ for (const node of Object.values(dialogues)) {
 // ── NPCs ──────────────────────────────────────────────────────────────────
 const dealerIds = new Set(DEALER_ROSTER.map((d) => d.id));
 const npcIds = new Set();
+const npcNames = new Map();
 for (const mapId of MAP_IDS) {
   const npcs = getNpcsForMap(mapId);
   check(npcs.length > 0, `${mapId}: has no NPCs`);
@@ -207,6 +209,7 @@ for (const mapId of MAP_IDS) {
     const at = `npc ${npc.id} (${mapId})`;
     check(!npcIds.has(npc.id), `${at}: duplicate npc id`);
     npcIds.add(npc.id);
+    npcNames.set(npc.id, npc.name);
     check(Boolean(npc.name), `${at}: missing name`);
     check(reachable(mapId, npc.x, npc.y),
       `${at}: nothing walkable next to (${npc.x},${npc.y}) — player can never reach them`);
@@ -238,6 +241,58 @@ for (const mapId of MAP_IDS) {
   }
 }
 check(dealerIds.size > 0, "dealers.js exported no dealers");
+
+// ── Signage legibility ────────────────────────────────────────────────────
+// Zone signs are wayfinding, so anything drawn over them is a player who
+// cannot read where they are going. Sprites sit above signs in the draw order,
+// and guests move with the day phase, so a sign has to clear every stop.
+{
+  const fontSize = Math.max(7, Math.round(TILE_SIZE * 0.28));
+  const signBox = (s) => {
+    const cx = s.x * TILE_SIZE + TILE_SIZE / 2;
+    const cy = s.y * TILE_SIZE + TILE_SIZE / 2;
+    const w = s.text.length * fontSize * 0.72 + 18;
+    const h = fontSize + 14;
+    return { x0: cx - w / 2, x1: cx + w / 2, y0: cy - h / 2, y1: cy + h / 2 };
+  };
+  const npcBox = (npc, x, y) => {
+    const prop = NPC_PROPS[npc.id];
+    const cx = x * TILE_SIZE + TILE_SIZE / 2;
+    if (prop) {
+      const h = (artHeightUnits(prop) * TILE_SIZE) / ART_UNIT;
+      const cy = (y + 1) * TILE_SIZE - h / 2;
+      return { x0: cx - TILE_SIZE / 2, x1: cx + TILE_SIZE / 2, y0: cy - h / 2, y1: cy + h / 2 };
+    }
+    const w = CHAR_METRICS.width * CHAR_METRICS.scale;
+    const h = CHAR_METRICS.height * CHAR_METRICS.scale;
+    const cy = y * TILE_SIZE + TILE_SIZE / 2 - FOOT_DROP;
+    return { x0: cx - w / 2, x1: cx + w / 2, y0: cy - h / 2, y1: cy + h / 2 };
+  };
+  const overlaps = (a, b) => a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1;
+
+  let signCount = 0;
+  for (const mapId of MAP_IDS) {
+    const signs = getMapDefinition(mapId).signs ?? MAP_ZONE_SIGNS[mapId] ?? [];
+    signCount += signs.length;
+    for (const sign of signs) {
+      const box = signBox(sign);
+      for (const npc of getNpcsForMap(mapId)) {
+        for (let phase = 0; phase < 4; phase += 1) {
+          const pos = resolveNpcPosition(npc, 720, phase);
+          check(!overlaps(box, npcBox(npc, pos.x, pos.y)),
+            `${mapId}: sign "${sign.text}" is covered by ${npc.id} at phase ${phase}`);
+        }
+      }
+    }
+    for (let i = 0; i < signs.length; i += 1) {
+      for (let j = i + 1; j < signs.length; j += 1) {
+        check(!overlaps(signBox(signs[i]), signBox(signs[j])),
+          `${mapId}: signs "${signs[i].text}" and "${signs[j].text}" overlap`);
+      }
+    }
+  }
+  check(signCount > 0, "no map carries any wayfinding signage");
+}
 
 // ── Dialogue graph ────────────────────────────────────────────────────────
 for (const [id, node] of Object.entries(dialogues)) {
@@ -503,7 +558,15 @@ for (const mapId of MAP_IDS) {
 
   for (const key of artKeys()) {
     const canvas = drawn(`sprite ${key}`, (c) => drawArtToCanvas(c, key));
-    if (!canvas || !key.startsWith("tile_")) continue;
+    if (!canvas) continue;
+    // Anything drawn past the frame is silently cropped by the texture.
+    const unit = canvas.width / ART_UNIT;
+    const overflow = canvas.rects.find(
+      (r) => r.x < 0 || r.y < 0 || r.x + r.w > canvas.width
+        || r.y + r.h > artHeightUnits(key) * unit);
+    check(overflow === undefined,
+      `art ${key}: draws outside its ${ART_UNIT}×${artHeightUnits(key)} frame`);
+    if (!key.startsWith("tile_")) continue;
     // A floor tile with a hole in it shows the void through the map.
     const cell = canvas.width / ART_UNIT;
     const covered = new Set();
@@ -610,8 +673,11 @@ for (const mapId of MAP_IDS) {
   // now be recognisably themselves.
   indexSpeakerLooks(world.npcs);
   const npcLooks = new Set();
+  const people = new Set();
   for (const [mapId, npcs] of Object.entries(world.npcs)) {
     for (const npc of npcs) {
+      if (NPC_PROPS[npc.id]) continue;
+      people.add(npc.id);
       const look = resolveNpcLook(npc.sprite, npc.id);
       check(sheetIds.has(look.sheet),
         `${mapId}/${npc.id}: unknown sheet ${look.sheet}`);
@@ -622,8 +688,19 @@ for (const mapId of MAP_IDS) {
       npcLooks.add(lookKey(look));
     }
   }
-  check(npcLooks.size >= npcIds.size * 0.9,
-    `only ${npcLooks.size} distinct looks across ${npcIds.size} NPCs`);
+  check(npcLooks.size >= people.size * 0.9,
+    `only ${npcLooks.size} distinct looks across ${people.size} NPCs`);
+
+  // Statues, doors and kiosks are furniture. Drawing them from a sheet puts a
+  // person where the dialogue says there is an object.
+  const artNames = new Set(artKeys());
+  for (const [npcId, artKey] of Object.entries(NPC_PROPS)) {
+    check(npcIds.has(npcId), `prop ${npcId}: no NPC by that id to attach to`);
+    check(artNames.has(artKey), `prop ${npcId}: unknown art key ${artKey}`);
+    const name = npcNames.get(npcId);
+    check(resolveSpeakerLook(name)?.prop === artKey,
+      `prop ${npcId}: "${name}" speaks with a character portrait`);
+  }
 
   // Portraits are looked up by speaker name, so a name the index misses would
   // silently fall back to a stranger's face.

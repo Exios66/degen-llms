@@ -26,7 +26,17 @@ function pxCtx(ctx, color, scale, x, y, w = 1, h = 1, alpha = 1) {
   ctx.fillRect(x * scale, y * scale, w * scale, h * scale);
 }
 
-function makeWriter(target, scale = SCALE) {
+/**
+ * Pixel size for canvas draws.
+ *
+ * Drawers take whatever `makeWriter` defaults to, so `drawArtToCanvas` sets
+ * this for the length of one synchronous draw when a caller wants art at a
+ * size other than the world's 2×. The Phaser path ignores it and always uses
+ * SCALE, so only canvas output is affected.
+ */
+let canvasScale = SCALE;
+
+function makeWriter(target, scale = canvasScale) {
   if (target?.getContext) {
     const ctx = target.getContext("2d");
     return {
@@ -784,6 +794,115 @@ function drawScreenDecor(g) {
   w.px(0x48d8e8, 1, 10, 14, 2, 0.12);
 }
 
+/**
+ * Fixtures the world files list among the NPCs because you walk up and press
+ * A on them. They are furniture, not guests, so they get their own art instead
+ * of a character sheet. Drawn a tile and a half tall on the same 16-unit grid,
+ * standing on the bottom edge of their tile.
+ */
+export const PROP_HEIGHT = 24;
+
+/**
+ * The lobby lion, seated on a plaqued plinth.
+ *
+ * Gold on a gold carpet needs a hard dark edge or the whole thing dissolves
+ * into the floor, so every silhouette pixel is spelled out rather than filled
+ * with overlapping rectangles.
+ */
+const STATUE_GRID = [
+  "................",
+  "....OOO..OOO....",
+  "...OMMMOOMMMO...",
+  "..OMMMMMMMMMMO..",
+  ".OHMMMMMMMMMMSO.",
+  ".OHMMGGGGGGMMSO.",
+  ".OHMMGDGGDGMMSO.",
+  ".OHMMGGHHGGMMSO.",
+  ".OHMMGGDDGGMMSO.",
+  ".OHMMMGSSGMMMSO.",
+  ".OHMMMMSSMMMMSO.",
+  "..OHMMMMMMMMSO..",
+  "...OHMMMMMMSO...",
+  "...OGGGGGGGSO...",
+  "..OHGGGGGGGGSO..",
+  "..OHGGMSSMGGSO..",
+  ".OHHGGMSSMGGHSO.",
+  ".EEEEEEEEEEEEEE.",
+  ".OPPPPPPPPPPPPO.",
+  ".OPppppppppppqO.",
+  ".OPppEEEEEEppqO.",
+  ".OPppppppppppqO.",
+  ".OqqqqqqqqqqqqO.",
+  ".OOOOOOOOOOOOOO.",
+];
+
+function drawStatueProp(g) {
+  paintGrid(makeWriter(g), STATUE_GRID, {
+    O: [OUTLINE, 1],
+    H: [0xffe890, 1],
+    G: [0xf0d050, 1],
+    M: [0xc8a030, 1],
+    S: [0x8a6c18, 1],
+    D: [0x4a3608, 1],
+    E: [0xe8c547, 1],
+    P: [0x6a6280, 1],
+    p: [0x443c5c, 1],
+    q: [0x262038, 1],
+  });
+}
+
+function drawDoorProp(g) {
+  const w = makeWriter(g);
+  // Frame and leaf
+  w.px(OUTLINE, 1, 0, 14, 24);
+  w.px(0x4a3524, 2, 1, 12, 23);
+  w.px(0x6b4c31, 3, 2, 10, 21);
+  w.px(0x835f3c, 3, 2, 10, 1);
+  w.px(0x835f3c, 3, 2, 1, 21);
+  w.px(0x3a2818, 12, 3, 1, 20);
+  // Recessed panels
+  w.px(0x53381f, 4, 4, 8, 7);
+  w.px(0x7a5738, 4, 4, 8, 1);
+  w.px(0x53381f, 4, 13, 8, 7);
+  w.px(0x7a5738, 4, 13, 8, 1);
+  // Number plate and handle
+  w.px(0xe8c547, 5, 6, 6, 3);
+  w.px(0xffe890, 5, 6, 6, 1);
+  w.px(0x8a6c18, 6, 7, 1, 1);
+  w.px(0x8a6c18, 8, 7, 1, 1);
+  w.px(0x8a6c18, 10, 7, 1, 1);
+  w.px(OUTLINE, 10, 12, 3, 2);
+  w.px(0xd8c8a0, 10, 12, 3, 1);
+  w.px(0xffffff, 10, 12, 1, 1);
+}
+
+function drawKioskProp(g) {
+  const w = makeWriter(g);
+  // Pedestal cabinet
+  w.px(OUTLINE, 2, 4, 12, 20);
+  w.px(0x1a2030, 3, 5, 10, 18);
+  w.px(0x2c3648, 3, 5, 10, 1);
+  w.px(0x11161f, 3, 22, 10, 1);
+  // Angled screen with a menu on it
+  w.px(OUTLINE, 2, 4, 12, 10);
+  w.px(0x0a1018, 3, 5, 10, 8);
+  w.px(0x1a4060, 4, 6, 8, 6);
+  w.px(0x48d8e8, 4, 6, 8, 1);
+  w.px(0x6ae8f0, 5, 6, 4, 1);
+  w.px(0xf0d050, 4, 8, 5, 1);
+  w.px(0x9fb4c8, 4, 10, 6, 1);
+  w.px(0x9fb4c8, 4, 11, 4, 1);
+  // Keypad and card slot
+  w.px(0x2c3648, 4, 15, 8, 4);
+  w.px(0x5a6a80, 5, 16, 2, 1);
+  w.px(0x5a6a80, 8, 16, 2, 1);
+  w.px(0x5a6a80, 5, 18, 2, 1);
+  w.px(0x5a6a80, 8, 18, 2, 1);
+  w.px(0xe8c547, 4, 20, 8, 1);
+  // Screen glow spilling onto the floor
+  w.px(0x48d8e8, 2, 13, 12, 2, 0.14);
+}
+
 /** Standalone sprites, keyed by the texture name the scene looks them up by. */
 const SPRITE_DRAWERS = {
   decor_bar: drawBarDecor,
@@ -793,6 +912,36 @@ const SPRITE_DRAWERS = {
   decor_glass: drawGlassTile,
   decor_rope: drawRopeTile,
   interact_icon: drawInteractIcon,
+  prop_statue: drawStatueProp,
+  prop_door: drawDoorProp,
+  prop_kiosk: drawKioskProp,
+};
+
+/** Sprites that are not a square tile tall, in art units. */
+const ART_HEIGHTS = {
+  interact_icon: 14,
+  prop_statue: PROP_HEIGHT,
+  prop_door: PROP_HEIGHT,
+  prop_kiosk: PROP_HEIGHT,
+};
+
+/** Height of one art key in art units — 16 unless it is listed above. */
+export const artHeightUnits = (key) => ART_HEIGHTS[key] ?? ART_UNIT;
+
+/**
+ * The handful of "NPCs" that are really furniture, and the art they use.
+ *
+ * The world files list them alongside the staff because you talk to them the
+ * same way, but drawing them from a character sheet put a person where the
+ * dialogue says there is a statue, a door or a kiosk.
+ */
+export const NPC_PROPS = {
+  lobby_statue: "prop_statue",
+  hotel_room_door: "prop_door",
+  room_console: "prop_kiosk",
+  photo_kiosk: "prop_kiosk",
+  salon_cage: "prop_kiosk",
+  minibar: "decor_bar",
 };
 
 /** Every art key the overworld registers at boot. */
@@ -804,20 +953,27 @@ export function artKeys() {
 }
 
 /**
- * Draw one art key onto a 2D canvas. The scene draws through Phaser Graphics;
- * this is the same drawer against a canvas, for previews and headless checks.
+ * Draw one art key onto a 2D canvas at `pixelScale` screen pixels per art unit.
+ *
+ * The scene draws through Phaser Graphics; this is the same drawer against a
+ * canvas, for previews, portraits and headless checks.
  */
-export function drawArtToCanvas(canvas, key) {
+export function drawArtToCanvas(canvas, key, pixelScale = SCALE) {
   const drawer = key.startsWith("tile_")
     ? TILE_DRAWERS[key.slice("tile_".length)]
     : SPRITE_DRAWERS[key];
   if (!drawer) throw new Error(`unknown art key "${key}"`);
   const ctx = canvas.getContext("2d");
-  canvas.width = TILE_SIZE;
-  canvas.height = TILE_SIZE;
+  canvas.width = ART_UNIT * pixelScale;
+  canvas.height = artHeightUnits(key) * pixelScale;
   ctx.imageSmoothingEnabled = false;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  drawer(canvas);
+  canvasScale = pixelScale;
+  try {
+    drawer(canvas);
+  } finally {
+    canvasScale = SCALE;
+  }
 }
 
 export function createGameTextures(scene) {
@@ -840,12 +996,8 @@ export function createGameTextures(scene) {
     }
   }
 
-  makeTex(scene, "decor_bar", drawBarDecor);
-  makeTex(scene, "decor_plant", drawPlantDecor);
-  makeTex(scene, "decor_slot", drawSlotDecor);
-  makeTex(scene, "decor_screen", drawScreenDecor);
-  makeTex(scene, "decor_glass", drawGlassTile);
-  makeTex(scene, "decor_rope", drawRopeTile);
-  makeTex(scene, "interact_icon", drawInteractIcon, TILE_SIZE, TILE_SIZE * 0.875);
+  for (const [key, drawer] of Object.entries(SPRITE_DRAWERS)) {
+    makeTex(scene, key, drawer, TILE_SIZE, artHeightUnits(key) * SCALE);
+  }
 }
 

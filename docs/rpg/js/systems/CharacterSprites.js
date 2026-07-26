@@ -15,6 +15,7 @@
 import { CHARACTER_SHEETS } from "../data/character-sheets.js";
 import { ART_UNIT, TILE_SIZE } from "./MapTiles.js";
 import { normalizeAppearance, resolvePalette } from "./CharacterAppearance.js";
+import { drawArtToCanvas } from "./TextureFactory.js";
 
 const ASSET_ROOT = new URL("../../assets/characters/", import.meta.url);
 const SHEETS = CHARACTER_SHEETS.sheets;
@@ -288,6 +289,16 @@ export function applyLook(scene, sprite, look, facing = "down") {
 const pendingRedraws = new Set();
 
 /**
+ * Draw a fixture's own art into a portrait frame, centred and standing on the
+ * bottom edge the way it does in the world.
+ */
+function drawPropPortrait(ctx, canvas, artKey, pixelScale) {
+  const art = document.createElement("canvas");
+  drawArtToCanvas(art, artKey, pixelScale);
+  ctx.drawImage(art, (canvas.width - art.width) / 2, canvas.height - art.height);
+}
+
+/**
  * Draw one frame of a look into a 2D canvas, for wardrobe previews and
  * dialogue portraits. Redraws itself once the source art arrives.
  */
@@ -298,6 +309,11 @@ export function drawCharacterToCanvas(canvas, look, dir = "down", frame = 0, pix
   canvas.height = FRAME.h * pixelScale;
   ctx.imageSmoothingEnabled = false;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (look?.prop) {
+    drawPropPortrait(ctx, canvas, look.prop, pixelScale);
+    return;
+  }
 
   const baked = bakeLook(look);
   if (!baked) {

@@ -1,5 +1,7 @@
 import Phaser from "phaser";
-import { createGameTextures, groundTileKey } from "../systems/TextureFactory.js";
+import {
+  NPC_PROPS, artHeightUnits, createGameTextures, groundTileKey,
+} from "../systems/TextureFactory.js";
 import {
   CHAR_METRICS, FOOT_DROP, applyLook, ensurePlayerTextures,
   playerAnimKey, playerTextureKey,
@@ -8,7 +10,7 @@ import {
   normalizeAppearance, resolveDealerLook, resolveNpcLook, resolvePalette,
 } from "../systems/CharacterAppearance.js";
 import {
-  TILE_SIZE, MAP_WIDTH, MAP_HEIGHT, buildMapLayersForId, getNpcsForMap,
+  ART_UNIT, TILE_SIZE, MAP_WIDTH, MAP_HEIGHT, buildMapLayersForId, getNpcsForMap,
   doorAt, getMapDefinition, SPAWN_DEFAULT, TILE, resolveNpcPosition,
   MAP_ZONE_SIGNS,
 } from "../systems/MapData.js";
@@ -48,6 +50,26 @@ const tileToSprite = (tileX, tileY) => ({
 /** Y for a name plate or badge floating just clear of a character's head. */
 const tileHeadY = (tileY) =>
   tileToSprite(0, tileY).y - (CHAR_METRICS.height * CHAR_METRICS.scale) / 2 - 6;
+
+/** Props stand on the floor of their tile rather than hovering in its middle. */
+const propToSprite = (tileX, tileY, artKey) => ({
+  x: tileX * TILE_SIZE + TILE_SIZE / 2,
+  y: (tileY + 1) * TILE_SIZE - (artHeightUnits(artKey) * TILE_SIZE) / (2 * ART_UNIT),
+});
+
+/** Where a fixture's or character's sprite centre belongs on a tile. */
+const npcToSprite = (npc) => {
+  const prop = NPC_PROPS[npc.id];
+  return prop ? propToSprite(npc.x, npc.y, prop) : tileToSprite(npc.x, npc.y);
+};
+
+/** Name-plate height for either kind of NPC, clearing whatever art it uses. */
+const npcHeadY = (npc) => {
+  const prop = NPC_PROPS[npc.id];
+  if (!prop) return tileHeadY(npc.y);
+  const half = (artHeightUnits(prop) * TILE_SIZE) / (2 * ART_UNIT);
+  return propToSprite(npc.x, npc.y, prop).y - half - 6;
+};
 
 /** Per-surface footstep sound. */
 const FOOTSTEP_SFX = {
@@ -201,21 +223,25 @@ export class OverworldScene extends Phaser.Scene {
       return { ...npc, x: pos.x, y: pos.y };
     });
     for (const npc of this.currentNpcs) {
-      const at = tileToSprite(npc.x, npc.y);
-      const sprite = this.add.sprite(at.x, at.y, "interact_icon");
+      const prop = NPC_PROPS[npc.id];
+      const at = npcToSprite(npc);
+      const sprite = this.add.sprite(at.x, at.y, prop ?? "interact_icon");
       sprite.setDepth(10);
       sprite.setData("npc", npc);
       this.npcSprites.set(npc.id, sprite);
 
       // A dealer keeps their own sheet, unpainted; everyone else is repainted
       // into a look of their own so the floor is not seven faces on a loop.
-      const look = npc.zone
-        ? resolveDealerLook(this._dealerForZone(npc.zone).id, npc.sprite)
-        : resolveNpcLook(npc.sprite, npc.id);
-      applyLook(this, sprite, look, npc.direction ?? "down");
+      // Fixtures already have their art and never get a character sheet.
+      if (!prop) {
+        const look = npc.zone
+          ? resolveDealerLook(this._dealerForZone(npc.zone).id, npc.sprite)
+          : resolveNpcLook(npc.sprite, npc.id);
+        applyLook(this, sprite, look, npc.direction ?? "down");
+      }
 
       const displayName = this._resolveNpcDisplayName(npc);
-      const label = this._createNpcLabel(sprite.x, tileHeadY(npc.y), displayName, npc.zone);
+      const label = this._createNpcLabel(sprite.x, npcHeadY(npc), displayName, npc.zone);
       this.npcLabels.set(npc.id, label);
     }
 
@@ -419,11 +445,11 @@ export class OverworldScene extends Phaser.Scene {
       npc.y = pos.y;
       const sprite = this.npcSprites.get(npc.id);
       const label = this.npcLabels.get(npc.id);
-      const { x: tx, y: ty } = tileToSprite(pos.x, pos.y);
+      const { x: tx, y: ty } = npcToSprite(npc);
       if (sprite) this.tweens.add({ targets: sprite, x: tx, y: ty, duration: 600 });
       if (label) {
         this.tweens.add({
-          targets: label, x: tx, y: tileHeadY(pos.y), duration: 600,
+          targets: label, x: tx, y: npcHeadY(npc), duration: 600,
         });
       }
     }
@@ -995,7 +1021,7 @@ export class OverworldScene extends Phaser.Scene {
       this.interactIcon.setVisible(true);
       this.interactIcon.setPosition(
         closest.x * TILE_SIZE + TILE_SIZE / 2,
-        tileHeadY(closest.y) - 8
+        npcHeadY(closest) - 8
       );
     } else {
       this.interactIcon.setVisible(false);
@@ -1044,7 +1070,7 @@ export class OverworldScene extends Phaser.Scene {
     this.audio?.sfx?.("secret");
     const bang = this.add.text(
       npc.x * TILE_SIZE + TILE_SIZE / 2,
-      tileHeadY(npc.y),
+      npcHeadY(npc),
       "!",
       { fontFamily: "Press Start 2P", fontSize: "10px", color: "#f07178", stroke: "#0a0812", strokeThickness: 3 }
     ).setOrigin(0.5).setDepth(120);

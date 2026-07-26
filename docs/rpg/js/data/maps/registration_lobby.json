@@ -93,14 +93,14 @@
   "signs": [
     {
       "x": 11.5,
-      "y": 6.2,
+      "y": 5.0,
       "text": "CHECK IN",
       "color": "#fff8e8",
       "stroke": "#8a6a28"
     },
     {
       "x": 19.5,
-      "y": 6.2,
+      "y": 5.0,
       "text": "CONCIERGE",
       "color": "#fff8e8",
       "stroke": "#8a6a28"
@@ -135,14 +135,14 @@
     },
     {
       "x": 8,
-      "y": 4.5,
+      "y": 3.0,
       "text": "GUEST FLOOR ↑",
       "color": "#a8e8ff",
       "stroke": "#184868"
     },
     {
       "x": 21,
-      "y": 4.5,
+      "y": 3.0,
       "text": "ROOM 24-118 ↑",
       "color": "#ffe890",
       "stroke": "#684810"

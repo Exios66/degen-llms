@@ -9,6 +9,7 @@
  * Archetype still drives gameplay perks; appearance only drives the look.
  */
 import { CHARACTER_SHEETS } from "../data/character-sheets.js";
+import { NPC_PROPS } from "./TextureFactory.js";
 
 /** Bodies the wardrobe offers, in sheet order. Others are NPC-only. */
 export const BODIES = Object.entries(CHARACTER_SHEETS.sheets)
@@ -265,7 +266,10 @@ export function indexSpeakerLooks(npcsByMap) {
   speakerIndex.clear();
   for (const npcs of Object.values(npcsByMap ?? {})) {
     for (const npc of npcs ?? []) {
-      const look = resolveNpcLook(npc.sprite, npc.id);
+      // A fixture speaks with a picture of itself, not a stand-in face.
+      const look = NPC_PROPS[npc.id]
+        ? { prop: NPC_PROPS[npc.id] }
+        : resolveNpcLook(npc.sprite, npc.id);
       speakerIndex.set(npc.name, look);
       // Dialogue often uses just the first name ("Betty" for "Barkeep Betty").
       const short = String(npc.name ?? "").split(" ").pop();

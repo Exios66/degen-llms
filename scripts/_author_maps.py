@@ -134,14 +134,14 @@ MAPS_SPEC: list[dict] = [
             points("PLANT", [(4, 6), (25, 6), (4, 21), (25, 21), (11, 23), (18, 23)]),
         ],
         "signs": [
-            sign(11.5, 6.2, "CHECK IN", color="#fff8e8", stroke="#8a6a28"),
-            sign(19.5, 6.2, "CONCIERGE", color="#fff8e8", stroke="#8a6a28"),
+            sign(11.5, 5.0, "CHECK IN", color="#fff8e8", stroke="#8a6a28"),
+            sign(19.5, 5.0, "CONCIERGE", color="#fff8e8", stroke="#8a6a28"),
             sign(15, 3.4, "CASINO \u2191"),
             sign(4.5, 12.5, "\u2190 VALET", **COOL_SIGN),
             sign(25.5, 12.5, "TOWER \u2192"),
             sign(15, 26.2, "BLVD \u2193", **COOL_SIGN),
-            sign(8, 4.5, "GUEST FLOOR \u2191", **COOL_SIGN),
-            sign(21, 4.5, "ROOM 24-118 \u2191"),
+            sign(8, 3.0, "GUEST FLOOR \u2191", **COOL_SIGN),
+            sign(21, 3.0, "ROOM 24-118 \u2191"),
         ],
         "clear": [
             rect("LOBBY", 14, 2, 3, 3),
@@ -196,9 +196,9 @@ MAPS_SPEC: list[dict] = [
             sign(15, 7.4, "TABLE PIT", **FELT_SIGN),
             sign(25.5, 6.6, "SLOTS"),
             sign(5, 8.6, "SPORTS", **COOL_SIGN),
-            sign(15, 4, "HIGH LIMIT"),
+            sign(15, 2.6, "HIGH LIMIT"),
             sign(15, 22, "LOBBY", color="#fff8e8", stroke="#8a6a28"),
-            sign(26, 6, "SOUTH \u2192", **COOL_SIGN),
+            sign(26, 4.4, "SOUTH \u2192", **COOL_SIGN),
         ],
         # Kept off the wall columns: a planter hard against the wall leaves a
         # one-tile slot behind it that players walk into and stop.
@@ -511,7 +511,7 @@ MAPS_SPEC: list[dict] = [
         ],
         "signs": [
             sign(15, 26.2, "ELEVATORS \u2193"),
-            sign(15, 3.4, "ROOM 24-118 \u2191"),
+            sign(15, 1.5, "ROOM 24-118 \u2191"),
             sign(5, 14.5, "\u2190 LOBBY", **COOL_SIGN),
             sign(24.5, 14.5, "SUITE WING \u2192"),
             sign(7, 5.5, "24-112"),
@@ -838,7 +838,7 @@ MAPS_SPEC: list[dict] = [
             points("PLANT", [(4, 12), (26, 12), (4, 20), (26, 20)]),
         ],
         "signs": [
-            sign(15, 10.4, "ONE STAGE"),
+            sign(15, 8.4, "ONE STAGE"),
             sign(11, 12.4, "ORCHESTRA", **COOL_SIGN),
             sign(20, 12.4, "ORCHESTRA", **COOL_SIGN),
             sign(4.5, 12.5, "LOBBY", **COOL_SIGN),
@@ -872,7 +872,7 @@ MAPS_SPEC: list[dict] = [
             rect("GLASS", 19, 21, 1, 3),
         ],
         "signs": [
-            sign(15, 7.4, "ICE BAR", **COOL_SIGN),
+            sign(15, 5.6, "ICE BAR", **COOL_SIGN),
             sign(15, 24.4, "\u2212 5 \u00b0 C", **COOL_SIGN),
             sign(25.5, 12.5, "SHOPPES \u2192"),
         ],

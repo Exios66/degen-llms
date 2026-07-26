@@ -15,8 +15,8 @@ import {
   resolveBottleMemory,
   playFeltFlip,
   clubSummary,
-} from "../gentlemans-club.js";
-import { canEnterGentlemansClub } from "../venues.js";
+  canEnterGentlemansClub,
+} from "../gentlemans-club.js?v=__ASSET_SHA__";
 import { fmtChips } from "../core.js";
 
 /**

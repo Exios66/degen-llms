@@ -124,6 +124,11 @@ if ! git archive "origin/$SOURCE_BRANCH" docs | tar -x -C "$STAGING"; then
 fi
 touch "$STAGING/docs/.nojekyll"
 
+# Stamp versioned import maps + __ASSET_SHA__ on the staged tree before
+# checking out gh-pages (that branch has no scripts/ directory).
+python3 "$ROOT/scripts/generate-docs-importmap.py" "$STAGING/docs" "$MAIN_SHA_SHORT"
+bash "$ROOT/scripts/stamp-docs-asset-sha.sh" "$STAGING/docs" "$MAIN_SHA_SHORT"
+
 CHANGED_FILES=0
 if [[ "$GH_SHA" != "none" ]]; then
   GH_STAGING="$(mktemp -d)"
@@ -164,15 +169,6 @@ else
   mkdir -p docs
   cp -a "$STAGING/docs/." docs/
   touch docs/.nojekyll
-
-  if [[ -f docs/index.html ]]; then
-    # BSD sed (macOS) requires a backup-extension arg for -i; GNU sed does not.
-    if sed --version >/dev/null 2>&1; then
-      sed -i "s/__ASSET_SHA__/${MAIN_SHA_SHORT}/g" docs/index.html
-    else
-      sed -i '' "s/__ASSET_SHA__/${MAIN_SHA_SHORT}/g" docs/index.html
-    fi
-  fi
 
   git add -A docs/
   if ! git commit -m "Sync gh-pages/docs/ from $SOURCE_BRANCH ($MAIN_SHA_SHORT)

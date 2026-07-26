@@ -55,7 +55,7 @@ export class DialogueManager {
     portrait.height = 88;
     portrait.setAttribute("aria-hidden", "true");
     const palette = resolveSpeakerPortrait(speaker ?? "Resort");
-    drawCharacterToCanvas(portrait, palette, "down", 0, 2);
+    drawCharacterToCanvas(portrait, palette, "down", 0, 2, { badge: true });
     portraitWrap.appendChild(portrait);
 
     const content = document.createElement("div");

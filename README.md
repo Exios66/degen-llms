@@ -41,7 +41,7 @@ python3 -m pytest -v                     # 200+ tests
 
 ### Casino floor
 
-Seven floors, eleven activities, one chip wallet:
+Eight floors, twelve activities, one chip wallet:
 
 | Floor | Activities | Min bet |
 |-------|------------|---------|
@@ -50,6 +50,7 @@ Seven floors, eleven activities, one chip wallet:
 | **Lottery Counter** | Pick 3/4, Mega/Powerball, premium scratchers | Varies (stake-scaled) |
 | **Sports Book** | Scenario board, parlays/futures + prediction markets | 10 chips |
 | **Trading Floor** | Futures & call/put options (NYSE, commodities, crypto) | 25 chips |
+| **Arcade Alley** | CRT cabinets — Strip Cross, Neon Invaders, Breakout, Showgirl Beat | 5 chips |
 | **Racing Pavilion** | Mandalay Racing (thoroughbred sim) | 5 chips |
 | **Equestrian Arena** | Dressage & show jumping | 10 chips |
 
@@ -62,7 +63,7 @@ Beyond the gaming pits:
 - **Cashier** — Buy chips, cash out to your off-strip bank account, view the floor ledger
 - **Off-Strip Bank Account** — Park winnings outside the cage; fund trips from outside income
 - **Staff Manifest** — Editable dealer roster with session overrides
-- **High Limit salon & Foundation Room** — Chip- and tier-gated VIP venues (web)
+- **High Limit salon, Foundation Room & Gentleman's Club** — Chip- and tier-gated VIP venues (web + RPG; Velvet Ledger also on CLI)
 
 ### Resort hotel
 
@@ -70,7 +71,8 @@ Exit the casino floor to the **Mandalay Bay Hotel Experience**:
 
 - **Clerk Carmen** at the front desk — locate reservations, settle overdue charges, upgrade rooms, review folios, checkout, resort dining
 - **Hallway mini-game** — three beats of directional choices to reach your door
-- **In-room amenities** — TV (Shark Reef ch. 47, wave pool cam), sensor-enabled minibar, unlimited foreign calls, balcony decisions, 17 unlockable Vegas vignettes
+- **In-room amenities** — TV (Shark Reef ch. 47, wave pool cam), sensor-enabled minibar, unlimited foreign calls, balcony decisions / suite balcony POV smoke-break, 17 unlockable Vegas vignettes
+- **Gentleman's Club — The Velvet Ledger** — Gold+ / suite key / club phone line; tip storms, stocked bar, minigames, ledger eggs
 - **Guest Directory** — leather-bound lobby guest book with persistent signatures
 - **Real-time day/night cycle** — 2 hours real time = 1 in-game day; daily room/resort/parking charges; rotating check-in requirements (phone, desk, both, or whale net-positive)
 - **MGM Rewards phone** — press **P** in the web app for tier status, comps, reservation locate, and textable staff contacts
@@ -180,6 +182,7 @@ Full docs in [`docs/`](docs/README.md) and on the **[GitHub Wiki](https://github
 | [Lottery](docs/lottery.md) | Pick 3/4, Mega/Powerball, premium scratchers |
 | [Sports Book](docs/sportsbook.md) | Scenario board, parlays, prediction markets |
 | [Trading Floor](docs/trading-floor.md) | Futures & options (NYSE, commodities, crypto) |
+| [Arcade Alley](docs/arcade.md) | CRT cabinets — Strip Cross, Invaders, Breakout, rhythm |
 | [Racing](docs/racing.md) | Thoroughbred + equestrian |
 | [Hotel](docs/hotel.md) / [Pool](docs/pool-complex.md) / [Rewards](docs/mgm-rewards.md) | Resort off the floor |
 | [Architecture](docs/architecture.md) | Packages, data flow, activity system |

@@ -40,7 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Slot machines **remember last bet amount**; roulette shows **animated spin history** (#66)
 - **Texas Hold'em** — full street flow, no-limit raises, 5-max table (#65)
 - GitHub Pages deploy switched to **manual skill loop**; automatic workflow disabled (#72, #79)
-- **Documentation parity** across wiki, Quarto `docs/`, and README — seven floors, eleven activities (#102, #107)
+- **Documentation parity** across wiki, Quarto `docs/`, and README — floor catalog kept aligned with `FLOOR_ORDER` (#102, #107)
 
 ### Fixed
 

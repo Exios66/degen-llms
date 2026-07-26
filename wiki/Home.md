@@ -27,6 +27,7 @@ See [[Access-Points]] for full details on every surface.
 - [[Casino-Offerings]] — Every floor, activity, and amenity on property
 - [[MGM-Rewards]] — Tier progression, comps, and perks
 - [[Resort-Hotel]] — Check-in, rooms, amenities, and day/night cycle
+- [[Resort-Dining]] — Aureole, Border Grill, Stripsteak capacity overlay
 - [[Pool-Complex]] — 11-acre pool expansion, Shark Reef, beach club
 
 ---
@@ -46,6 +47,7 @@ See [[Access-Points]] for full details on every surface.
 - [[Lottery-Counter]]
 - [[Sports-Book-and-Prediction-Markets]]
 - [[Trading-Floor]]
+- [[Arcade-Alley]]
 - [[Racing-and-Equestrian]]
 
 ---

@@ -29,6 +29,7 @@
 - [[Lottery-Counter]]
 - [[Sports-Book-and-Prediction-Markets]]
 - [[Trading-Floor]]
+- [[Arcade-Alley]]
 - [[Racing-and-Equestrian]]
 
 ### 🕹️ Pixel RPG

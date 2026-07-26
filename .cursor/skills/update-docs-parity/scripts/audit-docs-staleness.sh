@@ -20,6 +20,7 @@ echo
 scan_paths=(
   README.md
   CONTRIBUTING-POSIT.md
+  CHANGELOG.md
   pyproject.toml
   mandalay-bay.toml
   mandalay_bay/README.md
@@ -42,6 +43,7 @@ patterns=(
   'digital casino CLI'
   'Five floors, eight activities'
   'Six floors, ten activities'
+  'Seven floors, eleven activities'
   'Phase 1 pixel RPG'
   '16-bit JRPG'
   'Source: GitHub Actions'
@@ -72,17 +74,20 @@ done
 if [[ -s "$tmp_hits" ]]; then
   filtered="$(mktemp)"
   while IFS= read -r line; do
-    if [[ "$line" =~ (no vendored|there is no|not.*assets/tiles|no.*assets/tiles) ]]; then
+    if [[ "$line" =~ (no vendored|there is no|not.*assets/tiles|no.*assets/tiles|orphaned|dead modules|Removed) ]]; then
       continue
     fi
     if [[ "$line" =~ Phase\ 1\ —\ CLI ]]; then
       continue
     fi
-    if [[ "$line" =~ (Disabled|disabled|historical|HISTORICAL|retired|no longer|Previously) ]]; then
+    if [[ "$line" =~ (Disabled|disabled|historical|HISTORICAL|retired|no longer|Previously|FLOOR_ORDER) ]]; then
       continue
     fi
-    # Allow skill/reference files outside this skill that document the replacement
     if [[ "$line" =~ (never “digital casino|not “16-bit) ]]; then
+      continue
+    fi
+    # Changelog / history may mention retired names when describing removals
+    if [[ "$line" =~ ^CHANGELOG\.md: ]]; then
       continue
     fi
     printf '%s\n' "$line" >>"$filtered"
@@ -116,8 +121,10 @@ declare -A WIKI_TO_DOCS=(
   [Lottery-Counter.md]=docs/lottery.md
   [Sports-Book-and-Prediction-Markets.md]=docs/sportsbook.md
   [Trading-Floor.md]=docs/trading-floor.md
+  [Arcade-Alley.md]=docs/arcade.md
   [Racing-and-Equestrian.md]=docs/racing.md
   [Resort-Hotel.md]=docs/hotel.md
+  [Resort-Dining.md]=docs/dining.md
   [Pool-Complex.md]=docs/pool-complex.md
   [MGM-Rewards.md]=docs/mgm-rewards.md
   [Pixel-RPG-Simulator.md]=docs/pixel-rpg.md
@@ -166,15 +173,16 @@ else
 fi
 echo
 
-echo "-- Floor catalog smoke (seven / eleven + Trading Floor) --"
-if rg -n 'Five floors, eight activities|Six floors, ten activities' README.md docs wiki index.qmd 2>/dev/null; then
+echo "-- Floor catalog smoke (eight / twelve + Arcade Alley) --"
+obsolete='Five floors, eight activities|Six floors, ten activities|Seven floors, eleven activities'
+if rg -n "$obsolete" README.md docs wiki index.qmd 2>/dev/null; then
   echo "${RED}Found obsolete floor catalog count.${RST}"
   fail=1
-elif rg -n 'Seven floors, eleven activities' README.md docs/casino-offerings.md wiki/Casino-Offerings.md >/dev/null 2>&1 \
-  && rg -n 'Trading Floor' README.md docs/casino-offerings.md wiki/Casino-Offerings.md >/dev/null 2>&1; then
-  echo "${GRN}Canonical seven/eleven catalog + Trading Floor present in key files.${RST}"
+elif rg -n 'Eight floors, twelve activities' README.md docs/casino-offerings.md wiki/Casino-Offerings.md >/dev/null 2>&1 \
+  && rg -n 'Arcade Alley' README.md docs/casino-offerings.md wiki/Casino-Offerings.md wiki/Arcade-Alley.md >/dev/null 2>&1; then
+  echo "${GRN}Canonical eight/twelve catalog + Arcade Alley present in key files.${RST}"
 else
-  echo "${YLW}WARN${RST}: could not confirm seven/eleven + Trading Floor in key files"
+  echo "${YLW}WARN${RST}: could not confirm eight/twelve + Arcade Alley in key files"
   fail=1
 fi
 echo

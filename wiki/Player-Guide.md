@@ -27,23 +27,24 @@ Choose your adventure:
   2) Explore Slot Machines
   3) Explore Lottery Counter
   4) Explore Sports Book
-  5) Explore Racing Pavilion
-  6) Explore Equestrian Arena
-  7) Cashier
-  8) Player Stats
-  9) Save Game
- 10) Casino Guide
- 11) Leave Casino
+  5) Explore Trading Floor
+  6) Explore Racing Pavilion
+  7) Explore Equestrian Arena
+  8) Cashier
+  9) Player Stats
+ 10) Save Game
+ 11) Casino Guide
+ 12) Leave Casino
 ```
 
 | Option | Action |
 |--------|--------|
-| 1–6 | Enter a casino floor and pick an activity |
-| 7 | Buy/cash out chips, view ledger |
-| 8 | Session statistics per activity |
-| 9 | Manual save to your slot |
-| 10 | In-game rules and controls reference |
-| 11 | Auto-save and exit (confirmation required) |
+| 1–7 | Enter a casino floor and pick an activity |
+| 8 | Buy/cash out chips, view ledger |
+| 9 | Session statistics per activity |
+| 10 | Manual save to your slot |
+| 11 | In-game rules and controls reference |
+| 12 | Auto-save and exit (confirmation required) |
 
 ### Low balance notice
 
@@ -110,6 +111,14 @@ See [[Sports-Book-and-Prediction-Markets]].
 
 ---
 
+## Trading Floor
+
+Futures and call/put options on NYSE, commodities, and crypto (min 25 chips).
+
+See [[Trading-Floor]].
+
+---
+
 ## Racing Pavilion & Equestrian Arena
 
 Thoroughbred win/place/show and equestrian dressage/jumping competitions.
@@ -160,8 +169,9 @@ In-game help with sections for every activity:
 4. Slot machine paytables
 5. Lottery tickets
 6. Sports book & prediction markets
-7. Racing & equestrian
-8. Chip economy
+7. Trading Floor
+8. Racing & equestrian
+9. Chip economy
 
 ---
 

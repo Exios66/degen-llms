@@ -239,21 +239,38 @@ function outfitForLegacy(sheetId) {
   }[sheetId] ?? "slate";
 }
 
+/**
+ * Sheets that cannot go out on the floor as the artist drew them.
+ *
+ * The pack's visitor is a green alien and its monochrome figure is grey from
+ * head to foot. Both are good art and neither is a casino dealer, so they keep
+ * their faces, their hair and their uniforms and are repainted to human skin.
+ */
+const HUMANISE = {
+  nicole: byId(SKIN_TONES, "tan").ramp,
+  green: byId(SKIN_TONES, "porcelain").ramp,
+};
+
 /** A dealer's fixed sheet, drawn with the artist's own colours. */
 export function resolveDealerLook(dealerId, fallbackKey = "npc_gold") {
   const sheet = DEALER_SHEETS[dealerId] ?? LEGACY_SHEET[fallbackKey] ?? "gold";
-  return { sheet };
+  return HUMANISE[sheet] ? { sheet, skin: HUMANISE[sheet] } : { sheet };
+}
+
+/** The look a named character is always drawn with, sheet colours and all. */
+function fixedLook(sheet) {
+  return HUMANISE[sheet] ? { sheet, skin: HUMANISE[sheet] } : { sheet };
 }
 
 /** Dialogue speakers that are not overworld NPCs. */
 export const SPEAKER_LOOKS = {
-  "Steve Harvey": { sheet: "steve" },
-  "Dealer Meryl Screech": { sheet: "meryl" },
-  "Croupier Judi Bench": { sheet: "judi" },
-  "Jennifer Lawless": { sheet: "jennifer" },
-  "Sofia Volume": { sheet: "sofia" },
-  "Octavia Spectacular": { sheet: "octavia" },
-  "Nicole Widechart": { sheet: "nicole" },
+  "Steve Harvey": fixedLook("steve"),
+  "Dealer Meryl Screech": fixedLook("meryl"),
+  "Croupier Judi Bench": fixedLook("judi"),
+  "Jennifer Lawless": fixedLook("jennifer"),
+  "Sofia Volume": fixedLook("sofia"),
+  "Octavia Spectacular": fixedLook("octavia"),
+  "Nicole Widechart": fixedLook("nicole"),
 };
 
 /**

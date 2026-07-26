@@ -64,29 +64,54 @@ const luminance = ([r, g, b]) => 0.299 * r + 0.587 * g + 0.114 * b;
 
 const packRgb = ([r, g, b]) => (r << 16) | (g << 8) | b;
 
-/** Sample a light-to-dark ramp at `t` in [0,1], blending between stops. */
-function sampleRamp(ramp, t) {
-  if (ramp.length === 1) return ramp[0];
-  const pos = Math.min(Math.max(t, 0), 1) * (ramp.length - 1);
-  const i = Math.min(Math.floor(pos), ramp.length - 2);
-  const f = pos - i;
-  const a = ramp[i];
-  const b = ramp[i + 1];
-  return [
-    Math.round(a[0] + (b[0] - a[0]) * f),
-    Math.round(a[1] + (b[1] - a[1]) * f),
-    Math.round(a[2] + (b[2] - a[2]) * f),
-  ];
+/**
+ * Where each colour of a ramp sits on a 0…1 scale from its lightest stop to its
+ * darkest, by luminance rather than by position in the list.
+ */
+function rampPositions(rgbs) {
+  const lums = rgbs.map(luminance);
+  const hi = Math.max(...lums);
+  const span = hi - Math.min(...lums) || 1;
+  return lums.map((l) => (hi - l) / span);
+}
+
+/**
+ * A function that reads a colour off a ramp at `t` in 0…1, lightest to darkest.
+ *
+ * Stops are placed at their own relative luminance rather than spread evenly,
+ * which is what makes a repaint reversible: feed a sheet its own ramp back and
+ * every pixel lands on the colour it started as. Ranking the stops instead
+ * moved colours that happened to sit close together in the original art, and a
+ * face is mostly colours that sit close together.
+ */
+function rampSampler(stops) {
+  const sorted = [...stops].sort((a, b) => luminance(b) - luminance(a));
+  if (sorted.length === 1) return () => sorted[0];
+  const pos = rampPositions(sorted);
+  return (t) => {
+    const x = Math.min(Math.max(t, 0), 1);
+    let i = 0;
+    while (i < pos.length - 2 && x > pos[i + 1]) i += 1;
+    const span = pos[i + 1] - pos[i];
+    const f = span <= 0 ? 0 : Math.min(Math.max((x - pos[i]) / span, 0), 1);
+    const a = sorted[i];
+    const b = sorted[i + 1];
+    return [
+      Math.round(a[0] + (b[0] - a[0]) * f),
+      Math.round(a[1] + (b[1] - a[1]) * f),
+      Math.round(a[2] + (b[2] - a[2]) * f),
+    ];
+  };
 }
 
 /**
  * Build the source-colour → target-colour table for one look.
  *
- * Each region's source colours are ranked lightest to darkest and read off the
- * target ramp at the same relative position, so a five-stop skin ramp can drive
- * a sheet that only uses four and vice versa.
+ * Each region's source colours are read off the target ramp at their own
+ * relative luminance, so a five-stop skin ramp can drive a sheet that uses
+ * seven and the shading the artist drew survives the trip.
  */
-function buildColorMap(sheetId, look) {
+export function buildColorMap(sheetId, look) {
   const spec = SHEETS[sheetId];
   const map = new Map();
   if (!spec) return map;
@@ -96,12 +121,10 @@ function buildColorMap(sheetId, look) {
     const source = spec[region];
     if (!target?.length || !source?.length) continue;
 
-    const ramp = target.map(hexToRgb);
-    const sorted = source.map(hexToRgb).sort((a, b) => luminance(b) - luminance(a));
-    const last = sorted.length - 1;
-    sorted.forEach((rgb, i) => {
-      map.set(packRgb(rgb), sampleRamp(ramp, last === 0 ? 0 : i / last));
-    });
+    const sample = rampSampler(target.map(hexToRgb));
+    const rgbs = source.map(hexToRgb);
+    const pos = rampPositions(rgbs);
+    rgbs.forEach((rgb, i) => map.set(packRgb(rgb), sample(pos[i])));
   }
   return map;
 }

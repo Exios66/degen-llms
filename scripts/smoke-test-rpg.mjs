@@ -36,7 +36,7 @@ const {
   resolvePalette, resolveSpeakerLook,
 } = await import(join(rpgRoot, "js/systems/CharacterAppearance.js"));
 const { CHARACTER_SHEETS } = await import(join(rpgRoot, "js/data/character-sheets.js"));
-const { CHAR_METRICS, FOOT_DROP, lookKey } = await import(
+const { CHAR_METRICS, FOOT_DROP, buildColorMap, lookKey } = await import(
   join(rpgRoot, "js/systems/CharacterSprites.js"));
 const { DEALER_ROSTER } = await import(join(here, "..", "docs", "js", "dealers.js"));
 const { PlayerSession, RPG_START_MAP, SAVE_VERSION, defaultRpgState } = await import(
@@ -658,6 +658,23 @@ for (const mapId of MAP_IDS) {
     for (const region of ["skin", "outfit"]) {
       check((sheet[region] ?? []).length >= 2,
         `sheet ${id}.${region}: needs at least two stops to shade with`);
+    }
+  }
+
+  // Repainting a sheet with its own ramps has to give the sheet back. When the
+  // mapping is off, it is off by a shade or two, which is invisible on a swatch
+  // and reads on a face as a character who has been quietly deformed.
+  for (const [id, sheet] of sheets) {
+    const map = buildColorMap(id, {
+      sheet: id, skin: sheet.skin, hair: sheet.hair, outfit: sheet.outfit, legs: sheet.legs,
+    });
+    for (const region of REGIONS) {
+      for (const hex of sheet[region] ?? []) {
+        const rgb = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+        const got = map.get((rgb[0] << 16) | (rgb[1] << 8) | rgb[2]);
+        check(got && got.every((c, i) => c === rgb[i]),
+          `sheet ${id}.${region}: ${hex} repaints to itself as ${got}`);
+      }
     }
   }
 

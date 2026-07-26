@@ -10,14 +10,15 @@ Main lobby options:
   1) Table Games       — Blackjack, Texas Hold'em, Roulette, Craps
   2) Slot Machines     — Mandalay Bay slots (Megabucks, Wheel of Fortune, and more)
   3) Lottery Counter   — Pick 3/4, Mega draws, scratchers
-  4) Sports Book       — Sports board + prediction markets (history desk & easter eggs)
-  5) Racing Pavilion   — Thoroughbred win / place / show
-  6) Equestrian Arena  — Dressage competition & Show Jumping
-  7) Cashier           — Buy chips, cash out, view ledger
-  8) Player Stats      — Visits, bets, net winnings per activity
-  9) Save Game         — Write progress to your save slot
- 10) Casino Guide      — Rules and controls reference
- 11) Leave Casino      — Auto-saves and exits
+  4) Sports Book       — Stored scenario board, parlays/futures, prediction markets
+  5) Trading Floor     — Futures & call/put options (NYSE, commodities, crypto)
+  6) Racing Pavilion   — Thoroughbred win / place / show
+  7) Equestrian Arena  — Dressage competition & Show Jumping
+  8) Cashier           — Buy chips, cash out, view ledger
+  9) Player Stats      — Visits, bets, net winnings per activity
+ 10) Save Game         — Write progress to your save slot
+ 11) Casino Guide      — Rules and controls reference
+ 12) Leave Casino      — Auto-saves and exits
 
 Save system:
   • Pick or create a save slot when entering the casino
@@ -83,9 +84,10 @@ Enter 0 as spin amount to leave the machine.
 SPORTSBOOK_HELP = """
 SPORTS BOOK — HOW TO WAGER
 ==========================
-1) Sports board — 10 events across NFL, NBA, MLB, MLS, NHL, NCAA, UFC, Tennis, Golf
-2) Prediction markets board — YES/NO contracts across sports pulse, History Desk, headlines, Vegas buzz, sentiment, and easter eggs
-3) Settle all open positions when ready for simulated final scores and market resolutions
+1) Sports board — pages of 125+ stored scenarios (NFL, NBA, MLB, MLS, NHL, NCAA, UFC, Tennis, Golf)
+2) Prediction markets — 125+ stored YES/NO contracts (History Desk, headlines, Vegas, sentiment, easter eggs)
+3) Next scenario slate advances the stored DB cursor (boards cycle and wrap)
+4) Settle all open positions when ready for simulated finals and market resolutions
 
 Sports bet types:
   Moneyline — Pick the outright winner
@@ -93,18 +95,37 @@ Sports bet types:
   Total     — Over/under the combined score line
   Props     — Side bets tied to the same simulated outcome
   Outright  — UFC, tennis, and golf winner markets
+  Futures   — Season / tournament winner markets from the scenario book
+  Parlay    — 2–4 legs (ML or totals), American odds combined
 
 Prediction markets:
   Buy YES or NO at displayed cent prices (e.g. 35¢ YES → high upside if correct)
   History Desk — realistic historical claims that settle to recorded truth
   Easter Eggs — ludicrous longshot contracts for the chaotic visitor
-  Filter the board by category; prices drift on refresh
+  Filter the board by category; Refresh prices drifts quotes; Next slate pages the DB
 
 American odds examples:
   +150  — Win $150 profit on a $100 bet
   -110  — Bet $110 to win $100 profit
 
 Open positions appear in the unified bet slip.
+"""
+
+TRADING_DESK_HELP = """
+TRADING FLOOR — MANDALAY MARKETS
+================================
+Long-only futures and call/put options on NYSE equities, commodities, and crypto.
+
+1) Browse / filter the stored contract catalog (700+ listings)
+2) Buy futures (margin stub) or pay premium for calls/puts
+3) Settle / expire — spot drifts from the mark, options settle to intrinsic
+
+Instrument notes:
+  Future — margin ≈ 10% of notional; PnL tracks mark → exit spot
+  Call   — pays max(0, spot − strike) × multiplier × qty
+  Put    — pays max(0, strike − spot) × multiplier × qty
+
+Minimum trade: 25 chips. No naked shorts.
 """
 
 HOLDEM_HELP = """
@@ -245,6 +266,7 @@ SECTIONS = {
     "slots": SLOTS_HELP,
     "lottery": LOTTERY_HELP,
     "sportsbook": SPORTSBOOK_HELP,
+    "trading_desk": TRADING_DESK_HELP,
     "horse_racing": HORSE_RACING_HELP,
     "equestrian": EQUESTRIAN_HELP,
     "dressage": EQUESTRIAN_HELP,

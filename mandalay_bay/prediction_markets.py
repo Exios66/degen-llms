@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
 from blackjack.rng import SECURE_RANDOM
@@ -234,8 +236,73 @@ def _template_markets(
     return markets
 
 
-def generate_markets(events: list[dict[str, Any]] | None = None) -> list[dict[str, Any]]:
+def _scenarios_path() -> Path:
+    return Path(__file__).resolve().parent / "data" / "prediction_scenarios.json"
+
+
+_PRED_SCENARIOS: dict[str, Any] | None = None
+
+
+def load_prediction_scenarios() -> dict[str, Any]:
+    global _PRED_SCENARIOS
+    if _PRED_SCENARIOS is not None:
+        return _PRED_SCENARIOS
+    path = _scenarios_path()
+    if not path.exists():
+        _PRED_SCENARIOS = {"pageSize": 20, "scenarios": []}
+        return _PRED_SCENARIOS
+    with path.open(encoding="utf-8") as f:
+        _PRED_SCENARIOS = json.load(f)
+    return _PRED_SCENARIOS
+
+
+def page_from_scenarios(
+    scenario_db: dict[str, Any] | None = None,
+    cursor: int = 0,
+    page_size: int | None = None,
+    events: list[dict[str, Any]] | None = None,
+) -> tuple[list[dict[str, Any]], int]:
+    from blackjack.rng import SECURE_RANDOM as _rng
+
+    db = scenario_db or load_prediction_scenarios()
+    scenarios = db.get("scenarios") or []
+    size = page_size or db.get("pageSize") or 20
+    pulse = _sports_pulse_markets(events or [])
+    static_count = max(0, size - len(pulse))
+    markets = list(pulse)
+    if not scenarios:
+        return markets[:size], 0
+    idx = cursor % len(scenarios)
+    for _ in range(static_count):
+        s = scenarios[idx]
+        yes = _clamp_price(int(s.get("yesPrice", 50)) + _rng.randint(-2, 2))
+        markets.append({
+            "marketId": f"{s.get('scenarioId', 'sc')}-{_rng.randint(10000, 99999)}",
+            "scenarioId": s.get("scenarioId"),
+            "category": s.get("category", "headlines"),
+            "question": s["question"],
+            "yesPrice": yes,
+            "noPrice": 100 - yes,
+            "volume": s.get("volume") or _rng.randint(2000, 30000),
+            "linkedEventId": s.get("linkedEventId"),
+            "resolution": None,
+            "fixedResolution": s.get("fixedResolution"),
+            "blurb": s.get("blurb"),
+        })
+        idx = (idx + 1) % len(scenarios)
+    return markets[:size], idx
+
+
+def generate_markets(
+    events: list[dict[str, Any]] | None = None,
+    scenario_db: dict[str, Any] | None = None,
+    cursor: int = 0,
+) -> list[dict[str, Any]]:
     events = events or []
+    db = scenario_db or load_prediction_scenarios()
+    if db.get("scenarios"):
+        markets, _ = page_from_scenarios(db, cursor, db.get("pageSize") or 20, events)
+        return markets
     markets = [
         *_sports_pulse_markets(events),
         *_history_markets(4),
@@ -328,9 +395,29 @@ class PredictionMarketsState:
     markets: list[dict[str, Any]] = field(default_factory=list)
     positions: list[dict[str, Any]] = field(default_factory=list)
     category_filter: str = "all"
+    scenario_cursor: int = 0
 
     def sync_markets(self, events: list[dict[str, Any]], force: bool = False) -> None:
         if not self.markets or force:
+            db = load_prediction_scenarios()
+            if db.get("scenarios"):
+                self.markets, next_cursor = page_from_scenarios(
+                    db, self.scenario_cursor, db.get("pageSize") or 20, events,
+                )
+                if force:
+                    self.scenario_cursor = next_cursor
+            else:
+                self.markets = generate_markets(events)
+
+    def next_slate(self, events: list[dict[str, Any]] | None = None) -> None:
+        """Advance the scenario cursor and load the next prediction page."""
+        events = events or []
+        db = load_prediction_scenarios()
+        if db.get("scenarios"):
+            self.markets, self.scenario_cursor = page_from_scenarios(
+                db, self.scenario_cursor, db.get("pageSize") or 20, events,
+            )
+        else:
             self.markets = generate_markets(events)
 
     def settle_all(self, events: list[dict[str, Any]] | None = None) -> tuple[list[dict[str, Any]], int]:

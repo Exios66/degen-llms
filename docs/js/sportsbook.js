@@ -1,5 +1,7 @@
 import { secureRandomInt } from "./core.js";
-import { loadCatalog, generateBoard, simulateEventOutcome } from "./sportSimulator.js";
+import {
+  loadCatalog, loadSportsScenarios, generateBoard, boardFromScenarios, simulateEventOutcome,
+} from "./sportSimulator.js";
 import { PredictionMarketsState } from "./predictionMarkets.js";
 
 export function fmtOdds(odds) {
@@ -11,8 +13,47 @@ export function profit(amount, americanOdds) {
   return Math.floor((amount * 100) / Math.abs(americanOdds));
 }
 
+/** Combine American odds for a parlay (decimal multiply → American). */
+export function combineAmericanOdds(legs) {
+  let decimal = 1;
+  for (const odds of legs) {
+    if (odds > 0) decimal *= 1 + odds / 100;
+    else decimal *= 1 + 100 / Math.abs(odds);
+  }
+  if (decimal >= 2) return Math.round((decimal - 1) * 100);
+  return Math.round(-100 / (decimal - 1));
+}
+
+export function availableBetTypes(event) {
+  if (!event) return [];
+  if (event.eventType === "futures") return ["futures"];
+  if (event.eventType === "outright") return ["outright"];
+  const types = ["moneyline", "spread", "total"];
+  if (event.props?.length) types.push("prop");
+  return types;
+}
+
 export function resolveSlip(slip) {
   const event = slip.event;
+
+  if (slip.betType === "parlay") {
+    let allWon = true;
+    let anyPush = false;
+    for (const leg of slip.legs ?? []) {
+      const resolved = resolveSlip(leg);
+      if (!resolved.won) {
+        allWon = false;
+        break;
+      }
+      if (resolved.reason?.startsWith("Push")) anyPush = true;
+    }
+    if (!allWon) return { won: false, payout: 0, reason: "Parlay lost — a leg missed" };
+    if (anyPush && (slip.legs?.length ?? 0) <= 1) {
+      return { won: true, payout: slip.amount, reason: "Push — stake returned" };
+    }
+    const p = profit(slip.amount, slip.odds);
+    return { won: true, payout: slip.amount + p, reason: `Parlay cashes (${slip.legs.length} legs)` };
+  }
 
   if (slip.betType === "moneyline") {
     if (event.homeScore === event.awayScore) {
@@ -73,7 +114,7 @@ export function resolveSlip(slip) {
     return { won: false, payout: 0, reason: `${slip.propLabel}: ${slip.pick.toUpperCase()} missed` };
   }
 
-  if (slip.betType === "outright") {
+  if (slip.betType === "outright" || slip.betType === "futures") {
     if (event.winner === slip.pick) {
       const p = profit(slip.amount, slip.odds);
       return { won: true, payout: slip.amount + p, reason: `${slip.pick} wins` };
@@ -87,11 +128,13 @@ export function resolveSlip(slip) {
 export class SportsbookState {
   constructor(data = null) {
     this.catalog = null;
+    this.scenarioDb = null;
     this.events = [];
     this.pending = [];
     this.sportFilter = "all";
     this.activeTab = "sports";
     this.liveCache = null;
+    this.scenarioCursor = 0;
     this.predictions = new PredictionMarketsState();
     if (data) {
       this.events = data.events ?? [];
@@ -99,13 +142,19 @@ export class SportsbookState {
       this.sportFilter = data.sportFilter ?? "all";
       this.activeTab = data.activeTab ?? "sports";
       this.liveCache = data.liveCache ?? null;
+      this.scenarioCursor = data.scenarioCursor ?? 0;
       this.predictions = PredictionMarketsState.fromJSON(data.predictions ?? null);
     }
   }
 
   async ensureCatalog() {
-    if (!this.catalog) {
-      this.catalog = await loadCatalog();
+    if (!this.catalog) this.catalog = await loadCatalog();
+    if (!this.scenarioDb) {
+      try {
+        this.scenarioDb = await loadSportsScenarios();
+      } catch {
+        this.scenarioDb = { boardSize: 10, scenarios: [] };
+      }
     }
     return this.catalog;
   }
@@ -115,13 +164,21 @@ export class SportsbookState {
     if (!this.events.length || force) {
       this.refreshBoard(true);
     }
+    await this.predictions.ensureCatalog();
     this.predictions.syncMarkets(this.events, force);
   }
 
   refreshBoard(force = false) {
     if (this.events.length && !force) return;
-    if (!this.catalog) return;
-    this.events = generateBoard(this.catalog);
+    if (this.scenarioDb?.scenarios?.length) {
+      const { events, nextCursor } = boardFromScenarios(
+        this.scenarioDb, this.scenarioCursor, this.scenarioDb.boardSize ?? 10,
+      );
+      this.events = events;
+      this.scenarioCursor = nextCursor;
+    } else if (this.catalog) {
+      this.events = generateBoard(this.catalog);
+    }
     this.predictions.syncMarkets(this.events, force);
   }
 
@@ -148,13 +205,23 @@ export class SportsbookState {
     const results = [];
 
     for (const slip of this.pending) {
-      const event = slip.event;
-      if (!event.settled && !simulated.has(event.eventId)) {
-        simulateEventOutcome(cat, event);
-        simulated.add(event.eventId);
+      if (slip.betType === "parlay") {
+        for (const leg of slip.legs ?? []) {
+          const event = leg.event;
+          if (!event.settled && !simulated.has(event.eventId)) {
+            simulateEventOutcome(cat, event);
+            simulated.add(event.eventId);
+          }
+        }
+      } else {
+        const event = slip.event;
+        if (!event.settled && !simulated.has(event.eventId)) {
+          simulateEventOutcome(cat, event);
+          simulated.add(event.eventId);
+        }
       }
       const resolved = resolveSlip(slip);
-      results.push({ slip, event, ...resolved });
+      results.push({ slip, event: slip.event ?? slip.legs?.[0]?.event, ...resolved });
     }
 
     const count = this.pending.length;
@@ -166,17 +233,19 @@ export class SportsbookState {
     return {
       events: this.events.map((e) => ({ ...e, label: e.label ?? `${e.away} @ ${e.home}` })),
       pending: this.pending.map((s) => ({
-        event: { ...s.event },
+        event: s.event ? { ...s.event } : null,
         betType: s.betType,
         pick: s.pick,
         amount: s.amount,
         odds: s.odds,
         propId: s.propId ?? null,
         propLabel: s.propLabel ?? null,
+        legs: s.legs ?? null,
       })),
       sportFilter: this.sportFilter,
       activeTab: this.activeTab,
       liveCache: this.liveCache,
+      scenarioCursor: this.scenarioCursor,
       predictions: this.predictions.toJSON(),
     };
   }
@@ -197,7 +266,8 @@ export function filterEvents(events, sportFilter) {
 }
 
 export function formatEventScore(event) {
-  if (event.eventType === "outright") {
+  if (!event) return "Pending";
+  if (event.eventType === "outright" || event.eventType === "futures") {
     return event.winner ? `Winner: ${event.winner}` : "Pending";
   }
   return `${event.awayScore} — ${event.homeScore}`;
@@ -217,8 +287,11 @@ export function oddsForSelection(event, betType, pick, propId = null) {
     const prop = event.props?.find((p) => p.id === propId);
     return pick === "yes" ? prop?.yesOdds ?? -110 : prop?.noOdds ?? -110;
   }
-  if (betType === "outright") {
+  if (betType === "outright" || betType === "futures") {
     return event.outrightOdds?.[pick] ?? event.homeOdds;
   }
   return -110;
 }
+
+// Keep secureRandomInt import used via sportSimulator; silence unused if tree-shaken.
+void secureRandomInt;

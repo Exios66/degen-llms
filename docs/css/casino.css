@@ -3153,6 +3153,8 @@ body {
   display: block;
   max-width: 100%;
   height: auto;
+  min-width: 48px;
+  min-height: 36px;
   filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.35));
 }
 

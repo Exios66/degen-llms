@@ -14,6 +14,7 @@ import {
 } from "./systems/EncounterBridge.js?v=strip-drive-road-2";
 import { TerminalHostOverlay } from "./systems/TerminalHostOverlay.js";
 import { DiningOverlay } from "../../js/DiningOverlay.js";
+import { BalconySmokeOverlay } from "../../js/BalconySmokeOverlay.js";
 import { QuestManager } from "./systems/QuestManager.js";
 import { MenuOverlay } from "./systems/MenuOverlay.js";
 import { loadEggRegistry, syncEggsFromFlags, discoverEgg, eggForFlag } from "./systems/EasterEggs.js";
@@ -199,11 +200,19 @@ async function startOverworld(activeSession) {
   });
   diningOverlay.setSession(session);
 
+  const balconySmokeOverlay = new BalconySmokeOverlay(document.getElementById("balcony-smoke-overlay"), {
+    onPersist: () => persistAll(),
+    onStatus: (msg) => console.info("[balcony]", msg),
+    onIntoxChange: () => applyIntoxicationEffects(session),
+  });
+  balconySmokeOverlay.setSession(session);
+
   terminalHost = new TerminalHostOverlay(document.getElementById("terminal-overlay"), session, {
     ...hooks,
     onPersist: () => persistAll(),
     rewardsPhone,
     diningOverlay,
+    balconySmokeOverlay,
   });
 
   encounters = new EncounterBridge({

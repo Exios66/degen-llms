@@ -40,6 +40,18 @@ Carmen books the three tables that matter: **Aureole**, **Border Grill**, and **
 | **Minibar** | Sensor-enabled charges; concierge suggests items |
 | **Phone** | Concierge, bookie, Foundation Room (Noir+), spa, Delano |
 | **Decisions** | Balcony, sky bridge to Mandalay Place, suite/penthouse perks, wake-up roulette |
+| **Suite balcony POV** | Fullscreen Strip vista smoke-break overlay (suite/penthouse) — take hits, savor the view, step inside |
+
+### Suite balcony POV smoke break
+
+From a **Panorama Suite** or **Chairman Penthouse**, stepping onto the balcony (room schematic, Room Decisions, or the dedicated POV option) opens a fullscreen first-person Strip overlook:
+
+- Animated skyline, Luxor beam, traffic, fountains, glass railing, and joint ember/smoke
+- **Take a hit** (up to 5) records suite-balcony intoxication and advances the haze
+- **Savor the view** / **Step inside** (Esc) to close
+- Web terminal + RPG hotel host; CLI offers a text POV loop with the same hit ledger
+
+→ Overlay: `docs/js/BalconySmokeOverlay.js` · CSS: `docs/css/balcony-smoke-overlay.css`
 
 ### Unlockable vignettes
 

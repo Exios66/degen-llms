@@ -354,16 +354,65 @@ def _run_room_phone(session, ui, calls, call_fn) -> None:
 
 
 def _run_room_decisions(session, ui, decisions, decide_fn) -> None:
-    labels = []
-    for dec in decisions.values():
+    hotel = ensure_hotel(session)
+    entries = []
+    for decision_id, dec in decisions.items():
+        room_types = dec.get("room_types")
+        if room_types and hotel.room_type not in room_types:
+            continue
         price = dec.get("price")
-        labels.append(f"{dec['label']}" + (f" — ${price}" if price else ""))
+        entries.append((decision_id, f"{dec['label']}" + (f" — ${price}" if price else "")))
+    labels = [label for _, label in entries]
     pick = ui.menu_choice(labels + ["Back"], title="Room decisions:")
     if pick == 0 or pick > len(labels):
         return
-    decision_id = list(decisions.keys())[pick - 1]
+    decision_id = entries[pick - 1][0]
     res = decide_fn(session, decision_id)
     ui.success(res.message) if res.ok else ui.error(res.message)
+    if decision_id in ("balcony_smoke_pov", "balcony") and hotel.room_type in ("suite", "penthouse"):
+        _run_balcony_smoke_pov(session, ui)
+        return
+    ui.pause()
+
+
+def _run_balcony_smoke_pov(session, ui) -> None:
+    """Text POV smoke break — mirrors the web suite balcony overlay."""
+    from mandalay_bay.balcony_smoke import (
+        BALCONY_HIT_MAX,
+        close_balcony_sitting,
+        start_balcony_visit,
+        take_balcony_hit,
+    )
+
+    gate, sitting = start_balcony_visit(session)
+    if not gate.ok or sitting is None:
+        ui.error(gate.message)
+        ui.pause()
+        return
+
+    ui.banner("Suite Balcony — Strip POV")
+    ui.print("Glass railing. Warm wind. The Las Vegas Strip performs below.")
+    ui.dim(gate.message)
+    while True:
+        options = []
+        if sitting.hits < BALCONY_HIT_MAX:
+            options.append("Take a hit")
+        options.extend(["Savor the view", "Step inside"])
+        pick = ui.menu_choice(options, title="Balcony:")
+        if pick == 0:
+            break
+        label = options[pick - 1]
+        if label.startswith("Take a hit"):
+            hit = take_balcony_hit(session, sitting)
+            ui.success(hit.message) if hit.ok else ui.dim(hit.message)
+            if hit.done:
+                ui.dim("The ember is out. The Strip keeps glittering.")
+        elif label.startswith("Savor"):
+            ui.dim("Warm wind. Neon bloom. You let the Strip do the talking.")
+        else:
+            break
+    done = close_balcony_sitting(session, sitting)
+    ui.success(done.message)
     ui.pause()
 
 

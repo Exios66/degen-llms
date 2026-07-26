@@ -68,7 +68,9 @@ flowchart TB
 | Tile vocabulary | `js/systems/MapTiles.js` |
 | JSON → tile layers | `js/systems/MapLoader.js` |
 | Map/NPC/door accessors + procedural fallback | `js/systems/MapData.js` |
-| Procedural sprites and tiles | `js/systems/TextureFactory.js` |
+| Procedural sprites and tiles (16px art grids) | `js/systems/TextureFactory.js` |
+| Vendored tiles + procedural FX | `js/systems/EnvironmentTextures.js` |
+| Character / staff sprite sheets | `js/systems/CharacterSprites.js` |
 | Dialogue graph | `js/systems/DialogueManager.js` |
 | Encounter routing | `js/systems/EncounterBridge.js`, `js/systems/HostedEncounters.js` |
 | Mounting terminal screens | `js/systems/TerminalHostOverlay.js` |
@@ -88,7 +90,9 @@ on the bottom and right, then whatever pattern the surface needs. Every surface
 lights from the top left; breaking that is what makes a set of tiles look like
 it came from different games. Wide floors — lobby, carpet, felt, road, sand —
 also register three scuffed variants, and `groundTileKey()` spreads them across
-the map so a ballroom does not read as wallpaper.
+the map so a ballroom does not read as wallpaper. `EnvironmentTextures.js` can
+also map vendored PNGs under `assets/tiles/` onto the same `TILE` enum without
+changing map JSON.
 
 Characters are **authored pixel grids**, not stacked rectangles: `CHAR_BODY` and
 `CHAR_LEGS` in `TextureFactory.js` are arrays of 16-character strings, one
@@ -96,6 +100,8 @@ character per pixel, resolved through a palette legend (`O` outline, `H` hair,
 `S` skin, `B` outfit, `N` denim, and so on). The upper body and the legs are
 separate blocks, which is what lets a three-frame walk cycle swap only the legs
 and drop the torso a pixel. Right-facing is the left grid mirrored.
+`CharacterSprites.js` loads optional staff/dealer sheets from
+`assets/characters/` for named NPCs.
 
 To change how a character looks, edit the strings. `scripts/smoke-test-rpg.mjs`
 asserts every row is exactly 16 characters and every character is in the legend,

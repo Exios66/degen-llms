@@ -142,6 +142,26 @@
     "message": "Room 24-118. The drapes are open on the whole valley."
   },
   {
+    "id": "tower_elevator_lobby",
+    "mapId": "hotel_tower",
+    "x": 14,
+    "y": 20,
+    "width": 3,
+    "height": 1,
+    "type": "zone_message",
+    "message": "Gold elevators — guest floor, Delano bridge, and the lounge above."
+  },
+  {
+    "id": "guest_corridor_arrival",
+    "mapId": "guest_corridor",
+    "x": 14,
+    "y": 20,
+    "width": 3,
+    "height": 1,
+    "type": "zone_message",
+    "message": "24th floor — ice machines hum behind brass room numbers."
+  },
+  {
     "id": "back_of_house",
     "mapId": "staff_corridor",
     "x": 15,

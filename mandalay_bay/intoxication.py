@@ -26,6 +26,7 @@ CONSUMABLE_POTENCY: dict[str, dict[str, object]] = {
     "champagne_split": {"category": "liquor", "potency": 2},
     "noir_herb_preroll": {"category": "contraband", "potency": 4},
     "foundation_edible": {"category": "contraband", "potency": 5},
+    "balcony_suite_joint": {"category": "contraband", "potency": 3},
     "pool_beach_club_bar": {"category": "liquor", "potency": 2},
     "pool_cabana_bottle": {"category": "liquor", "potency": 3},
     "welcome_cocktail": {"category": "liquor", "potency": 2},

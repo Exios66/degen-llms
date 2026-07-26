@@ -1,0 +1,742 @@
+/* Suite balcony POV — Strip vista + smoke-break minigame */
+
+:root {
+  --balcony-night: #07101c;
+  --balcony-dusk: #12233a;
+  --balcony-gold: #e2b45a;
+  --balcony-amber: #ff8a3d;
+  --balcony-teal: #2ec4b6;
+  --balcony-coral: #ff5e7a;
+  --balcony-cream: #f4efe4;
+  --balcony-glass: rgba(180, 210, 230, 0.18);
+  --balcony-font-display: "Cormorant Garamond", "Times New Roman", serif;
+  --balcony-font-ui: "Manrope", "Segoe UI", sans-serif;
+}
+
+body.balcony-smoke-overlay-active {
+  overflow: hidden;
+}
+
+.balcony-smoke-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9300;
+  display: none;
+  pointer-events: none;
+}
+
+.balcony-smoke-overlay--open {
+  display: block;
+  pointer-events: auto;
+}
+
+.balcony-smoke-overlay__stage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--balcony-night);
+  color: var(--balcony-cream);
+  font-family: var(--balcony-font-ui);
+  animation: balcony-enter 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes balcony-enter {
+  from { opacity: 0; transform: scale(1.04); filter: blur(6px); }
+  to { opacity: 1; transform: scale(1); filter: blur(0); }
+}
+
+/* —— Sky —— */
+.balcony-sky {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.balcony-sky__gradient {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 90% 55% at 70% 18%, rgba(255, 138, 61, 0.22) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 45% at 20% 30%, rgba(46, 196, 182, 0.12) 0%, transparent 50%),
+    linear-gradient(180deg, #050914 0%, #0c1a2e 38%, #1a2740 62%, #2a1f18 100%);
+}
+
+.balcony-sky__stars {
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(1px 1px at 12% 18%, rgba(255, 255, 255, 0.85), transparent),
+    radial-gradient(1px 1px at 28% 12%, rgba(255, 255, 255, 0.7), transparent),
+    radial-gradient(1.5px 1.5px at 46% 22%, rgba(255, 255, 255, 0.9), transparent),
+    radial-gradient(1px 1px at 63% 8%, rgba(255, 255, 255, 0.65), transparent),
+    radial-gradient(1px 1px at 78% 16%, rgba(255, 255, 255, 0.8), transparent),
+    radial-gradient(1.5px 1.5px at 88% 28%, rgba(255, 255, 255, 0.75), transparent),
+    radial-gradient(1px 1px at 35% 30%, rgba(255, 255, 255, 0.55), transparent),
+    radial-gradient(1px 1px at 55% 14%, rgba(255, 255, 255, 0.6), transparent);
+  animation: balcony-twinkle 4.5s ease-in-out infinite alternate;
+  opacity: 0.85;
+}
+
+@keyframes balcony-twinkle {
+  from { opacity: 0.55; }
+  to { opacity: 0.95; }
+}
+
+.balcony-sky__beam {
+  position: absolute;
+  left: 18%;
+  top: -8%;
+  width: 3px;
+  height: 58%;
+  background: linear-gradient(180deg, rgba(255, 220, 160, 0.75), transparent 85%);
+  transform: rotate(-8deg);
+  filter: blur(0.5px);
+  animation: balcony-beam 6s ease-in-out infinite alternate;
+  box-shadow: 0 0 18px 4px rgba(255, 200, 120, 0.25);
+}
+
+@keyframes balcony-beam {
+  from { opacity: 0.55; }
+  to { opacity: 0.95; }
+}
+
+.balcony-sky__moon {
+  position: absolute;
+  top: 12%;
+  right: 16%;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #fff6d8, #e8d49a 55%, #c9a86a);
+  box-shadow: 0 0 40px rgba(255, 230, 160, 0.35);
+  animation: balcony-moon-drift 12s ease-in-out infinite alternate;
+}
+
+@keyframes balcony-moon-drift {
+  from { transform: translateY(0); }
+  to { transform: translateY(8px); }
+}
+
+/* —— Strip skyline —— */
+.balcony-strip {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.balcony-strip__horizon {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 28%;
+  height: 22%;
+  background: linear-gradient(180deg, transparent, rgba(255, 120, 60, 0.18) 40%, rgba(20, 12, 8, 0.55));
+}
+
+.balcony-strip__mountains {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 34%;
+  height: 18%;
+  background:
+    linear-gradient(160deg, transparent 40%, rgba(20, 28, 40, 0.85) 40%, rgba(20, 28, 40, 0.85) 70%, transparent 70%),
+    linear-gradient(-155deg, transparent 35%, rgba(16, 24, 36, 0.9) 35%, rgba(16, 24, 36, 0.9) 65%, transparent 65%);
+  opacity: 0.7;
+}
+
+.balcony-strip__skyline {
+  position: absolute;
+  left: 2%;
+  right: 2%;
+  bottom: 26%;
+  height: 42%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 0.6%;
+  transform-origin: 50% 100%;
+  animation: balcony-parallax 14s ease-in-out infinite alternate;
+}
+
+@keyframes balcony-parallax {
+  from { transform: translateX(-1.2%) scale(1); }
+  to { transform: translateX(1.2%) scale(1.015); }
+}
+
+.balcony-tower {
+  position: relative;
+  flex: 0 0 auto;
+  height: 55%;
+}
+
+.balcony-tower__body {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, #1c2433, #0d121c);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+.balcony-tower__lights {
+  position: absolute;
+  inset: 8% 12% 4%;
+  background:
+    repeating-linear-gradient(
+      180deg,
+      rgba(226, 180, 90, 0.55) 0 2px,
+      transparent 2px 10px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(46, 196, 182, 0.25) 0 3px,
+      transparent 3px 11px
+    );
+  opacity: 0.75;
+  animation: balcony-window-pulse 2.8s ease-in-out infinite alternate;
+  mix-blend-mode: screen;
+}
+
+@keyframes balcony-window-pulse {
+  from { opacity: 0.45; filter: brightness(0.9); }
+  to { opacity: 0.9; filter: brightness(1.15); }
+}
+
+.tower-pyramid { width: 7%; height: 70%; }
+.tower-pyramid .balcony-tower__body {
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  background: linear-gradient(180deg, #3a2a18, #1a120c);
+}
+.tower-pyramid .balcony-tower__lights {
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  background: linear-gradient(180deg, rgba(255, 200, 120, 0.5), transparent 70%);
+}
+
+.tower-sphere { width: 9%; height: 48%; }
+.tower-sphere .balcony-tower__body {
+  border-radius: 50% 50% 12% 12%;
+  background:
+    radial-gradient(circle at 40% 35%, rgba(255, 94, 122, 0.55), transparent 45%),
+    radial-gradient(circle at 60% 55%, rgba(46, 196, 182, 0.4), transparent 50%),
+    linear-gradient(180deg, #243044, #101820);
+}
+
+.tower-bellagio { width: 11%; height: 62%; }
+.tower-bellagio .balcony-tower__body {
+  background: linear-gradient(180deg, #243050, #121a28);
+  border-radius: 4px 4px 0 0;
+}
+
+.tower-paris { width: 5%; height: 78%; }
+.tower-paris .balcony-tower__body {
+  clip-path: polygon(50% 0, 70% 18%, 62% 18%, 62% 100%, 38% 100%, 38% 18%, 30% 18%);
+  background: linear-gradient(180deg, #d8c4a0, #6a5840);
+}
+.tower-paris .balcony-tower__lights {
+  background: linear-gradient(180deg, rgba(255, 230, 160, 0.7), transparent);
+}
+
+.tower-venetian { width: 10%; height: 58%; }
+.tower-venetian .balcony-tower__body {
+  background: linear-gradient(180deg, #3a2c40, #181220);
+}
+
+.tower-aria { width: 8%; height: 72%; }
+.tower-aria .balcony-tower__body {
+  background: linear-gradient(180deg, #1e3a48, #0c1820);
+  transform: perspective(120px) rotateY(-8deg);
+}
+
+.tower-mandalay { width: 12%; height: 80%; }
+.tower-mandalay .balcony-tower__body {
+  background:
+    linear-gradient(180deg, rgba(226, 180, 90, 0.35), transparent 30%),
+    linear-gradient(180deg, #2a1c14, #0e0a08);
+  border-radius: 3px 3px 0 0;
+  box-shadow: 0 0 28px rgba(226, 180, 90, 0.2);
+}
+
+.tower-casino { width: 7%; height: 50%; }
+.tower-casino .balcony-tower__body {
+  background: linear-gradient(180deg, #203040, #101820);
+}
+
+.balcony-strip__boulevard {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 22%;
+  height: 6%;
+  background: linear-gradient(180deg, #1a1410, #0a0806);
+  overflow: hidden;
+}
+
+.balcony-traffic {
+  position: absolute;
+  top: 35%;
+  height: 2px;
+  width: 140%;
+  left: -20%;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0 18px,
+    rgba(255, 220, 140, 0.85) 18px 22px,
+    transparent 22px 40px,
+    rgba(255, 80, 80, 0.7) 40px 43px
+  );
+}
+
+.balcony-traffic--a { animation: balcony-traffic 9s linear infinite; }
+.balcony-traffic--b {
+  top: 60%;
+  animation: balcony-traffic 12s linear infinite reverse;
+  opacity: 0.7;
+}
+
+@keyframes balcony-traffic {
+  from { transform: translateX(-8%); }
+  to { transform: translateX(8%); }
+}
+
+.balcony-strip__fountains {
+  position: absolute;
+  left: 42%;
+  bottom: 27%;
+  width: 12%;
+  height: 8%;
+  background:
+    radial-gradient(ellipse at 50% 100%, rgba(160, 210, 255, 0.45), transparent 70%);
+  animation: balcony-fountain 2.2s ease-in-out infinite;
+}
+
+@keyframes balcony-fountain {
+  0%, 100% { transform: scaleY(0.7); opacity: 0.45; }
+  50% { transform: scaleY(1.15); opacity: 0.9; }
+}
+
+.balcony-strip__glow {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 20%;
+  height: 30%;
+  background: radial-gradient(ellipse at 50% 100%, rgba(255, 140, 60, 0.28), transparent 65%);
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+/* —— Atmosphere / smoke —— */
+.balcony-atmosphere {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.balcony-haze {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 50% 70%, rgba(180, 160, 120, 0.35), transparent 55%),
+    linear-gradient(180deg, transparent 30%, rgba(40, 30, 20, 0.35));
+  transition: opacity 600ms ease;
+}
+
+.balcony-smoke-plumes {
+  position: absolute;
+  left: 52%;
+  bottom: 18%;
+  width: 40%;
+  height: 50%;
+}
+
+.plume {
+  position: absolute;
+  bottom: 0;
+  left: 20%;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(220, 210, 190, 0.35), transparent 70%);
+  filter: blur(8px);
+  animation: balcony-plume 4.5s ease-out infinite;
+  opacity: 0;
+}
+
+.plume--1 { left: 10%; animation-delay: 0s; }
+.plume--2 { left: 28%; animation-delay: 0.7s; width: 60px; height: 60px; }
+.plume--3 { left: 40%; animation-delay: 1.4s; }
+.plume--4 { left: 55%; animation-delay: 2.1s; width: 70px; height: 70px; }
+.plume--5 { left: 18%; animation-delay: 2.8s; }
+
+@keyframes balcony-plume {
+  0% { transform: translate(0, 0) scale(0.4); opacity: 0; }
+  15% { opacity: calc(0.35 + var(--balcony-haze, 0.2)); }
+  100% { transform: translate(-40px, -220px) scale(1.8); opacity: 0; }
+}
+
+.balcony-smoke-overlay--exhale .balcony-exhale-burst {
+  position: absolute;
+  left: 48%;
+  bottom: 22%;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(230, 220, 200, 0.55), transparent 70%);
+  filter: blur(10px);
+  animation: balcony-exhale 900ms ease-out forwards;
+}
+
+@keyframes balcony-exhale {
+  0% { transform: scale(0.3); opacity: 0.8; }
+  100% { transform: translate(-30px, -160px) scale(2.4); opacity: 0; }
+}
+
+/* —— Foreground railing + hands —— */
+.balcony-foreground {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+
+.balcony-railing {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 34%;
+}
+
+.balcony-railing__glass {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 8%;
+  height: 42%;
+  background: linear-gradient(
+    180deg,
+    rgba(200, 220, 240, 0.08),
+    rgba(180, 200, 220, 0.16) 40%,
+    rgba(40, 50, 60, 0.35)
+  );
+  border-top: 1px solid rgba(255, 255, 255, 0.28);
+  backdrop-filter: blur(1px);
+  box-shadow: inset 0 12px 30px rgba(255, 255, 255, 0.05);
+}
+
+.balcony-railing__bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 6%;
+  height: 10px;
+  background: linear-gradient(180deg, #c9b089, #7a6540);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+}
+
+.balcony-railing__posts {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 14%;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0 7%,
+    rgba(180, 160, 120, 0.35) 7% 7.35%
+  );
+  opacity: 0.55;
+}
+
+.balcony-hands {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 28%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 1.5rem;
+}
+
+.balcony-hand {
+  width: 120px;
+  height: 90px;
+  background: radial-gradient(ellipse at 50% 20%, #d4a574, #8a5a3a 70%);
+  border-radius: 40% 40% 20% 20%;
+  opacity: 0.92;
+  filter: blur(0.2px);
+}
+
+.balcony-hand--left {
+  transform: rotate(12deg) translateY(18px);
+  animation: balcony-hand-breathe 5s ease-in-out infinite;
+}
+
+.balcony-hand--right {
+  transform: rotate(-10deg) translateY(22px);
+  animation: balcony-hand-breathe 5s ease-in-out infinite 0.4s;
+}
+
+@keyframes balcony-hand-breathe {
+  0%, 100% { transform: rotate(12deg) translateY(18px); }
+  50% { transform: rotate(10deg) translateY(12px); }
+}
+
+.balcony-hand--right {
+  animation-name: balcony-hand-breathe-r;
+}
+
+@keyframes balcony-hand-breathe-r {
+  0%, 100% { transform: rotate(-10deg) translateY(22px); }
+  50% { transform: rotate(-8deg) translateY(14px); }
+}
+
+.balcony-joint-wrap {
+  position: relative;
+  margin-bottom: 3.2rem;
+  z-index: 2;
+}
+
+.balcony-joint {
+  width: 86px;
+  height: 14px;
+  position: relative;
+  transform: rotate(-18deg);
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.45));
+}
+
+.balcony-joint__paper {
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #f0e6d0, #c8b896 55%, #a89068);
+  box-shadow: inset 0 0 0 1px rgba(80, 60, 40, 0.25);
+}
+
+.balcony-joint__ember {
+  position: absolute;
+  right: -4px;
+  top: 1px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff2a8 0%, #ff8a3d 45%, #8b1e00 80%);
+  box-shadow: 0 0 12px 4px rgba(255, 120, 40, 0.65);
+  animation: balcony-ember 1.1s ease-in-out infinite alternate;
+}
+
+@keyframes balcony-ember {
+  from { transform: scale(0.9); box-shadow: 0 0 8px 2px rgba(255, 100, 30, 0.5); }
+  to { transform: scale(1.15); box-shadow: 0 0 18px 6px rgba(255, 140, 50, 0.8); }
+}
+
+.balcony-joint__smoke {
+  position: absolute;
+  right: 2px;
+  top: -28px;
+  width: 18px;
+  height: 36px;
+  background: radial-gradient(ellipse at 50% 100%, rgba(220, 210, 195, 0.55), transparent 70%);
+  filter: blur(3px);
+  animation: balcony-joint-smoke 2.4s ease-out infinite;
+}
+
+@keyframes balcony-joint-smoke {
+  0% { transform: translateY(0) scaleX(0.6); opacity: 0.2; }
+  40% { opacity: 0.7; }
+  100% { transform: translateY(-40px) scaleX(1.4); opacity: 0; }
+}
+
+/* —— HUD —— */
+.balcony-hud {
+  position: absolute;
+  z-index: 5;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  display: grid;
+  grid-template-rows: auto auto 1fr auto auto auto;
+  align-content: start;
+  padding: clamp(1rem, 3vw, 2rem);
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(5, 10, 18, 0.55) 0%, transparent 28%),
+    linear-gradient(0deg, rgba(5, 10, 18, 0.72) 0%, transparent 38%);
+}
+
+.balcony-hud > * {
+  pointer-events: auto;
+  max-width: 34rem;
+}
+
+.balcony-hud__brand {
+  justify-self: start;
+}
+
+.balcony-hud__eyebrow {
+  margin: 0;
+  font-family: var(--balcony-font-ui);
+  font-size: 0.72rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--balcony-gold);
+}
+
+.balcony-hud__title {
+  margin: 0.15rem 0 0;
+  font-family: var(--balcony-font-display);
+  font-weight: 600;
+  font-size: clamp(2.4rem, 6vw, 3.8rem);
+  line-height: 0.95;
+  color: var(--balcony-cream);
+  text-shadow: 0 4px 28px rgba(0, 0, 0, 0.55);
+}
+
+.balcony-hud__meta,
+.balcony-hud__tagline,
+.balcony-hud__status,
+.balcony-hud__hint {
+  margin: 0.35rem 0 0;
+  color: rgba(244, 239, 228, 0.78);
+  font-size: 0.92rem;
+}
+
+.balcony-hud__tagline {
+  letter-spacing: 0.04em;
+  color: rgba(226, 180, 90, 0.9);
+}
+
+.balcony-hud__status {
+  align-self: end;
+  margin-top: auto;
+  margin-bottom: 0.75rem;
+  font-size: 1rem;
+  line-height: 1.45;
+  color: var(--balcony-cream);
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.65);
+  max-width: 36rem;
+}
+
+.balcony-hud__meters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  margin-bottom: 0.85rem;
+}
+
+.balcony-meter {
+  min-width: 10rem;
+  flex: 1;
+}
+
+.balcony-meter span {
+  display: block;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(244, 239, 228, 0.7);
+  margin-bottom: 0.25rem;
+}
+
+.balcony-meter__track {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+.balcony-meter__fill {
+  height: 100%;
+  transition: width 400ms ease;
+}
+
+.balcony-meter__fill--ember {
+  background: linear-gradient(90deg, #ff8a3d, #e2b45a);
+}
+
+.balcony-meter__fill--buzz {
+  background: linear-gradient(90deg, #2ec4b6, #7ed6c8);
+}
+
+.balcony-hud__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-bottom: 0.5rem;
+}
+
+.balcony-btn {
+  appearance: none;
+  border: 1px solid rgba(226, 180, 90, 0.45);
+  background: rgba(10, 16, 28, 0.72);
+  color: var(--balcony-cream);
+  font-family: var(--balcony-font-ui);
+  font-size: 0.92rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 0.7rem 1.1rem;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+.balcony-btn:hover:not(:disabled) {
+  background: rgba(30, 40, 58, 0.88);
+  border-color: var(--balcony-gold);
+  transform: translateY(-1px);
+}
+
+.balcony-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.balcony-btn--primary {
+  background: linear-gradient(180deg, rgba(226, 180, 90, 0.95), rgba(180, 120, 40, 0.95));
+  color: #1a1208;
+  border-color: transparent;
+}
+
+.balcony-btn--primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, #f0c878, #c4923a);
+}
+
+.balcony-btn--ghost {
+  border-color: rgba(244, 239, 228, 0.28);
+  background: transparent;
+}
+
+.balcony-hud__hint {
+  font-size: 0.75rem;
+  color: rgba(244, 239, 228, 0.45);
+}
+
+@media (max-width: 720px) {
+  .balcony-hand { width: 88px; height: 70px; }
+  .balcony-joint { width: 70px; }
+  .balcony-hud__actions { flex-direction: column; }
+  .balcony-btn { width: 100%; }
+  .balcony-strip__skyline { height: 36%; bottom: 30%; }
+  .balcony-railing { height: 38%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .balcony-smoke-overlay__stage,
+  .balcony-sky__stars,
+  .balcony-sky__beam,
+  .balcony-sky__moon,
+  .balcony-strip__skyline,
+  .balcony-traffic,
+  .balcony-strip__fountains,
+  .balcony-tower__lights,
+  .plume,
+  .balcony-joint__ember,
+  .balcony-joint__smoke,
+  .balcony-hand--left,
+  .balcony-hand--right,
+  .balcony-smoke-overlay--exhale .balcony-exhale-burst {
+    animation: none !important;
+  }
+}

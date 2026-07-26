@@ -200,6 +200,13 @@ export const ROOM_DECISIONS = {
     label: "Step onto the balcony",
     flavor: "The Strip glitters below. You feel briefly like a chairman. The feeling passes.",
   },
+  /** Suite/penthouse — opens the POV Strip smoke-break overlay from the web terminal. */
+  balcony_smoke_pov: {
+    id: "balcony_smoke_pov",
+    label: "Suite balcony — Strip POV smoke break",
+    flavor: "Glass railing. Warm wind. A joint and the entire Las Vegas Strip performing just for you.",
+    roomTypes: ["suite", "penthouse"],
+  },
   room_service: {
     id: "room_service",
     label: "Order room service instead of the minibar",
@@ -568,12 +575,16 @@ export function makeRoomDecision(session, decisionId) {
   if (!ra.decisions.includes(decisionId)) {
     ra.decisions.push(decisionId);
   }
+  // POV smoke break still counts as stepping onto the balcony for vignette unlocks.
+  if (decisionId === "balcony_smoke_pov" && !ra.decisions.includes("balcony")) {
+    ra.decisions.push("balcony");
+  }
   if (decisionId === "wake_up_call") {
     ra.wakeUpScheduled = true;
   }
   const unlocked = afterAmenityAction(session);
   let message = `${decision.label}\n${decision.flavor}`;
-  if (decisionId === "balcony" || decisionId === "telescope_balcony") {
+  if (decisionId === "balcony" || decisionId === "telescope_balcony" || decisionId === "balcony_smoke_pov") {
     const room = getRoomType(hotel);
     const time = getSessionResortPhase(session);
     message += `\n${room.label} · ${time.label} — the Strip ${time.slot >= 2 ? "blazes" : "shimmers"}.`;

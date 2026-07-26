@@ -106,7 +106,24 @@ export function buildHotelRenderers(ctx) {
     ]);
   }
 
+  function openBalconySmokePov(opts = {}) {
+    const overlay = ctx.balconySmokeOverlay;
+    if (!overlay) {
+      showStatus("Balcony POV overlay not ready.", "error");
+      return false;
+    }
+    overlay.setSession(session);
+    overlay.open(opts);
+    return true;
+  }
+
   function schematicZoneView(zoneId) {
+    if (zoneId === "balcony") {
+      const hotel = ensureHotel(session);
+      if (hotel.roomType === "suite" || hotel.roomType === "penthouse") {
+        if (openBalconySmokePov({ recordDecision: true })) return;
+      }
+    }
     const map = {
       tv: "hotel-room-tv",
       minibar: "hotel-room-minibar",
@@ -671,10 +688,14 @@ export function buildHotelRenderers(ctx) {
     const hotel = ensureHotel(session);
     const log = el("div", { className: "log-area hotel-log" });
     const decisions = filterRoomDecisions(session, hotel);
+    const suiteBalcony = hotel.roomType === "suite" || hotel.roomType === "penthouse";
 
     const decisionButtons = decisions.map((dec) => {
       const priceTag = dec.price ? ` — $${dec.price}` : "";
       return menuBtn(`${dec.label}${priceTag}`, () => {
+        if (dec.id === "balcony_smoke_pov" || (dec.id === "balcony" && suiteBalcony)) {
+          if (openBalconySmokePov({ recordDecision: true })) return;
+        }
         const res = makeRoomDecision(session, dec.id);
         log.replaceChildren();
         renderAmenityLog(log, res);
@@ -691,19 +712,24 @@ export function buildHotelRenderers(ctx) {
       el("div", { className: "panel hotel-panel hotel-room-view" }, [
         el("p", { className: "subtitle", textContent: "Small choices. Large room charges." }),
         hotel.roomType === "penthouse"
-          ? el("p", { className: "dim", textContent: "Penthouse perks: telescope, butler, Foundation access." })
+          ? el("p", { className: "dim", textContent: "Penthouse perks: telescope, butler, Foundation access, Strip POV balcony." })
           : hotel.roomType === "suite"
-            ? el("p", { className: "dim", textContent: "Suite living room and Strip-facing balcony available." })
+            ? el("p", { className: "dim", textContent: "Suite living room and Strip POV balcony smoke break available." })
             : null,
         log,
         el("ul", { className: "menu-list" }, [
           ...decisionButtons,
+          suiteBalcony
+            ? menuBtn("Open Strip POV balcony (smoke break)", () => {
+                openBalconySmokePov({ recordDecision: true });
+              })
+            : null,
           menuBtn("Trigger wake-up call now", () => {
             appendResult(log, triggerWakeUpCall(session));
             persist();
           }),
           menuBtn("Back to room", () => navigateTo("hotel-room"), true),
-        ]),
+        ].filter(Boolean)),
       ]),
     ]);
   }

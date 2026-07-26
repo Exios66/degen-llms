@@ -28,6 +28,7 @@ import { buildTradingDeskRenderers } from "./ui/trading-desk-renderers.js";
 import { buildArcadeRenderers } from "./ui/arcade-renderers.js";
 import { ArcadeCabinetOverlay } from "./arcade/ArcadeCabinetOverlay.js";
 import { DiningOverlay } from "./DiningOverlay.js";
+import { BalconySmokeOverlay } from "./BalconySmokeOverlay.js";
 import { buildRacingRenderers } from "./ui/racing-renderers.js";
 import { buildVenueRenderers } from "./ui/venue-renderers.js";
 import { buildCashierRenderers } from "./ui/cashier-renderers.js";
@@ -41,6 +42,7 @@ let session = new PlayerSession();
 let rewardsPhone = null;
 let arcadeOverlay = null;
 let diningOverlay = null;
+let balconySmokeOverlay = null;
 let casinoTimeTicker = null;
 
 const runtime = createRuntime({
@@ -55,6 +57,7 @@ const ctx = {
   get rewardsPhone() { return rewardsPhone; },
   get arcadeOverlay() { return arcadeOverlay; },
   get diningOverlay() { return diningOverlay; },
+  get balconySmokeOverlay() { return balconySmokeOverlay; },
   runtime,
   persist,
   render,
@@ -173,6 +176,18 @@ function mountDiningOverlay() {
   diningOverlay.setSession(session);
 }
 
+function mountBalconySmokeOverlay() {
+  const root = document.getElementById("balcony-smoke-overlay");
+  if (!root) return;
+  balconySmokeOverlay = new BalconySmokeOverlay(root, {
+    onPersist: () => persist(),
+    onStatus: (msg, kind) => showStatus(msg, kind),
+    onClosed: () => render(),
+    onIntoxChange: () => applyIntoxicationEffects(session),
+  });
+  balconySmokeOverlay.setSession(session);
+}
+
 
 
 
@@ -195,6 +210,7 @@ function enterCasino(nextSession) {
   mountRewardsPhone();
   mountArcadeOverlay();
   mountDiningOverlay();
+  mountBalconySmokeOverlay();
   syncContactIntros(nextSession);
   applyIntoxicationEffects(session);
   render();
@@ -207,6 +223,7 @@ function returnToSavePicker() {
   rewardsPhone?.close();
   arcadeOverlay?.close();
   diningOverlay?.close();
+  balconySmokeOverlay?.close();
   runtime.sportsbook = new SportsbookState();
   runtime.tradingDesk = new TradingDeskState();
   runtime.blackjackGame = null;
@@ -738,6 +755,7 @@ function render() {
   }
   diningOverlay?.setSession(session);
   arcadeOverlay?.setSession(session);
+  balconySmokeOverlay?.setSession(session);
   window.__casinoReady = true;
 }
 

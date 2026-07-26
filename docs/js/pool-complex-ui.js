@@ -28,7 +28,12 @@ export function buildPoolRenderers(ctx) {
   } = ctx;
 
   function openOverlay(zoneId) {
-    const overlay = ctx.poolOverlay;
+    if (typeof ctx.openPoolComplexVisual === "function" && !ctx.poolOverlay?.active) {
+      return ctx.openPoolComplexVisual(zoneId);
+    }
+    const overlay = typeof ctx.ensurePoolOverlay === "function"
+      ? ctx.ensurePoolOverlay()
+      : ctx.poolOverlay;
     if (!overlay) return false;
     overlay.setSession(session);
     if (overlay.active) overlay.openZone(zoneId);

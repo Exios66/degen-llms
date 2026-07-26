@@ -26,7 +26,8 @@ Quest: photograph 5 shark species across the aquarium map. Progress tracked in `
 
 ## Access
 
-- **Web:** Hotel Lobby → Pool Complex opens the fullscreen **Mandalay Beach** graphic overlay
+- **Web terminal (casino):** Hub → **Pool Complex — Mandalay Beach**, or Casino Amenities → same, or Hotel Lobby → Pool Complex — all open the fullscreen graphic overlay
+- **Deep link:** `?guest=1&view=pool-complex` (also `pool-wave`, `pool-reef`, …) opens the overlay on guest entry
 - **RPG:** West lobby → Mandalay Beach; NPC encounters open the same overlay
 
 ## Graphic overlay

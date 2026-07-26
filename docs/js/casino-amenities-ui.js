@@ -50,9 +50,25 @@ export function buildAmenitiesRenderers(ctx) {
             ctx.diningOverlay.setSession(session);
             ctx.diningOverlay.open();
           }),
-          menuBtn("<span class=\"num\">4)</span> View shopping bag", () => pushView("mall-bag")),
-          menuBtn(`<span class="num">5)</span> High Limit Salon <span class="dim">(10,000+ chips, high-limit tier)</span>`, () => pushView("high-limit-salon")),
-          menuBtn(`<span class="num">6)</span> Foundation Room <span class="dim">(Noir lounge)</span>`, () => pushView("foundation-room")),
+          menuBtn("<span class=\"num\">4)</span> Pool Complex — Mandalay Beach <span class=\"dim\">(graphic overlay)</span>", () => {
+            if (typeof ctx.openPoolComplexVisual === "function") {
+              if (!ctx.openPoolComplexVisual("hub")) pushView("pool-complex");
+              return;
+            }
+            const overlay = typeof ctx.ensurePoolOverlay === "function"
+              ? ctx.ensurePoolOverlay()
+              : ctx.poolOverlay;
+            if (!overlay) {
+              showStatus("Pool overlay not ready.", "error");
+              pushView("pool-complex");
+              return;
+            }
+            overlay.setSession(session);
+            overlay.open("hub");
+          }),
+          menuBtn("<span class=\"num\">5)</span> View shopping bag", () => pushView("mall-bag")),
+          menuBtn(`<span class="num">6)</span> High Limit Salon <span class="dim">(10,000+ chips, high-limit tier)</span>`, () => pushView("high-limit-salon")),
+          menuBtn(`<span class="num">7)</span> Foundation Room <span class="dim">(Noir lounge)</span>`, () => pushView("foundation-room")),
           menuBtn('<span class="num">0)</span> Back', goBack, true),
         ]),
       ]),

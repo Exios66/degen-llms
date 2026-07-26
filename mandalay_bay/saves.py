@@ -270,6 +270,7 @@ def session_to_dict(session: PlayerSession) -> dict:
             "balance": session.bank.balance,
             "account_name": session.bank.account_name,
             "transactions": bank_txs,
+            "resort_perks": dict(getattr(session.bank, "resort_perks", {}) or {}),
         }
     if hasattr(session, "staff_overrides") and session.staff_overrides is not None:
         payload["staff_overrides"] = session.staff_overrides
@@ -353,6 +354,7 @@ def session_from_dict(data: dict) -> PlayerSession:
         bank = BankAccount(
             balance=bank_data.get("balance", 0),
             account_name=bank_data.get("account_name", "Private Offshore Account"),
+            resort_perks=dict(bank_data.get("resort_perks") or bank_data.get("resortPerks") or {}),
         )
         bank.transactions = []
         for raw in bank_data.get("transactions", []):

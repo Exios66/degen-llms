@@ -110,7 +110,7 @@ Thoroughbred sim with win/place/show wagering. Real horse names, strength-based 
 | Amenity | Description |
 |---------|-------------|
 | **Cashier** | Buy chips, cash out, view ledger |
-| **Private Offshore Account** | Park winnings outside the cage; tiered withdraws |
+| **Private Offshore Account** | Park winnings; life/business expense tree (legal, debt, contracts); resort privileges (floor floats, comps, VIP markers, recovery spa) |
 | **Casino Floor — shopping & bars** | Mandalay Place sky bridge, three bars, intoxication |
 | **Resort Dining** | Aureole, Border Grill, Stripsteak — capacity minigame + drink-scaled encounters |
 | **Staff Manifest** | Editable dealer roster with session overrides |

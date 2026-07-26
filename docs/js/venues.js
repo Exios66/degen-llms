@@ -31,16 +31,18 @@ export const GENTLEMANS_CLUB_MIN_REWARDS_TIER_IDX = 2;
  */
 export function canEnterHighLimitSalon(session, stakeTier) {
   const balance = session.wallet?.balance ?? 0;
-  if (balance < HIGH_LIMIT_SALON_CHIP_MIN) {
+  const hasMarker = Boolean(session.bank?.resortPerks?.high_limit_marker);
+  if (balance < HIGH_LIMIT_SALON_CHIP_MIN && !hasMarker) {
     return {
       ok: false,
-      reason: `High Limit salon requires at least ${HIGH_LIMIT_SALON_CHIP_MIN.toLocaleString()} chips on the floor.`,
+      reason: `High Limit salon requires at least ${HIGH_LIMIT_SALON_CHIP_MIN.toLocaleString()} chips on the floor (or an offshore High Limit marker).`,
     };
   }
   const tierId = stakeTier?.id;
   return {
     ok: true,
     needsStakeAssign: !tierId || !SALON_STAKE_TIER_IDS.includes(tierId),
+    hasMarker,
   };
 }
 
@@ -65,14 +67,30 @@ export function canEnterFoundationRoom(session) {
   const roomType = session.hotel?.roomType;
   const suiteOrBetter = roomType === "suite" || roomType === "penthouse";
 
+  const vipRetainer = Boolean(session.bank?.resortPerks?.vip_host_retainer);
+
   // Any one social/atmosphere path opens the rope for Noir+ members.
-  if (hostRapport >= FOUNDATION_MIN_HOST_RAPPORT || buzzed || calledFoundation || suiteOrBetter) {
-    return { ok: true, rewardsTier, hostRapport, buzzed, calledFoundation, suiteOrBetter };
+  if (
+    hostRapport >= FOUNDATION_MIN_HOST_RAPPORT
+    || buzzed
+    || calledFoundation
+    || suiteOrBetter
+    || vipRetainer
+  ) {
+    return {
+      ok: true,
+      rewardsTier,
+      hostRapport,
+      buzzed,
+      calledFoundation,
+      suiteOrBetter,
+      vipRetainer,
+    };
   }
 
   return {
     ok: false,
-    reason: "Velvet rope closed — build host rapport, call the Foundation Room from your suite phone, upgrade to a suite, or loosen up at the bar.",
+    reason: "Velvet rope closed — build host rapport, call the Foundation Room from your suite phone, upgrade to a suite, loosen up at the bar, or buy a VIP host retainer offshore.",
   };
 }
 

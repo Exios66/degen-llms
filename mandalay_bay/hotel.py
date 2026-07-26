@@ -349,6 +349,10 @@ def late_checkout(session: PlayerSession) -> ActionResult:
     hotel = ensure_hotel(session)
     if hotel.late_checkout_used:
         return ActionResult(False, "You already negotiated late checkout.")
+    bank = getattr(session, "bank", None)
+    if bank is not None and bank.has_perk("late_checkout_credit") and bank.consume_perk("late_checkout_credit"):
+        hotel.late_checkout_used = True
+        return ActionResult(True, "Carmen honors your offshore late-checkout credit. Two extra hours.")
     if is_net_positive(session):
         hotel.late_checkout_used = True
         return ActionResult(True, "Carmen comps an extra two hours. The minibar sensor sleeps.")
@@ -356,7 +360,10 @@ def late_checkout(session: PlayerSession) -> ActionResult:
     if session.wallet.debit(cost, "hotel", "Late checkout"):
         hotel.late_checkout_used = True
         return ActionResult(True, f"Paid {fmt_chips(cost)} for two extra hours. Worth it.")
-    return ActionResult(False, f"Need {fmt_chips(cost)} or net-positive floor status.")
+    return ActionResult(
+        False,
+        f"Need {fmt_chips(cost)}, net-positive floor status, or an offshore late-checkout credit.",
+    )
 
 
 def wake_up_call(session: PlayerSession) -> ActionResult:

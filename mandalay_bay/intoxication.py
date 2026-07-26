@@ -184,5 +184,25 @@ def get_intoxication_level(session: object) -> int:
     return ensure_intoxication(session).level
 
 
+def is_heightened_intoxication(session: object) -> bool:
+    """Roughly 4–5 drinks or a liquor + smoke equivalent (JS parity)."""
+    maybe_settle_max_intoxication(session)
+    state = ensure_intoxication(session)
+    level = state.level
+    total_doses = state.total_doses
+    categories = {"liquor": 0, "beer": 0, "contraband": 0}
+    for entry in state.history or []:
+        cat = entry.get("category") if isinstance(entry, dict) else None
+        if cat in categories:
+            categories[cat] += 1
+    if level >= 16:
+        return True
+    if total_doses >= 4 and level >= 10:
+        return True
+    if total_doses >= 3 and level >= 12 and categories["contraband"] > 0:
+        return True
+    return False
+
+
 def is_consumable_item(item_id: str) -> bool:
     return item_id in CONSUMABLE_POTENCY

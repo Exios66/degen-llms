@@ -153,7 +153,7 @@ export function createShowgirlBeat(canvas, api) {
     ctx.font = "16px JetBrains Mono, monospace";
     ctx.fillText(`Round ${Math.min(round, TARGET_ROUNDS)} / ${TARGET_ROUNDS}`, W / 2, 158);
 
-    drawShowgirl(ctx, W / 2 - 30, 170, time, 3);
+    drawShowgirl(ctx, W / 2 - 40, 168, time, 4);
 
     // Upcoming sequence
     const show = sequence.slice(step, step + 5);

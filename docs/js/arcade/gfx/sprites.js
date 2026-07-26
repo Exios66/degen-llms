@@ -135,20 +135,34 @@ export function drawTourist(ctx, x, y, { dir = "up", t = 0, scale = 2, flash = f
 
 // ── Vehicles (Strip Cross) ───────────────────────────────────────────────────
 
-function vehicleBody(w, accent) {
-  const cols = Math.max(8, w);
-  const win = Math.max(2, Math.floor(cols * 0.35));
+function vehicleBody(cols, accent) {
+  const c = Math.max(10, cols);
+  const win = Math.max(3, Math.floor(c * 0.38));
+  const body = "B".repeat(c - 2);
+  const dark = "A".repeat(c - 2);
+  const glass = "W".repeat(win) + "B".repeat(c - 2 - win);
   const rows = [
-    "O".repeat(cols),
-    "O" + "B".repeat(cols - 2) + "O",
-    "O" + "W".repeat(win) + "B".repeat(cols - 2 - win) + "O",
-    "O" + "A".repeat(cols - 2) + "O",
-    "O" + "A".repeat(cols - 2) + "O",
-    "O".repeat(cols),
+    "." + "O".repeat(c - 2) + ".",
+    "O" + body + "O",
+    "O" + body + "O",
+    "O" + glass + "O",
+    "O" + glass + "O",
+    "O" + body + "O",
+    "O" + dark + "O",
+    "O" + dark + "O",
+    "O" + "K".repeat(c - 2) + "O",
+    "O".repeat(c),
   ];
   return {
     grid: rows,
-    pal: { O: "#121018", B: accent, A: shade(accent, 0.72), W: "#9ad0ff" },
+    pal: {
+      O: "#121018",
+      B: accent,
+      A: shade(accent, 0.72),
+      W: "#9ad0ff",
+      K: "#2a2a30",
+      ".": null,
+    },
   };
 }
 
@@ -165,29 +179,34 @@ function shade(hex, f) {
  * @param {number} wPx  Body width in canvas pixels.
  */
 export function drawVehicle(ctx, x, y, wPx, hPx, color, t = 0, facingRight = true) {
-  const scale = 2;
-  const cols = Math.max(8, Math.round(wPx / scale));
+  // Fit body to lane height with denser pixels
+  const scale = Math.max(3, Math.min(5, Math.floor(hPx / 10)));
+  const cols = Math.max(10, Math.round(wPx / scale));
   const { grid, pal } = vehicleBody(cols, color);
-  const gy = y + Math.max(0, (hPx - grid.length * scale) / 2);
+  const drawW = cols * scale;
+  const drawH = grid.length * scale;
+  const gx = x + Math.max(0, (wPx - drawW) / 2);
+  const gy = y + Math.max(0, (hPx - drawH) / 2);
   if (!facingRight) {
     const flipped = grid.map((row) => [...row].reverse().join(""));
-    drawPixels(ctx, x, gy, flipped, pal, scale);
+    drawPixels(ctx, gx, gy, flipped, pal, scale);
   } else {
-    drawPixels(ctx, x, gy, grid, pal, scale);
+    drawPixels(ctx, gx, gy, grid, pal, scale);
   }
   // Headlights
-  const lx = facingRight ? x + wPx - 4 : x;
+  const lx = facingRight ? gx + drawW - scale * 2 : gx + scale;
+  const ly = gy + scale * 2;
   ctx.fillStyle = withAlpha("#ffe08a", 0.7 + pulse01(t, 2) * 0.3);
-  ctx.fillRect(lx, gy + 4, 3, 3);
-  ctx.fillRect(lx, gy + hPx - 10, 3, 3);
+  ctx.fillRect(lx, ly, scale, scale);
+  ctx.fillRect(lx, gy + drawH - scale * 4, scale, scale);
   // Wheels
   const wheelFrame = frameAt(t, 12, 2);
-  const wy = gy + hPx - 6;
-  for (const wx of [x + 6, x + wPx - 12]) {
+  const wy = gy + drawH - scale;
+  for (const wx of [gx + scale * 2, gx + drawW - scale * 4]) {
     ctx.fillStyle = "#1a1a1a";
-    ctx.fillRect(wx, wy, 6, 5);
-    ctx.fillStyle = "#888";
-    ctx.fillRect(wx + (wheelFrame ? 2 : 1), wy + 1, 2, 3);
+    ctx.fillRect(wx, wy, scale * 2, scale);
+    ctx.fillStyle = "#aaa";
+    ctx.fillRect(wx + (wheelFrame ? scale : 0), wy, scale, scale);
   }
 }
 
@@ -429,28 +448,32 @@ export function drawChipBall(ctx, x, y, r, trail = []) {
 
 const SHOWGIRL = [
   [
-    "...OOOO...",
-    "..OSSSSO..",
-    "..OSHSHO..",
-    "..OSSSSO..",
-    "...ORRO...",
-    "..ORRRRO..",
-    ".ORRRRRRO.",
-    "ORRORORRRO",
-    ".O..O..O..",
-    ".O.....O..",
+    "....OOOO....",
+    "...OSSSSO...",
+    "...OSHSHO...",
+    "...OSSSSO...",
+    "....ORRO....",
+    "...ORRRRO...",
+    "..ORRRRRRO..",
+    ".ORRRRRRRRO.",
+    "ORROORORORRO",
+    ".O...OO...O.",
+    ".O........O.",
+    ".O........O.",
   ],
   [
-    "...OOOO...",
-    "..OSSSSO..",
-    "..OSHSHO..",
-    "..OSSSSO..",
-    "...ORRO...",
-    "..ORRRRO..",
-    ".ORRRRRRO.",
-    "ORRORORRRO",
-    "..O..O....",
-    "..O.....O.",
+    "....OOOO....",
+    "...OSSSSO...",
+    "...OSHSHO...",
+    "...OSSSSO...",
+    "....ORRO....",
+    "...ORRRRO...",
+    "..ORRRRRRO..",
+    ".ORRRRRRRRO.",
+    "ORROORORORRO",
+    "..O..OO..O..",
+    "..O......O..",
+    "O..........O",
   ],
 ];
 

@@ -161,14 +161,16 @@ export function createStripCross(canvas, api) {
       drawVehicle(ctx, x, h.r * ch + 10, h.w, ch - 20, h.color, time, h.speed > 0);
     }
 
-    // Player tourist
+    // Player tourist (3× pixels so the walk cycle reads on the CRT)
     const hopY = player.hop > 0 ? -Math.sin(player.hop * Math.PI) * 10 : 0;
-    const px = player.c * cw + (cw - 16) / 2;
-    const py = player.r * ch + (ch - 18) / 2 + hopY;
+    const tw = 8 * 3;
+    const th = 9 * 3;
+    const px = player.c * cw + (cw - tw) / 2;
+    const py = player.r * ch + (ch - th) / 2 + hopY;
     drawTourist(ctx, px, py, {
       dir: player.dir,
       t: player.anim,
-      scale: 2,
+      scale: 3,
       flash: deadFlash > 0,
     });
 

@@ -1,13 +1,15 @@
 import {
   ARCHETYPES,
+  BODIES,
   SKIN_TONES,
   HAIR_COLORS,
   OUTFIT_COLORS,
+  LEG_COLORS,
   defaultAppearance,
   normalizeAppearance,
   resolvePalette,
 } from "./CharacterAppearance.js";
-import { drawCharacterToCanvas } from "./TextureFactory.js";
+import { drawCharacterToCanvas } from "./CharacterSprites.js";
 
 /**
  * Character creator / wardrobe UI with live sprite preview.
@@ -77,6 +79,32 @@ export function renderCharacterCreator(root, {
   archetypeSection.appendChild(archetypeRow);
   optionsCol.appendChild(archetypeSection);
 
+  // Bodies are whole sprites rather than a colour, so they get thumbnails of
+  // the character you would actually be playing.
+  const bodySection = document.createElement("div");
+  bodySection.className = "character-creator__section";
+  bodySection.innerHTML = `<h2 class="character-creator__label">Body</h2>`;
+  const bodyRow = document.createElement("div");
+  bodyRow.className = "character-creator__bodies";
+  for (const body of BODIES) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "character-creator__body";
+    btn.dataset.body = body.id;
+    btn.title = body.label;
+    btn.setAttribute("aria-label", body.label);
+    const thumb = document.createElement("canvas");
+    thumb.className = "character-creator__body-thumb";
+    btn.appendChild(thumb);
+    btn.onclick = () => {
+      state.appearance.body = body.id;
+      refresh();
+    };
+    bodyRow.appendChild(btn);
+  }
+  bodySection.appendChild(bodyRow);
+  optionsCol.appendChild(bodySection);
+
   optionsCol.appendChild(makeSwatchSection("Skin tone", SKIN_TONES, "skin", (id) => {
     state.appearance.skin = id;
     refresh();
@@ -89,6 +117,11 @@ export function renderCharacterCreator(root, {
 
   optionsCol.appendChild(makeSwatchSection("Outfit", OUTFIT_COLORS, "outfit", (id) => {
     state.appearance.outfit = id;
+    refresh();
+  }));
+
+  optionsCol.appendChild(makeSwatchSection("Legwear", LEG_COLORS, "legs", (id) => {
+    state.appearance.legs = id;
     refresh();
   }));
 
@@ -127,6 +160,17 @@ export function renderCharacterCreator(root, {
     for (const btn of archetypeRow.querySelectorAll(".character-creator__archetype")) {
       btn.classList.toggle("character-creator__archetype--active", btn.dataset.archetype === state.archetype);
     }
+    for (const btn of bodyRow.querySelectorAll(".character-creator__body")) {
+      const active = state.appearance.body === btn.dataset.body;
+      btn.classList.toggle("character-creator__body--active", active);
+      // Thumbnails wear the colours already chosen, so switching body is a
+      // straight comparison rather than a guess.
+      drawCharacterToCanvas(
+        btn.querySelector("canvas"),
+        { ...palette, sheet: btn.dataset.body },
+        "down", 0, 2
+      );
+    }
     for (const swatch of panel.querySelectorAll(".character-creator__swatch")) {
       const group = swatch.dataset.group;
       const id = swatch.dataset.id;
@@ -154,13 +198,8 @@ function makeSwatchSection(label, options, group, onPick) {
     btn.dataset.id = opt.id;
     btn.title = opt.label;
     btn.setAttribute("aria-label", opt.label);
-    if (group === "skin") {
-      btn.style.background = `#${opt.mid.toString(16).padStart(6, "0")}`;
-    } else if (group === "hair") {
-      btn.style.background = `#${opt.color.toString(16).padStart(6, "0")}`;
-    } else {
-      btn.style.background = `#${opt.body.toString(16).padStart(6, "0")}`;
-    }
+    // Two stops of the ramp, so a swatch previews the shading too.
+    btn.style.background = `linear-gradient(135deg, ${opt.light} 0 50%, ${opt.mid} 50% 100%)`;
     btn.onclick = () => onPick(opt.id);
     row.appendChild(btn);
   }

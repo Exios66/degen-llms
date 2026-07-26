@@ -1,8 +1,8 @@
 /**
  * JSON-driven branching dialogue overlay (Pokémon / DS style).
  */
-import { resolveSpeakerPortrait } from "./CharacterAppearance.js";
-import { drawCharacterToCanvas } from "./TextureFactory.js";
+import { resolveSpeakerLook } from "./CharacterAppearance.js";
+import { drawCharacterToCanvas } from "./CharacterSprites.js";
 
 export class DialogueManager {
   /**
@@ -64,8 +64,7 @@ export class DialogueManager {
     portrait.width = 56;
     portrait.height = 77;
     portrait.setAttribute("aria-hidden", "true");
-    const palette = resolveSpeakerPortrait(speaker ?? "Resort");
-    drawCharacterToCanvas(portrait, palette, "down", 0, 3);
+    drawCharacterToCanvas(portrait, resolveSpeakerLook(speaker ?? "Resort"), "down", 0, 3);
     portraitWrap.appendChild(portrait);
 
     const content = document.createElement("div");

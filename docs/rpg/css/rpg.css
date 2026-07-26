@@ -61,15 +61,16 @@ body {
 #game-shell.arcade-cabinet::before {
   content: "THE MANDALAY BAY";
   position: absolute;
-  top: 3px;
+  top: 4px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 30;
-  font-size: 7px;
+  font-size: 8px;
+  line-height: 1;
   color: var(--gold);
   letter-spacing: 0.12em;
   pointer-events: none;
-  opacity: 0.7;
+  opacity: 0.85;
 }
 
 #game-shell.konami-mode {
@@ -92,7 +93,8 @@ body {
 
 #hud {
   position: absolute;
-  top: 14px;
+  /* Clear of the cabinet marquee printed along the top of the bezel. */
+  top: 18px;
   left: 50%;
   transform: translateX(-50%);
   width: min(100%, 640px);
@@ -501,6 +503,32 @@ body {
 .character-creator__swatch--active {
   border-color: var(--gold);
   box-shadow: 0 0 0 2px #0a0812, 0 0 0 4px var(--gold);
+}
+
+.character-creator__bodies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.character-creator__body {
+  padding: 2px;
+  min-height: 0;
+  background: #0a0812;
+  border: 3px solid var(--border);
+  cursor: pointer;
+  line-height: 0;
+}
+
+.character-creator__body--active {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 2px #0a0812, 0 0 0 4px var(--gold);
+}
+
+.character-creator__body-thumb {
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
 }
 
 .character-creator__actions {

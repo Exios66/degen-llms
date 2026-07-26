@@ -1,42 +1,15 @@
 import { ART_UNIT, TILE, TILE_SIZE } from "./MapTiles.js";
-import {
-  appearanceTextureBase,
-  normalizeAppearance,
-  resolvePalette,
-} from "./CharacterAppearance.js";
 
 /**
- * Production-grade procedural pixel textures — 16px art grid, 2× upscale.
- * Consistent top-left lighting, 4–5 tone palettes, DS/Pokémon polish.
+ * Procedural pixel textures for the ground, decor and UI cues — 16px art grid,
+ * 2× upscale. Consistent top-left lighting, 4–5 tone palettes, DS polish.
+ *
+ * Characters are not drawn here: they come from the vendored sprite sheets in
+ * `CharacterSprites.js`, which are hand-drawn art rather than generated.
  */
 
 const SCALE = TILE_SIZE / ART_UNIT;
-const CHAR_W = ART_UNIT;
-const CHAR_H = 24;
 const OUTLINE = 0x241d2e;
-const OUTLINE_SOFT = 0x3a3048;
-
-// ─── Color utilities ───────────────────────────────────────────────────────
-
-function clamp(v, lo, hi) {
-  return Math.max(lo, Math.min(hi, v));
-}
-
-function shade(color, factor) {
-  const r = clamp(Math.round(((color >> 16) & 0xff) * factor), 0, 255);
-  const g = clamp(Math.round(((color >> 8) & 0xff) * factor), 0, 255);
-  const b = clamp(Math.round((color & 0xff) * factor), 0, 255);
-  return (r << 16) | (g << 8) | b;
-}
-
-function mix(a, b, t) {
-  const ch = (shift) => {
-    const av = (a >> shift) & 0xff;
-    const bv = (b >> shift) & 0xff;
-    return clamp(Math.round(av + (bv - av) * t), 0, 255);
-  };
-  return (ch(16) << 16) | (ch(8) << 8) | ch(0);
-}
 
 // ─── Pixel writers (Phaser Graphics + HTML Canvas) ─────────────────────────
 
@@ -638,282 +611,19 @@ export function groundTileKey(tile, x, y) {
   return variant === 0 ? `tile_${tile}` : `tile_${tile}_s${variant - 1}`;
 }
 
-const TEX_CHAR_W = CHAR_W * SCALE;
-const TEX_CHAR_H = CHAR_H * SCALE;
-
-// ─── Characters ──────────────────────────────────────────────────────────────
-
-/**
- * Characters are authored as pixel grids rather than stacked rectangles: one
- * character per pixel, 16 wide, read against a palette legend.
- *
- * Two rules keep them from reading as a stack of boxes, which is the failure
- * mode this format invites. The silhouette narrows at the crown, the jaw, and
- * the shoulders, so nothing has a flat edge longer than it needs. And the arms
- * carry their own tone plus a two-pixel hand, so they separate from the torso
- * instead of merging into one slab. Proportions follow the CC0 Kenney RPG Urban
- * pack: a big round head on a short body, most of the frame's width used.
- *
- * The upper body (rows 1-17) is a separate block from the legs (rows 17-23), so
- * a walk cycle only swaps the leg block and drops the body a pixel.
- */
-
-const CHAR_LEGEND = (palette) => {
-  const { body, mid, shade: outfit, hair, hairShade, skinLight, skinMid, skinShade } = palette;
-  return {
-    O: [OUTLINE, 1],
-    o: [OUTLINE_SOFT, 1],
-    H: [hair, 1],
-    h: [hairShade, 1],
-    G: [mix(hair, 0xffffff, 0.24), 1],
-    S: [skinLight, 1],
-    s: [skinMid, 1],
-    d: [skinShade, 1],
-    e: [0xfffaf2, 1],
-    E: [0x4a3550, 1],
-    F: [mix(0x4a3550, skinLight, 0.4), 1],
-    c: [mix(skinMid, 0xe06878, 0.45), 1],
-    B: [body, 1],
-    M: [mix(body, 0xffffff, 0.3), 1],
-    D: [mid, 1],
-    b: [outfit, 1],
-    // Trousers stay a neutral denim so the outfit colour reads as one garment
-    // instead of tinting the whole character.
-    N: [0x4a5480, 1],
-    n: [0x343c62, 1],
-    g: [mix(0x343c62, OUTLINE, 0.35), 1],
-    k: [0x413c52, 1],
-    K: [0x6d6683, 1],
-    ",": [0x000000, 0.15],
-    ";": [0x000000, 0.24],
-  };
-};
-
-/** Head, torso and arms: grid rows 1 through 17. */
-const CHAR_BODY = {
-  down: [
-    ".....OOOOOO.....",
-    "...OHHHHHHHhO...",
-    "..OHGGHHHHHhhO..",
-    "..OHGHHHHHHhhO..",
-    "..OHHSSSSSSShO..",
-    "..OSSESSSSESSO..",
-    "...OSFSSSSFSO...",
-    "....OcSssScO....",
-    ".....OssssO.....",
-    "....OMMMMMMO....",
-    "..OMMMMMMMMMDO..",
-    ".OMMBBBBBBBDDDO.",
-    ".OMMBBBBBBBDDDO.",
-    ".OSSBBBBBBBDssO.",
-    "...OBBBBBBBDO...",
-    "...OBBBBBBBDO...",
-    "...ObbbbbbbbO...",
-  ],
-  up: [
-    ".....OOOOOO.....",
-    "...OHHHHHHHhO...",
-    "..OHGGHHHHHhhO..",
-    "..OHGHHHHHHhhO..",
-    "..OHHHHHHHHhhO..",
-    "..OHHHHHHHHHhO..",
-    "...OHHHHHHhhO...",
-    "....OhhhhhhO....",
-    ".....OhsshO.....",
-    "....OMMMMMMO....",
-    "..OMMMMMMMMMDO..",
-    ".OMMBBBBBBBDDDO.",
-    ".OMMBBBBBBBDDDO.",
-    ".OSSBBBBBBBDssO.",
-    "...OBBBBBBBDO...",
-    "...OBBBBBBBDO...",
-    "...ObbbbbbbbO...",
-  ],
-  left: [
-    ".....OOOOOO.....",
-    "...OHHHHHHHhO...",
-    "..OGHHHHHHhhhO..",
-    "..OGHHHHHHhhhO..",
-    "..OSSSSSHHhhhO..",
-    "..OSESSSHHhhhO..",
-    "...OFSSdHhhhO...",
-    "....OcSShhhO....",
-    ".....OsshhO.....",
-    "....OMMMMMMO....",
-    "..OMMMMMMMMMDO..",
-    ".OMMBBBBBBBBDDO.",
-    ".OMMBBBBBBBBDDO.",
-    ".OSSBBBBBBBBDsO.",
-    "...OBBBBBBBDO...",
-    "...OBBBBBBBDO...",
-    "...ObbbbbbbbO...",
-  ],
-};
-
-/** Legs, shoes and contact shadow: grid rows 17 through 23, one per frame. */
-const CHAR_LEGS = [
-  [
-    "...ONNNNNNNNO...",
-    "...ONNNggNNNO...",
-    "...ONNNggnnnO...",
-    "...OnnnggnnnO...",
-    "...OKKKggkkkO...",
-    "..,OOOO,,OOOO,..",
-    "....;;;;;;;;....",
-  ],
-  [
-    "...ONNNNNNNNO...",
-    "...ONNNggNNNO...",
-    "...ONNNggnnnO...",
-    "...OKKKggnnnO...",
-    "........OkkkO...",
-    "..,,,,,,OOOOO,..",
-    "....;;;;;;;;....",
-  ],
-  [
-    "...ONNNNNNNNO...",
-    "...ONNNggNNNO...",
-    "...ONNNggnnnO...",
-    "...OnnnggkkkO...",
-    "...OKKKO........",
-    "..,OOOOO,,,,,,..",
-    "....;;;;;;;;....",
-  ],
-];
-
-const BODY_TOP = 1;
-const LEGS_TOP = 17;
-
-const mirrorRows = (rows) => rows.map((row) => [...row].reverse().join(""));
-
-const CHAR_BODY_BY_DIR = { ...CHAR_BODY, right: mirrorRows(CHAR_BODY.left) };
-
-/** Paint a grid, merging horizontal runs of one colour into a single rect. */
-function paintGrid(w, rows, legend, top) {
-  rows.forEach((row, index) => {
-    const y = top + index;
-    if (y < 0) return;
-    let run = 0;
-    while (run < row.length) {
-      const ch = row[run];
-      let width = 1;
-      while (row[run + width] === ch) width += 1;
-      const paint = ch === "." ? null : legend[ch];
-      if (paint) w.px(paint[0], run, y, width, 1, paint[1]);
-      run += width;
-    }
-  });
-}
-
-function drawCharacterPixels(w, palette, dir, frame) {
-  const legend = CHAR_LEGEND(palette);
-  const legs = CHAR_LEGS[frame] ?? CHAR_LEGS[0];
-  const body = CHAR_BODY_BY_DIR[dir] ?? CHAR_BODY_BY_DIR.down;
-  // Frames 1 and 2 lift a foot, so the upper body rides a pixel higher. The leg
-  // block always starts at row 17, which keeps the waist joined either way.
-  const bob = frame === 0 ? 0 : -1;
-  paintGrid(w, legs, legend, LEGS_TOP);
-  paintGrid(w, body, legend, BODY_TOP + bob);
-}
-
-function drawCharacter(g, palette, dir, frame) {
-  drawCharacterPixels(makeWriter(g), palette, dir, frame);
-}
-
-/**
- * Where a character's feet sit inside its texture, in art units.
- *
- * The scene uses this for the collision body so the box hugs the shoes rather
- * than the whole 24-row sprite. Anything that positions a character on the tile
- * grid has to agree with it, or the player and the NPCs end up standing on
- * different parts of the same tile.
- */
-export const CHAR_METRICS = {
-  width: CHAR_W,
-  height: CHAR_H,
-  scale: SCALE,
-  feet: { x: 3, y: 18, w: 10, h: 5 },
-};
-
-/** Sprite-centre offset that puts a character's feet on a tile centre, in px. */
-export const FOOT_DROP =
-  (CHAR_METRICS.feet.y + CHAR_METRICS.feet.h / 2 - CHAR_H / 2) * SCALE;
-
-/** The raw grids, so tests can assert shape and legend coverage off the wire. */
-export function characterGrids() {
-  return {
-    rowWidth: CHAR_W,
-    bodyRows: CHAR_BODY.down.length,
-    legRows: CHAR_LEGS[0].length,
-    body: CHAR_BODY_BY_DIR,
-    legs: CHAR_LEGS,
-    legend: Object.keys(CHAR_LEGEND(resolvePalette())),
-  };
-}
-
-/** Draw character to a 2D canvas (for previews and dialogue portraits). */
-export function drawCharacterToCanvas(canvas, palette, dir = "down", frame = 0, pixelScale = 3) {
-  const ctx = canvas.getContext("2d");
-  const w = CHAR_W * pixelScale;
-  const h = CHAR_H * pixelScale;
-  canvas.width = w;
-  canvas.height = h;
-  ctx.imageSmoothingEnabled = false;
-  ctx.clearRect(0, 0, w, h);
-  drawCharacterPixels(makeWriter(canvas, pixelScale), palette, dir, frame);
-}
-
-function createPlayerAnims(scene, base) {
-  for (const dir of ["down", "up", "left", "right"]) {
-    const animKey = `${base}_walk_${dir}`;
-    if (scene.anims.exists(animKey)) scene.anims.remove(animKey);
-    scene.anims.create({
-      key: animKey,
-      frames: [
-        { key: `${base}_${dir}_1` },
-        { key: `${base}_${dir}` },
-        { key: `${base}_${dir}_2` },
-        { key: `${base}_${dir}` },
-      ],
-      frameRate: 8,
-      repeat: -1,
-    });
-    const idleKey = `${base}_idle_${dir}`;
-    if (scene.anims.exists(idleKey)) scene.anims.remove(idleKey);
-    scene.anims.create({
-      key: idleKey,
-      frames: [{ key: `${base}_${dir}` }],
-      frameRate: 1,
-      repeat: 0,
-    });
-  }
-}
-
-export function ensurePlayerTextures(scene, appearance) {
-  const normalized = normalizeAppearance({ appearance });
-  const palette = resolvePalette(normalized);
-  const base = appearanceTextureBase(normalized);
-  if (scene.textures.exists(`${base}_down`)) return base;
-
-  for (const dir of ["down", "up", "left", "right"]) {
-    for (const frame of [0, 1, 2]) {
-      const suffix = frame === 0 ? "" : `_${frame}`;
-      makeTex(
-        scene,
-        `${base}_${dir}${suffix}`,
-        (g) => drawCharacter(g, palette, dir, frame),
-        TEX_CHAR_W,
-        TEX_CHAR_H
-      );
-    }
-  }
-  createPlayerAnims(scene, base);
-  return base;
-}
-
 // ─── Decor & UI sprites ──────────────────────────────────────────────────────
 
 /** Speech balloon with a gold "!" — the same read as a DS interaction cue. */
+/** Paint a grid of legend characters, one pixel per character. */
+function paintGrid(w, rows, legend, top = 0) {
+  rows.forEach((row, y) => {
+    [...row].forEach((ch, x) => {
+      const entry = legend[ch];
+      if (entry) w.px(entry[0], x, top + y, 1, 1, entry[1]);
+    });
+  });
+}
+
 const INTERACT_GRID = [
   "...OOOOOOOOOO...",
   ".OOWWWWWWWWWWOO.",
@@ -1130,23 +840,6 @@ export function createGameTextures(scene) {
     }
   }
 
-  const npcs = [
-    ["npc_gold", 0xf0d050, 0xc8a838, 0x987820, 0x685010, 0x504008],
-    ["npc_green", 0x50e8a0, 0x38b878, 0x288858, 0x186040, 0x104030],
-    ["npc_pink", 0xd888f0, 0xa868c0, 0x7848a0, 0x503070, 0x382050],
-    ["npc_teal", 0x48d8e8, 0x30a8b8, 0x208898, 0x1a6070, 0x104050],
-    ["npc_red", 0xf08088, 0xc86068, 0x984048, 0x682830, 0x481820],
-    ["npc_orange", 0xffb060, 0xd89048, 0xa86830, 0x784820, 0x503010],
-    ["npc_silver", 0xc0c8d8, 0x9098a8, 0x606878, 0x404850, 0x303038],
-  ];
-  for (const [key, body, mid, shade, hair, hairShade] of npcs) {
-    const palette = {
-      body, mid, shade, hair, hairShade,
-      skinLight: 0xffe8d0, skinMid: 0xffd8b8, skinShade: 0xffc8a8,
-    };
-    makeTex(scene, key, (g) => drawCharacter(g, palette, "down", 0), TEX_CHAR_W, TEX_CHAR_H);
-  }
-
   makeTex(scene, "decor_bar", drawBarDecor);
   makeTex(scene, "decor_plant", drawPlantDecor);
   makeTex(scene, "decor_slot", drawSlotDecor);
@@ -1156,19 +849,3 @@ export function createGameTextures(scene) {
   makeTex(scene, "interact_icon", drawInteractIcon, TILE_SIZE, TILE_SIZE * 0.875);
 }
 
-export function playerTextureKey(rpgOrArchetype, facing = "down") {
-  if (rpgOrArchetype && typeof rpgOrArchetype === "object") {
-    const base = appearanceTextureBase(normalizeAppearance(rpgOrArchetype));
-    return `${base}_${facing}`;
-  }
-  const archetype = rpgOrArchetype ?? "weekend_warrior";
-  const base = appearanceTextureBase(normalizeAppearance({ archetype }));
-  return `${base}_${facing}`;
-}
-
-export function playerAnimKey(rpgOrArchetype, facing, moving) {
-  const base = (rpgOrArchetype && typeof rpgOrArchetype === "object")
-    ? appearanceTextureBase(normalizeAppearance(rpgOrArchetype))
-    : appearanceTextureBase(normalizeAppearance({ archetype: rpgOrArchetype ?? "weekend_warrior" }));
-  return moving ? `${base}_walk_${facing}` : `${base}_idle_${facing}`;
-}

@@ -3,7 +3,8 @@ import { OverworldScene } from "./scenes/GameScenes.js?v=pr89-main-1";
 import { TitleScreen, renderHud, renderTrainerCard } from "./scenes/TitleScreen.js?v=pr89-main-1";
 import { DialogueManager } from "./systems/DialogueManager.js";
 import { SaveAdapter } from "./systems/SaveAdapter.js";
-import { defaultAppearance } from "./systems/CharacterAppearance.js";
+import { defaultAppearance, indexSpeakerLooks } from "./systems/CharacterAppearance.js";
+import { preloadCharacterArt } from "./systems/CharacterSprites.js";
 import {
   BlackjackOverlay,
   EncounterBridge,
@@ -138,8 +139,14 @@ async function startOverworld(activeSession) {
     loadJson("js/data/quests.json", null),
     loadJson("js/data/easter_eggs.json", null),
     loadWorld(),
+    // Sheets have to be decoded before the first scene bakes a recoloured
+    // texture from them, so the player never spawns as a missing frame.
+    preloadCharacterArt(),
   ]);
   const knownMaps = new Set(installWorld(world));
+  // Lets a dialogue portrait be found from the speaker's name alone, so it
+  // matches the sprite that guest is wearing out on the floor.
+  indexSpeakerLooks(world?.npcs);
   // A save can point at a map id that a later world revision dropped.
   if (!knownMaps.has(rpg.mapId)) {
     rpg.mapId = DEFAULT_MAP_ID;

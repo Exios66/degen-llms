@@ -14,7 +14,7 @@ import { getWorldCycleState } from "../../../js/world-cycle.js";
 import { SaveAdapter, initSessionRpg } from "../systems/SaveAdapter.js";
 import { renderCharacterCreator } from "../systems/CharacterCreator.js";
 import { archetypeLabel, normalizeAppearance, resolvePalette } from "../systems/CharacterAppearance.js";
-import { drawCharacterToCanvas } from "../systems/TextureFactory.js";
+import { drawCharacterToCanvas } from "../systems/CharacterSprites.js";
 import { prefersTouchControls } from "../systems/TouchControls.js";
 
 const INTRO_AUTO_MS = 3200;

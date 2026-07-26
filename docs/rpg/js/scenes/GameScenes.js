@@ -1,9 +1,12 @@
 import Phaser from "phaser";
+import { createGameTextures, groundTileKey } from "../systems/TextureFactory.js";
 import {
-  CHAR_METRICS, FOOT_DROP, createGameTextures, ensurePlayerTextures, groundTileKey,
+  CHAR_METRICS, FOOT_DROP, applyLook, ensurePlayerTextures,
   playerAnimKey, playerTextureKey,
-} from "../systems/TextureFactory.js";
-import { normalizeAppearance } from "../systems/CharacterAppearance.js";
+} from "../systems/CharacterSprites.js";
+import {
+  normalizeAppearance, resolveDealerLook, resolveNpcLook, resolvePalette,
+} from "../systems/CharacterAppearance.js";
 import {
   TILE_SIZE, MAP_WIDTH, MAP_HEIGHT, buildMapLayersForId, getNpcsForMap,
   doorAt, getMapDefinition, SPAWN_DEFAULT, TILE, resolveNpcPosition,
@@ -175,7 +178,7 @@ export class OverworldScene extends Phaser.Scene {
     ensurePlayerTextures(this, this.playerAppearance);
     const pKey = playerTextureKey({ appearance: this.playerAppearance }, "down");
     const spawnPos = tileToSprite(px, py);
-    this.player = this.physics.add.sprite(spawnPos.x, spawnPos.y, pKey);
+    this.player = this.physics.add.sprite(spawnPos.x, spawnPos.y, pKey.key, pKey.frame);
     this.player.setCollideWorldBounds(true);
     this.player.setDepth(10);
     const feet = CHAR_METRICS.feet;
@@ -199,19 +202,21 @@ export class OverworldScene extends Phaser.Scene {
     });
     for (const npc of this.currentNpcs) {
       const at = tileToSprite(npc.x, npc.y);
-      const sprite = this.add.sprite(at.x, at.y, npc.sprite);
+      const sprite = this.add.sprite(at.x, at.y, "interact_icon");
       sprite.setDepth(10);
       sprite.setData("npc", npc);
       this.npcSprites.set(npc.id, sprite);
 
+      // A dealer keeps their own sheet, unpainted; everyone else is repainted
+      // into a look of their own so the floor is not seven faces on a loop.
+      const look = npc.zone
+        ? resolveDealerLook(this._dealerForZone(npc.zone).id, npc.sprite)
+        : resolveNpcLook(npc.sprite, npc.id);
+      applyLook(this, sprite, look, npc.direction ?? "down");
+
       const displayName = this._resolveNpcDisplayName(npc);
       const label = this._createNpcLabel(sprite.x, tileHeadY(npc.y), displayName, npc.zone);
       this.npcLabels.set(npc.id, label);
-
-      if (npc.zone) {
-        const dealer = this._dealerForZone(npc.zone);
-        sprite.setTexture(dealer.sprite);
-      }
     }
 
     this.interactIcon = this.add.image(0, 0, "interact_icon").setVisible(false).setDepth(100);
@@ -730,7 +735,8 @@ export class OverworldScene extends Phaser.Scene {
     if (this.anims.exists(key)) {
       this.player.anims.play(key, true);
     } else {
-      this.player.setTexture(playerTextureKey(appearance, this.facing));
+      const still = playerTextureKey(appearance, this.facing);
+      this.player.setTexture(still.key, still.frame);
     }
   }
 
@@ -741,7 +747,8 @@ export class OverworldScene extends Phaser.Scene {
     ensurePlayerTextures(this, this.playerAppearance);
     this.player.anims?.stop();
     // A standing player has no animation to restart, so set the still frame too.
-    this.player.setTexture(playerTextureKey({ appearance: this.playerAppearance }, this.facing));
+    const still = playerTextureKey({ appearance: this.playerAppearance }, this.facing);
+    this.player.setTexture(still.key, still.frame);
     this._applyPlayerAnim(this._moving);
   }
 

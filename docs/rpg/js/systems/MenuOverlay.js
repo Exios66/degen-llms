@@ -8,7 +8,7 @@ import { bagContents, equipItem } from "./Inventory.js";
 import { EGG_REGISTRY, foundEggs } from "./EasterEggs.js";
 import { normalizeAppearance, resolvePalette } from "./CharacterAppearance.js";
 import { renderCharacterCreator } from "./CharacterCreator.js";
-import { drawCharacterToCanvas } from "./TextureFactory.js";
+import { drawCharacterToCanvas } from "./CharacterSprites.js";
 
 const DEX_LABELS = {
   reef: "Shark Reef species",

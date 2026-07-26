@@ -41,13 +41,23 @@ Needs Jupyter + pandas/matplotlib for `index.qmd` executable cells.
 
 ### 3. Authenticate
 
-Prefer env vars:
+Prefer Cursor Cloud **Environment Secrets** (or shell env):
 
-- `POSIT_CONNECT_CLOUD_ACCESS_TOKEN`
-- `POSIT_CONNECT_CLOUD_REFRESH_TOKEN`
-- `POSIT_CONNECT_CLOUD_ACCOUNT_ID`
+| Name | Value |
+|------|--------|
+| `POSIT_CONNECT_CLOUD_REFRESH_TOKEN` | From device OAuth (required for unattended publish) |
+| `POSIT_CONNECT_CLOUD_ACCOUNT_ID` | `019f99e2-d77f-1f1d-7c50-e19abd9a0e5d` |
+| `POSIT_CONNECT_CLOUD_ACCESS_TOKEN` | Optional; script refreshes from the refresh token |
 
-Otherwise device-code OAuth via the publish script (authorize as **jackjburleson**).
+If secrets are missing, run device-code OAuth (authorize as **jackjburleson**):
+
+```bash
+python scripts/publish_posit_degen_llms.py --skip-render
+# prints https://login.posit.cloud/oauth/device?user_code=…
+# on success writes /tmp/posit-tokens.json
+```
+
+Then copy `refresh_token` + account id into the Cloud Agent environment secrets so future runs skip the browser step. See [`CONTRIBUTING-POSIT.md`](../../../CONTRIBUTING-POSIT.md).
 
 ### 4. Publish
 

@@ -13,11 +13,26 @@ This repository publishes a **Quarto website** to the JackJBurleson Posit Connec
 | Field | Value |
 |-------|-------|
 | Account | `jackjburleson` |
+| Account id | `019f99e2-d77f-1f1d-7c50-e19abd9a0e5d` |
 | Content | `019f9a67-d5c9-226b-b6b1-a86d1655be69` (see `_publish.yml`) |
 | Public share | https://019f9a67-d5c9-226b-b6b1-a86d1655be69.share.connect.posit.cloud/ |
 | Do **not** overwrite | PSYCH 755 content `019f9a10-ebb9-d1d5-839f-97e794bfd0ca` |
 
 After the first successful publish, `_publish.yml` records the new content id and dashboard URL. Subsequent publishes update **that** id only.
+
+## Cursor Cloud Agent secrets (recommended)
+
+Add these as **Environment Secrets** on the degen-llms Cloud Agent environment so agents can publish without interactive OAuth:
+
+| Secret name | Notes |
+|-------------|--------|
+| `POSIT_CONNECT_CLOUD_REFRESH_TOKEN` | Long-lived; obtain via device OAuth (`python scripts/publish_posit_degen_llms.py` or skill setup) |
+| `POSIT_CONNECT_CLOUD_ACCOUNT_ID` | `019f99e2-d77f-1f1d-7c50-e19abd9a0e5d` |
+| `POSIT_CONNECT_CLOUD_ACCESS_TOKEN` | Optional / short-lived; refresh token alone is enough |
+
+Dashboard: [Cloud Agents → Exios66/degen-llms environment](https://cursor.com/dashboard/cloud-agents/environments/e/9678f00e-885d-11f1-b532-320a589b8025)
+
+Never commit tokens to git. Session caches may live in `/tmp/posit-tokens.json` (gitignored).
 
 ## Local render
 

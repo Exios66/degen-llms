@@ -28,6 +28,12 @@ export const TILE = {
   TRIM: 19,
   /** Carved ice — Minus5 / cold-attraction floors. */
   ICE: 20,
+  /** Walkable floral clutter — bluebells, desert blooms, lobby posies. */
+  FLOWER: 21,
+  /** Blocking boulder / stacked-stone clutter. */
+  ROCK: 22,
+  /** Blocking lantern prop with a warm glow spill. */
+  LANTERN: 23,
 };
 
 export const TILE_SIZE = 32;
@@ -47,4 +53,6 @@ export const COLLISION = new Set([
   TILE.SCREEN,
   TILE.GLASS,
   TILE.ROPE,
+  TILE.ROCK,
+  TILE.LANTERN,
 ]);

@@ -273,7 +273,10 @@ function openPoolComplexVisual(zoneId = "hub", opts = {}) {
   }
   overlay.setSession(session);
   overlay.returnView = opts.returnView ?? poolOverlayReturnView();
-  overlay.open(zoneId || "hub");
+  const target = zoneId || "hub";
+  // Avoid re-open/reset on every render() while the beach deck is already up.
+  if (!overlay.active) overlay.open(target);
+  else if (target !== "hub" && overlay.zoneId !== target) overlay.openZone(target);
   return true;
 }
 

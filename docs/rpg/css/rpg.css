@@ -248,8 +248,10 @@ body {
 .drive-canvas {
   display: block;
   width: 100%;
+  max-width: 100%;
   height: auto;
   aspect-ratio: 16 / 9;
+  object-fit: contain;
   image-rendering: auto;
   border: 3px solid #f0c060;
   box-shadow: inset 0 0 0 2px #301820, 0 0 24px rgba(240, 120, 60, 0.25);

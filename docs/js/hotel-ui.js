@@ -26,7 +26,7 @@ import * as diningApi from "./dining.js";
  */
 export function buildHotelRenderers(ctx) {
   const {
-    session, rewardsPhone, diningOverlay, pushView, goBack, navigateTo, persist, render, el, banner, chipLine, statusBanner, showStatus,
+    session, rewardsPhone, pushView, goBack, navigateTo, persist, render, el, banner, chipLine, statusBanner, showStatus,
   } = ctx;
 
   const tracker = () => rewardsPhone?.tracker ?? null;
@@ -710,7 +710,7 @@ export function buildHotelRenderers(ctx) {
   }
 
   function openDining(venueId) {
-    const overlay = diningOverlay;
+    const overlay = ctx.diningOverlay;
     if (!overlay) {
       showStatus("Dining overlay not ready.", "error");
       return;

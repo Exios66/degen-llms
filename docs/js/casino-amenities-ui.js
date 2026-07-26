@@ -11,7 +11,7 @@ import { fmtChips } from "./core.js";
  */
 export function buildAmenitiesRenderers(ctx) {
   const {
-    session, diningOverlay, pushView, goBack, navigateTo, persist, render, el, banner, chipLine, statusBanner, showStatus,
+    session, pushView, goBack, navigateTo, persist, render, el, banner, chipLine, statusBanner, showStatus,
   } = ctx;
 
   function menuBtn(label, onclick, isBack = false) {
@@ -43,12 +43,12 @@ export function buildAmenitiesRenderers(ctx) {
           menuBtn(`<span class="num">1)</span> ${MALL_NAME}`, () => pushView("mall-lobby")),
           menuBtn("<span class=\"num\">2)</span> Full Service Bar — choose your lounge", () => pushView("bar-select")),
           menuBtn("<span class=\"num\">3)</span> Resort dining — Aureole, Border Grill, Stripsteak", () => {
-            if (!diningOverlay) {
+            if (!ctx.diningOverlay) {
               showStatus("Dining overlay not ready.", "error");
               return;
             }
-            diningOverlay.setSession(session);
-            diningOverlay.open();
+            ctx.diningOverlay.setSession(session);
+            ctx.diningOverlay.open();
           }),
           menuBtn("<span class=\"num\">4)</span> View shopping bag", () => pushView("mall-bag")),
           menuBtn(`<span class="num">5)</span> High Limit Salon <span class="dim">(10,000+ chips, high-limit tier)</span>`, () => pushView("high-limit-salon")),

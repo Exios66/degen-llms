@@ -1,7 +1,7 @@
 import { secureRandomInt, fmtChips } from "./core.js";
 import { recordConsumption } from "./intoxication-effects.js";
 import { ensureHotel, isNetPositive, getRoomType } from "./hotel.js";
-import { resortRequirementsMet, hintForEvent } from "./resort-bridge.js";
+import { resortRequirementsMet, hintForEvent, getSessionTierIndex } from "./resort-bridge.js";
 import { tierIndex } from "./rewards-perks.js";
 import { tierForWagered } from "./rewards.js";
 import { getWorldPhase } from "./world-cycle.js";
@@ -207,12 +207,11 @@ export const ROOM_DECISIONS = {
     label: "Step onto the balcony",
     flavor: "The Strip glitters below. You feel briefly like a chairman. The feeling passes.",
   },
-  /** Suite/penthouse — opens the POV Strip smoke-break overlay from the web terminal. */
+  /** Any Mandalay Bay guest room with a balcony door — POV smoke break available. */
   balcony_smoke_pov: {
     id: "balcony_smoke_pov",
-    label: "Suite balcony — Strip POV smoke break",
-    flavor: "Glass railing. Warm wind. A joint and the entire Las Vegas Strip performing just for you.",
-    roomTypes: ["suite", "penthouse"],
+    label: "Balcony — Strip POV smoke break",
+    flavor: "Glass railing. Warm wind. The Strip performs for anyone with a balcony key.",
   },
   room_service: {
     id: "room_service",
@@ -387,6 +386,7 @@ function defaultRoomAmenities(overrides = {}) {
     channelsWatched: overrides.channelsWatched ?? [],
     minibarPurchases: overrides.minibarPurchases ?? [],
     minibarTab: overrides.minibarTab ?? 0,
+    folioCharges: overrides.folioCharges ?? [],
     phoneCalls: overrides.phoneCalls ?? [],
     decisions: overrides.decisions ?? [],
     unlockedEvents: overrides.unlockedEvents ?? [],
@@ -407,16 +407,18 @@ export function ensureRoomAmenities(hotel) {
   for (const key of Object.keys(defaults)) {
     if (ra[key] === undefined) ra[key] = defaults[key];
   }
+  if (!Array.isArray(ra.folioCharges)) ra.folioCharges = [];
   return ra;
+}
+
+/** Record a charge on the in-room folio (minibar, room service, etc.). */
+export function recordFolioCharge(hotel, label, amount) {
+  const ra = ensureRoomAmenities(hotel);
+  ra.folioCharges.push({ label, amount });
 }
 
 function hasAll(haystack, needles) {
   return needles.every((n) => haystack.includes(n));
-}
-
-function getSessionTierIndex(session) {
-  const wagered = session.rewards?.lifetimeWagered ?? 0;
-  return tierIndex(tierForWagered(wagered).id);
 }
 
 function amenityAllowed(session, hotel, item) {
@@ -542,6 +544,7 @@ export function purchaseMinibarItem(session, itemId) {
   }
   ra.minibarPurchases.push(itemId);
   ra.minibarTab += item.price;
+  recordFolioCharge(hotel, `Minibar: ${item.label}`, item.price);
   recordConsumption(session, itemId, { source: "minibar" });
   const unlocked = afterAmenityAction(session);
   let message = `${item.label} — ${fmtChips(item.price)} charged to the room.\n${item.flavor}`;
@@ -584,6 +587,7 @@ export function makeRoomDecision(session, decisionId) {
     if (!session.wallet.debit(decision.price, "hotel", decision.label)) {
       return { ok: false, message: `Need ${fmtChips(decision.price)}.` };
     }
+    recordFolioCharge(hotel, decision.label, decision.price);
   }
   if (!ra.decisions.includes(decisionId)) {
     ra.decisions.push(decisionId);

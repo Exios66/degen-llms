@@ -19,7 +19,7 @@ import { RewardsPhone } from "./RewardsPhone.js";
 import { buildHotelRenderers } from "./hotel-ui.js";
 import { buildPoolRenderers } from "./pool-complex-ui.js";
 import { buildAmenitiesRenderers } from "./casino-amenities-ui.js";
-import { ensureHotel } from "./hotel.js";
+import { ensureHotel, applyPromotedTierRoomUpgrade } from "./hotel.js";
 import { createShell, createRuntime, createViewStack } from "./ui/shell.js";
 import { buildTitleSceneRenderer, shouldSkipCasinoTitle } from "./ui/title-scene.js";
 import { buildStakesRenderers } from "./ui/stakes-ui.js";
@@ -37,7 +37,7 @@ import { PoolComplexOverlay } from "./PoolComplexOverlay.js";
 import { BalconySmokeOverlay } from "./BalconySmokeOverlay.js";
 import { buildRacingRenderers } from "./ui/racing-renderers.js";
 import { buildVenueRenderers } from "./ui/venue-renderers.js";
-import { buildGentlemansClubRenderers } from "./ui/gentlemans-club-renderers.js?v=__ASSET_SHA__";
+import { buildGentlemansClubRenderers } from "./ui/gentlemans-club-renderers.js";
 import { buildCashierRenderers } from "./ui/cashier-renderers.js";
 import { buildMetaRenderers } from "./ui/meta-renderers.js";
 
@@ -149,7 +149,20 @@ function mountRewardsPhone() {
   const root = document.getElementById("rewards-phone");
   if (!root) return;
   ensureHotel(session);
-  rewardsPhone = new RewardsPhone(root, session, { onPersist: persist });
+  rewardsPhone = new RewardsPhone(root, session, {
+    onPersist: () => {
+      persist();
+      render();
+    },
+    onTierPromoted: (tierId) => {
+      const result = applyPromotedTierRoomUpgrade(session, tierId, rewardsPhone?.tracker);
+      if (result?.ok) {
+        rewardsPhone?.tracker.pushNotification("Room Upgraded", result.message);
+        persist();
+        render();
+      }
+    },
+  });
   rewardsPhone.sync();
 }
 
@@ -862,7 +875,8 @@ function render() {
     app.appendChild(renderNotFound({ requestedView: current.name }));
   }
   const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
-  if (!reduceMotion) {
+  const slotsSpinning = runtime.slots?.spinning === true;
+  if (!reduceMotion && !slotsSpinning) {
     app.classList.remove("view-transition");
     void app.offsetWidth;
     app.classList.add("view-transition");

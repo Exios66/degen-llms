@@ -155,7 +155,28 @@ def usable(access: str) -> bool:
         return False
 
 
+def _load_dotenv_file(path: Path) -> None:
+    """Load KEY=VALUE lines into os.environ if the key is not already set."""
+    if not path.is_file():
+        return
+    try:
+        for raw in path.read_text(encoding="utf-8").splitlines():
+            line = raw.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, _, val = line.partition("=")
+            key = key.strip()
+            if not key or key in os.environ:
+                continue
+            os.environ[key] = val.strip().strip('"').strip("'")
+        _log(f"Loaded credentials from {path}")
+    except OSError as exc:
+        _log(f"Could not read {path}: {exc}")
+
+
 def load_tokens() -> str:
+    # Prefer Cursor Environment Secrets; fall back to VM-local dotenv from prior OAuth.
+    _load_dotenv_file(Path.home() / ".config" / "posit-connect-cloud.env")
     cached = Path("/tmp/posit-tokens.json")
     access = os.environ.get("POSIT_CONNECT_CLOUD_ACCESS_TOKEN")
     if access and usable(access):

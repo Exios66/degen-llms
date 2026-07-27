@@ -158,6 +158,13 @@ check(Boolean(CALL_TREES.rideshare_driver?.voice?.hello), "rideshare call tree p
   check(isLimoUnlocked(session), "unlockRideshareService enables dispatch");
 }
 
+{
+  // strip-limo-ui must define its own menuBtn — ctx does not provide one.
+  const uiSrc = readFileSync(js("strip-limo-ui.js"), "utf8");
+  check(uiSrc.includes("function menuBtn("), "strip-limo-ui defines local menuBtn helper");
+  check(!/const\s*\{[^}]*menuBtn[^}]*\}\s*=\s*ctx/.test(uiSrc), "strip-limo-ui does not destructure menuBtn from ctx");
+}
+
 if (failed) {
   console.error(`\n${failed} check(s) failed`);
   process.exit(1);

@@ -19,7 +19,6 @@ import {
  *   el: Function,
  *   banner: Function,
  *   chipLine: Function,
- *   menuBtn: Function,
  *   statusBanner: Function,
  *   showStatus: Function,
  *   persist: Function,
@@ -31,12 +30,22 @@ import {
  */
 export function buildStripLimoRenderers(ctx) {
   const {
-    el, banner, chipLine, menuBtn, statusBanner, showStatus,
+    el, banner, chipLine, statusBanner, showStatus,
     persist, render, pushView, navigateTo, goBack,
   } = ctx;
 
   function session() {
     return ctx.session;
+  }
+
+  function menuBtn(label, onclick, isBack = false) {
+    return el("li", {}, [
+      el("button", {
+        className: "menu-btn" + (isBack ? " back" : ""),
+        textContent: label,
+        onclick,
+      }),
+    ]);
   }
 
   function renderStripLimoDispatch() {

@@ -17,6 +17,11 @@ import { Action } from "./blackjack/game.js";
 import { loadBundledHorseNames } from "./horse_racing.js";
 import { RewardsPhone } from "./RewardsPhone.js";
 import { buildHotelRenderers } from "./hotel-ui.js";
+import { buildStripLimoRenderers } from "./strip-limo-ui.js";
+import {
+  applyDestinationTheme, casinoDisplayName, ensureStripTravel, getCurrentDestination,
+  isAwayFromHome, isLimoUnlocked,
+} from "./strip-destinations.js";
 import { buildPoolRenderers } from "./pool-complex-ui.js";
 import { buildAmenitiesRenderers } from "./casino-amenities-ui.js";
 import { ensureHotel, applyPromotedTierRoomUpgrade } from "./hotel.js";
@@ -601,6 +606,11 @@ function renderSaveDelete() {
 }
 
 function renderHub() {
+  ensureStripTravel(session);
+  applyDestinationTheme(session);
+  const dest = getCurrentDestination(session);
+  const away = isAwayFromHome(session);
+  const showLimo = away || isLimoUnlocked(session);
   const floors = [
     ...FLOOR_ORDER,
     "Cashier",
@@ -611,6 +621,7 @@ function renderHub() {
     "Exit to Hotel",
     "Pool Complex — Mandalay Beach",
     "Casino Amenities",
+    ...(showLimo ? ["Strip Limo — Private Driver"] : []),
     "Explore Resort (RPG)",
     "Leave Casino",
   ];
@@ -619,15 +630,19 @@ function renderHub() {
   const wrap = el("div", {}, [
     statusBanner(),
     settingsBar(),
-    banner(CASINO_NAME),
+    banner(casinoDisplayName(session)),
+    away
+      ? el("span", { className: "strip-away-badge", textContent: `Visiting · ${dest.shortName}` })
+      : null,
     session.slotId != null
       ? el("p", { className: "dim", textContent: `Save: ${session.slotLabel || `Slot ${session.slotId}`}` })
       : el("p", { className: "dim", textContent: "Guest visit — progress is not saved" }),
     el("p", { className: "welcome-line", textContent: `Welcome, ${session.playerName}` }),
     el("p", { className: "dim", textContent: formatVegasClockLabel() }),
+    el("p", { className: "dim", textContent: dest.tagline }),
     chipLine(),
     el("div", { className: "hub-features panel" }, [
-      el("p", { className: "subtitle", textContent: "On the floor today:" }),
+      el("p", { className: "subtitle", textContent: away ? `On the floor at ${dest.shortName}:` : "On the floor today:" }),
       ...FLOOR_ORDER.map((floor) => {
         const acts = Object.values(ACTIVITIES).filter((a) => a.floor === floor);
         return el("div", {
@@ -635,6 +650,7 @@ function renderHub() {
           innerHTML: `<strong>${floor}</strong> — ${acts.map((a) => a.name).join(", ")}`,
         });
       }),
+      away ? el("p", { className: "dim", textContent: dest.floorBlurb }) : null,
     ]),
     el("div", { className: "panel" }, [
       el("p", { className: "subtitle", textContent: "Choose your adventure:" }),
@@ -674,6 +690,7 @@ function renderHub() {
       returnToSavePicker();
       return;
     }
+    const limoOffset = showLimo ? 1 : 0;
     if (choice <= FLOOR_ORDER.length) {
       pushView("floor", { floor: FLOOR_ORDER[choice - 1] });
     } else if (choice === FLOOR_ORDER.length + 1) {
@@ -698,7 +715,9 @@ function renderHub() {
       if (!openPoolComplexVisual("hub")) pushView("pool-complex");
     } else if (choice === FLOOR_ORDER.length + 8) {
       pushView("casino-floor");
-    } else if (choice === FLOOR_ORDER.length + 9) {
+    } else if (showLimo && choice === FLOOR_ORDER.length + 9) {
+      pushView("strip-limo");
+    } else if (choice === FLOOR_ORDER.length + 9 + limoOffset) {
       persist();
       const rpgUrl = session.slotId != null
         ? `./rpg/?slot=${session.slotId}&skipIntro=1`
@@ -735,6 +754,16 @@ function renderFloor({ floor }) {
     chipLine(),
     el("div", { className: "panel" }, [
       el("p", { className: "subtitle", textContent: `${floor}:` }),
+      isAwayFromHome(session)
+        ? el("p", { className: "dim", textContent: getCurrentDestination(session).gameFlavor[
+            activities[0]?.id === "slots" ? "slots"
+              : activities[0]?.id === "blackjack" ? "blackjack"
+                : activities[0]?.id === "holdem" ? "holdem"
+                  : activities[0]?.id === "roulette" ? "roulette"
+                    : activities[0]?.id === "craps" ? "craps"
+                      : "slots"
+          ] ?? getCurrentDestination(session).floorBlurb })
+        : null,
       el("ul", { className: "menu-list" }, items),
     ]),
   ]);
@@ -816,6 +845,7 @@ function renderNotFound({ requestedView } = {}) {
 }
 
 const hotelRenderers = buildHotelRenderers(ctx);
+const stripLimoRenderers = buildStripLimoRenderers(ctx);
 const poolRenderers = buildPoolRenderers(ctx);
 const amenitiesRenderers = buildAmenitiesRenderers(ctx);
 const stakesRenderers = buildStakesRenderers(ctx);
@@ -860,12 +890,15 @@ const RENDERERS = {
   ...cashierRenderers,
   ...metaRenderers,
   ...hotelRenderers,
+  ...stripLimoRenderers,
   ...poolRenderers,
   ...amenitiesRenderers,
   "not-found": renderNotFound,
 };
 
 function render() {
+  ensureStripTravel(session);
+  applyDestinationTheme(session);
   const current = viewStack[viewStack.length - 1] ?? { name: "hub", data: {} };
   const fn = RENDERERS[current.name];
   app.innerHTML = "";

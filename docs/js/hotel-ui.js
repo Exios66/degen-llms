@@ -738,6 +738,10 @@ export function buildHotelRenderers(ctx) {
         renderAmenityLog(log, res);
         tracker()?.pushNotification("Room Phone", call.destination);
         persist();
+        if (res.openLimoDispatch) {
+          showStatus("Private driver standing by — opening Strip limo dispatch.", "success");
+          pushView("strip-limo");
+        }
       }),
     );
 
@@ -746,15 +750,18 @@ export function buildHotelRenderers(ctx) {
       chipLine(),
       el("div", { className: "panel hotel-panel hotel-room-view" }, [
         el("p", { className: "subtitle", textContent: "Unlimited foreign calls — Mandalay Bay absorbs the guilt" }),
-        el("p", { className: "dim", textContent: "House of Blues, spa, Foundation Room, Delano — dial the Strip." }),
+        el("p", { className: "dim", textContent: "House of Blues, spa, Foundation Room, Delano, limo desk — dial the Strip." }),
         ra.phoneCalls.length
           ? el("p", { className: "dim", textContent: `${ra.phoneCalls.length} call(s) on this stay.` })
           : null,
         log,
         el("ul", { className: "menu-list" }, [
           ...callButtons,
+          ra.phoneCalls.includes("limo_service")
+            ? menuBtn("Open Strip limo dispatch", () => pushView("strip-limo"))
+            : null,
           menuBtn("Back to room", () => navigateTo("hotel-room"), true),
-        ]),
+        ].filter(Boolean)),
       ]),
     ]);
   }

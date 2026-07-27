@@ -194,6 +194,12 @@ export const PHONE_CALLS = {
     destination: "Delano Las Vegas — all-suite tower",
     flavor: "\"Wrong tower, darling. But our pool is also eleven acres of ambition.\"",
   },
+  limo_service: {
+    id: "limo_service",
+    label: "Call limo / private driver",
+    destination: "Strip chauffeur desk — black car idling",
+    flavor: "\"South Strip to downtown, sir. Luxor, Excalibur, Bellagio, Circa — name it. Fare comes off the chip roll.\"",
+  },
 };
 
 export const ROOM_DECISIONS = {
@@ -568,10 +574,21 @@ export function makePhoneCall(session, callId) {
   }
   const unlocked = afterAmenityAction(session);
   let message = `${call.label} → ${call.destination}\n${call.flavor}\n(Unlimited foreign calls — the hotel absorbs the guilt.)`;
+  if (callId === "limo_service") {
+    // Lazy import avoided — set flag on session for strip travel module.
+    session.stripTravel = session.stripTravel ?? {};
+    session.stripTravel.limoUnlocked = true;
+    message += "\n\n✦ Private driver unlocked — open Strip Limo Dispatch to ride.";
+  }
   if (unlocked.length) {
     message += `\n\n✦ Unlocked: ${unlocked.map((e) => e.label).join(", ")}`;
   }
-  return { ok: true, message, unlock: unlocked[0]?.id };
+  return {
+    ok: true,
+    message,
+    unlock: unlocked[0]?.id,
+    openLimoDispatch: callId === "limo_service",
+  };
 }
 
 /** @returns {AmenityResult} */

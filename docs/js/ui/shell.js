@@ -4,6 +4,7 @@ import { CASINO_NAME, fmtChips } from "../core.js";
 import { ensureBank } from "../bank-account.js";
 import { getSessionDealer, pickQuip } from "../dealers.js";
 import { createPlayingCardEl, createCardSpriteRow } from "./card-sprites.js";
+import { casinoDisplayName, getCurrentDestination } from "../strip-destinations.js";
 
 export function el(tag, attrs = {}, children = []) {
   const node = document.createElement(tag);
@@ -26,7 +27,7 @@ export function banner(title) {
   return el("div", { className: "banner" }, [el("h1", { textContent: title })]);
 }
 
-export function menu(options, title, onSelect, { showCasinoBanner = true } = {}) {
+export function menu(options, title, onSelect, { showCasinoBanner = true, casinoName = null } = {}) {
   const items = options.map((opt, i) =>
     el("li", {}, [
       el("button", {
@@ -44,7 +45,7 @@ export function menu(options, title, onSelect, { showCasinoBanner = true } = {})
     }),
   ]));
   const frag = [];
-  if (showCasinoBanner) frag.push(banner(CASINO_NAME));
+  if (showCasinoBanner) frag.push(banner(casinoName ?? CASINO_NAME));
   if (title) frag.push(el("p", { className: "subtitle", textContent: title }));
   frag.push(el("ul", { className: "menu-list" }, items));
   return el("div", { className: "panel" }, frag);
@@ -194,12 +195,14 @@ export function createShell(ctx) {
 
   function videoMachine(gameId, { title, screenChildren = [], controls = null, footerExtra = null }) {
     const game = MACHINE_GAMES[gameId] || { label: title, icon: "★", variant: "blackjack" };
+    const dest = getCurrentDestination(ctx.session);
+    const brand = casinoDisplayName(ctx.session);
     const footer = [el("span", { className: "machine-led", textContent: "CREDIT" }), chipLine()];
     if (footerExtra) footer.push(footerExtra);
     const parts = [
       el("div", { className: "machine-cabinet-top" }, [
         el("div", { className: "machine-marquee", textContent: `${game.icon}  ${title || game.label}  ${game.icon}` }),
-        el("div", { className: "machine-brand", textContent: CASINO_NAME }),
+        el("div", { className: "machine-brand", textContent: brand }),
       ]),
       el("div", { className: "machine-screen" }, [
         el("div", { className: "machine-screen-inner" }, [
@@ -210,7 +213,9 @@ export function createShell(ctx) {
     ];
     if (controls) parts.push(el("div", { className: "machine-controls" }, [controls]));
     parts.push(el("div", { className: "machine-footer" }, footer));
-    return el("div", { className: `video-machine video-machine--${game.variant}` }, parts);
+    return el("div", {
+      className: `video-machine video-machine--${game.variant} ${dest.tableClass}`,
+    }, parts);
   }
 
   function formatCardLabel(card) {

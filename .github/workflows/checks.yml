@@ -45,6 +45,7 @@ jobs:
           node scripts/smoke-test-rewards-phone.mjs
           node scripts/smoke-test-hotel-salon.mjs
           node scripts/smoke-test-balcony-smoke.mjs
+          node scripts/smoke-test-lounge-shops.mjs
 
       - name: Install Playwright
         run: |

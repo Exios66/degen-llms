@@ -388,6 +388,58 @@
   min-width: 42px;
 }
 
+.rewards-phone-sounds {
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(120, 160, 120, 0.35);
+}
+
+.rewards-sound-toggle,
+.rewards-ringtone-option,
+.rewards-call-choice,
+.rewards-call-hangup {
+  display: block;
+  width: 100%;
+  margin: 3px 0;
+  text-align: left;
+}
+
+.rewards-ringtone-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin: 4px 0;
+}
+
+.rewards-ringtone-option {
+  flex: 1 1 40%;
+  min-width: 48px;
+  width: auto;
+}
+
+.rewards-ringtone-option.active {
+  outline: 1px solid rgba(160, 220, 160, 0.8);
+  font-weight: 600;
+}
+
+.rewards-call-body .rewards-call-connecting {
+  margin: 8px 0;
+  animation: rewards-call-pulse 1.1s ease-in-out infinite;
+}
+
+.rewards-call-live {
+  color: #7dba7d;
+}
+
+.rewards-call-line {
+  margin: 6px 0 8px;
+}
+
+@keyframes rewards-call-pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+
 /* Responsive: keep the FAB reachable on narrow screens */
 @media (max-width: 480px) {
   .rewards-phone-root {

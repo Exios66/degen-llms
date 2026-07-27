@@ -13,11 +13,19 @@ import {
   normalizeThread, rapportBand, resolveLine,
 } from "./phone-rapport.js";
 import {
-  getDialogueNode, getDynamicCallScript, getDynamicIntro, getDynamicTextOptions,
+  getCallNode, getDialogueNode, getDynamicCallScript, getDynamicIntro, getDynamicTextOptions,
   getTierRankUpMessages, INTOX_UNLOCK_MESSAGES, getSessionSwingMessages,
 } from "./phone-dialogue-data.js";
 import { isHeightenedIntoxication, recordConsumption } from "./intoxication-effects.js";
 import { ensureDining } from "./dining.js";
+
+/** @typedef {{ muted: boolean, ringtoneId: string, smsSound: boolean }} PhoneSettings */
+
+export const DEFAULT_PHONE_SETTINGS = {
+  muted: false,
+  ringtoneId: "classic",
+  smsSound: true,
+};
 
 function nowIso() {
   return new Date().toISOString();
@@ -210,6 +218,7 @@ export function ensurePhoneBook(session) {
       introSent: [],
       lastTierAnnounced: "sapphire",
       intoxSecretsSent: false,
+      settings: { ...DEFAULT_PHONE_SETTINGS },
     };
   }
   const pb = session.rewards.phoneBook;
@@ -218,14 +227,44 @@ export function ensurePhoneBook(session) {
   if (!Array.isArray(pb.introSent)) pb.introSent = [];
   if (!pb.lastTierAnnounced) pb.lastTierAnnounced = "sapphire";
   if (pb.intoxSecretsSent == null) pb.intoxSecretsSent = false;
+  if (!pb.settings || typeof pb.settings !== "object") {
+    pb.settings = { ...DEFAULT_PHONE_SETTINGS };
+  } else {
+    pb.settings = { ...DEFAULT_PHONE_SETTINGS, ...pb.settings };
+  }
   return pb;
+}
+
+/** @param {import("./core.js").PlayerSession} session @returns {PhoneSettings} */
+export function getPhoneSettings(session) {
+  const pb = ensurePhoneBook(session);
+  return { ...DEFAULT_PHONE_SETTINGS, ...(pb?.settings ?? {}) };
+}
+
+/**
+ * @param {import("./core.js").PlayerSession} session
+ * @param {Partial<PhoneSettings>} patch
+ */
+export function updatePhoneSettings(session, patch) {
+  const pb = ensurePhoneBook(session);
+  if (!pb) return getPhoneSettings(session);
+  pb.settings = { ...DEFAULT_PHONE_SETTINGS, ...pb.settings, ...patch };
+  return { ...pb.settings };
 }
 
 function ensureThread(session, contactId) {
   const pb = ensurePhoneBook(session);
   if (!pb) return null;
   if (!pb.threads[contactId]) {
-    pb.threads[contactId] = { messages: [], callCount: 0, rapport: 0, textCount: 0, topicsSeen: [], dialogueState: null };
+    pb.threads[contactId] = {
+      messages: [],
+      callCount: 0,
+      rapport: 0,
+      textCount: 0,
+      topicsSeen: [],
+      dialogueState: null,
+      callState: null,
+    };
   }
   return normalizeThread(pb.threads[contactId]);
 }
@@ -533,6 +572,20 @@ export function getRapportSummary(session, contactId) {
   return { rapport, band: rapportBand(rapport) };
 }
 
+export function getCallState(session, contactId) {
+  return ensureThread(session, contactId)?.callState ?? null;
+}
+
+export function clearCallState(session, contactId) {
+  const thread = ensureThread(session, contactId);
+  if (thread) thread.callState = null;
+}
+
+/**
+ * Begin a multi-turn voice call. Sets callState to the greeting node.
+ * @param {import("./core.js").PlayerSession} session
+ * @param {string} contactId
+ */
 export function startCall(session, contactId) {
   if (!isContactUnlocked(session, contactId)) {
     return { ok: false, message: "Contact not unlocked." };
@@ -540,23 +593,109 @@ export function startCall(session, contactId) {
   const thread = ensureThread(session, contactId);
   if (thread) thread.callCount += 1;
   const ctx = buildDialogueContext(session, contactId);
-  const script = getDynamicCallScript(contactId, ctx);
-  if (!script) {
-    return {
-      ok: true,
-      script: {
-        opening: "You've reached the Mandalay Bay mobile desk.",
-        lines: ["Leave a text — calls cost extra personality."],
-        choices: [{ label: "Wrong number?", response: "Wrong numbers are right numbers in Vegas. Goodbye!", egg: "wrong_number" }],
-      },
-    };
+  const treeId = "voice";
+  const nodeId = "hello";
+  const node = getCallNode(contactId, treeId, nodeId, ctx);
+  if (!node) {
+    return { ok: false, message: "No answer." };
   }
-  return { ok: true, script };
+  thread.callState = { treeId, nodeId, phase: "connecting" };
+  appendMessage(session, contactId, "in", `[Call] ${node.text}`, { read: false });
+  // Compatibility: expose legacy script shape for older tests / UI shims.
+  const script = getDynamicCallScript(contactId, ctx);
+  return { ok: true, node, script, callState: thread.callState };
 }
 
 /**
- * Resolve a call menu choice. Pass `activeScript` from startCall so fallback /
- * filtered choice indexes stay aligned with what the LCD showed.
+ * Mark the connecting phase complete so the LCD shows live choices.
+ * @param {import("./core.js").PlayerSession} session
+ * @param {string} contactId
+ */
+export function connectCall(session, contactId) {
+  const thread = ensureThread(session, contactId);
+  if (!thread?.callState) return { ok: false, message: "No active call." };
+  thread.callState = { ...thread.callState, phase: "talking" };
+  return { ok: true, callState: thread.callState };
+}
+
+/**
+ * Advance an active multi-turn voice call.
+ * @param {import("./core.js").PlayerSession} session
+ * @param {string} contactId
+ * @param {number} choiceIndex
+ */
+export function advanceCall(session, contactId, choiceIndex, tracker = null) {
+  const thread = ensureThread(session, contactId);
+  const state = thread?.callState;
+  if (!state) return { ok: false, message: "No active call.", response: "…Call dropped.", egg: null, effectNotes: [] };
+
+  const ctx = buildDialogueContext(session, contactId);
+  const node = getCallNode(contactId, state.treeId, state.nodeId, ctx);
+  const choice = node?.choices?.[choiceIndex];
+  if (!choice) {
+    return { ok: false, message: "Invalid choice.", response: "…Call dropped.", egg: null, effectNotes: [] };
+  }
+
+  appendMessage(session, contactId, "out", `[Call] ${choice.label}`);
+  if (choice.egg) recordEasterEgg(session, choice.egg);
+  if (choice.rapport) adjustRapport(session, contactId, choice.rapport);
+  else adjustRapport(session, contactId, 5);
+  const effectNotes = applyPhoneEffect(session, choice.effect, tracker);
+
+  if (choice.next) {
+    const nextNode = getCallNode(contactId, state.treeId, choice.next, ctx);
+    if (nextNode) {
+      thread.callState = { treeId: state.treeId, nodeId: choice.next, phase: "talking" };
+      appendMessage(session, contactId, "in", `[Call] ${nextNode.text}`, { read: false });
+      const ended = nextNode.end || !nextNode.choices?.length;
+      if (ended) thread.callState = null;
+      return {
+        ok: true,
+        ended,
+        response: nextNode.text,
+        egg: choice.egg ?? null,
+        effectNotes,
+        node: ended ? null : nextNode,
+      };
+    }
+  }
+
+  thread.callState = null;
+  return {
+    ok: true,
+    ended: true,
+    response: choice.response ?? "…",
+    egg: choice.egg ?? null,
+    effectNotes,
+    node: null,
+  };
+}
+
+/**
+ * Hang up and clear call state.
+ * @param {import("./core.js").PlayerSession} session
+ * @param {string} contactId
+ */
+export function endCall(session, contactId) {
+  clearCallState(session, contactId);
+  return { ok: true };
+}
+
+export function getActiveCallNode(session, contactId) {
+  const state = getCallState(session, contactId);
+  if (!state) return null;
+  const ctx = buildDialogueContext(session, contactId);
+  const node = getCallNode(contactId, state.treeId, state.nodeId, ctx);
+  if (!node || node.end) {
+    clearCallState(session, contactId);
+    return null;
+  }
+  return { ...node, phase: state.phase ?? "talking", treeId: state.treeId, nodeId: state.nodeId };
+}
+
+/**
+ * Resolve a call menu choice (compat shim over advanceCall).
+ * Pass `activeScript` from startCall so fallback / filtered choice indexes stay aligned.
  * @param {import("./core.js").PlayerSession} session
  * @param {string} contactId
  * @param {number} choiceIndex
@@ -564,6 +703,13 @@ export function startCall(session, contactId) {
  * @param {{ redeemComp?: Function }|null} [tracker]
  */
 export function resolveCallChoice(session, contactId, choiceIndex, activeScript = null, tracker = null) {
+  // If a multi-turn call is active, advance it.
+  if (getCallState(session, contactId)) {
+    const r = advanceCall(session, contactId, choiceIndex, tracker);
+    return { response: r.response, egg: r.egg, effectNotes: r.effectNotes ?? [], ended: r.ended };
+  }
+
+  // Legacy path: one-shot script without callState (tests with explicit activeScript).
   const ctx = buildDialogueContext(session, contactId);
   const script = activeScript ?? getDynamicCallScript(contactId, ctx);
   const choices = script?.choices ?? [];
@@ -577,7 +723,28 @@ export function resolveCallChoice(session, contactId, choiceIndex, activeScript 
   return { response: choice.response, egg: choice.egg, effectNotes };
 }
 
+/**
+ * Start the multi-step wrong-number call tree (Dial 555-0199).
+ * @param {import("./core.js").PlayerSession} session
+ */
+export function startWrongNumberCall(session) {
+  const contactId = "chip_chandler";
+  const thread = ensureThread(session, contactId);
+  if (!thread) return { ok: false, message: "No phone book." };
+  recordEasterEgg(session, WRONG_NUMBER.egg);
+  const ctx = buildDialogueContext(session, contactId);
+  const node = getCallNode(contactId, "wrong_number", "hello", ctx);
+  thread.callCount += 1;
+  thread.callState = { treeId: "wrong_number", nodeId: "hello", phase: "connecting", contactId: "wrong_number" };
+  if (node) {
+    appendMessage(session, contactId, "in", `[Wrong #] ${node.text}`, { read: false });
+  }
+  return { ok: true, contactId, node, opening: WRONG_NUMBER.opening, egg: WRONG_NUMBER.egg };
+}
+
 export function dialWrongNumber(session) {
+  // Keep one-shot egg text for simple dial, and also seed the multi-step tree state
+  // when the UI wants a full call experience via startWrongNumberCall.
   if (recordEasterEgg(session, WRONG_NUMBER.egg)) {
     appendMessage(session, "chip_chandler", "in", `[Wrong #] ${WRONG_NUMBER.reply}`, { read: false });
   }

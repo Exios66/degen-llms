@@ -68,7 +68,13 @@ export function defaultRewardsState(overrides = {}) {
     unlockedComps: ["welcome_drink"],
     redeemedComps: [],
     notifications: [],
-    phoneBook: { threads: {}, easterEggs: [], introSent: [], intoxSecretsSent: false },
+    phoneBook: {
+      threads: {},
+      easterEggs: [],
+      introSent: [],
+      intoxSecretsSent: false,
+      settings: { muted: false, ringtoneId: "classic", smsSound: true },
+    },
     ...overrides,
   };
   if (!base.notifications.length) {
@@ -131,7 +137,15 @@ export class RewardsTracker {
     if (!Array.isArray(rewards.redeemedComps)) rewards.redeemedComps = [];
     if (!Array.isArray(rewards.notifications)) rewards.notifications = [...defaults.notifications];
     if (!rewards.phoneBook) {
-      rewards.phoneBook = { threads: {}, easterEggs: [], introSent: [] };
+      rewards.phoneBook = {
+        threads: {},
+        easterEggs: [],
+        introSent: [],
+        settings: { muted: false, ringtoneId: "classic", smsSound: true },
+      };
+    }
+    if (!rewards.phoneBook.settings) {
+      rewards.phoneBook.settings = { muted: false, ringtoneId: "classic", smsSound: true };
     }
     return rewards;
   }

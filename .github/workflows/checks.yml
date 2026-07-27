@@ -35,6 +35,17 @@ jobs:
       - name: RPG world data integrity
         run: node scripts/smoke-test-rpg.mjs
 
+      - name: Validate docs/js imports
+        run: node scripts/validate-docs-imports.mjs
+
+      - name: Node smoke tests (terminal wiring)
+        run: |
+          node scripts/smoke-test-pool-overlay.mjs
+          node scripts/smoke-test-carmen-desk.mjs
+          node scripts/smoke-test-rewards-phone.mjs
+          node scripts/smoke-test-hotel-salon.mjs
+          node scripts/smoke-test-balcony-smoke.mjs
+
       - name: Install Playwright
         run: |
           python -m pip install --upgrade pip playwright

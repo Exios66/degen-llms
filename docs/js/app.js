@@ -37,7 +37,7 @@ import { PoolComplexOverlay } from "./PoolComplexOverlay.js";
 import { BalconySmokeOverlay } from "./BalconySmokeOverlay.js";
 import { buildRacingRenderers } from "./ui/racing-renderers.js";
 import { buildVenueRenderers } from "./ui/venue-renderers.js";
-import { buildGentlemansClubRenderers } from "./ui/gentlemans-club-renderers.js?v=__ASSET_SHA__";
+import { buildGentlemansClubRenderers } from "./ui/gentlemans-club-renderers.js";
 import { buildCashierRenderers } from "./ui/cashier-renderers.js";
 import { buildMetaRenderers } from "./ui/meta-renderers.js";
 

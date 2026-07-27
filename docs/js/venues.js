@@ -9,7 +9,6 @@ import { tierIndex } from "./rewards-perks.js";
 import { getEffectiveLifetimeWagered } from "./resort-bridge.js";
 import { getRapport } from "./phone-rapport.js";
 import { getIntoxicationSummary, isHeightenedIntoxication } from "./intoxication-effects.js";
-import { STAKE_TIERS } from "./stakes.js";
 
 export {
   GENTLEMANS_CLUB_MIN_REWARDS_TIER_IDX,

@@ -230,6 +230,7 @@ inventory
 Developer deep-dives:
 
 - [Architecture](docs/architecture.md)
+- [Development Graph](docs/pr-graph.qmd) — interactive PR node graph over time
 - [Adding Activities](docs/adding-activities.md)
 - [Testing](docs/testing.md)
 - [Pixel RPG GDD](docs/rpg/GDD.md)

@@ -1,0 +1,48 @@
+---
+title: "Development Graph"
+subtitle: "Pull-request progress for The Mandalay Bay over time"
+format:
+  html:
+    toc: false
+    number-sections: false
+    code-tools: false
+    page-layout: full
+    css: assets/pr-graph/pr-graph.css
+resources:
+  - assets/pr-graph/pr-data.json
+  - assets/pr-graph/pr-graph.js
+  - assets/pr-graph/pr-graph.css
+---
+
+Each node is a GitHub pull request that landed (or is open) against [`Exios66/degen-llms`](https://github.com/Exios66/degen-llms). Edges show chronological merge flow, area succession (casino · hotel · RPG · docs), and shared-topic links. Drag the **Through** slider to watch the project accumulate; double-click a node to open its PR.
+
+::: {#pr-graph-app data-src="assets/pr-graph/pr-data.json"}
+:::
+
+```{=html}
+<script src="assets/pr-graph/pr-graph.js"></script>
+```
+
+## How to read the graph
+
+| Signal | Meaning |
+|--------|---------|
+| **Green node** | Merged PR (shipped work) |
+| **Blue ring** | Open PR |
+| **Grey** | Draft |
+| **Red** | Closed without merge |
+| **Outer tint** | Work area (casino / hotel / RPG / docs / …) |
+| **Timeline edges** | Consecutive merges on `main` |
+| **Area flow** | Next PR in the same product area |
+| **Relates to** | Shared distinctive title tokens |
+
+## Refreshing the data
+
+The snapshot in `docs/assets/pr-graph/pr-data.json` is generated from the GitHub API:
+
+```bash
+python scripts/refresh_pr_graph_data.py
+quarto render docs/pr-graph.qmd
+```
+
+Re-run before publishing the Posit site when you want the latest PR set reflected in the interactive view.

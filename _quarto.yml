@@ -26,6 +26,7 @@ project:
     - docs/mgm-rewards.md
     - docs/pixel-rpg.md
     - docs/architecture.md
+    - docs/pr-graph.qmd
     - docs/adding-activities.md
     - docs/testing.md
     - docs/rng.md
@@ -98,6 +99,8 @@ website:
         menu:
           - href: docs/architecture.md
             text: Architecture
+          - href: docs/pr-graph.qmd
+            text: Development Graph
           - href: docs/adding-activities.md
             text: Adding Activities
           - href: docs/testing.md
@@ -168,6 +171,7 @@ website:
       - section: "Developer Docs"
         contents:
           - docs/architecture.md
+          - docs/pr-graph.qmd
           - docs/adding-activities.md
           - docs/testing.md
           - docs/rng.md

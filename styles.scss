@@ -145,3 +145,12 @@ figcaption.quarto-float-caption-bottom > span:first-child {
 .play-card a {
   font-weight: 700;
 }
+
+/* Full-bleed interactive PR development graph */
+#pr-graph-app {
+  margin-top: 0.35rem;
+}
+
+.page-columns #pr-graph-app .pr-graph-shell {
+  max-width: none;
+}

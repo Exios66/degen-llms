@@ -146,11 +146,11 @@
           </div>
         </div>
         <div class="pr-graph-body">
-          <aside class="pr-graph-sidebar">
+          <div class="pr-graph-sidebar" role="navigation" aria-label="Pull request nodes">
             <header>Nodes — <span id="prg-node-count">${counts.nodes || 0}</span></header>
             <input class="pr-graph-search" id="prg-search" type="search" placeholder="Filter PRs…" aria-label="Filter pull requests" />
             <div class="pr-graph-list" id="prg-list"></div>
-          </aside>
+          </div>
           <div class="pr-graph-canvas-wrap" id="prg-canvas-wrap">
             <canvas id="prg-canvas"></canvas>
             <div class="pr-graph-tooltip" id="prg-tooltip"></div>
@@ -327,16 +327,17 @@
     function resize() {
       const dpr = window.devicePixelRatio || 1;
       const rect = wrap.getBoundingClientRect();
-      const w = Math.max(320, rect.width);
-      const h = Math.max(360, rect.height);
+      const w = Math.max(280, Math.floor(rect.width) || wrap.clientWidth || 640);
+      const h = Math.max(280, Math.floor(rect.height) || wrap.clientHeight || 480);
       canvas.width = Math.floor(w * dpr);
       canvas.height = Math.floor(h * dpr);
-      canvas.style.width = `${w}px`;
-      canvas.style.height = `${h}px`;
       const ctx = canvas.getContext("2d");
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       for (const node of nodes) {
         node.timelineX = 48 + node.frac * Math.max(120, w - 96);
+        // Keep nodes inside the visible world after layout changes.
+        node.x = clamp(node.x, 24, w - 24);
+        node.y = clamp(node.y, 24, h - 24);
       }
       return { w, h, ctx };
     }
@@ -404,7 +405,7 @@
     }
 
     function frame() {
-      const moving = sim.step(view.w / scale, view.h / scale, timelineBias || edgeKind === "timeline");
+      const moving = sim.step(view.w, view.h, timelineBias || edgeKind === "timeline");
       draw();
       if (moving || dragging) requestAnimationFrame(frame);
       else requestAnimationFrame(frameIdle);

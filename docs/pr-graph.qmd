@@ -8,6 +8,10 @@ format:
     code-tools: false
     page-layout: full
     css: assets/pr-graph/pr-graph.css
+    grid:
+      sidebar-width: 0px
+      margin-width: 0px
+      gutter-width: 1.5rem
 resources:
   - assets/pr-graph/pr-data.json
   - assets/pr-graph/pr-graph.js

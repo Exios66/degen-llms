@@ -1,13 +1,13 @@
 {
-  "generatedAt": "2026-07-27T01:32:48Z",
+  "generatedAt": "2026-07-27T01:46:15Z",
   "repo": "Exios66/degen-llms",
   "repoUrl": "https://github.com/Exios66/degen-llms",
   "counts": {
-    "nodes": 135,
-    "edges": 496,
+    "nodes": 136,
+    "edges": 499,
     "merged": 127,
     "open": 1,
-    "draft": 2,
+    "draft": 3,
     "closed": 5
   },
   "areas": [
@@ -2047,6 +2047,21 @@
       "area": "hotel",
       "branch": "cursor/fix-game-systems-722a",
       "labels": []
+    },
+    {
+      "id": 136,
+      "number": 136,
+      "title": "Add interactive PR development graph to Posit docs",
+      "state": "DRAFT",
+      "url": "https://github.com/Exios66/degen-llms/pull/136",
+      "createdAt": "2026-07-27T01:33:16Z",
+      "mergedAt": null,
+      "closedAt": null,
+      "when": "2026-07-27T01:33:16Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/pr-progress-node-graph-2e75",
+      "labels": []
     }
   ],
   "edges": [
@@ -2833,6 +2848,12 @@
     {
       "source": 132,
       "target": 133,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 133,
+      "target": 136,
       "kind": "area-flow",
       "area": "rpg"
     },
@@ -4451,6 +4472,12 @@
       "token": "catalog"
     },
     {
+      "source": 50,
+      "target": 136,
+      "kind": "relates",
+      "token": "interactive"
+    },
+    {
       "source": 48,
       "target": 58,
       "kind": "relates",
@@ -4633,6 +4660,12 @@
     {
       "source": 69,
       "target": 130,
+      "kind": "relates",
+      "token": "posit"
+    },
+    {
+      "source": 130,
+      "target": 136,
       "kind": "relates",
       "token": "posit"
     },

@@ -6,6 +6,8 @@
 
 [![pages-build-deployment](https://github.com/Exios66/degen-llms/actions/workflows/pages/pages-build-deployment/badge.svg?branch=gh-pages)](https://github.com/Exios66/degen-llms/actions/workflows/pages/pages-build-deployment)
 
+[![Web Casino Terminal](https://img.shields.io/badge/Web_Casino_Terminal-GitHub_Pages-2088FF?style=flat&logo=github&logoColor=white)](https://exios66.github.io/degen-llms/)
+
 [![Deployed on Posit Cloud](https://img.shields.io/badge/Deployed_on-Posit_Cloud-4d8DC9?style=flat&logo=rstudio)](https://019f9a67-d5c9-226b-b6b1-a86d1655be69.share.connect.posit.cloud/)
 
 ---

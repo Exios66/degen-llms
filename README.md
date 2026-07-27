@@ -170,6 +170,12 @@ degen-llms/
 
 Python is the authoritative game logic; the web app mirrors it in vanilla ES modules. The RPG delegates casino/hotel mechanics to the shared `docs/js/` engine. The Quarto site (`index.qmd`, guides) publishes separately to Posit Connect Cloud.
 
+---
+
+<img width="1376" height="768" alt="Gemini_Generated_Image_vk56fgvk56fgvk56" src="https://github.com/user-attachments/assets/59019177-8bef-48bd-a237-5d0f7808ef33" />
+
+---
+
 ## Documentation
 
 Full docs in [`docs/`](docs/README.md) and on the **[GitHub Wiki](https://github.com/Exios66/degen-llms/wiki)** (source in [`wiki/`](wiki/); publish with `/sync-github-wiki` or `bash scripts/sync-github-wiki.sh`):

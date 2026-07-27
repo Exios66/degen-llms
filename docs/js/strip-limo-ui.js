@@ -1,5 +1,5 @@
 /**
- * Strip limo dispatch UI — web terminal only.
+ * Strip limo dispatch UI for the web terminal casino.
  */
 import {
   applyDestinationTheme,
@@ -19,7 +19,6 @@ import {
  *   el: Function,
  *   banner: Function,
  *   chipLine: Function,
- *   menuBtn: Function,
  *   statusBanner: Function,
  *   showStatus: Function,
  *   persist: Function,
@@ -31,12 +30,23 @@ import {
  */
 export function buildStripLimoRenderers(ctx) {
   const {
-    el, banner, chipLine, menuBtn, statusBanner, showStatus,
+    el, banner, chipLine, statusBanner, showStatus,
     persist, render, pushView, navigateTo, goBack,
   } = ctx;
 
   function session() {
     return ctx.session;
+  }
+
+  /** Local helper — menuBtn is not on the shared web-terminal ctx (only hotel/pool factories define it). */
+  function menuBtn(label, onclick, isBack = false) {
+    return el("li", {}, [
+      el("button", {
+        className: "menu-btn" + (isBack ? " back" : ""),
+        textContent: label,
+        onclick,
+      }),
+    ]);
   }
 
   function renderStripLimoDispatch() {
@@ -93,7 +103,7 @@ export function buildStripLimoRenderers(ctx) {
         }),
         el("p", {
           className: "dim",
-          textContent: "Web terminal only — ride the Strip to Luxor, Excalibur, Bellagio, or Circa. Each property has its own slots, table lighting, and floor vibe.",
+          textContent: "Ride the Strip to Luxor, Excalibur, Bellagio, or Circa. Each property has its own slots, table lighting, and floor vibe.",
         }),
         isAwayFromHome(s)
           ? el("span", { className: "strip-away-badge", textContent: `Away · ${current.shortName}` })

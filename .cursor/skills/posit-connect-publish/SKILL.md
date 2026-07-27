@@ -59,6 +59,8 @@ python scripts/publish_posit_degen_llms.py --skip-render
 
 Then copy `refresh_token` + account id into the Cloud Agent environment secrets so future runs skip the browser step. See [`CONTRIBUTING-POSIT.md`](../../../CONTRIBUTING-POSIT.md).
 
+On a Cloud Agent VM, you may also persist credentials at `~/.config/posit-connect-cloud.env` (mode `600`). The publish script loads that file when dashboard secrets are not injected — still prefer the Secrets tab for cross-run durability.
+
 ### 4. Publish
 
 ```bash

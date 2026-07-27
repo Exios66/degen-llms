@@ -34,6 +34,14 @@ Dashboard: [Cloud Agents → Exios66/degen-llms environment](https://cursor.com/
 
 Never commit tokens to git. Session caches may live in `/tmp/posit-tokens.json` (gitignored).
 
+### VM-local fallback (this environment)
+
+After a successful device OAuth on a Cloud Agent VM, credentials may also be written to:
+
+`~/.config/posit-connect-cloud.env` (mode `600`)
+
+`scripts/publish_posit_degen_llms.py` loads that file when the Cursor Environment Secrets are not injected. Prefer promoting the same values into the dashboard **Secrets** tab so every new agent run receives them automatically.
+
 ## Local render
 
 Requires Quarto ≥ 1.10 and a Python environment with the repo on `PYTHONPATH` (repo root) plus `jupyter` / `matplotlib` / `pandas` for executable cells in `index.qmd`.

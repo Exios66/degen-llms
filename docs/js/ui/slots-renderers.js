@@ -53,6 +53,49 @@ export function buildSlotsRenderers(ctx) {
     return timerId;
   }
 
+  /** Update reel symbols in place during a spin — avoids full-page flicker. */
+  function patchSlotReelDisplay(machine) {
+    const root = document.querySelector(".slot-reel-window");
+    if (!root) return false;
+
+    const spinning = runtime.slots.spinning;
+    const reelsStopped = runtime.slots.reelsStopped ?? 0;
+    const landedReel = runtime.slots.landedReel ?? -1;
+    const reels = runtime.slots.displayReels ?? runtime.slots.lastReels;
+    const symbols = reels?.length === 3
+      ? reels.map((r) => (r ? displaySymbol(r, ctx.session.useUnicode) : "—"))
+      : ["—", "—", "—"];
+
+    root.classList.toggle("slot-reel-window--active-spin", Boolean(spinning && reelsStopped < 3));
+
+    const reelEls = root.querySelectorAll(".slot-reel");
+    for (let i = 0; i < 3; i += 1) {
+      const reelEl = reelEls[i];
+      if (!reelEl) continue;
+      const isSpinning = spinning && i >= reelsStopped;
+      reelEl.className = [
+        "slot-reel",
+        isSpinning ? "slot-reel--spinning" : "",
+        i === landedReel ? "slot-reel--landed" : "",
+      ].filter(Boolean).join(" ");
+      const sym = reelEl.querySelector(".slot-reel-symbol");
+      if (sym) sym.textContent = symbols[i];
+      if (isSpinning) reelEl.style.setProperty("--reel-delay", `${i * 0.05}s`);
+      else reelEl.style.removeProperty("--reel-delay");
+    }
+
+    const spinBtn = document.querySelector(".slot-cabinet-base .btn.primary");
+    if (spinBtn) spinBtn.disabled = Boolean(spinning);
+
+    const msg = document.querySelector(".slot-result");
+    if (msg && spinning && reelsStopped < 3) {
+      const cues = ["Spinning…", "Reels rolling…", "Almost there…"];
+      msg.className = "slot-result slot-result--spinning";
+      msg.textContent = cues[Math.min(reelsStopped, cues.length - 1)];
+    }
+    return true;
+  }
+
   function classifySlotWin(win, bet, isJackpot) {
     if (isJackpot) return "jackpot";
     if (win >= bet * 15 || win >= 1000) return "big";
@@ -342,19 +385,27 @@ export function buildSlotsRenderers(ctx) {
           display[i] = randomSymbol(machine);
         }
         runtime.slots.displayReels = display;
-        render();
+        if (!patchSlotReelDisplay(machine)) render();
       };
-      runtime.slots.spinIntervalId = window.setInterval(cycleSymbols, 90);
+      const cycleMs = Math.max(60, Math.round(90 * timing.speedMultiplier));
+      runtime.slots.spinIntervalId = window.setInterval(cycleSymbols, cycleMs);
       runtime.slotsSpinTimers.push(runtime.slots.spinIntervalId);
+      render();
       cycleSymbols();
 
       const stopReel = (index) => {
         runtime.slots.landedReel = index;
         runtime.slots.reelsStopped = index + 1;
-        runtime.slots.displayReels = runtime.slots.pendingFinalReels;
-        render();
+        const display = [...(runtime.slots.displayReels ?? runtime.slots.pendingFinalReels)];
+        display[index] = runtime.slots.pendingFinalReels[index];
+        for (let i = index + 1; i < 3; i += 1) {
+          display[i] = randomSymbol(machine);
+        }
+        runtime.slots.displayReels = display;
+        if (!patchSlotReelDisplay(machine)) render();
         scheduleSlotsSpin(() => {
           if (runtime.slots.landedReel === index) runtime.slots.landedReel = -1;
+          patchSlotReelDisplay(machine);
         }, 520);
       };
 

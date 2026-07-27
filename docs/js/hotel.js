@@ -305,16 +305,36 @@ export function upgradeRoom(session, targetType, rewardsTracker) {
 }
 
 function applyRoomUpgrade(hotel, targetType, target) {
+  const hadRoomAccess = hotel.reachedRoom || hotel.roomKeyActive;
   hotel.roomType = targetType;
   hotel.wing = target.wing;
   hotel.floor = target.floor;
   hotel.roomNumber = generateRoomNumber(target.floor);
-  hotel.foundReservation = false;
-  hotel.reservationConfirmedDesk = false;
-  hotel.roomKeyActive = false;
-  hotel.reachedRoom = false;
   hotel.hallwayProgress = 0;
   hotel.hallwayLog = [];
+  if (hadRoomAccess) {
+    hotel.foundReservation = true;
+    hotel.reservationConfirmedDesk = true;
+    hotel.roomKeyActive = true;
+    hotel.reachedRoom = false;
+  } else {
+    hotel.foundReservation = false;
+    hotel.reservationConfirmedDesk = false;
+    hotel.roomKeyActive = false;
+    hotel.reachedRoom = false;
+  }
+}
+
+/** Auto-apply suite/penthouse when Noir or Chairman tier is reached. */
+export function applyPromotedTierRoomUpgrade(session, tierId, rewardsTracker) {
+  const hotel = ensureHotel(session);
+  if (tierId === "noir" && hotel.roomType === "standard") {
+    return upgradeRoom(session, "suite", rewardsTracker);
+  }
+  if (tierId === "chairman" && hotel.roomType !== "penthouse") {
+    return upgradeRoom(session, "penthouse", rewardsTracker);
+  }
+  return null;
 }
 
 /** Skip hallway once the key is active (Carmen or lobby courtesy). */
@@ -376,22 +396,44 @@ export function buildFolioLines(session) {
   const hotel = ensureHotel(session);
   const ra = hotel.roomAmenities ?? {};
   const lines = [`Folio — Room ${hotel.roomNumber} · Conf ${hotel.reservationCode}`];
+  let runningTotal = 0;
 
-  if (ra.minibarTab > 0) {
+  if (ra.folioCharges?.length) {
+    for (const entry of ra.folioCharges) {
+      lines.push(`${entry.label}: ${fmtChips(entry.amount)}`);
+      runningTotal += entry.amount;
+    }
+  } else if (ra.minibarTab > 0) {
     lines.push(`Minibar tab: ${fmtChips(ra.minibarTab)} (sensor-enabled hospitality)`);
+    runningTotal += ra.minibarTab;
   }
+
   let serviceTotal = 0;
   if (ra.decisions?.includes("room_service")) serviceTotal += 35;
   if (ra.decisions?.includes("tip_maid")) serviceTotal += 25;
-  if (serviceTotal > 0) {
+  if (serviceTotal > 0 && !ra.folioCharges?.some((e) => e.label?.includes("room service") || e.label?.includes("maid"))) {
     lines.push(`In-room services: ${fmtChips(serviceTotal)}`);
+    runningTotal += serviceTotal;
   }
+
   const purchased = session.amenities?.purchasedItems?.length ?? 0;
   if (purchased > 0) {
     lines.push(`Mandalay Place deliveries: ${purchased} item(s) to your room`);
   }
+
+  const wc = getWorldCycleSummary(session);
+  if (wc.overdueBalance > 0) {
+    lines.push(`Overdue resort balance: ${fmtChips(wc.overdueBalance)}`);
+    runningTotal += wc.overdueBalance;
+  }
+  if (wc.dailyTotal > 0) {
+    lines.push(`Today's resort rate: ${fmtChips(wc.dailyTotal)} (posts at dawn)`);
+  }
+
   if (lines.length === 1) {
     lines.push("No charges. Suspiciously responsible for Vegas.");
+  } else if (runningTotal > 0) {
+    lines.push(`Running folio total: ${fmtChips(runningTotal)}`);
   }
   return lines;
 }
@@ -470,13 +512,17 @@ export function expressCheckout(session) {
   if (ra.checkedOut) {
     return { ok: false, message: "Already checked out." };
   }
+  if (!canAccessHotelRoom(session)) {
+    return { ok: false, message: "Settle overdue folio charges before express checkout." };
+  }
   if (tierIdx < 1) {
     return { ok: false, message: "Pearl+ required for express checkout. Join the regular line." };
   }
   ra.checkedOut = true;
   hotel.nightsRemaining = Math.max(0, hotel.nightsRemaining - 1);
+  const folio = buildFolioLines(session).join("\n");
   if (tierIdx >= 5) {
-    return { ok: true, message: "Chairman express — folio waived spiritually. Chauffeur waiting." };
+    return { ok: true, message: `${folio}\n\nChairman express — folio waived spiritually. Chauffeur waiting.` };
   }
-  return { ok: true, message: "Express checkout — line skipped. Folio emailed to guilt@vegas.com." };
+  return { ok: true, message: `${folio}\n\nExpress checkout — line skipped. Folio emailed to guilt@vegas.com.` };
 }

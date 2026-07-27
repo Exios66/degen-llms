@@ -6,7 +6,7 @@
 import { recordConsumption } from "./intoxication-effects.js";
 import { adjustRapport } from "./phone-rapport.js";
 import { tierForWagered } from "./rewards.js";
-import { tierIndex } from "./rewards-perks.js";
+import { getEffectiveLifetimeWagered, getSessionTierIndex } from "./resort-bridge.js";
 
 /** @readonly */
 export const CLUB_NAME = "The Velvet Ledger";
@@ -21,8 +21,8 @@ export const GENTLEMANS_CLUB_MIN_REWARDS_TIER_IDX = 2;
  * @param {import("./core.js").PlayerSession} session
  */
 export function canEnterGentlemansClub(session) {
-  const rewardsTier = tierForWagered(session.rewards?.lifetimeWagered ?? 0);
-  const rewardsIdx = tierIndex(rewardsTier.id);
+  const rewardsTier = tierForWagered(getEffectiveLifetimeWagered(session));
+  const rewardsIdx = getSessionTierIndex(session);
   const roomType = session.hotel?.roomType;
   const suiteOrBetter = roomType === "suite" || roomType === "penthouse";
   const calls = session.hotel?.roomAmenities?.phoneCalls ?? [];

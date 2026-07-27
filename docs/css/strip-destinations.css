@@ -171,6 +171,81 @@ body.strip-away .banner h1 {
   box-shadow: 0 0 20px rgba(255, 43, 214, 0.3);
 }
 
+.slot-theme-scarab { --slot-accent: #c9a227; --slot-panel: #1a1208; }
+.slot-cabinet.slot-theme-scarab {
+  background: linear-gradient(160deg, #2a1a05, #0a0806 60%, #3a2808);
+  box-shadow: inset 0 0 28px rgba(230, 180, 34, 0.2);
+}
+.slot-theme-nile { --slot-accent: #6ec6ff; --slot-panel: #0a1520; }
+.slot-cabinet.slot-theme-nile {
+  background: linear-gradient(180deg, #0c2030, #0a0806);
+  border: 1px solid #e6b422;
+}
+.slot-theme-ra { --slot-accent: #ffcc33; --slot-panel: #2a1800; }
+.slot-cabinet.slot-theme-ra {
+  background: radial-gradient(ellipse at top, #4a3008, #0a0806 70%);
+  box-shadow: 0 0 28px rgba(255, 200, 50, 0.35);
+  border: 1px solid #ffcc33;
+}
+
+.slot-theme-dragon { --slot-accent: #ff4500; --slot-panel: #2a0c10; }
+.slot-cabinet.slot-theme-dragon {
+  background: linear-gradient(160deg, #4a1018, #12080c 55%, #5a1820);
+  box-shadow: inset 0 0 30px rgba(255, 69, 0, 0.2);
+}
+.slot-theme-round-table { --slot-accent: #d4af37; --slot-panel: #3a1520; }
+.slot-cabinet.slot-theme-round-table {
+  background: linear-gradient(180deg, #5a2030, #12080c);
+  border: 1px solid #d4af37;
+}
+.slot-theme-grail { --slot-accent: #f0e68c; --slot-panel: #2a1018; }
+.slot-cabinet.slot-theme-grail {
+  background: radial-gradient(ellipse at center, #3a2030, #12080c 75%);
+  box-shadow: 0 0 26px rgba(240, 230, 140, 0.3);
+  border: 1px solid #f0e68c;
+}
+
+.slot-theme-lake { --slot-accent: #7ec8e3; --slot-panel: #0e2430; }
+.slot-cabinet.slot-theme-lake {
+  background: linear-gradient(160deg, #143848, #0c1018 55%, #1a4048);
+  box-shadow: inset 0 0 36px rgba(126, 200, 227, 0.2);
+}
+.slot-theme-glass-garden { --slot-accent: #e8a0c8; --slot-panel: #1a2830; }
+.slot-cabinet.slot-theme-glass-garden {
+  background: linear-gradient(180deg, #203838, #0c1018);
+  border: 1px solid #e8a0c8;
+}
+.slot-theme-fontana { --slot-accent: #b8d4e8; --slot-panel: #102830; }
+.slot-cabinet.slot-theme-fontana {
+  background: radial-gradient(ellipse at top, #1a4850, #0c1018 70%);
+  box-shadow: 0 0 30px rgba(142, 184, 200, 0.35);
+  border: 1px solid #b8d4e8;
+}
+
+.slot-theme-vamp { --slot-accent: #ff2bd6; --slot-panel: #1a0028; }
+.slot-cabinet.slot-theme-vamp {
+  background: linear-gradient(160deg, #2a0040, #08081a 55%, #001030);
+  box-shadow: inset 0 0 28px rgba(255, 43, 214, 0.22);
+}
+.slot-theme-stadium-swipe { --slot-accent: #00e5ff; --slot-panel: #101848; }
+.slot-cabinet.slot-theme-stadium-swipe {
+  background: linear-gradient(180deg, #002850, #08081a);
+  border: 1px solid #00e5ff;
+}
+.slot-theme-downtown-drop { --slot-accent: #c44cff; --slot-panel: #120028; }
+.slot-cabinet.slot-theme-downtown-drop {
+  background: radial-gradient(ellipse at top, #300060, #08081a 70%);
+  box-shadow: 0 0 28px rgba(196, 76, 255, 0.4), 0 0 12px rgba(0, 229, 255, 0.2);
+  border: 1px solid #c44cff;
+}
+
+.video-machine .machine-dest-flavor {
+  font-size: 0.78em;
+  opacity: 0.85;
+  margin: 2px 8px 6px;
+  letter-spacing: 0.02em;
+}
+
 /* ── Limo dispatch UI ── */
 
 .strip-limo-panel {

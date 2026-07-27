@@ -964,6 +964,41 @@ export const CALL_TREES = {
       },
     },
   },
+
+  rideshare_driver: {
+    voice: {
+      hello: {
+        text: "🚗 Uber / Lyft Strip desk — black car or pink pin. Where are we pin-dropping tonight?",
+        choices: [
+          { label: "Need a Strip ride", next: "strip", rapport: 2 },
+          { label: "What's the fare vibe?", next: "fare", rapport: 1 },
+          { label: "Unlock dispatch now", next: "dispatch", rapport: 3, effect: { unlockRideshare: true, openStripDispatch: true } },
+        ],
+      },
+      strip: {
+        text: "Luxor pyramid, Excalibur castle, Bellagio fountains, Circa neon — chips cover the hop. Open dispatch when you're ready.",
+        choices: [
+          { label: "Open dispatch", next: "dispatch", rapport: 2, effect: { unlockRideshare: true, openStripDispatch: true } },
+          { label: "Maybe later", next: "later", rapport: 1, effect: { unlockRideshare: true } },
+        ],
+      },
+      fare: {
+        text: "Fares pull from your chip roll — same as the hotel limo desk. Return to Mandalay is complimentary. Dispatch unlocked.",
+        choices: [
+          { label: "Open dispatch", next: "dispatch", rapport: 2, effect: { unlockRideshare: true, openStripDispatch: true } },
+          { label: "Got it", next: "later", rapport: 1, effect: { unlockRideshare: true } },
+        ],
+      },
+      dispatch: {
+        text: "Driver assigned. Opening Strip ride dispatch on your casino terminal — pick Luxor, Excalibur, Bellagio, or Circa.",
+        end: true,
+      },
+      later: {
+        text: "Ping us from Connect anytime. Strip ride dispatch is live on your Rewards phone.",
+        end: true,
+      },
+    },
+  },
 };
 
 /** Fallback voice tree when a contact has no CALL_TREES entry. */

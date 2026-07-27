@@ -159,10 +159,74 @@ check(Boolean(CALL_TREES.rideshare_driver?.voice?.hello), "rideshare call tree p
 }
 
 {
-  // strip-limo-ui must define its own menuBtn — ctx does not provide one.
-  const uiSrc = readFileSync(js("strip-limo-ui.js"), "utf8");
-  check(uiSrc.includes("function menuBtn("), "strip-limo-ui defines local menuBtn helper");
-  check(!/const\s*\{[^}]*menuBtn[^}]*\}\s*=\s*ctx/.test(uiSrc), "strip-limo-ui does not destructure menuBtn from ctx");
+  // Regression: strip-limo-ui must not pull menuBtn from ctx (web terminal never provides it).
+  const source = readFileSync(js("strip-limo-ui.js"), "utf8");
+  check(
+    source.includes("function menuBtn(") && !/const\s*\{[^}]*menuBtn[^}]*\}\s*=\s*ctx/.test(source),
+    "strip-limo-ui defines local menuBtn (not destructured from ctx)",
+  );
+  const appJs = readFileSync(js("app.js"), "utf8");
+  check(appJs.includes("...stripLimoRenderers"), "app.js mounts stripLimoRenderers into RENDERERS");
+
+  // Minimal DOM so createShell/el can build the dispatch view in Node.
+  if (typeof globalThis.document === "undefined") {
+    globalThis.document = {
+      documentElement: { style: { setProperty() {} }, dataset: {}, classList: { remove() {}, add() {}, [Symbol.iterator]: function* () {} } },
+      body: { classList: { toggle() {} } },
+      createElement: (tag) => {
+        const kids = [];
+        const attrs = {};
+        return {
+          tagName: String(tag).toUpperCase(),
+          className: "",
+          children: kids,
+          style: {},
+          dataset: {},
+          setAttribute(k, v) { attrs[k] = v; },
+          appendChild(c) { kids.push(c); return c; },
+          replaceChildren(...nodes) { kids.length = 0; kids.push(...nodes); },
+          addEventListener() {},
+          textContent: "",
+          innerHTML: "",
+          get disabled() { return Boolean(attrs.disabled); },
+          set disabled(v) { attrs.disabled = v; },
+        };
+      },
+      createTextNode: (t) => ({ textContent: String(t) }),
+    };
+    globalThis.window = {
+      addEventListener() {},
+      matchMedia: () => ({ matches: true, addEventListener() {}, removeEventListener() {} }),
+    };
+  }
+
+  const { buildStripLimoRenderers } = await import(js("strip-limo-ui.js"));
+  const { createShell, createViewStack } = await import(js("ui/shell.js"));
+  const session = new PlayerSession({ playerName: "Limo UI", chips: 5000 });
+  session.rpg = { flags: {} };
+  ensureHotel(session).reachedRoom = true;
+  unlockLimoService(session);
+  const views = createViewStack({ persist: () => {}, render: () => {} });
+  const ctx = {
+    get session() { return session; },
+    persist: () => {},
+    render: () => {},
+    pushView: views.pushView,
+    navigateTo: views.navigateTo,
+    goBack: views.goBack,
+    viewStack: views.stack,
+  };
+  Object.assign(ctx, createShell(ctx));
+  check(typeof ctx.menuBtn !== "function", "web-terminal-like ctx has no menuBtn");
+  const renderers = buildStripLimoRenderers(ctx);
+  check(typeof renderers["strip-limo"] === "function", "strip-limo renderer registered");
+  let rendered = null;
+  try {
+    rendered = renderers["strip-limo"]();
+  } catch (err) {
+    console.error(err);
+  }
+  check(Boolean(rendered), "strip-limo renders without throwing when menuBtn missing from ctx");
 }
 
 {

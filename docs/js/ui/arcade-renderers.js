@@ -1,6 +1,7 @@
 import { ACTIVITIES } from "../core.js";
 import { ARCADE_GAMES, REDEEM_OFFERS } from "../arcade/catalog.js";
 import { ensureArcade, persistArcade } from "../arcade/state.js";
+import { getActivityBranding } from "../strip-destinations.js";
 
 export function buildArcadeRenderers(ctx) {
   const {
@@ -8,6 +9,11 @@ export function buildArcadeRenderers(ctx) {
     render, persist, recordActivityVisit, recordActivityResult,
   } = ctx;
   const runtime = ctx.runtime;
+
+  function arcadeBannerTitle() {
+    const brand = getActivityBranding(ctx.session, "arcade", "Arcade");
+    return `Arcade Alley — ${brand.name}`;
+  }
 
   function state() {
     return ensureArcade(ctx.session);
@@ -17,7 +23,7 @@ export function buildArcadeRenderers(ctx) {
     const act = ACTIVITIES.arcade;
     if (ctx.session.wallet.balance < act.minBet) {
       return el("div", { className: "panel" }, [
-        banner("Arcade Alley"),
+        banner(arcadeBannerTitle()),
         el("p", { className: "error", textContent: `You need at least ${act.minBet} chips to enter.` }),
         el("div", { className: "action-bar" }, [
           el("button", { className: "btn", textContent: "Back", onclick: () => { popView(); render(); } }),
@@ -55,7 +61,7 @@ export function buildArcadeRenderers(ctx) {
     }));
 
     return el("div", { className: "panel arcade-floor" }, [
-      banner("Arcade Alley — Mandalay Cabinets"),
+      banner(arcadeBannerTitle()),
       chipLine(),
       el("p", {
         className: "dim",

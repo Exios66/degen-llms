@@ -4,6 +4,7 @@ import {
   ASSET_CLASSES, INSTRUMENTS, entryCostChips, filterContracts,
 } from "../tradingDesk.js";
 import { effectiveTableStakes, formatStakeRange } from "../stakes.js";
+import { getActivityBranding } from "../strip-destinations.js";
 
 export function buildTradingDeskRenderers(ctx) {
   const {
@@ -11,6 +12,11 @@ export function buildTradingDeskRenderers(ctx) {
     render, persist, recordActivityVisit, recordActivityResult,
   } = ctx;
   const runtime = ctx.runtime;
+
+  function tradingBannerTitle() {
+    const brand = getActivityBranding(ctx.session, "trading_desk", "Trading Desk");
+    return `Trading Floor — ${brand.name}`;
+  }
 
   function stopTicker() {
     if (runtime.marketTicker?.stop) {
@@ -25,7 +31,7 @@ export function buildTradingDeskRenderers(ctx) {
     if (ctx.session.wallet.balance < act.minBet && open === 0) {
       stopTicker();
       return el("div", { className: "panel" }, [
-        banner("Trading Floor"),
+        banner(tradingBannerTitle()),
         el("p", { className: "error", textContent: `You need at least ${act.minBet} chips to trade.` }),
         el("div", { className: "action-bar" }, [
           el("button", { className: "btn", textContent: "Back", onclick: () => { stopTicker(); popView(); render(); } }),
@@ -38,7 +44,7 @@ export function buildTradingDeskRenderers(ctx) {
     if (!runtime.tradingDesk.catalog) {
       runtime.tradingDesk.ensureCatalog().then(() => render());
       return el("div", { className: "panel" }, [
-        banner("Trading Floor — Mandalay Markets"),
+        banner(tradingBannerTitle()),
         chipLine(),
         el("p", { className: "dim", textContent: "Loading contract book…" }),
       ]);
@@ -134,7 +140,7 @@ export function buildTradingDeskRenderers(ctx) {
       : `Tape & charts isolated to ${assetFilter.toUpperCase()} underlyings — review 1D/1W activity, then buy.`;
 
     return el("div", { className: "panel" }, [
-      banner("Trading Floor — Mandalay Markets"),
+      banner(tradingBannerTitle()),
       chipLine(),
       assetChips,
       el("p", { className: "dim market-ticker-scope-hint", textContent: scopeHint }),

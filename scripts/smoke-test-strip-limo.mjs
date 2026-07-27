@@ -165,6 +165,39 @@ check(Boolean(CALL_TREES.rideshare_driver?.voice?.hello), "rideshare call tree p
   check(!/const\s*\{[^}]*menuBtn[^}]*\}\s*=\s*ctx/.test(uiSrc), "strip-limo-ui does not destructure menuBtn from ctx");
 }
 
+{
+  const menuTokens = ["--cyan", "--cyan-dim", "--magenta", "--bg-panel", "--bg-input", "--border"];
+  for (const destId of ["mandalay_bay", "luxor", "excalibur", "bellagio", "circa"]) {
+    const dest = STRIP_DESTINATIONS[destId];
+    for (const key of menuTokens) {
+      check(Boolean(dest.tokens[key]), `${destId} token ${key}`);
+    }
+  }
+  check(STRIP_DESTINATIONS.luxor.tokens["--cyan"] === "#e6b422", "Luxor menu accent is desert gold");
+  check(STRIP_DESTINATIONS.excalibur.tokens["--cyan"] === "#c23a3a", "Excalibur menu accent is crimson");
+  check(STRIP_DESTINATIONS.bellagio.tokens["--cyan"] === "#7eb8c8", "Bellagio menu accent is fountain teal");
+  check(STRIP_DESTINATIONS.circa.tokens["--cyan"] === "#00e5ff", "Circa menu accent is neon cyan");
+
+  check(css.includes("html.dest-luxor"), "luxor dest class CSS present");
+  check(css.includes("html.dest-excalibur .banner h1") || css.includes("html.dest-excalibur .banner"), "excalibur banner display style");
+  check(css.includes("Cormorant Garamond"), "Bellagio/Excalibur serif display font referenced");
+  check(css.includes("table-theme-luxor .machine-controls"), "luxor table theme deepens machine controls");
+  check(css.includes("table-theme-circa .machine-screen"), "circa table theme deepens machine screen");
+  check(css.includes("color-mix(in srgb, var(--cyan)"), "dest CSS uses cyan color-mix for accents");
+
+  const casinoCss = readFileSync(join(root, "docs", "css", "casino.css"), "utf8");
+  check(casinoCss.includes("color-mix(in srgb, var(--cyan)"), "casino.css menu chrome uses token color-mix");
+  check(!casinoCss.includes("rgba(57, 197, 207"), "casino.css has no hardcoded Mandalay cyan RGBA");
+
+  const session = new PlayerSession({ chips: 5000 });
+  unlockLimoService(session);
+  travelByLimo(session, "luxor");
+  check(getActivityBranding(session, "sportsbook").name === "Desert Book", "Luxor sportsbook branding");
+  check(getActivityBranding(session, "slots").name === "Pyramid Slots", "Luxor slots branding");
+  travelByLimo(session, "circa");
+  check(getActivityBranding(session, "sportsbook").name === "Stadium Sportsbook", "Circa sportsbook branding");
+}
+
 if (failed) {
   console.error(`\n${failed} check(s) failed`);
   process.exit(1);

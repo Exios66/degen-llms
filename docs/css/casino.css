@@ -66,7 +66,7 @@ body {
 
 body {
   background:
-    radial-gradient(ellipse at 50% 0%, rgba(57, 197, 207, 0.08) 0%, transparent 60%),
+    radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--cyan) 8%, transparent) 0%, transparent 60%),
     var(--bg);
 }
 
@@ -203,7 +203,7 @@ body {
 
 .menu-btn:hover,
 .menu-btn:focus-visible {
-  background: rgba(57, 197, 207, 0.1);
+  background: color-mix(in srgb, var(--cyan) 10%, transparent);
   border-color: var(--cyan-dim);
   outline: none;
 }
@@ -238,12 +238,12 @@ body {
 
 .btn:hover,
 .btn:focus-visible {
-  background: rgba(57, 197, 207, 0.15);
+  background: color-mix(in srgb, var(--cyan) 15%, transparent);
   outline: none;
 }
 
 .btn.primary {
-  background: rgba(57, 197, 207, 0.2);
+  background: color-mix(in srgb, var(--cyan) 20%, transparent);
   border-color: var(--cyan);
 }
 
@@ -393,7 +393,7 @@ body {
 }
 
 .ticket {
-  background: rgba(57, 197, 207, 0.08);
+  background: color-mix(in srgb, var(--cyan) 8%, transparent);
   border-left: 3px solid var(--cyan);
   padding: 0.5rem 0.75rem;
   margin: 0.35rem 0;
@@ -462,7 +462,7 @@ body {
 }
 
 .event-card--expanded {
-  border-color: rgba(57, 197, 207, 0.35);
+  border-color: color-mix(in srgb, var(--cyan) 35%, transparent);
 }
 
 .event-card-header {
@@ -509,7 +509,7 @@ body {
 }
 
 .market-card:hover {
-  border-color: rgba(57, 197, 207, 0.4);
+  border-color: color-mix(in srgb, var(--cyan) 40%, transparent);
 }
 
 .market-category {
@@ -581,7 +581,7 @@ body {
 }
 
 .outcome-chip:hover {
-  box-shadow: 0 0 8px rgba(57, 197, 207, 0.25);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--cyan) 25%, transparent);
 }
 
 .outcome-chip.yes:hover {
@@ -608,7 +608,7 @@ body {
 .unified-slip {
   margin: 1rem 0;
   padding: 0.75rem;
-  background: rgba(57, 197, 207, 0.05);
+  background: color-mix(in srgb, var(--cyan) 5%, transparent);
   border: 1px solid var(--border);
   border-radius: 4px;
 }
@@ -764,7 +764,7 @@ body {
 .hub-feature {
   padding: 0.5rem 0.75rem;
   border-left: 3px solid var(--cyan-dim);
-  background: rgba(57, 197, 207, 0.05);
+  background: color-mix(in srgb, var(--cyan) 5%, transparent);
 }
 
 .hub-feature strong {
@@ -795,7 +795,7 @@ body {
 }
 
 .dining-card:hover {
-  border-color: rgba(57, 197, 207, 0.45);
+  border-color: color-mix(in srgb, var(--cyan) 45%, transparent);
   transform: translateY(-1px);
 }
 
@@ -1109,7 +1109,7 @@ body {
   font-size: 0.95rem;
   color: var(--text, #e6e1cf);
   background: rgba(10, 14, 20, 0.8);
-  border: 1px solid rgba(57, 197, 207, 0.35);
+  border: 1px solid color-mix(in srgb, var(--cyan) 35%, transparent);
   border-radius: 2px;
 }
 
@@ -1197,12 +1197,12 @@ body {
 
 .error-actions .btn-link:hover,
 .error-actions .btn-link:focus-visible {
-  background: rgba(57, 197, 207, 0.15);
+  background: color-mix(in srgb, var(--cyan) 15%, transparent);
   outline: none;
 }
 
 .error-actions .btn-link.primary {
-  background: rgba(57, 197, 207, 0.2);
+  background: color-mix(in srgb, var(--cyan) 20%, transparent);
   border-color: var(--cyan);
 }
 
@@ -1292,7 +1292,7 @@ body {
 
 .machine-screen-inner {
   background:
-    radial-gradient(ellipse at 50% 0%, rgba(57, 197, 207, 0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--cyan) 4%, transparent) 0%, transparent 50%),
     #0a0e14;
   border: 1px solid var(--border);
   border-radius: 3px;
@@ -3402,7 +3402,7 @@ body {
 .racing-name-chip {
   font-size: 0.72rem;
   padding: 0.2rem 0.5rem;
-  background: rgba(57, 197, 207, 0.1);
+  background: color-mix(in srgb, var(--cyan) 10%, transparent);
   border: 1px solid var(--cyan-dim);
   border-radius: 12px;
 }
@@ -3755,7 +3755,7 @@ body {
   position: relative;
   min-height: 12rem;
   background:
-    radial-gradient(ellipse at 50% 0%, rgba(57, 197, 207, 0.08) 0%, transparent 55%),
+    radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--cyan) 8%, transparent) 0%, transparent 55%),
     rgba(0, 0, 0, 0.25);
 }
 
@@ -3836,13 +3836,13 @@ body {
 }
 
 .lottery-ticket-card--premium {
-  border-color: rgba(57, 197, 207, 0.35);
+  border-color: color-mix(in srgb, var(--cyan) 35%, transparent);
   background: linear-gradient(160deg, rgba(20, 40, 48, 0.9) 0%, rgba(0, 0, 0, 0.35) 100%);
 }
 
 .lottery-ticket-card--premium.lottery-ticket-card--active {
   border-color: #39c5cf;
-  box-shadow: 0 0 0 1px rgba(57, 197, 207, 0.4), 0 0 16px rgba(57, 197, 207, 0.15);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--cyan) 40%, transparent), 0 0 16px color-mix(in srgb, var(--cyan) 15%, transparent);
 }
 
 .lottery-ticket-card--mega {
@@ -4694,7 +4694,7 @@ body {
   font-size: 0.65rem;
   letter-spacing: 0.14em;
   color: rgba(230, 225, 207, 0.72);
-  border: 1px solid rgba(57, 197, 207, 0.28);
+  border: 1px solid color-mix(in srgb, var(--cyan) 28%, transparent);
   background: rgba(6, 20, 12, 0.55);
   padding: 0.28rem 0.55rem;
   border-radius: 2px;

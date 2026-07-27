@@ -1,0 +1,4937 @@
+{
+  "generatedAt": "2026-07-27T01:46:15Z",
+  "repo": "Exios66/degen-llms",
+  "repoUrl": "https://github.com/Exios66/degen-llms",
+  "counts": {
+    "nodes": 136,
+    "edges": 499,
+    "merged": 127,
+    "open": 1,
+    "draft": 3,
+    "closed": 5
+  },
+  "areas": [
+    "casino",
+    "docs",
+    "hotel",
+    "rpg"
+  ],
+  "nodes": [
+    {
+      "id": 1,
+      "number": 1,
+      "title": "Add The Mandalay Bay digital casino with unified chip economy",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/1",
+      "createdAt": "2026-07-04T17:23:37Z",
+      "mergedAt": "2026-07-04T17:30:10Z",
+      "closedAt": "2026-07-04T17:30:10Z",
+      "when": "2026-07-04T17:30:10Z",
+      "author": "Exios66",
+      "area": "casino",
+      "branch": "cursor/blackjack-cli-0522",
+      "labels": []
+    },
+    {
+      "id": 4,
+      "number": 4,
+      "title": "Add save slot library for CLI and web casino",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/4",
+      "createdAt": "2026-07-04T17:42:08Z",
+      "mergedAt": "2026-07-04T17:43:00Z",
+      "closedAt": "2026-07-04T17:43:01Z",
+      "when": "2026-07-04T17:43:00Z",
+      "author": "Exios66",
+      "area": "hotel",
+      "branch": "cursor/save-slots-8e67",
+      "labels": []
+    },
+    {
+      "id": 3,
+      "number": 3,
+      "title": "Add GitHub Pages web casino (The Mandalay Bay browser edition)",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/3",
+      "createdAt": "2026-07-04T17:40:02Z",
+      "mergedAt": "2026-07-04T17:43:02Z",
+      "closedAt": "2026-07-04T17:43:02Z",
+      "when": "2026-07-04T17:43:02Z",
+      "author": "Exios66",
+      "area": "docs",
+      "branch": "cursor/github-pages-casino-8e67",
+      "labels": []
+    },
+    {
+      "id": 5,
+      "number": 5,
+      "title": "Ensure gh-pages stays synced with docs/ via auto-deploy",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/5",
+      "createdAt": "2026-07-04T17:48:17Z",
+      "mergedAt": "2026-07-04T17:49:19Z",
+      "closedAt": "2026-07-04T17:49:19Z",
+      "when": "2026-07-04T17:49:19Z",
+      "author": "Exios66",
+      "area": "docs",
+      "branch": "cursor/sync-gh-pages-8e67",
+      "labels": []
+    },
+    {
+      "id": 2,
+      "number": 2,
+      "title": "The Mandalay Bay digital casino with full documentation",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/2",
+      "createdAt": "2026-07-04T17:33:15Z",
+      "mergedAt": "2026-07-04T21:20:26Z",
+      "closedAt": "2026-07-04T21:20:26Z",
+      "when": "2026-07-04T21:20:26Z",
+      "author": "Exios66",
+      "area": "docs",
+      "branch": "cursor/blackjack-cli-0522",
+      "labels": []
+    },
+    {
+      "id": 7,
+      "number": 7,
+      "title": "Fix blank GitHub Pages site and finalize gh-pages branch publishing",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/7",
+      "createdAt": "2026-07-04T21:17:28Z",
+      "mergedAt": "2026-07-04T21:20:52Z",
+      "closedAt": "2026-07-04T21:20:52Z",
+      "when": "2026-07-04T21:20:52Z",
+      "author": "Exios66",
+      "area": "docs",
+      "branch": "cursor/fix-gh-pages-blank-site-87b5",
+      "labels": []
+    },
+    {
+      "id": 8,
+      "number": 8,
+      "title": "Add Phase 1 pixel RPG mode (overworld, dialogue, blackjack)",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/8",
+      "createdAt": "2026-07-04T21:27:24Z",
+      "mergedAt": "2026-07-04T21:33:52Z",
+      "closedAt": "2026-07-04T21:33:52Z",
+      "when": "2026-07-04T21:33:52Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/phase-one-pixel-rpg-ab43",
+      "labels": []
+    },
+    {
+      "id": 11,
+      "number": 11,
+      "title": "Add full MGM Mandalay Bay slot machine lineup including Megabucks",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/11",
+      "createdAt": "2026-07-04T21:38:17Z",
+      "mergedAt": "2026-07-04T21:39:31Z",
+      "closedAt": "2026-07-04T21:39:31Z",
+      "when": "2026-07-04T21:39:31Z",
+      "author": "Exios66",
+      "area": "docs",
+      "branch": "cursor/mgm-slot-machines-5ec2",
+      "labels": []
+    },
+    {
+      "id": 10,
+      "number": 10,
+      "title": "Fix back navigation and add Hold'em, roulette, and horse racing",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/10",
+      "createdAt": "2026-07-04T21:36:28Z",
+      "mergedAt": "2026-07-04T21:43:55Z",
+      "closedAt": "2026-07-04T21:43:55Z",
+      "when": "2026-07-04T21:43:55Z",
+      "author": "Exios66",
+      "area": "docs",
+      "branch": "cursor/casino-games-back-nav-0588",
+      "labels": []
+    },
+    {
+      "id": 9,
+      "number": 9,
+      "title": "Phase 1: Phaser RPG scaffold, resort map, and blackjack encounter bridge",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/9",
+      "createdAt": "2026-07-04T21:35:53Z",
+      "mergedAt": "2026-07-04T21:44:14Z",
+      "closedAt": "2026-07-04T21:44:14Z",
+      "when": "2026-07-04T21:44:14Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/rpg-phase1-b7b6",
+      "labels": []
+    },
+    {
+      "id": 13,
+      "number": 13,
+      "title": "Add charismatic dealer team with rotation and quippy table dialogue",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/13",
+      "createdAt": "2026-07-04T22:45:17Z",
+      "mergedAt": "2026-07-05T04:16:51Z",
+      "closedAt": "2026-07-05T04:16:51Z",
+      "when": "2026-07-05T04:16:51Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/charismatic-dealer-team-4004",
+      "labels": []
+    },
+    {
+      "id": 15,
+      "number": 15,
+      "title": "Video casino machine UI for blackjack, hold'em, and roulette",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/15",
+      "createdAt": "2026-07-05T04:34:57Z",
+      "mergedAt": "2026-07-05T04:42:27Z",
+      "closedAt": "2026-07-05T04:42:27Z",
+      "when": "2026-07-05T04:42:27Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/video-machine-ui-3060",
+      "labels": []
+    },
+    {
+      "id": 12,
+      "number": 12,
+      "title": "Restore GitHub Pages deploy workflow and sync gh-pages branch",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/12",
+      "createdAt": "2026-07-04T21:47:06Z",
+      "mergedAt": "2026-07-05T05:29:45Z",
+      "closedAt": "2026-07-05T05:29:45Z",
+      "when": "2026-07-05T05:29:45Z",
+      "author": "Exios66",
+      "area": "docs",
+      "branch": "cursor/gh-pages-deploy-b7b6",
+      "labels": []
+    },
+    {
+      "id": 19,
+      "number": 19,
+      "title": "Add 401K Contribution and High Roller / No Limit stake tiers",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/19",
+      "createdAt": "2026-07-05T05:31:32Z",
+      "mergedAt": "2026-07-05T05:41:10Z",
+      "closedAt": "2026-07-05T05:41:10Z",
+      "when": "2026-07-05T05:41:10Z",
+      "author": "Exios66",
+      "area": "docs",
+      "branch": "cursor/stake-tiers-401k-nolimit-c545",
+      "labels": []
+    },
+    {
+      "id": 16,
+      "number": 16,
+      "title": "Themed slot machine cabinets for all 14 legendary machines",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/16",
+      "createdAt": "2026-07-05T04:41:26Z",
+      "mergedAt": "2026-07-05T05:53:02Z",
+      "closedAt": "2026-07-05T05:53:02Z",
+      "when": "2026-07-05T05:53:02Z",
+      "author": "Exios66",
+      "area": "docs",
+      "branch": "cursor/themed-slot-machines-3060",
+      "labels": []
+    },
+    {
+      "id": 17,
+      "number": 17,
+      "title": "Mandalay Bay Hotel Experience \u2014 exit to hotel, reservations, upgrades",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/17",
+      "createdAt": "2026-07-05T05:24:40Z",
+      "mergedAt": "2026-07-05T05:53:42Z",
+      "closedAt": "2026-07-05T05:53:42Z",
+      "when": "2026-07-05T05:53:42Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/mandalay-hotel-experience-4004",
+      "labels": []
+    },
+    {
+      "id": 20,
+      "number": 20,
+      "title": "Fix GitHub Pages deploy workflow to sync gh-pages branch",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/20",
+      "createdAt": "2026-07-05T05:43:46Z",
+      "mergedAt": "2026-07-05T05:54:26Z",
+      "closedAt": "2026-07-05T05:54:26Z",
+      "when": "2026-07-05T05:54:26Z",
+      "author": "Exios66",
+      "area": "docs",
+      "branch": "cursor/fix-gh-pages-sync-c545",
+      "labels": []
+    },
+    {
+      "id": 18,
+      "number": 18,
+      "title": "Kawaii horse sprites, paddock UI, and custom CSV name rosters",
+      "state": "CLOSED",
+      "url": "https://github.com/Exios66/degen-llms/pull/18",
+      "createdAt": "2026-07-05T05:27:05Z",
+      "mergedAt": null,
+      "closedAt": "2026-07-05T05:58:49Z",
+      "when": "2026-07-05T05:58:49Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/horse-racing-sprites-3060",
+      "labels": []
+    },
+    {
+      "id": 14,
+      "number": 14,
+      "title": "Fix RPG boot and add MGM Rewards phone to web + RPG",
+      "state": "CLOSED",
+      "url": "https://github.com/Exios66/degen-llms/pull/14",
+      "createdAt": "2026-07-05T04:20:59Z",
+      "mergedAt": null,
+      "closedAt": "2026-07-05T05:58:50Z",
+      "when": "2026-07-05T05:58:50Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/mgm-rewards-phone-4004",
+      "labels": []
+    },
+    {
+      "id": 21,
+      "number": 21,
+      "title": "Expand horse racing sprite roster with diverse breeds and patterns",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/21",
+      "createdAt": "2026-07-05T06:09:37Z",
+      "mergedAt": "2026-07-05T07:15:16Z",
+      "closedAt": "2026-07-05T07:15:16Z",
+      "when": "2026-07-05T07:15:16Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/horse-sprite-diversity-1d2d",
+      "labels": []
+    },
+    {
+      "id": 22,
+      "number": 22,
+      "title": "Fix GitHub Pages boot error: illegal return in app.js",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/22",
+      "createdAt": "2026-07-05T07:24:12Z",
+      "mergedAt": "2026-07-05T07:24:18Z",
+      "closedAt": "2026-07-05T07:24:18Z",
+      "when": "2026-07-05T07:24:18Z",
+      "author": "Exios66",
+      "area": "docs",
+      "branch": "cursor/fix-illegal-return-app-js-4ad3",
+      "labels": []
+    },
+    {
+      "id": 24,
+      "number": 24,
+      "title": "Add gh-pages build status log with error and debug codes",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/24",
+      "createdAt": "2026-07-05T07:33:19Z",
+      "mergedAt": "2026-07-05T07:35:30Z",
+      "closedAt": "2026-07-05T07:35:30Z",
+      "when": "2026-07-05T07:35:30Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/gh-pages-build-log-4004",
+      "labels": []
+    },
+    {
+      "id": 25,
+      "number": 25,
+      "title": "Add gh-pages build status log with GBP error/debug codes",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/25",
+      "createdAt": "2026-07-05T07:34:58Z",
+      "mergedAt": "2026-07-05T07:40:30Z",
+      "closedAt": "2026-07-05T07:40:30Z",
+      "when": "2026-07-05T07:40:30Z",
+      "author": "Exios66",
+      "area": "docs",
+      "branch": "cursor/gh-pages-build-status-log-4e24",
+      "labels": []
+    },
+    {
+      "id": 28,
+      "number": 28,
+      "title": "RPG title intro animation and persistent profile cache",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/28",
+      "createdAt": "2026-07-05T07:45:31Z",
+      "mergedAt": "2026-07-05T08:19:46Z",
+      "closedAt": "2026-07-05T08:19:46Z",
+      "when": "2026-07-05T08:19:46Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/rpg-title-profile-cache-8e53",
+      "labels": []
+    },
+    {
+      "id": 27,
+      "number": 27,
+      "title": "High-density kawaii horse sprites for race track paddock",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/27",
+      "createdAt": "2026-07-05T07:44:15Z",
+      "mergedAt": "2026-07-05T08:21:48Z",
+      "closedAt": "2026-07-05T08:21:49Z",
+      "when": "2026-07-05T08:21:48Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/cute-hd-horse-sprites-88d9",
+      "labels": []
+    },
+    {
+      "id": 26,
+      "number": 26,
+      "title": "Hotel expansion parity \u2014 terminal, pages, and RPG open world",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/26",
+      "createdAt": "2026-07-05T07:41:13Z",
+      "mergedAt": "2026-07-05T08:22:19Z",
+      "closedAt": "2026-07-05T08:22:19Z",
+      "when": "2026-07-05T08:22:19Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/hotel-open-world-parity-8e53",
+      "labels": []
+    },
+    {
+      "id": 29,
+      "number": 29,
+      "title": "Fix hotel comps, slot spins, and parody PAR-sheet RNG",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/29",
+      "createdAt": "2026-07-05T07:47:32Z",
+      "mergedAt": "2026-07-05T08:24:50Z",
+      "closedAt": "2026-07-05T08:24:50Z",
+      "when": "2026-07-05T08:24:50Z",
+      "author": "Exios66",
+      "area": "hotel",
+      "branch": "cursor/fix-hascomp-reference-77cb",
+      "labels": []
+    },
+    {
+      "id": 30,
+      "number": 30,
+      "title": "Add Mandalay Bay lobby guest directory book",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/30",
+      "createdAt": "2026-07-05T08:30:13Z",
+      "mergedAt": "2026-07-05T08:31:29Z",
+      "closedAt": "2026-07-05T08:31:29Z",
+      "when": "2026-07-05T08:31:29Z",
+      "author": "Exios66",
+      "area": "docs",
+      "branch": "cursor/guest-directory-book-32e0",
+      "labels": []
+    },
+    {
+      "id": 32,
+      "number": 32,
+      "title": "Pool complex expansion pack and expanded Steve Harvey quotes",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/32",
+      "createdAt": "2026-07-05T14:32:55Z",
+      "mergedAt": "2026-07-05T14:34:27Z",
+      "closedAt": "2026-07-05T14:34:27Z",
+      "when": "2026-07-05T14:34:27Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/pool-complex-steve-harvey-0960",
+      "labels": []
+    },
+    {
+      "id": 33,
+      "number": 33,
+      "title": "Add casino floor designer shopping mall and full-service bars",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/33",
+      "createdAt": "2026-07-05T14:35:27Z",
+      "mergedAt": "2026-07-05T14:40:38Z",
+      "closedAt": "2026-07-05T14:40:38Z",
+      "when": "2026-07-05T14:40:38Z",
+      "author": "Exios66",
+      "area": "docs",
+      "branch": "cursor/casino-floor-mall-bars-9250",
+      "labels": []
+    },
+    {
+      "id": 31,
+      "number": 31,
+      "title": "Add in-room Vegas amenities after check-in",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/31",
+      "createdAt": "2026-07-05T12:10:27Z",
+      "mergedAt": "2026-07-05T14:41:03Z",
+      "closedAt": "2026-07-05T14:41:03Z",
+      "when": "2026-07-05T14:41:03Z",
+      "author": "Exios66",
+      "area": "docs",
+      "branch": "cursor/room-amenities-vegas-0960",
+      "labels": []
+    },
+    {
+      "id": 34,
+      "number": 34,
+      "title": "Add tier-scaled VIP speed and satirical premium MGM Rewards perks",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/34",
+      "createdAt": "2026-07-05T14:44:01Z",
+      "mergedAt": "2026-07-05T14:51:02Z",
+      "closedAt": "2026-07-05T14:51:02Z",
+      "when": "2026-07-05T14:51:02Z",
+      "author": "Exios66",
+      "area": "docs",
+      "branch": "cursor/rewards-tier-premium-ux-3526",
+      "labels": []
+    },
+    {
+      "id": 35,
+      "number": 35,
+      "title": "Sports Book realism, prediction markets, and modern UI",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/35",
+      "createdAt": "2026-07-05T14:56:35Z",
+      "mergedAt": "2026-07-05T15:04:13Z",
+      "closedAt": "2026-07-05T15:04:13Z",
+      "when": "2026-07-05T15:04:13Z",
+      "author": "Exios66",
+      "area": "docs",
+      "branch": "cursor/sportsbook-predictions-9426",
+      "labels": []
+    },
+    {
+      "id": 36,
+      "number": 36,
+      "title": "Fix slot spin buttons and add bet stepper controls",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/36",
+      "createdAt": "2026-07-05T14:57:10Z",
+      "mergedAt": "2026-07-05T15:04:36Z",
+      "closedAt": "2026-07-05T15:04:37Z",
+      "when": "2026-07-05T15:04:36Z",
+      "author": "Exios66",
+      "area": "casino",
+      "branch": "cursor/fix-slot-spin-bet-controls-366d",
+      "labels": []
+    },
+    {
+      "id": 37,
+      "number": 37,
+      "title": "Complete Mandalay Bay room perfection roadmap",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/37",
+      "createdAt": "2026-07-05T15:32:40Z",
+      "mergedAt": "2026-07-05T15:57:46Z",
+      "closedAt": "2026-07-05T15:57:46Z",
+      "when": "2026-07-05T15:57:46Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/room-features-perfection-edfe",
+      "labels": []
+    },
+    {
+      "id": 38,
+      "number": 38,
+      "title": "Complete Mandalay Bay room perfection + real-time day/night cycle",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/38",
+      "createdAt": "2026-07-05T16:03:44Z",
+      "mergedAt": "2026-07-05T16:12:35Z",
+      "closedAt": "2026-07-05T16:12:36Z",
+      "when": "2026-07-05T16:12:35Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/room-features-perfection-edfe",
+      "labels": []
+    },
+    {
+      "id": 39,
+      "number": 39,
+      "title": "Hardy Horse-inspired cozy 16-bit horse sprites",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/39",
+      "createdAt": "2026-07-05T16:06:13Z",
+      "mergedAt": "2026-07-05T16:14:23Z",
+      "closedAt": "2026-07-05T16:14:23Z",
+      "when": "2026-07-05T16:14:23Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/hardy-horse-sprites-88d9",
+      "labels": []
+    },
+    {
+      "id": 40,
+      "number": 40,
+      "title": "Atari-style electric derby race track UI with jockeys",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/40",
+      "createdAt": "2026-07-05T16:13:16Z",
+      "mergedAt": "2026-07-05T16:17:04Z",
+      "closedAt": "2026-07-05T16:17:04Z",
+      "when": "2026-07-05T16:17:04Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/atari-race-track-ui-88d9",
+      "labels": []
+    },
+    {
+      "id": 42,
+      "number": 42,
+      "title": "Replace Racing Pavilion horse sprites with equestrian pixel art",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/42",
+      "createdAt": "2026-07-05T19:07:17Z",
+      "mergedAt": "2026-07-05T19:08:24Z",
+      "closedAt": "2026-07-05T19:08:24Z",
+      "when": "2026-07-05T19:08:24Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/horse-sprite-redesign-df54",
+      "labels": []
+    },
+    {
+      "id": 44,
+      "number": 44,
+      "title": "Add intensifying glitch screen effect for liquor, beer, and contraband",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/44",
+      "createdAt": "2026-07-05T19:11:45Z",
+      "mergedAt": "2026-07-05T19:18:01Z",
+      "closedAt": "2026-07-05T19:18:01Z",
+      "when": "2026-07-05T19:18:01Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/intoxication-glitch-effect-3b52",
+      "labels": []
+    },
+    {
+      "id": 45,
+      "number": 45,
+      "title": "Replace Racing Pavilion horse sprites with chibi gallop animation",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/45",
+      "createdAt": "2026-07-05T19:16:06Z",
+      "mergedAt": "2026-07-05T19:18:52Z",
+      "closedAt": "2026-07-05T19:18:52Z",
+      "when": "2026-07-05T19:18:52Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/horse-sprite-redesign-df54",
+      "labels": []
+    },
+    {
+      "id": 43,
+      "number": 43,
+      "title": "Add off-strip bank account and editable staff manifest",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/43",
+      "createdAt": "2026-07-05T19:08:23Z",
+      "mergedAt": "2026-07-05T19:19:25Z",
+      "closedAt": "2026-07-05T19:19:25Z",
+      "when": "2026-07-05T19:19:25Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/bank-account-staff-manifest-1993",
+      "labels": []
+    },
+    {
+      "id": 41,
+      "number": 41,
+      "title": "Add video casino machine UI for blackjack, hold'em, and roulette",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/41",
+      "createdAt": "2026-07-05T17:50:19Z",
+      "mergedAt": "2026-07-05T19:19:43Z",
+      "closedAt": "2026-07-05T19:19:43Z",
+      "when": "2026-07-05T19:19:43Z",
+      "author": "Exios66",
+      "area": "casino",
+      "branch": "cursor/video-machine-ui-3060",
+      "labels": []
+    },
+    {
+      "id": 47,
+      "number": 47,
+      "title": "fix: prevent sportsbook crash when sports catalog has not loaded",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/47",
+      "createdAt": "2026-07-05T19:31:22Z",
+      "mergedAt": "2026-07-05T19:44:41Z",
+      "closedAt": "2026-07-05T19:44:41Z",
+      "when": "2026-07-05T19:44:41Z",
+      "author": "Exios66",
+      "area": "docs",
+      "branch": "cursor/fix-sportsbook-crash-80fa",
+      "labels": []
+    },
+    {
+      "id": 46,
+      "number": 46,
+      "title": "Horse Stables: equestrian gallop sprites + interactive stable location",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/46",
+      "createdAt": "2026-07-05T19:30:20Z",
+      "mergedAt": "2026-07-05T19:47:24Z",
+      "closedAt": "2026-07-05T19:47:24Z",
+      "when": "2026-07-05T19:47:24Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/horse-sprite-redesign-df54",
+      "labels": []
+    },
+    {
+      "id": 48,
+      "number": 48,
+      "title": "fix: sportsbook crash + hotel front-desk decision tree + dining recommendations",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/48",
+      "createdAt": "2026-07-05T20:10:11Z",
+      "mergedAt": "2026-07-05T20:30:40Z",
+      "closedAt": "2026-07-05T20:30:40Z",
+      "when": "2026-07-05T20:30:40Z",
+      "author": "Exios66",
+      "area": "docs",
+      "branch": "cursor/fix-sportsbook-crash-80fa",
+      "labels": []
+    },
+    {
+      "id": 49,
+      "number": 49,
+      "title": "Add in-game casino time tracker to save slots",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/49",
+      "createdAt": "2026-07-05T20:11:39Z",
+      "mergedAt": "2026-07-05T21:11:27Z",
+      "closedAt": "2026-07-05T21:11:27Z",
+      "when": "2026-07-05T21:11:27Z",
+      "author": "Exios66",
+      "area": "docs",
+      "branch": "cursor/casino-time-save-slots-0e95",
+      "labels": []
+    },
+    {
+      "id": 50,
+      "number": 50,
+      "title": "Horse Stables: equestrian sprites + interactive stable location (dual entry)",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/50",
+      "createdAt": "2026-07-07T01:06:55Z",
+      "mergedAt": "2026-07-07T01:07:37Z",
+      "closedAt": "2026-07-07T01:07:37Z",
+      "when": "2026-07-07T01:07:37Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/horse-sprite-redesign-df54",
+      "labels": []
+    },
+    {
+      "id": 51,
+      "number": 51,
+      "title": "fix: patch 6 UX-breaking bugs across casino features",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/51",
+      "createdAt": "2026-07-07T03:14:01Z",
+      "mergedAt": "2026-07-07T03:23:20Z",
+      "closedAt": "2026-07-07T03:23:20Z",
+      "when": "2026-07-07T03:23:20Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/horse-sprite-redesign-df54",
+      "labels": []
+    },
+    {
+      "id": 53,
+      "number": 53,
+      "title": "Add Connect contacts and messaging app to MGM phone",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/53",
+      "createdAt": "2026-07-07T03:35:19Z",
+      "mergedAt": "2026-07-07T03:39:30Z",
+      "closedAt": "2026-07-07T03:39:30Z",
+      "when": "2026-07-07T03:39:30Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/phone-contacts-messaging-0e95",
+      "labels": []
+    },
+    {
+      "id": 55,
+      "number": 55,
+      "title": "feat: add Equestrian Arena (Dressage & Show Jumping) as separate floor from Racing Pavilion",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/55",
+      "createdAt": "2026-07-07T03:54:20Z",
+      "mergedAt": "2026-07-07T03:58:19Z",
+      "closedAt": "2026-07-07T03:58:19Z",
+      "when": "2026-07-07T03:58:19Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/equestrian-arena-e979",
+      "labels": []
+    },
+    {
+      "id": 56,
+      "number": 56,
+      "title": "Enhance slot win animations with Vegas-style reel stops and celebrations",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/56",
+      "createdAt": "2026-07-07T04:02:20Z",
+      "mergedAt": "2026-07-07T04:13:12Z",
+      "closedAt": "2026-07-07T04:13:12Z",
+      "when": "2026-07-07T04:13:12Z",
+      "author": "Exios66",
+      "area": "casino",
+      "branch": "cursor/enhance-slot-win-animations-40f0",
+      "labels": []
+    },
+    {
+      "id": 54,
+      "number": 54,
+      "title": "feat(slots): tier-correlated payout scaling + significantly increased base multipliers",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/54",
+      "createdAt": "2026-07-07T03:49:14Z",
+      "mergedAt": "2026-07-07T04:15:54Z",
+      "closedAt": "2026-07-07T04:15:54Z",
+      "when": "2026-07-07T04:15:54Z",
+      "author": "Exios66",
+      "area": "docs",
+      "branch": "cursor/slots-tier-payout-scaling-80fa",
+      "labels": []
+    },
+    {
+      "id": 52,
+      "number": 52,
+      "title": "fix: navigation gaps, blackjack crash, responsive CSS overhaul",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/52",
+      "createdAt": "2026-07-07T03:34:56Z",
+      "mergedAt": "2026-07-07T04:16:31Z",
+      "closedAt": "2026-07-07T04:16:31Z",
+      "when": "2026-07-07T04:16:31Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/horse-sprite-redesign-df54",
+      "labels": []
+    },
+    {
+      "id": 57,
+      "number": 57,
+      "title": "Dynamic phone dialogue trees with rapport and custom staff lines",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/57",
+      "createdAt": "2026-07-07T04:49:01Z",
+      "mergedAt": "2026-07-07T05:42:45Z",
+      "closedAt": "2026-07-07T05:42:45Z",
+      "when": "2026-07-07T05:42:45Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/dynamic-phone-dialogue-40f0",
+      "labels": []
+    },
+    {
+      "id": 58,
+      "number": 58,
+      "title": "Fix Mandalay Bay room access from phone, front desk, and hallway",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/58",
+      "createdAt": "2026-07-07T05:53:49Z",
+      "mergedAt": "2026-07-07T10:13:45Z",
+      "closedAt": "2026-07-07T10:13:45Z",
+      "when": "2026-07-07T10:13:45Z",
+      "author": "Exios66",
+      "area": "docs",
+      "branch": "cursor/fix-room-access-b058",
+      "labels": []
+    },
+    {
+      "id": 59,
+      "number": 59,
+      "title": "Sportsbook predictions, VIP venues, dealer phone trees, session swing texts",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/59",
+      "createdAt": "2026-07-07T10:36:35Z",
+      "mergedAt": "2026-07-07T10:37:03Z",
+      "closedAt": "2026-07-07T10:37:03Z",
+      "when": "2026-07-07T10:37:03Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/sportsbook-salon-phone-perks-40f0",
+      "labels": []
+    },
+    {
+      "id": 60,
+      "number": 60,
+      "title": "Update README to reflect current resort simulator scope",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/60",
+      "createdAt": "2026-07-08T17:12:54Z",
+      "mergedAt": "2026-07-08T18:01:53Z",
+      "closedAt": "2026-07-08T18:01:53Z",
+      "when": "2026-07-08T18:01:53Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/update-readme-b058",
+      "labels": []
+    },
+    {
+      "id": 61,
+      "number": 61,
+      "title": "Add GitHub profile README badge for The Mandalay Bay",
+      "state": "DRAFT",
+      "url": "https://github.com/Exios66/degen-llms/pull/61",
+      "createdAt": "2026-07-25T15:20:48Z",
+      "mergedAt": null,
+      "closedAt": null,
+      "when": "2026-07-25T15:20:48Z",
+      "author": "Exios66",
+      "area": "docs",
+      "branch": "cursor/profile-readme-badge-6ebf",
+      "labels": []
+    },
+    {
+      "id": 62,
+      "number": 62,
+      "title": "Add Quarto Posit Connect Cloud documentation site for Mandalay Bay",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/62",
+      "createdAt": "2026-07-25T17:49:48Z",
+      "mergedAt": "2026-07-25T17:51:14Z",
+      "closedAt": "2026-07-25T17:51:14Z",
+      "when": "2026-07-25T17:51:14Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/posit-cloud-website-30a1",
+      "labels": []
+    },
+    {
+      "id": 63,
+      "number": 63,
+      "title": "Record live Posit Connect Cloud content id for degen-llms",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/63",
+      "createdAt": "2026-07-25T18:13:27Z",
+      "mergedAt": "2026-07-25T18:33:22Z",
+      "closedAt": "2026-07-25T18:33:22Z",
+      "when": "2026-07-25T18:33:22Z",
+      "author": "Exios66",
+      "area": "docs",
+      "branch": "cursor/posit-publish-metadata-30a1",
+      "labels": []
+    },
+    {
+      "id": 65,
+      "number": 65,
+      "title": "Fix Texas Hold'em: full street flow, no-limit raises, 5-max table",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/65",
+      "createdAt": "2026-07-25T19:46:55Z",
+      "mergedAt": "2026-07-25T19:47:20Z",
+      "closedAt": "2026-07-25T19:47:20Z",
+      "when": "2026-07-25T19:47:20Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/holdem-nolimit-flow-5b5e",
+      "labels": []
+    },
+    {
+      "id": 64,
+      "number": 64,
+      "title": "Set up dev environment + add AGENTS.md cloud instructions",
+      "state": "CLOSED",
+      "url": "https://github.com/Exios66/degen-llms/pull/64",
+      "createdAt": "2026-07-25T19:33:00Z",
+      "mergedAt": null,
+      "closedAt": "2026-07-25T19:50:34Z",
+      "when": "2026-07-25T19:50:34Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/setup-dev-environment-ee00",
+      "labels": []
+    },
+    {
+      "id": 66,
+      "number": 66,
+      "title": "Remember slot bets and add animated roulette spin history",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/66",
+      "createdAt": "2026-07-25T19:50:33Z",
+      "mergedAt": "2026-07-25T19:59:42Z",
+      "closedAt": "2026-07-25T19:59:42Z",
+      "when": "2026-07-25T19:59:42Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/slots-bet-roulette-history-5b5e",
+      "labels": []
+    },
+    {
+      "id": 68,
+      "number": 68,
+      "title": "Add Craps, Lottery, and expanded Sportsbook prediction markets",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/68",
+      "createdAt": "2026-07-25T20:04:51Z",
+      "mergedAt": "2026-07-25T20:05:16Z",
+      "closedAt": "2026-07-25T20:05:16Z",
+      "when": "2026-07-25T20:05:16Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/craps-lottery-predictions-5b5e",
+      "labels": []
+    },
+    {
+      "id": 69,
+      "number": 69,
+      "title": "Add Posit Connect Cloud site to README access points",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/69",
+      "createdAt": "2026-07-25T20:16:14Z",
+      "mergedAt": "2026-07-25T20:16:37Z",
+      "closedAt": "2026-07-25T20:16:37Z",
+      "when": "2026-07-25T20:16:37Z",
+      "author": "Exios66",
+      "area": "docs",
+      "branch": "cursor/readme-posit-cloud-access-5b5e",
+      "labels": []
+    },
+    {
+      "id": 70,
+      "number": 70,
+      "title": "Update README access points and project structure",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/70",
+      "createdAt": "2026-07-25T20:16:56Z",
+      "mergedAt": "2026-07-25T20:17:12Z",
+      "closedAt": "2026-07-25T20:17:12Z",
+      "when": "2026-07-25T20:17:12Z",
+      "author": "Exios66",
+      "area": "docs",
+      "branch": "cursor/readme-posit-cloud-access-5b5e",
+      "labels": []
+    },
+    {
+      "id": 71,
+      "number": 71,
+      "title": "Populate full GitHub Wiki with Mandalay Bay documentation",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/71",
+      "createdAt": "2026-07-25T20:21:32Z",
+      "mergedAt": "2026-07-25T20:21:53Z",
+      "closedAt": "2026-07-25T20:21:53Z",
+      "when": "2026-07-25T20:21:53Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/github-wiki-populate-5b5e",
+      "labels": []
+    },
+    {
+      "id": 73,
+      "number": 73,
+      "title": "Replace wiki GitHub Actions with manual skill sync",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/73",
+      "createdAt": "2026-07-25T20:23:38Z",
+      "mergedAt": "2026-07-25T20:24:11Z",
+      "closedAt": "2026-07-25T20:24:11Z",
+      "when": "2026-07-25T20:24:11Z",
+      "author": "Exios66",
+      "area": "docs",
+      "branch": "cursor/wiki-manual-sync-5b5e",
+      "labels": []
+    },
+    {
+      "id": 72,
+      "number": 72,
+      "title": "Add gh-pages-deploy-loop skill (12h schedule + manual deploy)",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/72",
+      "createdAt": "2026-07-25T20:22:59Z",
+      "mergedAt": "2026-07-25T20:29:47Z",
+      "closedAt": "2026-07-25T20:29:47Z",
+      "when": "2026-07-25T20:29:47Z",
+      "author": "Exios66",
+      "area": "docs",
+      "branch": "cursor/gh-pages-deploy-loop-skill-5b5e",
+      "labels": []
+    },
+    {
+      "id": 74,
+      "number": 74,
+      "title": "Wiki themed sidebar, footer, and web UI screenshots",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/74",
+      "createdAt": "2026-07-25T20:35:39Z",
+      "mergedAt": "2026-07-25T20:41:11Z",
+      "closedAt": "2026-07-25T20:41:11Z",
+      "when": "2026-07-25T20:41:11Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/wiki-theme-screenshots-5b5e",
+      "labels": []
+    },
+    {
+      "id": 75,
+      "number": 75,
+      "title": "Mobile touch controls and DS-style pixel graphics for Pixel RPG",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/75",
+      "createdAt": "2026-07-25T20:48:54Z",
+      "mergedAt": "2026-07-25T20:49:20Z",
+      "closedAt": "2026-07-25T20:49:20Z",
+      "when": "2026-07-25T20:49:20Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/rpg-mobile-ds-graphics-5b5e",
+      "labels": []
+    },
+    {
+      "id": 76,
+      "number": 76,
+      "title": "RPG character customization, closer camera, and enhanced NPC dialogue",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/76",
+      "createdAt": "2026-07-25T21:02:03Z",
+      "mergedAt": "2026-07-25T21:02:40Z",
+      "closedAt": "2026-07-25T21:02:40Z",
+      "when": "2026-07-25T21:02:40Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/rpg-character-customization-5b5e",
+      "labels": []
+    },
+    {
+      "id": 77,
+      "number": 77,
+      "title": "RPG casino floor legibility \u2014 distinct zones, textures, and signage",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/77",
+      "createdAt": "2026-07-25T21:04:06Z",
+      "mergedAt": "2026-07-25T21:08:03Z",
+      "closedAt": "2026-07-25T21:08:03Z",
+      "when": "2026-07-25T21:08:03Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/rpg-casino-floor-legibility-5b5e",
+      "labels": []
+    },
+    {
+      "id": 78,
+      "number": 78,
+      "title": "Fix hotel front desk interactions and phone reservation room unlock",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/78",
+      "createdAt": "2026-07-25T21:32:41Z",
+      "mergedAt": "2026-07-25T21:33:05Z",
+      "closedAt": "2026-07-25T21:33:05Z",
+      "when": "2026-07-25T21:33:05Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/hotel-desk-room-fix-5b5e",
+      "labels": []
+    },
+    {
+      "id": 79,
+      "number": 79,
+      "title": "Disable automatic GitHub Pages deploy workflow",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/79",
+      "createdAt": "2026-07-25T21:34:30Z",
+      "mergedAt": "2026-07-25T21:36:05Z",
+      "closedAt": "2026-07-25T21:36:05Z",
+      "when": "2026-07-25T21:36:05Z",
+      "author": "Exios66",
+      "area": "docs",
+      "branch": "cursor/disable-gh-pages-action-5b5e",
+      "labels": []
+    },
+    {
+      "id": 80,
+      "number": 80,
+      "title": "Add dedicated mandalay-bay.toml for PyPI publish",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/80",
+      "createdAt": "2026-07-25T21:42:09Z",
+      "mergedAt": "2026-07-25T21:42:50Z",
+      "closedAt": "2026-07-25T21:42:50Z",
+      "when": "2026-07-25T21:42:50Z",
+      "author": "Exios66",
+      "area": "docs",
+      "branch": "cursor/mandalay-bay-pyproject-5b5e",
+      "labels": []
+    },
+    {
+      "id": 81,
+      "number": 81,
+      "title": "Add concise GitHub pull request template",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/81",
+      "createdAt": "2026-07-25T21:42:56Z",
+      "mergedAt": "2026-07-25T21:43:52Z",
+      "closedAt": "2026-07-25T21:43:52Z",
+      "when": "2026-07-25T21:43:52Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/pr-template-17a6",
+      "labels": []
+    },
+    {
+      "id": 82,
+      "number": 82,
+      "title": "Heighten RPG texture quality for production-ready pixel art",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/82",
+      "createdAt": "2026-07-25T21:44:33Z",
+      "mergedAt": "2026-07-25T21:46:29Z",
+      "closedAt": "2026-07-25T21:46:29Z",
+      "when": "2026-07-25T21:46:29Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/rpg-texture-quality-5b5e",
+      "labels": []
+    },
+    {
+      "id": 83,
+      "number": 83,
+      "title": "Add /publish-mandalay-bay-pypi skill for Twine releases",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/83",
+      "createdAt": "2026-07-25T21:45:02Z",
+      "mergedAt": "2026-07-25T21:46:48Z",
+      "closedAt": "2026-07-25T21:46:48Z",
+      "when": "2026-07-25T21:46:48Z",
+      "author": "Exios66",
+      "area": "docs",
+      "branch": "cursor/publish-pypi-skill-17a6",
+      "labels": []
+    },
+    {
+      "id": 67,
+      "number": 67,
+      "title": "Pixel RPG total expansion \u2014 web-terminal parity + Pok\u00e9mon-style play",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/67",
+      "createdAt": "2026-07-25T19:51:08Z",
+      "mergedAt": "2026-07-25T22:03:23Z",
+      "closedAt": "2026-07-25T22:03:23Z",
+      "when": "2026-07-25T22:03:23Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/pixel-rpg-total-expansion-30a1",
+      "labels": []
+    },
+    {
+      "id": 84,
+      "number": 84,
+      "title": "Heighten RPG textures \u2014 variants, neon atmosphere, display polish",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/84",
+      "createdAt": "2026-07-25T22:02:59Z",
+      "mergedAt": "2026-07-25T22:06:06Z",
+      "closedAt": "2026-07-25T22:06:06Z",
+      "when": "2026-07-25T22:06:06Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/rpg-texture-upgrade-17a6",
+      "labels": []
+    },
+    {
+      "id": 85,
+      "number": 85,
+      "title": "Replace RPG characters with CC0 open-source sprite sheets",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/85",
+      "createdAt": "2026-07-25T22:06:09Z",
+      "mergedAt": "2026-07-25T22:07:59Z",
+      "closedAt": "2026-07-25T22:08:00Z",
+      "when": "2026-07-25T22:07:59Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/rpg-character-sprites-5b5e",
+      "labels": []
+    },
+    {
+      "id": 87,
+      "number": 87,
+      "title": "Carry web terminal save profiles into RPG save slots",
+      "state": "OPEN",
+      "url": "https://github.com/Exios66/degen-llms/pull/87",
+      "createdAt": "2026-07-25T22:16:30Z",
+      "mergedAt": null,
+      "closedAt": null,
+      "when": "2026-07-25T22:16:30Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/terminal-rpg-save-carry-5b5e",
+      "labels": []
+    },
+    {
+      "id": 88,
+      "number": 88,
+      "title": "Fix RPG title screen boot so it cannot stay blank",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/88",
+      "createdAt": "2026-07-25T22:29:00Z",
+      "mergedAt": "2026-07-25T22:32:18Z",
+      "closedAt": "2026-07-25T22:32:18Z",
+      "when": "2026-07-25T22:32:18Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/fix-rpg-title-boot-17a6",
+      "labels": []
+    },
+    {
+      "id": 86,
+      "number": 86,
+      "title": "Expand guest corridor and add lobby/hallway room access",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/86",
+      "createdAt": "2026-07-25T22:14:20Z",
+      "mergedAt": "2026-07-25T23:14:24Z",
+      "closedAt": "2026-07-25T23:14:24Z",
+      "when": "2026-07-25T23:14:24Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/hotel-hallway-rooms-5b5e",
+      "labels": []
+    },
+    {
+      "id": 90,
+      "number": 90,
+      "title": "Vend online RPG tiles, unique staff sprites, and fix walk facing",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/90",
+      "createdAt": "2026-07-25T23:32:26Z",
+      "mergedAt": "2026-07-25T23:35:20Z",
+      "closedAt": "2026-07-25T23:35:20Z",
+      "when": "2026-07-25T23:35:20Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/rpg-textures-sprites-walk-a05b",
+      "labels": []
+    },
+    {
+      "id": 91,
+      "number": 91,
+      "title": "Add animated playing-card sprites to table game displays",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/91",
+      "createdAt": "2026-07-25T23:54:05Z",
+      "mergedAt": "2026-07-26T00:19:43Z",
+      "closedAt": "2026-07-26T00:19:43Z",
+      "when": "2026-07-26T00:19:43Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/animated-card-sprites-a05b",
+      "labels": []
+    },
+    {
+      "id": 89,
+      "number": 89,
+      "title": "Pixel RPG: web-terminal parity, Pok\u00e9mon-style systems, phone controls, and DS-grade art",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/89",
+      "createdAt": "2026-07-25T23:10:31Z",
+      "mergedAt": "2026-07-26T00:32:26Z",
+      "closedAt": "2026-07-26T00:32:26Z",
+      "when": "2026-07-26T00:32:26Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/pixel-rpg-total-expansion-30a1",
+      "labels": []
+    },
+    {
+      "id": 6,
+      "number": 6,
+      "title": "Fix GitHub Pages deploy path (gh-pages/docs/)",
+      "state": "CLOSED",
+      "url": "https://github.com/Exios66/degen-llms/pull/6",
+      "createdAt": "2026-07-04T17:52:03Z",
+      "mergedAt": null,
+      "closedAt": "2026-07-26T00:58:57Z",
+      "when": "2026-07-26T00:58:57Z",
+      "author": "Exios66",
+      "area": "docs",
+      "branch": "cursor/fix-gh-pages-deploy-8e67",
+      "labels": []
+    },
+    {
+      "id": 92,
+      "number": 92,
+      "title": "Fix open-PR blockers: save-profile carry-over, Pages cache-bust, profile badge",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/92",
+      "createdAt": "2026-07-26T00:35:24Z",
+      "mergedAt": "2026-07-26T01:09:07Z",
+      "closedAt": "2026-07-26T01:09:07Z",
+      "when": "2026-07-26T01:09:07Z",
+      "author": "app/cursor",
+      "area": "rpg",
+      "branch": "cursor/open-prs-issues-28a5",
+      "labels": []
+    },
+    {
+      "id": 93,
+      "number": 93,
+      "title": "Upgrade RPG characters to 32\u00d744 detail with tuxedo default",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/93",
+      "createdAt": "2026-07-26T01:09:49Z",
+      "mergedAt": "2026-07-26T01:14:53Z",
+      "closedAt": "2026-07-26T01:14:53Z",
+      "when": "2026-07-26T01:14:53Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/tuxedo-hires-sprites-b058",
+      "labels": []
+    },
+    {
+      "id": 94,
+      "number": 94,
+      "title": "Add cabinet-style title scene to the web terminal",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/94",
+      "createdAt": "2026-07-26T01:16:59Z",
+      "mergedAt": "2026-07-26T01:17:20Z",
+      "closedAt": "2026-07-26T01:17:20Z",
+      "when": "2026-07-26T01:17:20Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/casino-title-scene-b058",
+      "labels": []
+    },
+    {
+      "id": 95,
+      "number": 95,
+      "title": "Fix RPG character sprites clipped to top-left quarter",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/95",
+      "createdAt": "2026-07-26T02:08:25Z",
+      "mergedAt": "2026-07-26T02:09:36Z",
+      "closedAt": "2026-07-26T02:09:36Z",
+      "when": "2026-07-26T02:09:36Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/fix-sprite-clipping-b058",
+      "labels": []
+    },
+    {
+      "id": 97,
+      "number": 97,
+      "title": "Raise Mandalay Bay RPG art fidelity (casino + outdoor resort)",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/97",
+      "createdAt": "2026-07-26T02:51:12Z",
+      "mergedAt": "2026-07-26T02:59:58Z",
+      "closedAt": "2026-07-26T02:59:58Z",
+      "when": "2026-07-26T02:59:58Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/upgrade-rpg-casino-art-f6e6",
+      "labels": []
+    },
+    {
+      "id": 96,
+      "number": 96,
+      "title": "Fix chopped RPG sprites and toast-blocked movement",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/96",
+      "createdAt": "2026-07-26T02:24:52Z",
+      "mergedAt": "2026-07-26T03:04:50Z",
+      "closedAt": "2026-07-26T03:04:50Z",
+      "when": "2026-07-26T03:04:50Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/fix-sprites-movement-b058",
+      "labels": []
+    },
+    {
+      "id": 98,
+      "number": 98,
+      "title": "Upgrade RPG graphics to SNES-era painterly pixel art standards",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/98",
+      "createdAt": "2026-07-26T03:08:55Z",
+      "mergedAt": "2026-07-26T03:28:28Z",
+      "closedAt": "2026-07-26T03:28:28Z",
+      "when": "2026-07-26T03:28:28Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/upgrade-rpg-pixel-art-df23",
+      "labels": []
+    },
+    {
+      "id": 99,
+      "number": 99,
+      "title": "Restore tuxedo sprites and feet-based zone travel",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/99",
+      "createdAt": "2026-07-26T03:28:51Z",
+      "mergedAt": "2026-07-26T03:33:24Z",
+      "closedAt": "2026-07-26T03:33:24Z",
+      "when": "2026-07-26T03:33:24Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/tuxedo-feet-travel-b058",
+      "labels": []
+    },
+    {
+      "id": 100,
+      "number": 100,
+      "title": "prune: remove orphaned RPG tiles, dead modules, and legacy archives",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/100",
+      "createdAt": "2026-07-26T03:36:12Z",
+      "mergedAt": "2026-07-26T03:36:17Z",
+      "closedAt": "2026-07-26T03:36:17Z",
+      "when": "2026-07-26T03:36:17Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/prune-stale-rpg-artifacts-1871",
+      "labels": []
+    },
+    {
+      "id": 102,
+      "number": 102,
+      "title": "docs: full wiki/docs/Quarto parity and current product accuracy",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/102",
+      "createdAt": "2026-07-26T03:46:39Z",
+      "mergedAt": "2026-07-26T03:47:37Z",
+      "closedAt": "2026-07-26T03:47:37Z",
+      "when": "2026-07-26T03:47:37Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/docs-wiki-parity-1e58",
+      "labels": []
+    },
+    {
+      "id": 103,
+      "number": 103,
+      "title": "Fix mobile phone, suite wing, and front desk access",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/103",
+      "createdAt": "2026-07-26T03:48:00Z",
+      "mergedAt": "2026-07-26T04:41:21Z",
+      "closedAt": "2026-07-26T04:41:21Z",
+      "when": "2026-07-26T04:41:21Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/mobile-hotel-access-d59e",
+      "labels": []
+    },
+    {
+      "id": 104,
+      "number": 104,
+      "title": "chore: refresh Quarto freeze after docs parity render",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/104",
+      "createdAt": "2026-07-26T03:54:25Z",
+      "mergedAt": "2026-07-26T04:41:48Z",
+      "closedAt": "2026-07-26T04:41:48Z",
+      "when": "2026-07-26T04:41:48Z",
+      "author": "Exios66",
+      "area": "docs",
+      "branch": "cursor/posit-freeze-publish-1e58",
+      "labels": []
+    },
+    {
+      "id": 101,
+      "number": 101,
+      "title": "Cozy resort polish for Pool, Hotel, and arrival overworld",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/101",
+      "createdAt": "2026-07-26T03:41:10Z",
+      "mergedAt": "2026-07-26T04:44:57Z",
+      "closedAt": "2026-07-26T04:44:57Z",
+      "when": "2026-07-26T04:44:57Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/cozy-resort-polish-f9eb",
+      "labels": []
+    },
+    {
+      "id": 105,
+      "number": 105,
+      "title": "feat: sports/prediction scenario DBs + Trading Floor",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/105",
+      "createdAt": "2026-07-26T04:56:41Z",
+      "mergedAt": "2026-07-26T04:56:52Z",
+      "closedAt": "2026-07-26T04:56:52Z",
+      "when": "2026-07-26T04:56:52Z",
+      "author": "Exios66",
+      "area": "docs",
+      "branch": "cursor/sports-prediction-trading-dbs-1871",
+      "labels": []
+    },
+    {
+      "id": 107,
+      "number": 107,
+      "title": "Add /update-docs-parity skill and sync Trading Floor docs",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/107",
+      "createdAt": "2026-07-26T05:15:49Z",
+      "mergedAt": "2026-07-26T05:16:44Z",
+      "closedAt": "2026-07-26T05:16:44Z",
+      "when": "2026-07-26T05:16:44Z",
+      "author": "Exios66",
+      "area": "docs",
+      "branch": "cursor/docs-refresh-skill-1e58",
+      "labels": []
+    },
+    {
+      "id": 108,
+      "number": 108,
+      "title": "feat: trading ticker, $1M buy-in, $1B offshore, no table max",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/108",
+      "createdAt": "2026-07-26T05:17:24Z",
+      "mergedAt": "2026-07-26T05:17:28Z",
+      "closedAt": "2026-07-26T05:17:28Z",
+      "when": "2026-07-26T05:17:28Z",
+      "author": "Exios66",
+      "area": "casino",
+      "branch": "cursor/trading-ticker-limits-1871",
+      "labels": []
+    },
+    {
+      "id": 109,
+      "number": 109,
+      "title": "fix: raise MGM Rewards lifetime wager thresholds",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/109",
+      "createdAt": "2026-07-26T05:19:01Z",
+      "mergedAt": "2026-07-26T05:19:05Z",
+      "closedAt": "2026-07-26T05:19:05Z",
+      "when": "2026-07-26T05:19:05Z",
+      "author": "Exios66",
+      "area": "docs",
+      "branch": "cursor/raise-rewards-tier-thresholds-1871",
+      "labels": []
+    },
+    {
+      "id": 110,
+      "number": 110,
+      "title": "feat: Arcade Alley CRT overlay minigames",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/110",
+      "createdAt": "2026-07-26T05:40:18Z",
+      "mergedAt": "2026-07-26T05:40:24Z",
+      "closedAt": "2026-07-26T05:40:24Z",
+      "when": "2026-07-26T05:40:24Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/arcade-overlay-minigames-1871",
+      "labels": []
+    },
+    {
+      "id": 106,
+      "number": 106,
+      "title": "Valet garage exits + Vegas Strip Drive arcade",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/106",
+      "createdAt": "2026-07-26T05:15:37Z",
+      "mergedAt": "2026-07-26T05:43:34Z",
+      "closedAt": "2026-07-26T05:43:34Z",
+      "when": "2026-07-26T05:43:34Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/valet-garage-strip-drive-a814",
+      "labels": []
+    },
+    {
+      "id": 113,
+      "number": 113,
+      "title": "Upgrade lottery counter: premium stakes, Powerball selectors, draw overlays",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/113",
+      "createdAt": "2026-07-26T18:46:30Z",
+      "mergedAt": "2026-07-26T18:47:12Z",
+      "closedAt": "2026-07-26T18:47:12Z",
+      "when": "2026-07-26T18:47:12Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/lottery-premium-stakes-overlays-71c1",
+      "labels": []
+    },
+    {
+      "id": 112,
+      "number": 112,
+      "title": "Polish Arcade Alley graphics with 2\u00d7 pixel sprites and FX",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/112",
+      "createdAt": "2026-07-26T18:43:55Z",
+      "mergedAt": "2026-07-26T18:47:38Z",
+      "closedAt": "2026-07-26T18:47:38Z",
+      "when": "2026-07-26T18:47:38Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/arcade-graphics-polish-5157",
+      "labels": []
+    },
+    {
+      "id": 114,
+      "number": 114,
+      "title": "Fix gh-pages live verify false GBP-006 on app.js pattern",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/114",
+      "createdAt": "2026-07-26T18:49:27Z",
+      "mergedAt": "2026-07-26T18:52:05Z",
+      "closedAt": "2026-07-26T18:52:05Z",
+      "when": "2026-07-26T18:52:05Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/fix-gh-pages-verify-app-js-71c1",
+      "labels": []
+    },
+    {
+      "id": 116,
+      "number": 116,
+      "title": "Fix Strip Drive road into a scanline boulevard",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/116",
+      "createdAt": "2026-07-26T18:52:18Z",
+      "mergedAt": "2026-07-26T18:52:51Z",
+      "closedAt": "2026-07-26T18:52:51Z",
+      "when": "2026-07-26T18:52:51Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/valet-garage-strip-drive-a814",
+      "labels": []
+    },
+    {
+      "id": 117,
+      "number": 117,
+      "title": "Add resort dining overlay minigame with drink-scaled encounters",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/117",
+      "createdAt": "2026-07-26T18:58:17Z",
+      "mergedAt": "2026-07-26T18:58:56Z",
+      "closedAt": "2026-07-26T18:58:56Z",
+      "when": "2026-07-26T18:58:56Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/dining-overlay-minigame-f576",
+      "labels": []
+    },
+    {
+      "id": 115,
+      "number": 115,
+      "title": "Scale Arcade Alley sprites for CRT readability",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/115",
+      "createdAt": "2026-07-26T18:51:05Z",
+      "mergedAt": "2026-07-26T19:23:17Z",
+      "closedAt": "2026-07-26T19:23:17Z",
+      "when": "2026-07-26T19:23:17Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/arcade-sprite-scale-5157",
+      "labels": []
+    },
+    {
+      "id": 118,
+      "number": 118,
+      "title": "Fix hotel hallway access, Carmen desk, suites, and High Limit Salon exclusives",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/118",
+      "createdAt": "2026-07-26T19:29:47Z",
+      "mergedAt": "2026-07-26T19:30:21Z",
+      "closedAt": "2026-07-26T19:30:21Z",
+      "when": "2026-07-26T19:30:21Z",
+      "author": "Exios66",
+      "area": "docs",
+      "branch": "cursor/hotel-access-high-limit-f576",
+      "labels": []
+    },
+    {
+      "id": 120,
+      "number": 120,
+      "title": "Add suite balcony POV Strip smoke-break minigame",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/120",
+      "createdAt": "2026-07-26T19:36:56Z",
+      "mergedAt": "2026-07-26T19:38:45Z",
+      "closedAt": "2026-07-26T19:38:45Z",
+      "when": "2026-07-26T19:38:45Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/balcony-smoke-pov-f576",
+      "labels": []
+    },
+    {
+      "id": 111,
+      "number": 111,
+      "title": "docs: changelog for v1.1.0 (2026-07-26)",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/111",
+      "createdAt": "2026-07-26T06:02:32Z",
+      "mergedAt": "2026-07-26T19:40:29Z",
+      "closedAt": "2026-07-26T19:40:29Z",
+      "when": "2026-07-26T19:40:29Z",
+      "author": "app/cursor",
+      "area": "rpg",
+      "branch": "cursor/weekly-changelog-maintenance-6c97",
+      "labels": [
+        "documentation"
+      ]
+    },
+    {
+      "id": 121,
+      "number": 121,
+      "title": "Trading Floor: symbol DB, category-filtered tape, 1D/1W charts",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/121",
+      "createdAt": "2026-07-26T19:38:18Z",
+      "mergedAt": "2026-07-26T19:41:18Z",
+      "closedAt": "2026-07-26T19:41:18Z",
+      "when": "2026-07-26T19:41:18Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/trading-ticker-symbol-db-71c1",
+      "labels": []
+    },
+    {
+      "id": 119,
+      "number": 119,
+      "title": "Add graphic Mandalay Beach overlay for Pool Complex",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/119",
+      "createdAt": "2026-07-26T19:30:13Z",
+      "mergedAt": "2026-07-26T19:46:52Z",
+      "closedAt": "2026-07-26T19:46:52Z",
+      "when": "2026-07-26T19:46:52Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/pool-complex-graphic-overlay-71c1",
+      "labels": []
+    },
+    {
+      "id": 122,
+      "number": 122,
+      "title": "Fix Carmen front desk replies and hotel hallway access",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/122",
+      "createdAt": "2026-07-26T19:51:37Z",
+      "mergedAt": "2026-07-26T19:59:11Z",
+      "closedAt": "2026-07-26T19:59:11Z",
+      "when": "2026-07-26T19:59:11Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/carmen-desk-hallway-fix-f576",
+      "labels": []
+    },
+    {
+      "id": 123,
+      "number": 123,
+      "title": "First-person dining POV with food/drink sprites",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/123",
+      "createdAt": "2026-07-26T19:54:43Z",
+      "mergedAt": "2026-07-26T20:02:11Z",
+      "closedAt": "2026-07-26T20:02:11Z",
+      "when": "2026-07-26T20:02:11Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/dining-fpv-sprites-71c1",
+      "labels": []
+    },
+    {
+      "id": 124,
+      "number": 124,
+      "title": "Settle max intoxication screen effects after 3 minutes",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/124",
+      "createdAt": "2026-07-26T20:06:16Z",
+      "mergedAt": "2026-07-26T20:07:29Z",
+      "closedAt": "2026-07-26T20:07:29Z",
+      "when": "2026-07-26T20:07:29Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/intox-max-settle-timer-5157",
+      "labels": []
+    },
+    {
+      "id": 23,
+      "number": 23,
+      "title": "Fix horse sprite deploy: cache-bust assets and harden paddock rendering",
+      "state": "CLOSED",
+      "url": "https://github.com/Exios66/degen-llms/pull/23",
+      "createdAt": "2026-07-05T07:29:10Z",
+      "mergedAt": null,
+      "closedAt": "2026-07-26T20:07:46Z",
+      "when": "2026-07-26T20:07:46Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/fix-horse-sprites-pages-4004",
+      "labels": []
+    },
+    {
+      "id": 125,
+      "number": 125,
+      "title": "Add Gentleman's Club (Velvet Ledger) hotel amenity",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/125",
+      "createdAt": "2026-07-26T20:10:06Z",
+      "mergedAt": "2026-07-26T20:11:14Z",
+      "closedAt": "2026-07-26T20:11:15Z",
+      "when": "2026-07-26T20:11:14Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/gentlemans-club-amenity-a814",
+      "labels": []
+    },
+    {
+      "id": 126,
+      "number": 126,
+      "title": "Expand offshore account spend tree and resort privileges",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/126",
+      "createdAt": "2026-07-26T20:12:49Z",
+      "mergedAt": "2026-07-26T20:13:27Z",
+      "closedAt": "2026-07-26T20:13:27Z",
+      "when": "2026-07-26T20:13:27Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/offshore-spend-decision-tree-5157",
+      "labels": []
+    },
+    {
+      "id": 127,
+      "number": 127,
+      "title": "docs: /update-docs-parity pass \u2014 Arcade Alley & eight-floor catalog",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/127",
+      "createdAt": "2026-07-26T20:15:08Z",
+      "mergedAt": "2026-07-26T20:16:31Z",
+      "closedAt": "2026-07-26T20:16:31Z",
+      "when": "2026-07-26T20:16:31Z",
+      "author": "Exios66",
+      "area": "docs",
+      "branch": "cursor/update-docs-parity-1e58",
+      "labels": [
+        "documentation"
+      ]
+    },
+    {
+      "id": 128,
+      "number": 128,
+      "title": "Richer dining sprites + custom venue FPV overlays",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/128",
+      "createdAt": "2026-07-26T20:16:41Z",
+      "mergedAt": "2026-07-26T20:17:55Z",
+      "closedAt": "2026-07-26T20:17:55Z",
+      "when": "2026-07-26T20:17:55Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/dining-venue-overlays-71c1",
+      "labels": []
+    },
+    {
+      "id": 129,
+      "number": 129,
+      "title": "Enlarge desktop rewards phone and wire Connect/comp integrations",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/129",
+      "createdAt": "2026-07-26T20:17:47Z",
+      "mergedAt": "2026-07-26T20:18:33Z",
+      "closedAt": "2026-07-26T20:18:33Z",
+      "when": "2026-07-26T20:18:33Z",
+      "author": "Exios66",
+      "area": "hotel",
+      "branch": "cursor/rewards-phone-desktop-fix-1871",
+      "labels": []
+    },
+    {
+      "id": 130,
+      "number": 130,
+      "title": "docs: Posit Connect account id and Cloud Agent secret setup",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/130",
+      "createdAt": "2026-07-26T20:18:03Z",
+      "mergedAt": "2026-07-26T20:18:58Z",
+      "closedAt": "2026-07-26T20:18:58Z",
+      "when": "2026-07-26T20:18:58Z",
+      "author": "Exios66",
+      "area": "docs",
+      "branch": "cursor/posit-connect-secrets-1e58",
+      "labels": [
+        "documentation"
+      ]
+    },
+    {
+      "id": 131,
+      "number": 131,
+      "title": "Fix casino boot: Gentleman's Club venues.js export / module cache skew",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/131",
+      "createdAt": "2026-07-26T20:29:18Z",
+      "mergedAt": "2026-07-26T20:30:13Z",
+      "closedAt": "2026-07-26T20:30:13Z",
+      "when": "2026-07-26T20:30:13Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/fix-venues-module-cache-722a",
+      "labels": []
+    },
+    {
+      "id": 132,
+      "number": 132,
+      "title": "Wire Pool Complex graphic overlay into web terminal casino",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/132",
+      "createdAt": "2026-07-26T20:31:28Z",
+      "mergedAt": "2026-07-26T20:32:49Z",
+      "closedAt": "2026-07-26T20:32:50Z",
+      "when": "2026-07-26T20:32:49Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/pool-complex-overlay-f576",
+      "labels": []
+    },
+    {
+      "id": 133,
+      "number": 133,
+      "title": "Add first-person bar overlays for all resort lounge environments",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/133",
+      "createdAt": "2026-07-26T20:38:12Z",
+      "mergedAt": "2026-07-26T20:46:14Z",
+      "closedAt": "2026-07-26T20:46:14Z",
+      "when": "2026-07-26T20:46:14Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/bar-fpv-overlays-722a",
+      "labels": []
+    },
+    {
+      "id": 134,
+      "number": 134,
+      "title": "Fix pool overlay menu clipping and text-menu fallback",
+      "state": "MERGED",
+      "url": "https://github.com/Exios66/degen-llms/pull/134",
+      "createdAt": "2026-07-26T20:42:47Z",
+      "mergedAt": "2026-07-26T20:50:45Z",
+      "closedAt": "2026-07-26T20:50:45Z",
+      "when": "2026-07-26T20:50:45Z",
+      "author": "Exios66",
+      "area": "hotel",
+      "branch": "cursor/fix-pool-overlay-722a",
+      "labels": []
+    },
+    {
+      "id": 135,
+      "number": 135,
+      "title": "Fix slots glitches, tier gates, suite upgrades, folio, and balcony POV",
+      "state": "DRAFT",
+      "url": "https://github.com/Exios66/degen-llms/pull/135",
+      "createdAt": "2026-07-26T20:52:52Z",
+      "mergedAt": null,
+      "closedAt": null,
+      "when": "2026-07-26T20:52:52Z",
+      "author": "Exios66",
+      "area": "hotel",
+      "branch": "cursor/fix-game-systems-722a",
+      "labels": []
+    },
+    {
+      "id": 136,
+      "number": 136,
+      "title": "Add interactive PR development graph to Posit docs",
+      "state": "DRAFT",
+      "url": "https://github.com/Exios66/degen-llms/pull/136",
+      "createdAt": "2026-07-27T01:33:16Z",
+      "mergedAt": null,
+      "closedAt": null,
+      "when": "2026-07-27T01:33:16Z",
+      "author": "Exios66",
+      "area": "rpg",
+      "branch": "cursor/pr-progress-node-graph-2e75",
+      "labels": []
+    }
+  ],
+  "edges": [
+    {
+      "source": 1,
+      "target": 36,
+      "kind": "area-flow",
+      "area": "casino"
+    },
+    {
+      "source": 36,
+      "target": 41,
+      "kind": "area-flow",
+      "area": "casino"
+    },
+    {
+      "source": 41,
+      "target": 56,
+      "kind": "area-flow",
+      "area": "casino"
+    },
+    {
+      "source": 56,
+      "target": 108,
+      "kind": "area-flow",
+      "area": "casino"
+    },
+    {
+      "source": 4,
+      "target": 29,
+      "kind": "area-flow",
+      "area": "hotel"
+    },
+    {
+      "source": 29,
+      "target": 129,
+      "kind": "area-flow",
+      "area": "hotel"
+    },
+    {
+      "source": 129,
+      "target": 134,
+      "kind": "area-flow",
+      "area": "hotel"
+    },
+    {
+      "source": 134,
+      "target": 135,
+      "kind": "area-flow",
+      "area": "hotel"
+    },
+    {
+      "source": 3,
+      "target": 5,
+      "kind": "area-flow",
+      "area": "docs"
+    },
+    {
+      "source": 5,
+      "target": 2,
+      "kind": "area-flow",
+      "area": "docs"
+    },
+    {
+      "source": 2,
+      "target": 7,
+      "kind": "area-flow",
+      "area": "docs"
+    },
+    {
+      "source": 7,
+      "target": 11,
+      "kind": "area-flow",
+      "area": "docs"
+    },
+    {
+      "source": 11,
+      "target": 10,
+      "kind": "area-flow",
+      "area": "docs"
+    },
+    {
+      "source": 10,
+      "target": 12,
+      "kind": "area-flow",
+      "area": "docs"
+    },
+    {
+      "source": 12,
+      "target": 19,
+      "kind": "area-flow",
+      "area": "docs"
+    },
+    {
+      "source": 19,
+      "target": 16,
+      "kind": "area-flow",
+      "area": "docs"
+    },
+    {
+      "source": 16,
+      "target": 20,
+      "kind": "area-flow",
+      "area": "docs"
+    },
+    {
+      "source": 20,
+      "target": 22,
+      "kind": "area-flow",
+      "area": "docs"
+    },
+    {
+      "source": 22,
+      "target": 25,
+      "kind": "area-flow",
+      "area": "docs"
+    },
+    {
+      "source": 25,
+      "target": 30,
+      "kind": "area-flow",
+      "area": "docs"
+    },
+    {
+      "source": 30,
+      "target": 33,
+      "kind": "area-flow",
+      "area": "docs"
+    },
+    {
+      "source": 33,
+      "target": 31,
+      "kind": "area-flow",
+      "area": "docs"
+    },
+    {
+      "source": 31,
+      "target": 34,
+      "kind": "area-flow",
+      "area": "docs"
+    },
+    {
+      "source": 34,
+      "target": 35,
+      "kind": "area-flow",
+      "area": "docs"
+    },
+    {
+      "source": 35,
+      "target": 47,
+      "kind": "area-flow",
+      "area": "docs"
+    },
+    {
+      "source": 47,
+      "target": 48,
+      "kind": "area-flow",
+      "area": "docs"
+    },
+    {
+      "source": 48,
+      "target": 49,
+      "kind": "area-flow",
+      "area": "docs"
+    },
+    {
+      "source": 49,
+      "target": 54,
+      "kind": "area-flow",
+      "area": "docs"
+    },
+    {
+      "source": 54,
+      "target": 58,
+      "kind": "area-flow",
+      "area": "docs"
+    },
+    {
+      "source": 58,
+      "target": 61,
+      "kind": "area-flow",
+      "area": "docs"
+    },
+    {
+      "source": 61,
+      "target": 63,
+      "kind": "area-flow",
+      "area": "docs"
+    },
+    {
+      "source": 63,
+      "target": 69,
+      "kind": "area-flow",
+      "area": "docs"
+    },
+    {
+      "source": 69,
+      "target": 70,
+      "kind": "area-flow",
+      "area": "docs"
+    },
+    {
+      "source": 70,
+      "target": 73,
+      "kind": "area-flow",
+      "area": "docs"
+    },
+    {
+      "source": 73,
+      "target": 72,
+      "kind": "area-flow",
+      "area": "docs"
+    },
+    {
+      "source": 72,
+      "target": 79,
+      "kind": "area-flow",
+      "area": "docs"
+    },
+    {
+      "source": 79,
+      "target": 80,
+      "kind": "area-flow",
+      "area": "docs"
+    },
+    {
+      "source": 80,
+      "target": 83,
+      "kind": "area-flow",
+      "area": "docs"
+    },
+    {
+      "source": 83,
+      "target": 6,
+      "kind": "area-flow",
+      "area": "docs"
+    },
+    {
+      "source": 6,
+      "target": 104,
+      "kind": "area-flow",
+      "area": "docs"
+    },
+    {
+      "source": 104,
+      "target": 105,
+      "kind": "area-flow",
+      "area": "docs"
+    },
+    {
+      "source": 105,
+      "target": 107,
+      "kind": "area-flow",
+      "area": "docs"
+    },
+    {
+      "source": 107,
+      "target": 109,
+      "kind": "area-flow",
+      "area": "docs"
+    },
+    {
+      "source": 109,
+      "target": 118,
+      "kind": "area-flow",
+      "area": "docs"
+    },
+    {
+      "source": 118,
+      "target": 127,
+      "kind": "area-flow",
+      "area": "docs"
+    },
+    {
+      "source": 127,
+      "target": 130,
+      "kind": "area-flow",
+      "area": "docs"
+    },
+    {
+      "source": 8,
+      "target": 9,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 9,
+      "target": 13,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 13,
+      "target": 15,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 15,
+      "target": 17,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 17,
+      "target": 18,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 18,
+      "target": 14,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 14,
+      "target": 21,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 21,
+      "target": 24,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 24,
+      "target": 28,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 28,
+      "target": 27,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 27,
+      "target": 26,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 26,
+      "target": 32,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 32,
+      "target": 37,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 37,
+      "target": 38,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 38,
+      "target": 39,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 39,
+      "target": 40,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 40,
+      "target": 42,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 42,
+      "target": 44,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 44,
+      "target": 45,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 45,
+      "target": 43,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 43,
+      "target": 46,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 46,
+      "target": 50,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 50,
+      "target": 51,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 51,
+      "target": 53,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 53,
+      "target": 55,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 55,
+      "target": 52,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 52,
+      "target": 57,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 57,
+      "target": 59,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 59,
+      "target": 60,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 60,
+      "target": 62,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 62,
+      "target": 65,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 65,
+      "target": 64,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 64,
+      "target": 66,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 66,
+      "target": 68,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 68,
+      "target": 71,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 71,
+      "target": 74,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 74,
+      "target": 75,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 75,
+      "target": 76,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 76,
+      "target": 77,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 77,
+      "target": 78,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 78,
+      "target": 81,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 81,
+      "target": 82,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 82,
+      "target": 67,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 67,
+      "target": 84,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 84,
+      "target": 85,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 85,
+      "target": 87,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 87,
+      "target": 88,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 88,
+      "target": 86,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 86,
+      "target": 90,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 90,
+      "target": 91,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 91,
+      "target": 89,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 89,
+      "target": 92,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 92,
+      "target": 93,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 93,
+      "target": 94,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 94,
+      "target": 95,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 95,
+      "target": 97,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 97,
+      "target": 96,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 96,
+      "target": 98,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 98,
+      "target": 99,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 99,
+      "target": 100,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 100,
+      "target": 102,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 102,
+      "target": 103,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 103,
+      "target": 101,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 101,
+      "target": 110,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 110,
+      "target": 106,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 106,
+      "target": 113,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 113,
+      "target": 112,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 112,
+      "target": 114,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 114,
+      "target": 116,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 116,
+      "target": 117,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 117,
+      "target": 115,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 115,
+      "target": 120,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 120,
+      "target": 111,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 111,
+      "target": 121,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 121,
+      "target": 119,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 119,
+      "target": 122,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 122,
+      "target": 123,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 123,
+      "target": 124,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 124,
+      "target": 23,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 23,
+      "target": 125,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 125,
+      "target": 126,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 126,
+      "target": 128,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 128,
+      "target": 131,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 131,
+      "target": 132,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 132,
+      "target": 133,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 133,
+      "target": 136,
+      "kind": "area-flow",
+      "area": "rpg"
+    },
+    {
+      "source": 1,
+      "target": 4,
+      "kind": "timeline"
+    },
+    {
+      "source": 4,
+      "target": 3,
+      "kind": "timeline"
+    },
+    {
+      "source": 3,
+      "target": 5,
+      "kind": "timeline"
+    },
+    {
+      "source": 5,
+      "target": 2,
+      "kind": "timeline"
+    },
+    {
+      "source": 2,
+      "target": 7,
+      "kind": "timeline"
+    },
+    {
+      "source": 7,
+      "target": 8,
+      "kind": "timeline"
+    },
+    {
+      "source": 8,
+      "target": 11,
+      "kind": "timeline"
+    },
+    {
+      "source": 11,
+      "target": 10,
+      "kind": "timeline"
+    },
+    {
+      "source": 10,
+      "target": 9,
+      "kind": "timeline"
+    },
+    {
+      "source": 9,
+      "target": 13,
+      "kind": "timeline"
+    },
+    {
+      "source": 13,
+      "target": 15,
+      "kind": "timeline"
+    },
+    {
+      "source": 15,
+      "target": 12,
+      "kind": "timeline"
+    },
+    {
+      "source": 12,
+      "target": 19,
+      "kind": "timeline"
+    },
+    {
+      "source": 19,
+      "target": 16,
+      "kind": "timeline"
+    },
+    {
+      "source": 16,
+      "target": 17,
+      "kind": "timeline"
+    },
+    {
+      "source": 17,
+      "target": 20,
+      "kind": "timeline"
+    },
+    {
+      "source": 20,
+      "target": 21,
+      "kind": "timeline"
+    },
+    {
+      "source": 21,
+      "target": 22,
+      "kind": "timeline"
+    },
+    {
+      "source": 22,
+      "target": 24,
+      "kind": "timeline"
+    },
+    {
+      "source": 24,
+      "target": 25,
+      "kind": "timeline"
+    },
+    {
+      "source": 25,
+      "target": 28,
+      "kind": "timeline"
+    },
+    {
+      "source": 28,
+      "target": 27,
+      "kind": "timeline"
+    },
+    {
+      "source": 27,
+      "target": 26,
+      "kind": "timeline"
+    },
+    {
+      "source": 26,
+      "target": 29,
+      "kind": "timeline"
+    },
+    {
+      "source": 29,
+      "target": 30,
+      "kind": "timeline"
+    },
+    {
+      "source": 30,
+      "target": 32,
+      "kind": "timeline"
+    },
+    {
+      "source": 32,
+      "target": 33,
+      "kind": "timeline"
+    },
+    {
+      "source": 33,
+      "target": 31,
+      "kind": "timeline"
+    },
+    {
+      "source": 31,
+      "target": 34,
+      "kind": "timeline"
+    },
+    {
+      "source": 34,
+      "target": 35,
+      "kind": "timeline"
+    },
+    {
+      "source": 35,
+      "target": 36,
+      "kind": "timeline"
+    },
+    {
+      "source": 36,
+      "target": 37,
+      "kind": "timeline"
+    },
+    {
+      "source": 37,
+      "target": 38,
+      "kind": "timeline"
+    },
+    {
+      "source": 38,
+      "target": 39,
+      "kind": "timeline"
+    },
+    {
+      "source": 39,
+      "target": 40,
+      "kind": "timeline"
+    },
+    {
+      "source": 40,
+      "target": 42,
+      "kind": "timeline"
+    },
+    {
+      "source": 42,
+      "target": 44,
+      "kind": "timeline"
+    },
+    {
+      "source": 44,
+      "target": 45,
+      "kind": "timeline"
+    },
+    {
+      "source": 45,
+      "target": 43,
+      "kind": "timeline"
+    },
+    {
+      "source": 43,
+      "target": 41,
+      "kind": "timeline"
+    },
+    {
+      "source": 41,
+      "target": 47,
+      "kind": "timeline"
+    },
+    {
+      "source": 47,
+      "target": 46,
+      "kind": "timeline"
+    },
+    {
+      "source": 46,
+      "target": 48,
+      "kind": "timeline"
+    },
+    {
+      "source": 48,
+      "target": 49,
+      "kind": "timeline"
+    },
+    {
+      "source": 49,
+      "target": 50,
+      "kind": "timeline"
+    },
+    {
+      "source": 50,
+      "target": 51,
+      "kind": "timeline"
+    },
+    {
+      "source": 51,
+      "target": 53,
+      "kind": "timeline"
+    },
+    {
+      "source": 53,
+      "target": 55,
+      "kind": "timeline"
+    },
+    {
+      "source": 55,
+      "target": 56,
+      "kind": "timeline"
+    },
+    {
+      "source": 56,
+      "target": 54,
+      "kind": "timeline"
+    },
+    {
+      "source": 54,
+      "target": 52,
+      "kind": "timeline"
+    },
+    {
+      "source": 52,
+      "target": 57,
+      "kind": "timeline"
+    },
+    {
+      "source": 57,
+      "target": 58,
+      "kind": "timeline"
+    },
+    {
+      "source": 58,
+      "target": 59,
+      "kind": "timeline"
+    },
+    {
+      "source": 59,
+      "target": 60,
+      "kind": "timeline"
+    },
+    {
+      "source": 60,
+      "target": 62,
+      "kind": "timeline"
+    },
+    {
+      "source": 62,
+      "target": 63,
+      "kind": "timeline"
+    },
+    {
+      "source": 63,
+      "target": 65,
+      "kind": "timeline"
+    },
+    {
+      "source": 65,
+      "target": 66,
+      "kind": "timeline"
+    },
+    {
+      "source": 66,
+      "target": 68,
+      "kind": "timeline"
+    },
+    {
+      "source": 68,
+      "target": 69,
+      "kind": "timeline"
+    },
+    {
+      "source": 69,
+      "target": 70,
+      "kind": "timeline"
+    },
+    {
+      "source": 70,
+      "target": 71,
+      "kind": "timeline"
+    },
+    {
+      "source": 71,
+      "target": 73,
+      "kind": "timeline"
+    },
+    {
+      "source": 73,
+      "target": 72,
+      "kind": "timeline"
+    },
+    {
+      "source": 72,
+      "target": 74,
+      "kind": "timeline"
+    },
+    {
+      "source": 74,
+      "target": 75,
+      "kind": "timeline"
+    },
+    {
+      "source": 75,
+      "target": 76,
+      "kind": "timeline"
+    },
+    {
+      "source": 76,
+      "target": 77,
+      "kind": "timeline"
+    },
+    {
+      "source": 77,
+      "target": 78,
+      "kind": "timeline"
+    },
+    {
+      "source": 78,
+      "target": 79,
+      "kind": "timeline"
+    },
+    {
+      "source": 79,
+      "target": 80,
+      "kind": "timeline"
+    },
+    {
+      "source": 80,
+      "target": 81,
+      "kind": "timeline"
+    },
+    {
+      "source": 81,
+      "target": 82,
+      "kind": "timeline"
+    },
+    {
+      "source": 82,
+      "target": 83,
+      "kind": "timeline"
+    },
+    {
+      "source": 83,
+      "target": 67,
+      "kind": "timeline"
+    },
+    {
+      "source": 67,
+      "target": 84,
+      "kind": "timeline"
+    },
+    {
+      "source": 84,
+      "target": 85,
+      "kind": "timeline"
+    },
+    {
+      "source": 85,
+      "target": 88,
+      "kind": "timeline"
+    },
+    {
+      "source": 88,
+      "target": 86,
+      "kind": "timeline"
+    },
+    {
+      "source": 86,
+      "target": 90,
+      "kind": "timeline"
+    },
+    {
+      "source": 90,
+      "target": 91,
+      "kind": "timeline"
+    },
+    {
+      "source": 91,
+      "target": 89,
+      "kind": "timeline"
+    },
+    {
+      "source": 89,
+      "target": 92,
+      "kind": "timeline"
+    },
+    {
+      "source": 92,
+      "target": 93,
+      "kind": "timeline"
+    },
+    {
+      "source": 93,
+      "target": 94,
+      "kind": "timeline"
+    },
+    {
+      "source": 94,
+      "target": 95,
+      "kind": "timeline"
+    },
+    {
+      "source": 95,
+      "target": 97,
+      "kind": "timeline"
+    },
+    {
+      "source": 97,
+      "target": 96,
+      "kind": "timeline"
+    },
+    {
+      "source": 96,
+      "target": 98,
+      "kind": "timeline"
+    },
+    {
+      "source": 98,
+      "target": 99,
+      "kind": "timeline"
+    },
+    {
+      "source": 99,
+      "target": 100,
+      "kind": "timeline"
+    },
+    {
+      "source": 100,
+      "target": 102,
+      "kind": "timeline"
+    },
+    {
+      "source": 102,
+      "target": 103,
+      "kind": "timeline"
+    },
+    {
+      "source": 103,
+      "target": 104,
+      "kind": "timeline"
+    },
+    {
+      "source": 104,
+      "target": 101,
+      "kind": "timeline"
+    },
+    {
+      "source": 101,
+      "target": 105,
+      "kind": "timeline"
+    },
+    {
+      "source": 105,
+      "target": 107,
+      "kind": "timeline"
+    },
+    {
+      "source": 107,
+      "target": 108,
+      "kind": "timeline"
+    },
+    {
+      "source": 108,
+      "target": 109,
+      "kind": "timeline"
+    },
+    {
+      "source": 109,
+      "target": 110,
+      "kind": "timeline"
+    },
+    {
+      "source": 110,
+      "target": 106,
+      "kind": "timeline"
+    },
+    {
+      "source": 106,
+      "target": 113,
+      "kind": "timeline"
+    },
+    {
+      "source": 113,
+      "target": 112,
+      "kind": "timeline"
+    },
+    {
+      "source": 112,
+      "target": 114,
+      "kind": "timeline"
+    },
+    {
+      "source": 114,
+      "target": 116,
+      "kind": "timeline"
+    },
+    {
+      "source": 116,
+      "target": 117,
+      "kind": "timeline"
+    },
+    {
+      "source": 117,
+      "target": 115,
+      "kind": "timeline"
+    },
+    {
+      "source": 115,
+      "target": 118,
+      "kind": "timeline"
+    },
+    {
+      "source": 118,
+      "target": 120,
+      "kind": "timeline"
+    },
+    {
+      "source": 120,
+      "target": 111,
+      "kind": "timeline"
+    },
+    {
+      "source": 111,
+      "target": 121,
+      "kind": "timeline"
+    },
+    {
+      "source": 121,
+      "target": 119,
+      "kind": "timeline"
+    },
+    {
+      "source": 119,
+      "target": 122,
+      "kind": "timeline"
+    },
+    {
+      "source": 122,
+      "target": 123,
+      "kind": "timeline"
+    },
+    {
+      "source": 123,
+      "target": 124,
+      "kind": "timeline"
+    },
+    {
+      "source": 124,
+      "target": 125,
+      "kind": "timeline"
+    },
+    {
+      "source": 125,
+      "target": 126,
+      "kind": "timeline"
+    },
+    {
+      "source": 126,
+      "target": 127,
+      "kind": "timeline"
+    },
+    {
+      "source": 127,
+      "target": 128,
+      "kind": "timeline"
+    },
+    {
+      "source": 128,
+      "target": 129,
+      "kind": "timeline"
+    },
+    {
+      "source": 129,
+      "target": 130,
+      "kind": "timeline"
+    },
+    {
+      "source": 130,
+      "target": 131,
+      "kind": "timeline"
+    },
+    {
+      "source": 131,
+      "target": 132,
+      "kind": "timeline"
+    },
+    {
+      "source": 132,
+      "target": 133,
+      "kind": "timeline"
+    },
+    {
+      "source": 133,
+      "target": 134,
+      "kind": "timeline"
+    },
+    {
+      "source": 1,
+      "target": 2,
+      "kind": "relates",
+      "token": "digital"
+    },
+    {
+      "source": 4,
+      "target": 49,
+      "kind": "relates",
+      "token": "save"
+    },
+    {
+      "source": 49,
+      "target": 87,
+      "kind": "relates",
+      "token": "save"
+    },
+    {
+      "source": 87,
+      "target": 87,
+      "kind": "relates",
+      "token": "save"
+    },
+    {
+      "source": 87,
+      "target": 92,
+      "kind": "relates",
+      "token": "save"
+    },
+    {
+      "source": 4,
+      "target": 11,
+      "kind": "relates",
+      "token": "slot"
+    },
+    {
+      "source": 11,
+      "target": 16,
+      "kind": "relates",
+      "token": "slot"
+    },
+    {
+      "source": 16,
+      "target": 29,
+      "kind": "relates",
+      "token": "slot"
+    },
+    {
+      "source": 29,
+      "target": 36,
+      "kind": "relates",
+      "token": "slot"
+    },
+    {
+      "source": 36,
+      "target": 56,
+      "kind": "relates",
+      "token": "slot"
+    },
+    {
+      "source": 56,
+      "target": 66,
+      "kind": "relates",
+      "token": "slot"
+    },
+    {
+      "source": 5,
+      "target": 12,
+      "kind": "relates",
+      "token": "deploy"
+    },
+    {
+      "source": 12,
+      "target": 20,
+      "kind": "relates",
+      "token": "deploy"
+    },
+    {
+      "source": 20,
+      "target": 72,
+      "kind": "relates",
+      "token": "deploy"
+    },
+    {
+      "source": 72,
+      "target": 72,
+      "kind": "relates",
+      "token": "deploy"
+    },
+    {
+      "source": 72,
+      "target": 79,
+      "kind": "relates",
+      "token": "deploy"
+    },
+    {
+      "source": 79,
+      "target": 6,
+      "kind": "relates",
+      "token": "deploy"
+    },
+    {
+      "source": 6,
+      "target": 23,
+      "kind": "relates",
+      "token": "deploy"
+    },
+    {
+      "source": 2,
+      "target": 11,
+      "kind": "relates",
+      "token": "full"
+    },
+    {
+      "source": 11,
+      "target": 33,
+      "kind": "relates",
+      "token": "full"
+    },
+    {
+      "source": 33,
+      "target": 65,
+      "kind": "relates",
+      "token": "full"
+    },
+    {
+      "source": 65,
+      "target": 71,
+      "kind": "relates",
+      "token": "full"
+    },
+    {
+      "source": 71,
+      "target": 102,
+      "kind": "relates",
+      "token": "full"
+    },
+    {
+      "source": 2,
+      "target": 62,
+      "kind": "relates",
+      "token": "documentation"
+    },
+    {
+      "source": 62,
+      "target": 71,
+      "kind": "relates",
+      "token": "documentation"
+    },
+    {
+      "source": 7,
+      "target": 88,
+      "kind": "relates",
+      "token": "blank"
+    },
+    {
+      "source": 7,
+      "target": 62,
+      "kind": "relates",
+      "token": "site"
+    },
+    {
+      "source": 62,
+      "target": 69,
+      "kind": "relates",
+      "token": "site"
+    },
+    {
+      "source": 7,
+      "target": 12,
+      "kind": "relates",
+      "token": "branch"
+    },
+    {
+      "source": 8,
+      "target": 9,
+      "kind": "relates",
+      "token": "phase"
+    },
+    {
+      "source": 8,
+      "target": 101,
+      "kind": "relates",
+      "token": "overworld"
+    },
+    {
+      "source": 8,
+      "target": 13,
+      "kind": "relates",
+      "token": "dialogue"
+    },
+    {
+      "source": 13,
+      "target": 57,
+      "kind": "relates",
+      "token": "dialogue"
+    },
+    {
+      "source": 57,
+      "target": 76,
+      "kind": "relates",
+      "token": "dialogue"
+    },
+    {
+      "source": 9,
+      "target": 15,
+      "kind": "relates",
+      "token": "blackjack"
+    },
+    {
+      "source": 15,
+      "target": 41,
+      "kind": "relates",
+      "token": "blackjack"
+    },
+    {
+      "source": 41,
+      "target": 52,
+      "kind": "relates",
+      "token": "blackjack"
+    },
+    {
+      "source": 11,
+      "target": 15,
+      "kind": "relates",
+      "token": "machine"
+    },
+    {
+      "source": 15,
+      "target": 16,
+      "kind": "relates",
+      "token": "machine"
+    },
+    {
+      "source": 16,
+      "target": 41,
+      "kind": "relates",
+      "token": "machine"
+    },
+    {
+      "source": 10,
+      "target": 52,
+      "kind": "relates",
+      "token": "navigation"
+    },
+    {
+      "source": 10,
+      "target": 15,
+      "kind": "relates",
+      "token": "hold'em"
+    },
+    {
+      "source": 41,
+      "target": 65,
+      "kind": "relates",
+      "token": "hold'em"
+    },
+    {
+      "source": 41,
+      "target": 66,
+      "kind": "relates",
+      "token": "roulette"
+    },
+    {
+      "source": 10,
+      "target": 21,
+      "kind": "relates",
+      "token": "racing"
+    },
+    {
+      "source": 21,
+      "target": 42,
+      "kind": "relates",
+      "token": "racing"
+    },
+    {
+      "source": 42,
+      "target": 45,
+      "kind": "relates",
+      "token": "racing"
+    },
+    {
+      "source": 45,
+      "target": 55,
+      "kind": "relates",
+      "token": "racing"
+    },
+    {
+      "source": 9,
+      "target": 60,
+      "kind": "relates",
+      "token": "resort"
+    },
+    {
+      "source": 60,
+      "target": 97,
+      "kind": "relates",
+      "token": "resort"
+    },
+    {
+      "source": 97,
+      "target": 101,
+      "kind": "relates",
+      "token": "resort"
+    },
+    {
+      "source": 101,
+      "target": 117,
+      "kind": "relates",
+      "token": "resort"
+    },
+    {
+      "source": 117,
+      "target": 126,
+      "kind": "relates",
+      "token": "resort"
+    },
+    {
+      "source": 126,
+      "target": 133,
+      "kind": "relates",
+      "token": "resort"
+    },
+    {
+      "source": 13,
+      "target": 59,
+      "kind": "relates",
+      "token": "dealer"
+    },
+    {
+      "source": 13,
+      "target": 65,
+      "kind": "relates",
+      "token": "table"
+    },
+    {
+      "source": 65,
+      "target": 91,
+      "kind": "relates",
+      "token": "table"
+    },
+    {
+      "source": 91,
+      "target": 108,
+      "kind": "relates",
+      "token": "table"
+    },
+    {
+      "source": 20,
+      "target": 79,
+      "kind": "relates",
+      "token": "workflow"
+    },
+    {
+      "source": 20,
+      "target": 73,
+      "kind": "relates",
+      "token": "sync"
+    },
+    {
+      "source": 73,
+      "target": 107,
+      "kind": "relates",
+      "token": "sync"
+    },
+    {
+      "source": 19,
+      "target": 27,
+      "kind": "relates",
+      "token": "high"
+    },
+    {
+      "source": 27,
+      "target": 118,
+      "kind": "relates",
+      "token": "high"
+    },
+    {
+      "source": 19,
+      "target": 65,
+      "kind": "relates",
+      "token": "limit"
+    },
+    {
+      "source": 65,
+      "target": 118,
+      "kind": "relates",
+      "token": "limit"
+    },
+    {
+      "source": 16,
+      "target": 74,
+      "kind": "relates",
+      "token": "themed"
+    },
+    {
+      "source": 17,
+      "target": 135,
+      "kind": "relates",
+      "token": "upgrades"
+    },
+    {
+      "source": 18,
+      "target": 27,
+      "kind": "relates",
+      "token": "kawaii"
+    },
+    {
+      "source": 27,
+      "target": 23,
+      "kind": "relates",
+      "token": "paddock"
+    },
+    {
+      "source": 18,
+      "target": 57,
+      "kind": "relates",
+      "token": "custom"
+    },
+    {
+      "source": 57,
+      "target": 128,
+      "kind": "relates",
+      "token": "custom"
+    },
+    {
+      "source": 14,
+      "target": 22,
+      "kind": "relates",
+      "token": "boot"
+    },
+    {
+      "source": 22,
+      "target": 88,
+      "kind": "relates",
+      "token": "boot"
+    },
+    {
+      "source": 88,
+      "target": 131,
+      "kind": "relates",
+      "token": "boot"
+    },
+    {
+      "source": 14,
+      "target": 34,
+      "kind": "relates",
+      "token": "rewards"
+    },
+    {
+      "source": 34,
+      "target": 109,
+      "kind": "relates",
+      "token": "rewards"
+    },
+    {
+      "source": 109,
+      "target": 129,
+      "kind": "relates",
+      "token": "rewards"
+    },
+    {
+      "source": 21,
+      "target": 85,
+      "kind": "relates",
+      "token": "sprite"
+    },
+    {
+      "source": 85,
+      "target": 23,
+      "kind": "relates",
+      "token": "sprite"
+    },
+    {
+      "source": 22,
+      "target": 24,
+      "kind": "relates",
+      "token": "error"
+    },
+    {
+      "source": 24,
+      "target": 25,
+      "kind": "relates",
+      "token": "error"
+    },
+    {
+      "source": 28,
+      "target": 88,
+      "kind": "relates",
+      "token": "title"
+    },
+    {
+      "source": 88,
+      "target": 94,
+      "kind": "relates",
+      "token": "title"
+    },
+    {
+      "source": 28,
+      "target": 45,
+      "kind": "relates",
+      "token": "animation"
+    },
+    {
+      "source": 28,
+      "target": 61,
+      "kind": "relates",
+      "token": "profile"
+    },
+    {
+      "source": 61,
+      "target": 92,
+      "kind": "relates",
+      "token": "profile"
+    },
+    {
+      "source": 92,
+      "target": 92,
+      "kind": "relates",
+      "token": "profile"
+    },
+    {
+      "source": 28,
+      "target": 92,
+      "kind": "relates",
+      "token": "cache"
+    },
+    {
+      "source": 92,
+      "target": 23,
+      "kind": "relates",
+      "token": "cache"
+    },
+    {
+      "source": 23,
+      "target": 131,
+      "kind": "relates",
+      "token": "cache"
+    },
+    {
+      "source": 27,
+      "target": 40,
+      "kind": "relates",
+      "token": "race"
+    },
+    {
+      "source": 26,
+      "target": 32,
+      "kind": "relates",
+      "token": "expansion"
+    },
+    {
+      "source": 32,
+      "target": 67,
+      "kind": "relates",
+      "token": "expansion"
+    },
+    {
+      "source": 26,
+      "target": 67,
+      "kind": "relates",
+      "token": "parity"
+    },
+    {
+      "source": 67,
+      "target": 89,
+      "kind": "relates",
+      "token": "parity"
+    },
+    {
+      "source": 89,
+      "target": 102,
+      "kind": "relates",
+      "token": "parity"
+    },
+    {
+      "source": 102,
+      "target": 104,
+      "kind": "relates",
+      "token": "parity"
+    },
+    {
+      "source": 104,
+      "target": 107,
+      "kind": "relates",
+      "token": "parity"
+    },
+    {
+      "source": 107,
+      "target": 127,
+      "kind": "relates",
+      "token": "parity"
+    },
+    {
+      "source": 67,
+      "target": 87,
+      "kind": "relates",
+      "token": "terminal"
+    },
+    {
+      "source": 87,
+      "target": 89,
+      "kind": "relates",
+      "token": "terminal"
+    },
+    {
+      "source": 89,
+      "target": 94,
+      "kind": "relates",
+      "token": "terminal"
+    },
+    {
+      "source": 94,
+      "target": 132,
+      "kind": "relates",
+      "token": "terminal"
+    },
+    {
+      "source": 26,
+      "target": 85,
+      "kind": "relates",
+      "token": "open"
+    },
+    {
+      "source": 85,
+      "target": 92,
+      "kind": "relates",
+      "token": "open"
+    },
+    {
+      "source": 30,
+      "target": 86,
+      "kind": "relates",
+      "token": "lobby"
+    },
+    {
+      "source": 30,
+      "target": 35,
+      "kind": "relates",
+      "token": "book"
+    },
+    {
+      "source": 32,
+      "target": 101,
+      "kind": "relates",
+      "token": "pool"
+    },
+    {
+      "source": 101,
+      "target": 119,
+      "kind": "relates",
+      "token": "pool"
+    },
+    {
+      "source": 119,
+      "target": 132,
+      "kind": "relates",
+      "token": "pool"
+    },
+    {
+      "source": 132,
+      "target": 134,
+      "kind": "relates",
+      "token": "pool"
+    },
+    {
+      "source": 32,
+      "target": 119,
+      "kind": "relates",
+      "token": "complex"
+    },
+    {
+      "source": 32,
+      "target": 68,
+      "kind": "relates",
+      "token": "expanded"
+    },
+    {
+      "source": 33,
+      "target": 55,
+      "kind": "relates",
+      "token": "floor"
+    },
+    {
+      "source": 55,
+      "target": 77,
+      "kind": "relates",
+      "token": "floor"
+    },
+    {
+      "source": 77,
+      "target": 105,
+      "kind": "relates",
+      "token": "floor"
+    },
+    {
+      "source": 105,
+      "target": 107,
+      "kind": "relates",
+      "token": "floor"
+    },
+    {
+      "source": 107,
+      "target": 121,
+      "kind": "relates",
+      "token": "floor"
+    },
+    {
+      "source": 121,
+      "target": 127,
+      "kind": "relates",
+      "token": "floor"
+    },
+    {
+      "source": 31,
+      "target": 37,
+      "kind": "relates",
+      "token": "room"
+    },
+    {
+      "source": 37,
+      "target": 38,
+      "kind": "relates",
+      "token": "room"
+    },
+    {
+      "source": 38,
+      "target": 58,
+      "kind": "relates",
+      "token": "room"
+    },
+    {
+      "source": 58,
+      "target": 78,
+      "kind": "relates",
+      "token": "room"
+    },
+    {
+      "source": 78,
+      "target": 86,
+      "kind": "relates",
+      "token": "room"
+    },
+    {
+      "source": 31,
+      "target": 56,
+      "kind": "relates",
+      "token": "vegas"
+    },
+    {
+      "source": 56,
+      "target": 106,
+      "kind": "relates",
+      "token": "vegas"
+    },
+    {
+      "source": 31,
+      "target": 104,
+      "kind": "relates",
+      "token": "after"
+    },
+    {
+      "source": 104,
+      "target": 124,
+      "kind": "relates",
+      "token": "after"
+    },
+    {
+      "source": 34,
+      "target": 54,
+      "kind": "relates",
+      "token": "tier"
+    },
+    {
+      "source": 54,
+      "target": 135,
+      "kind": "relates",
+      "token": "tier"
+    },
+    {
+      "source": 34,
+      "target": 117,
+      "kind": "relates",
+      "token": "scaled"
+    },
+    {
+      "source": 34,
+      "target": 113,
+      "kind": "relates",
+      "token": "premium"
+    },
+    {
+      "source": 35,
+      "target": 47,
+      "kind": "relates",
+      "token": "sports"
+    },
+    {
+      "source": 47,
+      "target": 105,
+      "kind": "relates",
+      "token": "sports"
+    },
+    {
+      "source": 35,
+      "target": 68,
+      "kind": "relates",
+      "token": "prediction"
+    },
+    {
+      "source": 68,
+      "target": 105,
+      "kind": "relates",
+      "token": "prediction"
+    },
+    {
+      "source": 36,
+      "target": 66,
+      "kind": "relates",
+      "token": "spin"
+    },
+    {
+      "source": 36,
+      "target": 75,
+      "kind": "relates",
+      "token": "controls"
+    },
+    {
+      "source": 75,
+      "target": 89,
+      "kind": "relates",
+      "token": "controls"
+    },
+    {
+      "source": 38,
+      "target": 49,
+      "kind": "relates",
+      "token": "time"
+    },
+    {
+      "source": 39,
+      "target": 101,
+      "kind": "relates",
+      "token": "cozy"
+    },
+    {
+      "source": 40,
+      "target": 56,
+      "kind": "relates",
+      "token": "style"
+    },
+    {
+      "source": 56,
+      "target": 75,
+      "kind": "relates",
+      "token": "style"
+    },
+    {
+      "source": 75,
+      "target": 67,
+      "kind": "relates",
+      "token": "style"
+    },
+    {
+      "source": 45,
+      "target": 73,
+      "kind": "relates",
+      "token": "replace"
+    },
+    {
+      "source": 73,
+      "target": 85,
+      "kind": "relates",
+      "token": "replace"
+    },
+    {
+      "source": 42,
+      "target": 46,
+      "kind": "relates",
+      "token": "equestrian"
+    },
+    {
+      "source": 46,
+      "target": 50,
+      "kind": "relates",
+      "token": "equestrian"
+    },
+    {
+      "source": 50,
+      "target": 55,
+      "kind": "relates",
+      "token": "equestrian"
+    },
+    {
+      "source": 44,
+      "target": 88,
+      "kind": "relates",
+      "token": "screen"
+    },
+    {
+      "source": 88,
+      "target": 124,
+      "kind": "relates",
+      "token": "screen"
+    },
+    {
+      "source": 45,
+      "target": 46,
+      "kind": "relates",
+      "token": "gallop"
+    },
+    {
+      "source": 43,
+      "target": 106,
+      "kind": "relates",
+      "token": "strip"
+    },
+    {
+      "source": 106,
+      "target": 116,
+      "kind": "relates",
+      "token": "strip"
+    },
+    {
+      "source": 116,
+      "target": 120,
+      "kind": "relates",
+      "token": "strip"
+    },
+    {
+      "source": 43,
+      "target": 126,
+      "kind": "relates",
+      "token": "account"
+    },
+    {
+      "source": 126,
+      "target": 130,
+      "kind": "relates",
+      "token": "account"
+    },
+    {
+      "source": 43,
+      "target": 57,
+      "kind": "relates",
+      "token": "staff"
+    },
+    {
+      "source": 57,
+      "target": 90,
+      "kind": "relates",
+      "token": "staff"
+    },
+    {
+      "source": 47,
+      "target": 48,
+      "kind": "relates",
+      "token": "sportsbook"
+    },
+    {
+      "source": 48,
+      "target": 59,
+      "kind": "relates",
+      "token": "sportsbook"
+    },
+    {
+      "source": 59,
+      "target": 68,
+      "kind": "relates",
+      "token": "sportsbook"
+    },
+    {
+      "source": 48,
+      "target": 52,
+      "kind": "relates",
+      "token": "crash"
+    },
+    {
+      "source": 47,
+      "target": 127,
+      "kind": "relates",
+      "token": "catalog"
+    },
+    {
+      "source": 50,
+      "target": 136,
+      "kind": "relates",
+      "token": "interactive"
+    },
+    {
+      "source": 48,
+      "target": 58,
+      "kind": "relates",
+      "token": "front"
+    },
+    {
+      "source": 78,
+      "target": 103,
+      "kind": "relates",
+      "token": "front"
+    },
+    {
+      "source": 103,
+      "target": 122,
+      "kind": "relates",
+      "token": "front"
+    },
+    {
+      "source": 103,
+      "target": 118,
+      "kind": "relates",
+      "token": "desk"
+    },
+    {
+      "source": 118,
+      "target": 122,
+      "kind": "relates",
+      "token": "desk"
+    },
+    {
+      "source": 48,
+      "target": 126,
+      "kind": "relates",
+      "token": "tree"
+    },
+    {
+      "source": 48,
+      "target": 117,
+      "kind": "relates",
+      "token": "dining"
+    },
+    {
+      "source": 117,
+      "target": 123,
+      "kind": "relates",
+      "token": "dining"
+    },
+    {
+      "source": 123,
+      "target": 128,
+      "kind": "relates",
+      "token": "dining"
+    },
+    {
+      "source": 49,
+      "target": 91,
+      "kind": "relates",
+      "token": "game"
+    },
+    {
+      "source": 49,
+      "target": 54,
+      "kind": "relates",
+      "token": "slots"
+    },
+    {
+      "source": 54,
+      "target": 87,
+      "kind": "relates",
+      "token": "slots"
+    },
+    {
+      "source": 87,
+      "target": 135,
+      "kind": "relates",
+      "token": "slots"
+    },
+    {
+      "source": 53,
+      "target": 62,
+      "kind": "relates",
+      "token": "connect"
+    },
+    {
+      "source": 62,
+      "target": 63,
+      "kind": "relates",
+      "token": "connect"
+    },
+    {
+      "source": 63,
+      "target": 69,
+      "kind": "relates",
+      "token": "connect"
+    },
+    {
+      "source": 69,
+      "target": 129,
+      "kind": "relates",
+      "token": "connect"
+    },
+    {
+      "source": 129,
+      "target": 130,
+      "kind": "relates",
+      "token": "connect"
+    },
+    {
+      "source": 57,
+      "target": 59,
+      "kind": "relates",
+      "token": "trees"
+    },
+    {
+      "source": 58,
+      "target": 69,
+      "kind": "relates",
+      "token": "access"
+    },
+    {
+      "source": 69,
+      "target": 70,
+      "kind": "relates",
+      "token": "access"
+    },
+    {
+      "source": 70,
+      "target": 86,
+      "kind": "relates",
+      "token": "access"
+    },
+    {
+      "source": 86,
+      "target": 103,
+      "kind": "relates",
+      "token": "access"
+    },
+    {
+      "source": 58,
+      "target": 86,
+      "kind": "relates",
+      "token": "hallway"
+    },
+    {
+      "source": 86,
+      "target": 118,
+      "kind": "relates",
+      "token": "hallway"
+    },
+    {
+      "source": 59,
+      "target": 131,
+      "kind": "relates",
+      "token": "venues"
+    },
+    {
+      "source": 60,
+      "target": 61,
+      "kind": "relates",
+      "token": "readme"
+    },
+    {
+      "source": 61,
+      "target": 69,
+      "kind": "relates",
+      "token": "readme"
+    },
+    {
+      "source": 60,
+      "target": 102,
+      "kind": "relates",
+      "token": "current"
+    },
+    {
+      "source": 62,
+      "target": 102,
+      "kind": "relates",
+      "token": "quarto"
+    },
+    {
+      "source": 69,
+      "target": 130,
+      "kind": "relates",
+      "token": "posit"
+    },
+    {
+      "source": 130,
+      "target": 136,
+      "kind": "relates",
+      "token": "posit"
+    },
+    {
+      "source": 63,
+      "target": 64,
+      "kind": "relates",
+      "token": "cloud"
+    },
+    {
+      "source": 64,
+      "target": 69,
+      "kind": "relates",
+      "token": "cloud"
+    },
+    {
+      "source": 63,
+      "target": 114,
+      "kind": "relates",
+      "token": "live"
+    },
+    {
+      "source": 66,
+      "target": 91,
+      "kind": "relates",
+      "token": "animated"
+    },
+    {
+      "source": 68,
+      "target": 113,
+      "kind": "relates",
+      "token": "lottery"
+    },
+    {
+      "source": 71,
+      "target": 73,
+      "kind": "relates",
+      "token": "wiki"
+    },
+    {
+      "source": 73,
+      "target": 74,
+      "kind": "relates",
+      "token": "wiki"
+    },
+    {
+      "source": 74,
+      "target": 102,
+      "kind": "relates",
+      "token": "wiki"
+    },
+    {
+      "source": 73,
+      "target": 72,
+      "kind": "relates",
+      "token": "manual"
+    },
+    {
+      "source": 72,
+      "target": 83,
+      "kind": "relates",
+      "token": "skill"
+    },
+    {
+      "source": 83,
+      "target": 107,
+      "kind": "relates",
+      "token": "skill"
+    },
+    {
+      "source": 75,
+      "target": 103,
+      "kind": "relates",
+      "token": "mobile"
+    },
+    {
+      "source": 75,
+      "target": 98,
+      "kind": "relates",
+      "token": "graphics"
+    },
+    {
+      "source": 98,
+      "target": 112,
+      "kind": "relates",
+      "token": "graphics"
+    },
+    {
+      "source": 76,
+      "target": 95,
+      "kind": "relates",
+      "token": "character"
+    },
+    {
+      "source": 77,
+      "target": 84,
+      "kind": "relates",
+      "token": "textures"
+    },
+    {
+      "source": 80,
+      "target": 83,
+      "kind": "relates",
+      "token": "pypi"
+    },
+    {
+      "source": 82,
+      "target": 84,
+      "kind": "relates",
+      "token": "heighten"
+    },
+    {
+      "source": 84,
+      "target": 101,
+      "kind": "relates",
+      "token": "polish"
+    },
+    {
+      "source": 101,
+      "target": 112,
+      "kind": "relates",
+      "token": "polish"
+    },
+    {
+      "source": 85,
+      "target": 93,
+      "kind": "relates",
+      "token": "characters"
+    },
+    {
+      "source": 90,
+      "target": 100,
+      "kind": "relates",
+      "token": "tiles"
+    },
+    {
+      "source": 93,
+      "target": 98,
+      "kind": "relates",
+      "token": "upgrade"
+    },
+    {
+      "source": 98,
+      "target": 113,
+      "kind": "relates",
+      "token": "upgrade"
+    },
+    {
+      "source": 93,
+      "target": 99,
+      "kind": "relates",
+      "token": "tuxedo"
+    },
+    {
+      "source": 97,
+      "target": 109,
+      "kind": "relates",
+      "token": "raise"
+    },
+    {
+      "source": 103,
+      "target": 120,
+      "kind": "relates",
+      "token": "suite"
+    },
+    {
+      "source": 120,
+      "target": 135,
+      "kind": "relates",
+      "token": "suite"
+    },
+    {
+      "source": 107,
+      "target": 108,
+      "kind": "relates",
+      "token": "trading"
+    },
+    {
+      "source": 108,
+      "target": 121,
+      "kind": "relates",
+      "token": "trading"
+    },
+    {
+      "source": 108,
+      "target": 126,
+      "kind": "relates",
+      "token": "offshore"
+    },
+    {
+      "source": 110,
+      "target": 106,
+      "kind": "relates",
+      "token": "arcade"
+    },
+    {
+      "source": 106,
+      "target": 112,
+      "kind": "relates",
+      "token": "arcade"
+    },
+    {
+      "source": 112,
+      "target": 115,
+      "kind": "relates",
+      "token": "arcade"
+    },
+    {
+      "source": 115,
+      "target": 127,
+      "kind": "relates",
+      "token": "arcade"
+    },
+    {
+      "source": 110,
+      "target": 112,
+      "kind": "relates",
+      "token": "alley"
+    },
+    {
+      "source": 110,
+      "target": 117,
+      "kind": "relates",
+      "token": "overlay"
+    },
+    {
+      "source": 117,
+      "target": 119,
+      "kind": "relates",
+      "token": "overlay"
+    },
+    {
+      "source": 113,
+      "target": 128,
+      "kind": "relates",
+      "token": "overlays"
+    },
+    {
+      "source": 128,
+      "target": 133,
+      "kind": "relates",
+      "token": "overlays"
+    },
+    {
+      "source": 117,
+      "target": 120,
+      "kind": "relates",
+      "token": "minigame"
+    },
+    {
+      "source": 123,
+      "target": 133,
+      "kind": "relates",
+      "token": "first"
+    },
+    {
+      "source": 125,
+      "target": 131,
+      "kind": "relates",
+      "token": "gentleman's"
+    },
+    {
+      "source": 134,
+      "target": 134,
+      "kind": "relates",
+      "token": "menu"
+    }
+  ]
+}

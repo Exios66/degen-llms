@@ -145,3 +145,23 @@ figcaption.quarto-float-caption-bottom > span:first-child {
 .play-card a {
   font-weight: 700;
 }
+
+/* Full-bleed interactive PR development graph */
+#pr-graph-app {
+  margin-top: 0.35rem;
+  display: block;
+  width: 100%;
+}
+
+#pr-graph-app .pr-graph-shell {
+  max-width: none;
+}
+
+/* Prevent Quarto margin/aside layout from capturing graph chrome */
+#pr-graph-app .pr-graph-sidebar,
+#pr-graph-app .pr-graph-canvas-wrap,
+#pr-graph-app .pr-graph-toolbar,
+#pr-graph-app .pr-graph-footer {
+  grid-column: auto !important;
+  grid-row: auto !important;
+}

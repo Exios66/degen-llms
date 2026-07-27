@@ -16,7 +16,7 @@ import {
   playFeltFlip,
   clubSummary,
   canEnterGentlemansClub,
-} from "../gentlemans-club.js?v=__ASSET_SHA__";
+} from "../gentlemans-club.js";
 import { fmtChips } from "../core.js";
 
 /**

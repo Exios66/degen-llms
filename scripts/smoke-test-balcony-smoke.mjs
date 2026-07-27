@@ -35,7 +35,7 @@ function check(cond, msg) {
 }
 
 check(Boolean(CONSUMABLE_POTENCY[BALCONY_JOINT_ID]), "balcony joint consumable registered");
-check(ROOM_DECISIONS.balcony_smoke_pov?.roomTypes?.includes("suite"), "POV decision gated to suite+");
+check(!ROOM_DECISIONS.balcony_smoke_pov?.roomTypes, "POV decision available for all balcony rooms");
 
 const session = new PlayerSession({ chips: 20000 });
 ensureHotel(session);
@@ -43,11 +43,10 @@ check(!canEnterBalconySmoke(session).ok, "blocked before room access");
 
 findReservation(session);
 useRoomKeyToDoor(session);
-check(!canEnterBalconySmoke(session).ok, "blocked in standard room");
+check(canEnterBalconySmoke(session).ok, "standard room + door opens balcony POV");
 
 session.wallet.credit(1000, "blackjack", "win");
 upgradeRoom(session, "suite");
-findReservation(session);
 useRoomKeyToDoor(session);
 check(canEnterBalconySmoke(session).ok, "suite + door opens balcony POV");
 

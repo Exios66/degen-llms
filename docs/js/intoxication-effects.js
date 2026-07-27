@@ -33,6 +33,7 @@ export const CONSUMABLE_POTENCY = {
   // Minibar — contraband
   noir_herb_preroll: { category: "contraband", potency: 4, label: "Noir pre-roll" },
   foundation_edible: { category: "contraband", potency: 5, label: "Foundation Room edible" },
+  balcony_suite_joint: { category: "contraband", potency: 3, label: "Balcony smoke break" },
   // Pool complex — liquor
   pool_beach_club_bar: { category: "liquor", potency: 2, label: "Beach club cocktail" },
   pool_mango_freeze: { category: "liquor", potency: 2, label: "Mango wave freeze" },

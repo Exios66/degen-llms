@@ -56,10 +56,9 @@ session.wallet.credit(1000, "blackjack", "win");
 const up = upgradeRoom(session, "suite");
 check(up.ok, "suite upgrade ok");
 check(hotel.roomType === "suite", "room type suite");
-check(hotel.roomKeyActive === false && hotel.reachedRoom === false, "upgrade resets key + door");
-findReservation(session);
+check(hotel.roomKeyActive === true && hotel.reachedRoom === false, "upgrade keeps key but resets door for new suite hallway");
 grantRoomKeyIfReservationReady(session);
-check(hotel.roomKeyActive && !hotel.reachedRoom, "re-locate activates key only");
+check(hotel.roomKeyActive && !hotel.reachedRoom, "key active for new suite hallway walk");
 
 const salonSlots = MACHINES.filter((m) => isSalonOnlySlot(m) || m.salonOnly);
 check(salonSlots.length >= 3, `salon slots present (${salonSlots.length})`);

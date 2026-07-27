@@ -23,6 +23,7 @@ TERMINAL_VIEWS = [
     "horse-racing", "horse-racing-names", "horse-stables", "horse-stables-pasture",
     "horse-stables-stalls", "dressage", "jumper",
     "hotel-lobby", "hotel-front-desk", "hotel-dining", "casino-floor", "pool-complex",
+    "gentlemans-club", "gentlemans-club-bar", "bar-menu",
 ]
 
 DINING_OVERLAY_READY = """() => {

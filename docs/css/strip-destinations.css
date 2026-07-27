@@ -251,6 +251,27 @@ body.strip-away .banner h1 {
 .strip-limo-panel {
   position: relative;
   overflow: hidden;
+  max-width: 100%;
+}
+
+.strip-dest-list {
+  max-height: min(50vh, 28rem);
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 0.5rem 0 0.75rem;
+  padding-right: 0.15rem;
+}
+
+@media (max-height: 500px), (orientation: landscape) and (max-height: 500px) {
+  .strip-dest-list {
+    max-height: min(38vh, 16rem);
+  }
+
+  .strip-dest-card {
+    padding: 8px 10px;
+    margin: 4px 0;
+  }
 }
 
 .strip-limo-panel::before {

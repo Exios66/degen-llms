@@ -649,9 +649,10 @@ function renderHub() {
       el("p", { className: "subtitle", textContent: away ? `On the floor at ${dest.shortName}:` : "On the floor today:" }),
       ...FLOOR_ORDER.map((floor) => {
         const acts = Object.values(ACTIVITIES).filter((a) => a.floor === floor);
+        const names = acts.map((a) => getActivityBranding(session, a.id, a.name).name).join(", ");
         return el("div", {
           className: "hub-feature",
-          innerHTML: `<strong>${floor}</strong> — ${acts.map((a) => a.name).join(", ")}`,
+          innerHTML: `<strong>${floor}</strong> — ${names}`,
         });
       }),
       away ? el("p", { className: "dim", textContent: dest.floorBlurb }) : null,
@@ -793,9 +794,10 @@ function renderFloor({ floor }) {
 }
 
 function renderLeave() {
+  const property = casinoDisplayName(session);
   return el("div", { className: "panel" }, [
     banner("Leave Casino"),
-    el("p", { textContent: "Are you sure you want to leave The Mandalay Bay?" }),
+    el("p", { textContent: `Are you sure you want to leave ${property}?` }),
     chipLine(),
     el("div", { className: "action-bar" }, [
       el("button", {
@@ -803,7 +805,7 @@ function renderLeave() {
         textContent: "Leave",
         onclick: () => {
           persist();
-          showStatus(`Thanks for visiting ${CASINO_NAME}. Final balance: ${fmtChips(session.wallet.balance)}`);
+          showStatus(`Thanks for visiting ${property}. Final balance: ${fmtChips(session.wallet.balance)}`);
           returnToSavePicker();
         },
       }),
@@ -817,12 +819,13 @@ function renderLeave() {
 
 function renderNotFound({ requestedView } = {}) {
   const label = requestedView ? `"${requestedView}"` : "this screen";
+  const property = casinoDisplayName(session);
   return el("div", { className: "error-screen panel" }, [
-    banner(CASINO_NAME),
+    banner(property),
     el("pre", {
       className: "error-ascii",
       textContent: `╔══════════════════════════════════════╗
-║         THE MANDALAY BAY             ║
+║      ${property.toUpperCase().padStart(18).slice(0, 18).padEnd(18)}      ║
 ║      ░░░  WRONG FLOOR  ░░░           ║
 ╚══════════════════════════════════════╝`,
     }),
@@ -830,7 +833,7 @@ function renderNotFound({ requestedView } = {}) {
     el("p", { className: "error-slots", textContent: "🎰 7️⃣ ❓" }),
     el("p", {
       className: "error-message",
-      innerHTML: `This table isn't on the floor.<br>Screen ${label} is not available at The Mandalay Bay.`,
+      innerHTML: `This table isn't on the floor.<br>Screen ${label} is not available at ${property}.`,
     }),
     el("div", { className: "error-actions" }, [
       el("button", {

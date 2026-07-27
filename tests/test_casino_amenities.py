@@ -3,6 +3,10 @@
 from __future__ import annotations
 
 from mandalay_bay.casino_amenities import (
+    ALL_SHOP_STORES,
+    FLAGSHIP_DESIGNER_STORES,
+    MANDALAY_PLACE_STORES,
+    SHOP_ITEMS_BY_ID,
     ensure_amenities,
     order_bar_drink,
     purchase_shop_item,
@@ -10,6 +14,31 @@ from mandalay_bay.casino_amenities import (
 from mandalay_bay.chips import ChipWallet
 from mandalay_bay.saves import SaveLibrary, session_from_dict, session_to_dict
 from mandalay_bay.session import PlayerSession
+
+
+def test_shoppes_catalog_expanded() -> None:
+    assert len(FLAGSHIP_DESIGNER_STORES) == 6
+    assert len(MANDALAY_PLACE_STORES) == 10
+    assert len(ALL_SHOP_STORES) == 16
+    assert len(SHOP_ITEMS_BY_ID) == 81
+    for store_id in (
+        "rolex_boutique",
+        "tiffany_co",
+        "nike_mandalay",
+        "house_of_blues_store",
+        "surf_city",
+        "mandalay_souvenirs",
+    ):
+        assert store_id in {s.id for s in ALL_SHOP_STORES}
+
+
+def test_purchase_new_catalog_items() -> None:
+    session = PlayerSession(wallet=ChipWallet(balance=50_000))
+    assert purchase_shop_item(session, "nike_dri_fit").ok
+    assert purchase_shop_item(session, "rolex_cap").ok
+    assert purchase_shop_item(session, "mb_mug").ok
+    amenities = ensure_amenities(session)
+    assert amenities.purchased_items == ["nike_dri_fit", "rolex_cap", "mb_mug"]
 
 
 def test_purchase_shop_item_debits_chips() -> None:

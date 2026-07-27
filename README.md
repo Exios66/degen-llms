@@ -2,11 +2,17 @@
 
 **The Mandalay Bay** — a satirical choose-your-adventure resort simulator with a unified chip economy. Play blackjack, slots, and the sports book on the casino floor; check into the hotel; lounge at the 11-acre pool complex; climb MGM Rewards tiers; and explore the property as a pixel RPG. Available as a **Python CLI**, a **browser terminal** (GitHub Pages), and a **Phaser overworld**.
 
-## Play now
+## Play Now!
 
 [![pages-build-deployment](https://github.com/Exios66/degen-llms/actions/workflows/pages/pages-build-deployment/badge.svg?branch=gh-pages)](https://github.com/Exios66/degen-llms/actions/workflows/pages/pages-build-deployment)
 
 [![Deployed on Posit Cloud](https://img.shields.io/badge/Deployed_on-Posit_Cloud-4d8DC9?style=flat&logo=rstudio)](https://019f9a67-d5c9-226b-b6b1-a86d1655be69.share.connect.posit.cloud/)
+
+---
+
+<img width="1408" height="768" alt="Gemini_Generated_Image_sphl86sphl86sphl" src="https://github.com/user-attachments/assets/37c7d433-f7f3-4553-9919-31253010dda3" />
+
+---
 
 | Surface | URL / command |
 |---------|----------------|

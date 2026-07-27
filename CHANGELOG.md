@@ -5,6 +5,21 @@ All notable changes to **degen-llms** (The Mandalay Bay) are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] - 2026-07-27
+
+### Changed
+
+- **Strip destination menus** — Luxor, Excalibur, Bellagio, and Circa away casinos use distinct accent colors, typography, and table skins instead of Mandalay Bay cyan chrome (#148)
+
+### Documentation
+
+- Docs / wiki / Posit parity — Strip Ride guide, destination exclusives, Rewards Connect rideshare, viewport notes
+- README play section revised with terminal screenshot and Web Casino Terminal GitHub Pages badge (#150)
+
+### Notes
+
+- Intentionally excluded: prior changelog PR (#147) and strip-limo render smoke-test-only PR (#149)
+
 ## [1.2.0] - 2026-07-27
 
 ### Added

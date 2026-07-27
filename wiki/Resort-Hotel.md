@@ -24,7 +24,7 @@ MGM Rewards tier comps can cover upgrades and room nights. See [[MGM-Rewards|MGM
 2. **Room key** — activates as soon as the day's check-in requirement is satisfied, whether the phone or the desk finished it; the desk then offers your hallway or your door directly
 3. **Hallway mini-game** — three beats of directional choices to reach your door (wrong turns are comedic; a dining food coma forces one zig). Reaching the door sets `reachedRoom` and unlocks in-room amenities
 4. **Gentleman's Club — The Velvet Ledger** — opens from Gold+, a suite key, or the club phone line (hotel lobby / amenities)
-5. **Your room** — TV, minibar, phone, balcony decisions, unlockable Vegas vignettes. Foundation Room phone line unlocks from a suite or penthouse (Noir+)
+5. **Your room** — TV, minibar, phone, balcony decisions, unlockable Vegas vignettes. Foundation Room phone line unlocks from a suite or penthouse (Noir+). **Call limo / private driver** (or Rewards Connect Uber / Lyft) unlocks [[Strip-Ride|Strip Ride]] travel on the web terminal
 
 ## Resort dining
 
@@ -32,13 +32,19 @@ Carmen books the three tables that matter: **Aureole**, **Border Grill**, and **
 
 → [[Resort-Dining|Resort Dining]]
 
+## Strip Ride (web terminal)
+
+From the room phone (**Call limo / private driver**) or MGM Rewards Phone **Connect → Call Uber / Lyft**, dispatch a chip-fare ride to **Luxor**, **Excalibur**, **Bellagio**, or **Circa**. Each property has five exclusive slots, destination-branded activities, and themed menus. Return to Mandalay Bay is complimentary. Not available in the pixel RPG.
+
+→ [[Strip-Ride|Strip Ride]]
+
 ## In-room amenities
 
 | Amenity | Highlights |
 |---------|------------|
 | **TV** | Shark Reef (ch. 47), wave pool cam, ULTRA Arena boxing, House of Blues (Gold+ tier) |
 | **Minibar** | Sensor-enabled charges; concierge suggests items |
-| **Phone** | Concierge, bookie, Foundation Room (Noir+), Gentleman's Club / Velvet Ledger (Gold+), spa, Delano |
+| **Phone** | Concierge, bookie, Foundation Room (Noir+), Gentleman's Club / Velvet Ledger (Gold+), spa, Delano, **limo / private driver** (Strip Ride) |
 | **Gentleman's Club** | Hotel lobby amenity — make it rain, encounters, stocked bar, Tip Cascade / Bottle Memory / Felt Flip, ledger eggs |
 | **Suite balcony POV** | Fullscreen Strip vista smoke-break overlay (suite/penthouse) — take hits, savor the view, step inside |
 | **Decisions** | Balcony, sky bridge to Mandalay Place, suite/penthouse perks, wake-up roulette |
@@ -101,7 +107,8 @@ Press **P** in the web app for:
 
 - Tier status and comps
 - Reservation locate
-- Textable staff contacts
+- Textable / callable staff contacts (Connect)
+- **Call Uber / Lyft** — Strip Ride unlock
 
 ## Implementation
 
@@ -113,4 +120,4 @@ Press **P** in the web app for:
 | `docs/js/hotel.js` / `docs/js/hotel-ui.js` | Browser mirror |
 | `docs/js/hotel-ui.js` → `buildHotelRenderers(ctx)` | Screens the RPG mounts too |
 
-See also [Save slots](saves.md) for the hotel save schema.
+See also [[Save-Slots]] for the hotel save schema.

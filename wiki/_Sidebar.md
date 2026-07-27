@@ -13,6 +13,7 @@
 - [[Casino-Offerings]]
 - [[MGM-Rewards]]
 - [[Resort-Hotel]]
+- [[Strip-Ride]]
 - [[Resort-Dining]]
 - [[Pool-Complex]]
 

@@ -9,7 +9,7 @@ Three playable surfaces share save slots and the chip wallet. This Posit site do
 ::: {.play-grid}
 ::: {.play-card}
 ### Web terminal
-Browser hub with casino floors, hotel, pool, and rewards phone.
+Browser hub with casino floors, hotel, pool, rewards phone, and **Strip Ride** limo / Uber travel to themed away casinos.
 
 **[Launch web terminal →](https://exios66.github.io/degen-llms/)**
 :::
@@ -17,7 +17,7 @@ Browser hub with casino floors, hotel, pool, and rewards phone.
 ::: {.play-card}
 ### Pixel RPG
 Thirty-two walkable rooms — including a Strip overworld to Luxor and Excalibur —
-that mount the terminal's own screens.
+that mount the terminal's own screens. (Strip Ride destination floors stay web-only.)
 
 **[Launch pixel RPG →](https://exios66.github.io/degen-llms/rpg/)** · [about](rpg.qmd)
 :::
@@ -55,11 +55,11 @@ python3 -m pytest -v
 | Input | Action |
 |-------|--------|
 | Number keys / click | Menu choices |
-| **P** | Open MGM Rewards phone |
+| **P** | Open MGM Rewards phone (Connect → Uber / Lyft unlocks Strip Ride) |
 | Casino Guide | In-lobby rules reference |
 | Leave Casino | Auto-save and exit |
 
-Full navigation: [Player Guide](docs/player-guide.md) · first launch: [Getting Started](docs/getting-started.md).
+Full navigation: [Player Guide](docs/player-guide.md) · [Strip Ride](docs/strip-ride.md) · first launch: [Getting Started](docs/getting-started.md).
 
 ## What ships in the repo
 

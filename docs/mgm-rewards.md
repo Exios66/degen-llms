@@ -46,8 +46,11 @@ Press **P** in the web app (or access via RPG HUD):
 - Locate hotel reservation
 - Text and **call** staff contacts (Connect tab) with multi-turn conversations
 - Phone **Sounds** on Home: mute, SMS tones, and selectable ringtones (procedural dial / ringback / SMS SFX)
+- **Connect → Call Uber / Lyft** — unlocks Strip Ride dispatch (web terminal) to Luxor, Excalibur, Bellagio, and Circa
 
-Calls play dial tone → keypad → ringback, then branch like a real conversation until you hang up. Texts play send/receive tones when Sounds are enabled.
+Calls play dial tone → keypad → ringback, then branch like a real conversation until you hang up. Texts play send/receive tones when Sounds are enabled. The desktop phone shell and overlays respect dynamic viewport / safe-area caps so the LCD stays readable on short screens.
+
+→ [Strip Ride](strip-ride.md)
 
 ## Wagering tracking
 

@@ -90,6 +90,10 @@ if [[ -s "$tmp_hits" ]]; then
     if [[ "$line" =~ ^CHANGELOG\.md: ]]; then
       continue
     fi
+    # PR graph JSON stores historical PR titles (not current product claims)
+    if [[ "$line" =~ docs/assets/pr-graph/ ]]; then
+      continue
+    fi
     printf '%s\n' "$line" >>"$filtered"
   done <"$tmp_hits"
 
@@ -124,6 +128,7 @@ declare -A WIKI_TO_DOCS=(
   [Arcade-Alley.md]=docs/arcade.md
   [Racing-and-Equestrian.md]=docs/racing.md
   [Resort-Hotel.md]=docs/hotel.md
+  [Strip-Ride.md]=docs/strip-ride.md
   [Resort-Dining.md]=docs/dining.md
   [Pool-Complex.md]=docs/pool-complex.md
   [MGM-Rewards.md]=docs/mgm-rewards.md

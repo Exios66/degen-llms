@@ -21,6 +21,7 @@
 | `Arcade-Alley.md` | `docs/arcade.md` |
 | `Racing-and-Equestrian.md` | `docs/racing.md` |
 | `Resort-Hotel.md` | `docs/hotel.md` |
+| `Strip-Ride.md` | `docs/strip-ride.md` |
 | `Resort-Dining.md` | `docs/dining.md` |
 | `Pool-Complex.md` | `docs/pool-complex.md` |
 | `MGM-Rewards.md` | `docs/mgm-rewards.md` |

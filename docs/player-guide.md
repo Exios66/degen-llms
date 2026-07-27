@@ -347,11 +347,16 @@ Exit the casino floor to the **hotel lobby** (web: hub menu or RPG HUD link; dee
 1. **MGM Rewards (P)** → Reservation — locate your tower and floor
 2. **Front desk** — confirm at the desk on the days that require it; your key activates the moment the day's requirement is met, from either the phone or the desk; **Resort dining** opens the restaurant overlay
 3. **Hallway mini-game** — three beats of directional choices (wrong turns are comedic; food coma from dining forces one miss)
-4. **Your room** — TV, minibar, phone, decisions, unlockable Vegas vignettes
+4. **Gentleman's Club — The Velvet Ledger** — Gold+, suite key, or club phone line
+5. **Your room** — TV, minibar, phone, decisions, unlockable Vegas vignettes; room phone limo / Rewards Connect Uber unlock **Strip Ride** (web only)
 
 ### Resort dining
 
 From the front desk or **Casino Floor → Resort dining**, open Aureole, Border Grill, or Stripsteak. Order courses with pacing (pace / clean plate / chase shots). Drinks raise encounter odds — strangers, celebrities, satirical escort gags, and staff drop-ins. See [Resort Dining](dining.md).
+
+### Strip Ride (web terminal)
+
+From the room phone (**Call limo / private driver**) or Rewards Phone **Connect → Call Uber / Lyft**, dispatch a chip-fare ride to Luxor, Excalibur, Bellagio, or Circa. Away floors restyle menus per property and add five exclusive slots each. See [Strip Ride](strip-ride.md).
 
 ### In-room amenities
 
@@ -359,8 +364,9 @@ From the front desk or **Casino Floor → Resort dining**, open Aureole, Border 
 |---------|------------|
 | TV | Shark Reef (ch. 47), wave pool cam, ULTRA Arena boxing, House of Blues (Gold+) |
 | Minibar | Sensor-enabled charges; concierge suggests items |
-| Phone | Concierge, bookie, Foundation Room (Noir+ penthouse), Gentleman's Club / Velvet Ledger (Gold+), spa, Delano |
+| Phone | Concierge, bookie, Foundation Room (Noir+ penthouse), Gentleman's Club / Velvet Ledger (Gold+), spa, Delano, **limo / private driver** (Strip Ride) |
 | Gentleman's Club | Hotel lobby / casino amenities — tip storms, stocked bar, encounters, Tip Cascade / Bottle Memory / Felt Flip, ledger eggs |
+| Suite balcony POV | Fullscreen Strip vista smoke-break (suite/penthouse) |
 | Decisions | Balcony, sky bridge to Mandalay Place, suite/penthouse perks, wake-up roulette |
 
 **17 unlockable room events** chain across pool visits, shopping (LUSH bath bomb), tier status, and bad decisions. Locked events show cryptic hints in the event log.

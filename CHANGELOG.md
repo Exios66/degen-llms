@@ -13,7 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Documentation
 
+<<<<<<< HEAD
 - Docs / wiki / Posit parity — Strip Ride guide, destination exclusives, Rewards Connect rideshare, viewport notes
+=======
+>>>>>>> origin/main
 - README play section revised with terminal screenshot and Web Casino Terminal GitHub Pages badge (#150)
 
 ### Notes

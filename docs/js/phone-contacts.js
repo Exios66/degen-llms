@@ -18,6 +18,7 @@ import {
 } from "./phone-dialogue-data.js";
 import { isHeightenedIntoxication, recordConsumption } from "./intoxication-effects.js";
 import { ensureDining } from "./dining.js";
+import { unlockRideshareService } from "./strip-destinations.js";
 
 /** @typedef {{ muted: boolean, ringtoneId: string, smsSound: boolean }} PhoneSettings */
 
@@ -113,6 +114,14 @@ const EXTRA_CONTACTS = [
     resolveName: () => "Alexandra Vale",
     resolveRole: () => "MGM Host Representative",
   },
+  {
+    id: "rideshare_driver",
+    label: "Uber / Lyft — Strip",
+    emoji: "🚗",
+    unlock: () => true,
+    resolveName: () => "Uber / Lyft — Strip",
+    resolveRole: () => "Rideshare · Strip dispatch",
+  },
 ];
 
 const GAME_TO_DEALERS = {
@@ -148,6 +157,7 @@ const STATIC_INTROS = {
   attorney_brief: "Harvey Brief, Esq. You've been added to my billable contacts. Text OBJECTION for legal theater. (Not actual legal advice.)",
   host_representative: "Alexandra Vale — MGM Host Services. Platinum welcome. Text COMPAINT (yes, one P) and I'll escalate with a smile.",
   pete_bookie: "Pete here. Off-the-record line. Text LOCK for my 'lock of the day.' Lock not guaranteed. Neither is tomorrow.",
+  rideshare_driver: "🚗 Uber / Lyft Strip desk. Black car or pink pin — we get you to Luxor, Excalibur, Bellagio, or Circa. Call to unlock dispatch.",
 };
 
 /** Wrong-number Easter egg — dial from contacts search. */
@@ -394,8 +404,39 @@ export function applyPhoneEffect(session, effect, tracker = null) {
     const r = tracker.redeemComp(effect.redeemComp);
     if (r) notes.push(`Comp redeemed: ${effect.redeemComp}`);
   }
+  if (effect.unlockRideshare) {
+    unlockRideshareService(session);
+    notes.push("Uber/Lyft Strip dispatch unlocked");
+  }
+  if (effect.openStripDispatch) {
+    unlockRideshareService(session);
+    const st = session.stripTravel ?? (session.stripTravel = {});
+    st.openDispatchPending = true;
+    notes.push("Strip ride dispatch ready");
+  }
 
   return notes;
+}
+
+/**
+ * Call Uber/Lyft from Connect — unlocks Strip dispatch and starts the rideshare voice tree.
+ * @param {import("./core.js").PlayerSession} session
+ */
+export function startRideshareCall(session) {
+  unlockRideshareService(session);
+  if (!isContactUnlocked(session, "rideshare_driver")) {
+    return { ok: false, message: "Rideshare line busy." };
+  }
+  const thread = ensureThread(session, "rideshare_driver");
+  if (!thread) return { ok: false, message: "Open MGM Rewards to initialize Connect." };
+  thread.callCount += 1;
+  const ctx = buildDialogueContext(session, "rideshare_driver");
+  const node = getCallNode("rideshare_driver", "voice", "hello", ctx);
+  if (!node) return { ok: false, message: "No answer from rideshare." };
+  thread.callState = { treeId: "voice", nodeId: "hello", phase: "connecting" };
+  appendMessage(session, "rideshare_driver", "in", `[Call] ${node.text}`, { read: false });
+  recordEasterEgg(session, "rideshare_connect_dial");
+  return { ok: true, contactId: "rideshare_driver", node, unlocked: true };
 }
 
 /** Send tier rank-up texts from key contacts. */

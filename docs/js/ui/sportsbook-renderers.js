@@ -7,6 +7,7 @@ import {
 } from "../sportsbook.js";
 import { effectiveTableStakes, formatStakeRange } from "../stakes.js";
 import { resolveActivityMin } from "../salon-exclusives.js";
+import { getActivityBranding } from "../strip-destinations.js";
 
 function eventCardLines(el, event, i) {
   const kids = [
@@ -45,12 +46,18 @@ export function buildSportsbookRenderers(ctx) {
   const { el, banner, chipLine, showStatus, menu, pushView, popView, goBack, render, persist, recordActivityVisit, recordActivityResult } = ctx;
   const runtime = ctx.runtime;
 
+  function sportsbookBannerTitle() {
+    if (runtime.sportsbook.salonDesk) return "Salon Sports Desk — Whale Lines";
+    const brand = getActivityBranding(ctx.session, "sportsbook", "Sports Book");
+    return `Sports Book — ${brand.name}`;
+  }
+
   function renderSportsbook() {
     const act = ACTIVITIES.sportsbook;
     const openCount = runtime.sportsbook.getOpenPositionCount();
     if (ctx.session.wallet.balance < act.minBet && openCount === 0) {
       return el("div", { className: "panel" }, [
-        banner("Sports Book"),
+        banner(sportsbookBannerTitle()),
         el("p", { className: "error", textContent: `You need at least ${act.minBet} chips to wager.` }),
         el("div", { className: "action-bar" }, [
           el("button", { className: "btn", textContent: "Back", onclick: () => { popView(); render(); } }),
@@ -63,7 +70,7 @@ export function buildSportsbookRenderers(ctx) {
     if (!runtime.sportsbook.events.length) {
       runtime.sportsbook.refreshBoardAsync(false).then(() => render());
       return el("div", { className: "panel" }, [
-        banner(runtime.sportsbook.salonDesk ? "Salon Sports Desk — Whale Lines" : "Sports Book — Mandalay Sports Book"),
+        banner(sportsbookBannerTitle()),
         chipLine(),
         el("p", { className: "dim", textContent: "Loading scenario board…" }),
         el("div", { className: "action-bar" }, [
@@ -189,7 +196,7 @@ export function buildSportsbookRenderers(ctx) {
       : ["Place prediction contract", "Refresh market prices", "Next prediction slate", "Settle all open positions"];
 
     return el("div", { className: "panel" }, [
-      banner(salonDesk ? "Salon Sports Desk — Whale Lines" : "Sports Book — Mandalay Sports Book"),
+      banner(sportsbookBannerTitle()),
       chipLine(),
       salonDesk
         ? el("p", {

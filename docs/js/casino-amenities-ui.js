@@ -11,8 +11,22 @@ import { fmtChips } from "./core.js";
  */
 export function buildAmenitiesRenderers(ctx) {
   const {
-    session, pushView, goBack, navigateTo, persist, render, el, banner, chipLine, statusBanner, showStatus,
+    pushView,
+    goBack,
+    navigateTo,
+    persist,
+    render,
+    el,
+    banner,
+    chipLine,
+    statusBanner,
+    showStatus,
   } = ctx;
+
+  function session() {
+    return ctx.session;
+  }
+
 
   function menuBtn(label, onclick, isBack = false) {
     return el("li", {}, [
@@ -46,7 +60,7 @@ export function buildAmenitiesRenderers(ctx) {
               showStatus("Bar overlay not ready.", "error");
               return;
             }
-            ctx.barOverlay.setSession(session);
+            ctx.barOverlay.setSession(session());
             ctx.barOverlay.open();
           }),
           menuBtn("<span class=\"num\">3)</span> Resort dining — Aureole, Border Grill, Stripsteak", () => {
@@ -54,7 +68,7 @@ export function buildAmenitiesRenderers(ctx) {
               showStatus("Dining overlay not ready.", "error");
               return;
             }
-            ctx.diningOverlay.setSession(session);
+            ctx.diningOverlay.setSession(session());
             ctx.diningOverlay.open();
           }),
           menuBtn("<span class=\"num\">4)</span> Pool Complex — Mandalay Beach <span class=\"dim\">(graphic overlay)</span>", () => {
@@ -70,7 +84,7 @@ export function buildAmenitiesRenderers(ctx) {
               pushView("pool-complex");
               return;
             }
-            overlay.setSession(session);
+            overlay.setSession(session());
             overlay.open("hub");
           }),
           menuBtn("<span class=\"num\">5)</span> View shopping bag", () => pushView("mall-bag")),
@@ -128,7 +142,7 @@ export function buildAmenitiesRenderers(ctx) {
       el("p", { className: "error", textContent: "Store not found." }),
       el("ul", { className: "menu-list" }, [menuBtn('<span class="num">0)</span> Back', goBack, true)]),
     ]);
-    const amenities = ensureAmenities(session);
+    const amenities = ensureAmenities(session());
     const log = el("div", { className: "log-area" });
 
     return el("div", {}, [
@@ -145,7 +159,7 @@ export function buildAmenitiesRenderers(ctx) {
             return menuBtn(
               `<span class="num">${i + 1})</span> ${item.name} — ${fmtChips(item.price)}${owned ? ' <span class="success">[owned]</span>' : ""}<br><span class="dim" style="padding-left:1.75rem;font-size:0.85rem;">${item.description}</span>`,
               () => {
-                const result = purchaseShopItem(session, item.id);
+                const result = purchaseShopItem(session(), item.id);
                 appendResult(log, result);
                 if (result.ok) {
                   showStatus(result.message);
@@ -163,8 +177,8 @@ export function buildAmenitiesRenderers(ctx) {
   }
 
   function renderMallBag() {
-    const purchased = listPurchasedItems(session);
-    const amenities = ensureAmenities(session);
+    const purchased = listPurchasedItems(session());
+    const amenities = ensureAmenities(session());
     const items = purchased.length
       ? purchased.map(({ item, store }) =>
         el("p", { textContent: `• ${item.name} from ${store.name} — ${fmtChips(item.price)}` }))
@@ -198,7 +212,7 @@ export function buildAmenitiesRenderers(ctx) {
       showStatus("Bar overlay not ready.", "error");
       return;
     }
-    ctx.barOverlay.setSession(session);
+    ctx.barOverlay.setSession(session());
     ctx.barOverlay.open(venueId);
   }
 

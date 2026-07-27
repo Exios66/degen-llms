@@ -5,6 +5,72 @@ All notable changes to **degen-llms** (The Mandalay Bay) are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] - 2026-07-27
+
+### Changed
+
+- **Strip destination menus** — Luxor, Excalibur, Bellagio, and Circa away casinos use distinct accent colors, typography, and table skins instead of Mandalay Bay cyan chrome (#148)
+
+### Documentation
+
+- Docs / wiki / Posit parity — Strip Ride guide, destination exclusives, Rewards Connect rideshare, viewport notes
+- README play section revised with terminal screenshot and Web Casino Terminal GitHub Pages badge (#150)
+
+### Notes
+
+- Intentionally excluded: prior changelog PR (#147) and strip-limo render smoke-test-only PR (#149)
+
+## [1.2.0] - 2026-07-27
+
+### Added
+
+- **Gentleman's Club (Velvet Ledger)** — hotel amenity with bottle-service Ledger Bar and tier/suite/phone access paths (#125, #146)
+- **Resort dining overlay** — first-person POV with food/drink sprites, capacity minigame, and per-venue scenery (Aureole wine tower, Border Grill poolside, Stripsteak booth) (#117, #123, #128)
+- **First-person bar overlays** for eight lounge environments (Eyecandy, Big Chill, Rhythm & Riffs, Betty's, Skyfall, Ledger Bar, Beach Club, Foundation Room) (#133)
+- **Mandalay Beach Pool Complex** graphic fullscreen overlay wired into web terminal hub, amenities, and hotel lobby (#119, #132)
+- **Suite balcony POV** Strip smoke-break minigame from any guest room balcony once checked in (#120, #135)
+- **Strip Ride / limo travel** to themed away casinos (Luxor, Excalibur, Bellagio, Circa) with exclusive slots and destination branding; Uber/Lyft unlock via Rewards Phone Connect (#141, #142)
+- **Rewards Phone audio** — Web Audio SFX, customizable ringtones, and multi-turn call dialogues for all 18 contacts (#140)
+- **Trading Floor symbol DB** with category-filtered tape and 1D/1W sparkline charts (#121)
+- **Offshore spend decision tree** — life/business expense branches and in-world resort privilege purchases (#126)
+- **Interactive PR development graph** on the Quarto / Posit documentation site (#136)
+- **Shoppes expansion** — 16 stores / 81 SKUs including Rolex Boutique, Tiffany & Co., Nike, and House of Blues Store (#146)
+
+### Changed
+
+- **Lottery counter** — premium stakes, Powerball selectors, and draw overlays (#113)
+- **Arcade Alley** — 2× pixel sprites, FX polish, and CRT readability scaling (#112, #115)
+- **Desktop Rewards Phone** — enlarged shell/LCD and wired comp/Connect effects to wallet, dining, and hotel state (#129)
+- **Room folio** — minibar and priced room decisions record line items with running total preview (#135)
+- **Noir/Chairman tier** auto-applies suite/penthouse comp upgrades without a full Carmen reset (#135)
+- **Intoxication max visuals** settle after three minutes (#124)
+- **Responsive viewport** — terminal, overlays, and menus size against `100dvh` and safe-area tokens (#145)
+- Posit Connect publish loads credentials from VM-local dotenv when dashboard secrets are absent (#139)
+
+### Fixed
+
+- **Strip Drive** road projection into a scanline boulevard (#116)
+- **Strip Ride / private driver** blank-screen crash from missing `menuBtn` helper (#143)
+- **Casino boot** ES module cache-skew that duplicated `venues.js` instances (#131, #138)
+- **Slots spin glitches** — in-place reel updates instead of full `#app` re-render every 90ms (#135)
+- **Tier gates** — sync effective lifetime wagered for Gentleman's Club, Foundation Room, and express checkout (#135, #146)
+- **Velvet Ledger access** — amenity UI reads live session context instead of stale boot wallet (#146)
+- **Pool overlay** menu clipping and text-menu fallback under the graphic overlay (#134)
+- **Hotel hallway access**, Carmen front desk replies, and High Limit Salon exclusives (#118, #122)
+- **gh-pages live verify** false failure on moved horse canvas helper (#114)
+- **Phone comp redeem** triggers immediate persist/render so chips and credits appear in-game (#135)
+
+### Documentation
+
+- Docs parity pass — eight-floor catalog, Arcade Alley wiki, Posit Connect Cloud Agent secret setup (#127, #130)
+- README deployment badges and access links updated
+- PR graph page wired into Quarto navbar and Overview (#136, #137)
+
+### Notes
+
+- Strip Ride is web-terminal only; the pixel RPG hub is unchanged (#141)
+- Intentionally excluded: gh-pages sync log commits and routine Quarto freeze refreshes
+
 ## [1.1.0] - 2026-07-26
 
 ### Added

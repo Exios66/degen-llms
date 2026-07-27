@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Smoke tests for Strip limo / destination travel (web terminal).
+ * Smoke tests for Strip limo / rideshare destination travel (web terminal).
  */
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -23,15 +23,24 @@ function check(cond, msg) {
 const { PlayerSession } = await import(js("core.js"));
 const { makePhoneCall, PHONE_CALLS } = await import(js("room-amenities.js"));
 const { ensureHotel } = await import(js("hotel.js"));
+const { RewardsTracker } = await import(js("rewards.js"));
 const { MACHINES } = await import(js("slots.js"));
 const { SLOT_CATEGORIES, getMachineUI } = await import(js("slots-ui.js"));
+const { CALL_TREES } = await import(js("phone-call-trees.js"));
+const {
+  startRideshareCall,
+  listUnlockedContacts,
+  getContactDef,
+} = await import(js("phone-contacts.js"));
 const {
   STRIP_DESTINATIONS,
   ensureStripTravel,
   unlockLimoService,
+  unlockRideshareService,
   travelByLimo,
   filterMachinesForDestination,
   getCurrentDestination,
+  getActivityBranding,
   isAwayFromHome,
   isLimoUnlocked,
   HOME_DESTINATION_ID,
@@ -41,9 +50,13 @@ const css = readFileSync(join(root, "docs", "css", "strip-destinations.css"), "u
 check(css.includes("dest-luxor"), "luxor theme CSS present");
 check(css.includes("table-theme-bellagio"), "bellagio table theme present");
 check(css.includes("slot-theme-fremont"), "circa fremont slot theme present");
+check(css.includes("slot-theme-scarab"), "luxor scarab slot theme present");
+check(css.includes("slot-theme-grail"), "excalibur grail slot theme present");
+check(css.includes("slot-theme-downtown-drop"), "circa downtown-drop theme present");
 check(css.includes("strip-limo-panel"), "limo panel CSS present");
 
 check(Boolean(PHONE_CALLS.limo_service), "limo_service phone call catalogued");
+check(Boolean(CALL_TREES.rideshare_driver?.voice?.hello), "rideshare call tree present");
 
 {
   // Regression: strip-limo-ui must not pull menuBtn from ctx (web terminal never provides it).
@@ -129,6 +142,26 @@ check(Boolean(PHONE_CALLS.limo_service), "limo_service phone call catalogued");
 }
 
 {
+  const session = new PlayerSession({ playerName: "Rideshare Tester", chips: 5000 });
+  session.rpg = { flags: {} };
+  new RewardsTracker(session).ensureRewards();
+  ensureStripTravel(session);
+  check(!isLimoUnlocked(session), "dispatch locked before rideshare");
+  const contact = getContactDef(session, "rideshare_driver");
+  check(Boolean(contact), "rideshare_driver contact exists");
+  const unlocked = listUnlockedContacts(session).some((c) => c.id === "rideshare_driver");
+  check(unlocked, "rideshare contact always unlockable");
+  const dial = startRideshareCall(session);
+  check(dial.ok && dial.contactId === "rideshare_driver", "startRideshareCall ok");
+  check(isLimoUnlocked(session), "dispatch unlocked via rideshare dial");
+  check(session.stripTravel.rideshareUnlocked, "rideshareUnlocked flag set");
+  check(!session.stripTravel.limoUnlocked, "limoUnlocked stays false on rideshare-only path");
+  const trip = travelByLimo(session, "circa", { mode: "rideshare" });
+  check(trip.ok && trip.mode === "rideshare", "rideshare travel to Circa");
+  check(session.stripTravel.lastRideMode === "rideshare", "lastRideMode rideshare");
+}
+
+{
   const session = new PlayerSession({ playerName: "Traveler", chips: 5000 });
   session.rpg = { flags: {} };
   ensureHotel(session).reachedRoom = true;
@@ -140,12 +173,18 @@ check(Boolean(PHONE_CALLS.limo_service), "limo_service phone call catalogued");
   check(getCurrentDestination(session).id === "luxor", "current dest Luxor");
   check(isAwayFromHome(session), "away from home");
   const luxorSlots = filterMachinesForDestination(session, MACHINES).filter((m) => m.destinationId === "luxor");
-  check(luxorSlots.length === 2, "two Luxor exclusive slots visible");
+  check(luxorSlots.length === 5, "five Luxor exclusive slots visible");
   const homeOnlyHidden = filterMachinesForDestination(session, MACHINES).some((m) => m.destinationId === "bellagio");
   check(!homeOnlyHidden, "Bellagio exclusives hidden at Luxor");
+  const fortuneVisible = filterMachinesForDestination(session, MACHINES).some((m) => m.id === "fortune");
+  check(!fortuneVisible, "homeOnly fortune hidden away from Mandalay");
+  const brand = getActivityBranding(session, "blackjack", "Blackjack");
+  check(brand.name === "Sphinx Blackjack", "Luxor blackjack branding");
   const home = travelByLimo(session, HOME_DESTINATION_ID);
   check(home.ok && home.fare === 0, "return home complimentary");
   check(!isAwayFromHome(session), "back home");
+  const fortuneHome = filterMachinesForDestination(session, MACHINES).some((m) => m.id === "fortune");
+  check(fortuneHome, "homeOnly fortune visible at Mandalay");
 }
 
 {
@@ -156,15 +195,143 @@ check(Boolean(PHONE_CALLS.limo_service), "limo_service phone call catalogued");
 }
 
 {
-  const ids = ["luxor_obelisk", "sphinx_spin", "castle_jackpot", "joust_reels",
-    "fountain_fortune", "conservatory_spin", "neon_stadium", "fremont_flash"];
-  for (const id of ids) {
-    const m = MACHINES.find((x) => x.id === id);
-    check(Boolean(m), `machine ${id} exists`);
-    check(getMachineUI(m).category === "Strip Exclusive", `${id} Strip Exclusive category`);
+  const awayIds = ["luxor", "excalibur", "bellagio", "circa"];
+  const progressives = {
+    luxor: "luxor_ra",
+    excalibur: "excalibur_grail",
+    bellagio: "bellagio_fontana",
+    circa: "circa_downtown",
+  };
+  for (const destId of awayIds) {
+    const dest = STRIP_DESTINATIONS[destId];
+    check(dest.exclusiveSlotIds.length === 5, `${destId} has 5 exclusives`);
+    check(Boolean(dest.activityBranding?.slots?.name), `${destId} slots activity branding`);
+    for (const id of dest.exclusiveSlotIds) {
+      const m = MACHINES.find((x) => x.id === id);
+      check(Boolean(m), `machine ${id} exists`);
+      check(m.destinationOnly === true, `${id} destinationOnly`);
+      check(m.destinationId === destId, `${id} destinationId ${destId}`);
+      check(getMachineUI(m).category === "Strip Exclusive", `${id} Strip Exclusive category`);
+    }
+    const progressive = MACHINES.find(
+      (m) => m.destinationId === destId && m.progressive && m.progressivePoolId === progressives[destId],
+    );
+    check(Boolean(progressive), `${destId} progressive pool ${progressives[destId]}`);
   }
   check(SLOT_CATEGORIES.some((c) => c.id === "Strip Exclusive"), "Strip Exclusive category registered");
   check(Object.keys(STRIP_DESTINATIONS).length === 5, "5 destinations incl home");
+  const fortune = MACHINES.find((m) => m.id === "fortune");
+  check(fortune?.homeOnly === true, "fortune marked homeOnly");
+}
+
+{
+  const session = new PlayerSession({ chips: 5000 });
+  unlockRideshareService(session);
+  check(isLimoUnlocked(session), "unlockRideshareService enables dispatch");
+}
+
+{
+  // Regression: strip-limo-ui must not pull menuBtn from ctx (web terminal never provides it).
+  const source = readFileSync(js("strip-limo-ui.js"), "utf8");
+  check(
+    source.includes("function menuBtn(") && !/const\s*\{[^}]*menuBtn[^}]*\}\s*=\s*ctx/.test(source),
+    "strip-limo-ui defines local menuBtn (not destructured from ctx)",
+  );
+  const appJs = readFileSync(js("app.js"), "utf8");
+  check(appJs.includes("...stripLimoRenderers"), "app.js mounts stripLimoRenderers into RENDERERS");
+
+  // Minimal DOM so createShell/el can build the dispatch view in Node.
+  if (typeof globalThis.document === "undefined") {
+    globalThis.document = {
+      documentElement: { style: { setProperty() {} }, dataset: {}, classList: { remove() {}, add() {}, [Symbol.iterator]: function* () {} } },
+      body: { classList: { toggle() {} } },
+      createElement: (tag) => {
+        const kids = [];
+        const attrs = {};
+        return {
+          tagName: String(tag).toUpperCase(),
+          className: "",
+          children: kids,
+          style: {},
+          dataset: {},
+          setAttribute(k, v) { attrs[k] = v; },
+          appendChild(c) { kids.push(c); return c; },
+          replaceChildren(...nodes) { kids.length = 0; kids.push(...nodes); },
+          addEventListener() {},
+          textContent: "",
+          innerHTML: "",
+          get disabled() { return Boolean(attrs.disabled); },
+          set disabled(v) { attrs.disabled = v; },
+        };
+      },
+      createTextNode: (t) => ({ textContent: String(t) }),
+    };
+    globalThis.window = {
+      addEventListener() {},
+      matchMedia: () => ({ matches: true, addEventListener() {}, removeEventListener() {} }),
+    };
+  }
+
+  const { buildStripLimoRenderers } = await import(js("strip-limo-ui.js"));
+  const { createShell, createViewStack } = await import(js("ui/shell.js"));
+  const session = new PlayerSession({ playerName: "Limo UI", chips: 5000 });
+  session.rpg = { flags: {} };
+  ensureHotel(session).reachedRoom = true;
+  unlockLimoService(session);
+  const views = createViewStack({ persist: () => {}, render: () => {} });
+  const ctx = {
+    get session() { return session; },
+    persist: () => {},
+    render: () => {},
+    pushView: views.pushView,
+    navigateTo: views.navigateTo,
+    goBack: views.goBack,
+    viewStack: views.stack,
+  };
+  Object.assign(ctx, createShell(ctx));
+  check(typeof ctx.menuBtn !== "function", "web-terminal-like ctx has no menuBtn");
+  const renderers = buildStripLimoRenderers(ctx);
+  check(typeof renderers["strip-limo"] === "function", "strip-limo renderer registered");
+  let rendered = null;
+  try {
+    rendered = renderers["strip-limo"]();
+  } catch (err) {
+    console.error(err);
+  }
+  check(Boolean(rendered), "strip-limo renders without throwing when menuBtn missing from ctx");
+}
+
+{
+  const menuTokens = ["--cyan", "--cyan-dim", "--magenta", "--bg-panel", "--bg-input", "--border"];
+  for (const destId of ["mandalay_bay", "luxor", "excalibur", "bellagio", "circa"]) {
+    const dest = STRIP_DESTINATIONS[destId];
+    for (const key of menuTokens) {
+      check(Boolean(dest.tokens[key]), `${destId} token ${key}`);
+    }
+  }
+  check(STRIP_DESTINATIONS.luxor.tokens["--cyan"] === "#e6b422", "Luxor menu accent is desert gold");
+  check(STRIP_DESTINATIONS.excalibur.tokens["--cyan"] === "#c23a3a", "Excalibur menu accent is crimson");
+  check(STRIP_DESTINATIONS.bellagio.tokens["--cyan"] === "#7eb8c8", "Bellagio menu accent is fountain teal");
+  check(STRIP_DESTINATIONS.circa.tokens["--cyan"] === "#00e5ff", "Circa menu accent is neon cyan");
+
+  check(css.includes("html.dest-luxor"), "luxor dest class CSS present");
+  check(css.includes("html.dest-excalibur .banner h1") || css.includes("html.dest-excalibur .banner"), "excalibur banner display style");
+  check(css.includes("Cormorant Garamond"), "Bellagio/Excalibur serif display font referenced");
+  check(css.includes("table-theme-luxor .machine-controls"), "luxor table theme deepens machine controls");
+  check(css.includes("table-theme-circa .machine-screen"), "circa table theme deepens machine screen");
+  check(css.includes("color-mix(in srgb, var(--cyan)"), "dest CSS uses cyan color-mix for accents");
+
+  const casinoCss = readFileSync(join(root, "docs", "css", "casino.css"), "utf8");
+  check(casinoCss.includes("color-mix(in srgb, var(--cyan)"), "casino.css menu chrome uses token color-mix");
+  check(!casinoCss.includes("rgba(57, 197, 207"), "casino.css has no hardcoded Mandalay cyan RGBA");
+
+  const session = new PlayerSession({ chips: 5000 });
+  unlockLimoService(session);
+  travelByLimo(session, "luxor");
+  check(getActivityBranding(session, "sportsbook").name === "Desert Book", "Luxor sportsbook branding");
+  check(getActivityBranding(session, "slots").name === "Pyramid Slots", "Luxor slots branding");
+  travelByLimo(session, "circa");
+  check(getActivityBranding(session, "sportsbook").name === "Stadium Sportsbook", "Circa sportsbook branding");
 }
 
 if (failed) {

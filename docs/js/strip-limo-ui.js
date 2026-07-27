@@ -57,6 +57,14 @@ export function buildStripLimoRenderers(ctx) {
     const current = getCurrentDestination(s);
     const destinations = listLimoDestinations(s);
 
+    const st = ensureStripTravel(s);
+    const rideFlavor = st.rideshareUnlocked && !st.limoUnlocked
+      ? "rideshare"
+      : st.limoUnlocked && !st.rideshareUnlocked
+        ? "limo"
+        : (st.lastRideMode === "rideshare" ? "rideshare" : "limo");
+    const modeLabel = rideFlavor === "rideshare" ? "Uber / Lyft" : "Black car";
+
     const cards = unlocked
       ? destinations.map((dest) => {
           const fareLabel = dest.fare > 0 ? `${dest.fare} chips` : "Complimentary";
@@ -64,7 +72,7 @@ export function buildStripLimoRenderers(ctx) {
             type: "button",
             className: `strip-dest-card strip-dest-card--${dest.id}`,
             onclick: () => {
-              const res = travelByLimo(s, dest.id);
+              const res = travelByLimo(s, dest.id, { mode: rideFlavor });
               if (!res.ok) {
                 showStatus(res.message, "error");
                 render();
@@ -77,13 +85,16 @@ export function buildStripLimoRenderers(ctx) {
           }, [
             el("span", { className: "strip-dest-name", textContent: dest.limoLabel }),
             el("span", { className: "strip-dest-tag", textContent: dest.tagline }),
-            el("span", { className: "strip-dest-fare", textContent: `Fare: ${fareLabel} · ${dest.exclusiveSlotIds.length} exclusive slot(s)` }),
+            el("span", {
+              className: "strip-dest-fare",
+              textContent: `${modeLabel} · Fare: ${fareLabel} · ${dest.exclusiveSlotIds.length} exclusive slot(s)`,
+            }),
           ]);
         })
       : [
           el("p", {
             className: "dim",
-            textContent: "Call limo / private driver from your hotel room phone to unlock Strip dispatch.",
+            textContent: "Unlock via room-phone limo / private driver, or Call Uber / Lyft from MGM Rewards Connect.",
           }),
           menuBtn("Go to room phone", () => {
             pushView("hotel-room-phone");
@@ -92,18 +103,18 @@ export function buildStripLimoRenderers(ctx) {
 
     return el("div", {}, [
       statusBanner(),
-      banner("Strip Limo — Private Driver"),
+      banner("Strip Ride — Limo / Uber / Lyft"),
       chipLine(),
       el("div", { className: "panel hotel-panel strip-limo-panel" }, [
         el("p", {
           className: "subtitle",
           textContent: unlocked
-            ? `Black car ready. You are at ${current.shortName}.`
-            : "Chauffeur desk — awaiting room-phone authorization.",
+            ? `${modeLabel} ready. You are at ${current.shortName}.`
+            : "Dispatch locked — authorize via room phone or Rewards Connect rideshare.",
         }),
         el("p", {
           className: "dim",
-          textContent: "Ride the Strip to Luxor, Excalibur, Bellagio, or Circa. Each property has its own slots, table lighting, and floor vibe.",
+          textContent: "Web terminal only — black-car limo or Uber/Lyft flavor, same chip fares. Luxor, Excalibur, Bellagio, and Circa each run five exclusive slots plus branded tables.",
         }),
         isAwayFromHome(s)
           ? el("span", { className: "strip-away-badge", textContent: `Away · ${current.shortName}` })

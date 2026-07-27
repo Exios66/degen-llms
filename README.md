@@ -2,11 +2,19 @@
 
 **The Mandalay Bay** — a satirical choose-your-adventure resort simulator with a unified chip economy. Play blackjack, slots, and the sports book on the casino floor; check into the hotel; lounge at the 11-acre pool complex; climb MGM Rewards tiers; and explore the property as a pixel RPG. Available as a **Python CLI**, a **browser terminal** (GitHub Pages), and a **Phaser overworld**.
 
-## Play now
+## Play Now!
 
 [![pages-build-deployment](https://github.com/Exios66/degen-llms/actions/workflows/pages/pages-build-deployment/badge.svg?branch=gh-pages)](https://github.com/Exios66/degen-llms/actions/workflows/pages/pages-build-deployment)
 
+[![Web Casino Terminal](https://img.shields.io/badge/Web_Casino_Terminal-GitHub_Pages-2088FF?style=flat&logo=github&logoColor=white)](https://exios66.github.io/degen-llms/)
+
 [![Deployed on Posit Cloud](https://img.shields.io/badge/Deployed_on-Posit_Cloud-4d8DC9?style=flat&logo=rstudio)](https://019f9a67-d5c9-226b-b6b1-a86d1655be69.share.connect.posit.cloud/)
+
+---
+
+<img width="1408" height="768" alt="Gemini_Generated_Image_sphl86sphl86sphl" src="https://github.com/user-attachments/assets/37c7d433-f7f3-4553-9919-31253010dda3" />
+
+---
 
 | Surface | URL / command |
 |---------|----------------|
@@ -73,9 +81,10 @@ Exit the casino floor to the **Mandalay Bay Hotel Experience**:
 - **Hallway mini-game** — three beats of directional choices to reach your door
 - **In-room amenities** — TV (Shark Reef ch. 47, wave pool cam), sensor-enabled minibar, unlimited foreign calls, balcony decisions / suite balcony POV smoke-break, 17 unlockable Vegas vignettes
 - **Gentleman's Club — The Velvet Ledger** — Gold+ / suite key / club phone line; tip storms, stocked bar, minigames, ledger eggs
+- **Strip Ride (web)** — room-phone limo or Rewards Connect Uber / Lyft to Luxor, Excalibur, Bellagio, Circa with exclusive slots and per-property menu themes
 - **Guest Directory** — leather-bound lobby guest book with persistent signatures
 - **Real-time day/night cycle** — 2 hours real time = 1 in-game day; daily room/resort/parking charges; rotating check-in requirements (phone, desk, both, or whale net-positive)
-- **MGM Rewards phone** — press **P** in the web app for tier status, comps, reservation locate, and textable staff contacts
+- **MGM Rewards phone** — press **P** for tier status, comps, reservation locate, audio call trees, and Connect rideshare
 
 Room types: Deluxe King → Panorama Suite → Chairman Penthouse. MGM Rewards tier comps can cover upgrades and room nights.
 
@@ -164,6 +173,12 @@ degen-llms/
 
 Python is the authoritative game logic; the web app mirrors it in vanilla ES modules. The RPG delegates casino/hotel mechanics to the shared `docs/js/` engine. The Quarto site (`index.qmd`, guides) publishes separately to Posit Connect Cloud.
 
+---
+
+<img width="1376" height="768" alt="Gemini_Generated_Image_vk56fgvk56fgvk56" src="https://github.com/user-attachments/assets/59019177-8bef-48bd-a237-5d0f7808ef33" />
+
+---
+
 ## Documentation
 
 Full docs in [`docs/`](docs/README.md) and on the **[GitHub Wiki](https://github.com/Exios66/degen-llms/wiki)** (source in [`wiki/`](wiki/); publish with `/sync-github-wiki` or `bash scripts/sync-github-wiki.sh`):
@@ -184,7 +199,7 @@ Full docs in [`docs/`](docs/README.md) and on the **[GitHub Wiki](https://github
 | [Trading Floor](docs/trading-floor.md) | Futures & options (NYSE, commodities, crypto) |
 | [Arcade Alley](docs/arcade.md) | CRT cabinets — Strip Cross, Invaders, Breakout, rhythm |
 | [Racing](docs/racing.md) | Thoroughbred + equestrian |
-| [Hotel](docs/hotel.md) / [Pool](docs/pool-complex.md) / [Rewards](docs/mgm-rewards.md) | Resort off the floor |
+| [Hotel](docs/hotel.md) / [Strip Ride](docs/strip-ride.md) / [Pool](docs/pool-complex.md) / [Rewards](docs/mgm-rewards.md) | Resort off the floor |
 | [Architecture](docs/architecture.md) | Packages, data flow, activity system |
 | [Adding Activities](docs/adding-activities.md) | Plug in new games |
 | [Testing](docs/testing.md) | Running and writing tests |

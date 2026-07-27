@@ -19,8 +19,8 @@ import { RewardsPhone } from "./RewardsPhone.js";
 import { buildHotelRenderers } from "./hotel-ui.js";
 import { buildStripLimoRenderers } from "./strip-limo-ui.js";
 import {
-  applyDestinationTheme, casinoDisplayName, ensureStripTravel, getCurrentDestination,
-  isAwayFromHome, isLimoUnlocked,
+  applyDestinationTheme, casinoDisplayName, ensureStripTravel, getActivityBranding,
+  getCurrentDestination, isAwayFromHome, isLimoUnlocked,
 } from "./strip-destinations.js";
 import { buildPoolRenderers } from "./pool-complex-ui.js";
 import { buildAmenitiesRenderers } from "./casino-amenities-ui.js";
@@ -166,6 +166,10 @@ function mountRewardsPhone() {
         persist();
         render();
       }
+    },
+    onOpenStripTravel: () => {
+      pushView("strip-limo");
+      render();
     },
   });
   rewardsPhone.sync();
@@ -621,7 +625,7 @@ function renderHub() {
     "Exit to Hotel",
     "Pool Complex — Mandalay Beach",
     "Casino Amenities",
-    ...(showLimo ? ["Strip Limo — Private Driver"] : []),
+    ...(showLimo ? ["Strip Ride — Limo / Uber / Lyft"] : []),
     "Explore Resort (RPG)",
     "Leave Casino",
   ];
@@ -645,9 +649,10 @@ function renderHub() {
       el("p", { className: "subtitle", textContent: away ? `On the floor at ${dest.shortName}:` : "On the floor today:" }),
       ...FLOOR_ORDER.map((floor) => {
         const acts = Object.values(ACTIVITIES).filter((a) => a.floor === floor);
+        const names = acts.map((a) => getActivityBranding(session, a.id, a.name).name).join(", ");
         return el("div", {
           className: "hub-feature",
-          innerHTML: `<strong>${floor}</strong> — ${acts.map((a) => a.name).join(", ")}`,
+          innerHTML: `<strong>${floor}</strong> — ${names}`,
         });
       }),
       away ? el("p", { className: "dim", textContent: dest.floorBlurb }) : null,
@@ -731,16 +736,21 @@ function renderHub() {
 
 function renderFloor({ floor }) {
   const activities = Object.values(ACTIVITIES).filter((a) => a.floor === floor);
-  const items = activities.map((a, i) => el("li", {}, [
-    el("button", {
-      className: "menu-btn",
-      onclick: () => handleChoice(i + 1),
-      innerHTML: [
-        `<span class="num">${i + 1})</span> ${a.name} — min ${a.minBet} chips`,
-        a.description ? `<br><span class="dim" style="padding-left:1.75rem;font-size:0.85rem;">${a.description}</span>` : "",
-      ].join(""),
-    }),
-  ]));
+  const dest = getCurrentDestination(session);
+  const items = activities.map((a, i) => {
+    const brand = getActivityBranding(session, a.id, a.name);
+    const blurb = isAwayFromHome(session) ? brand.blurb : (a.description || "");
+    return el("li", {}, [
+      el("button", {
+        className: "menu-btn",
+        onclick: () => handleChoice(i + 1),
+        innerHTML: [
+          `<span class="num">${i + 1})</span> ${brand.name} — min ${a.minBet} chips`,
+          blurb ? `<br><span class="dim" style="padding-left:1.75rem;font-size:0.85rem;">${blurb}</span>` : "",
+        ].join(""),
+      }),
+    ]);
+  });
   items.push(el("li", {}, [
     el("button", {
       className: "menu-btn back",
@@ -750,19 +760,12 @@ function renderFloor({ floor }) {
   ]));
 
   return el("div", {}, [
-    banner(`${floor}`),
+    banner(isAwayFromHome(session) ? `${dest.shortName} · ${floor}` : `${floor}`),
     chipLine(),
     el("div", { className: "panel" }, [
       el("p", { className: "subtitle", textContent: `${floor}:` }),
       isAwayFromHome(session)
-        ? el("p", { className: "dim", textContent: getCurrentDestination(session).gameFlavor[
-            activities[0]?.id === "slots" ? "slots"
-              : activities[0]?.id === "blackjack" ? "blackjack"
-                : activities[0]?.id === "holdem" ? "holdem"
-                  : activities[0]?.id === "roulette" ? "roulette"
-                    : activities[0]?.id === "craps" ? "craps"
-                      : "slots"
-          ] ?? getCurrentDestination(session).floorBlurb })
+        ? el("p", { className: "dim", textContent: dest.floorBlurb })
         : null,
       el("ul", { className: "menu-list" }, items),
     ]),
@@ -791,9 +794,10 @@ function renderFloor({ floor }) {
 }
 
 function renderLeave() {
+  const property = casinoDisplayName(session);
   return el("div", { className: "panel" }, [
     banner("Leave Casino"),
-    el("p", { textContent: "Are you sure you want to leave The Mandalay Bay?" }),
+    el("p", { textContent: `Are you sure you want to leave ${property}?` }),
     chipLine(),
     el("div", { className: "action-bar" }, [
       el("button", {
@@ -801,7 +805,7 @@ function renderLeave() {
         textContent: "Leave",
         onclick: () => {
           persist();
-          showStatus(`Thanks for visiting ${CASINO_NAME}. Final balance: ${fmtChips(session.wallet.balance)}`);
+          showStatus(`Thanks for visiting ${property}. Final balance: ${fmtChips(session.wallet.balance)}`);
           returnToSavePicker();
         },
       }),
@@ -815,12 +819,13 @@ function renderLeave() {
 
 function renderNotFound({ requestedView } = {}) {
   const label = requestedView ? `"${requestedView}"` : "this screen";
+  const property = casinoDisplayName(session);
   return el("div", { className: "error-screen panel" }, [
-    banner(CASINO_NAME),
+    banner(property),
     el("pre", {
       className: "error-ascii",
       textContent: `╔══════════════════════════════════════╗
-║         THE MANDALAY BAY             ║
+║      ${property.toUpperCase().padStart(18).slice(0, 18).padEnd(18)}      ║
 ║      ░░░  WRONG FLOOR  ░░░           ║
 ╚══════════════════════════════════════╝`,
     }),
@@ -828,7 +833,7 @@ function renderNotFound({ requestedView } = {}) {
     el("p", { className: "error-slots", textContent: "🎰 7️⃣ ❓" }),
     el("p", {
       className: "error-message",
-      innerHTML: `This table isn't on the floor.<br>Screen ${label} is not available at The Mandalay Bay.`,
+      innerHTML: `This table isn't on the floor.<br>Screen ${label} is not available at ${property}.`,
     }),
     el("div", { className: "error-actions" }, [
       el("button", {

@@ -20,6 +20,7 @@ import {
 } from "../lottery.js";
 import { applyTierSpeedCss, getActivityTiming } from "../rewards-perks.js";
 import { getTier, getTierPayoutBoost } from "../stakes.js";
+import { getActivityBranding } from "../strip-destinations.js";
 
 export function buildLotteryRenderers(ctx) {
   const {
@@ -555,7 +556,7 @@ export function buildLotteryRenderers(ctx) {
 
     const boost = getTierPayoutBoost(tier?.id);
     return el("div", { className: "panel lottery-panel" }, [
-      banner("Lottery Counter — Mandalay Lottery"),
+      banner(`Lottery Counter — ${getActivityBranding(ctx.session, "lottery", "Lottery").name}`),
       lotteryCabinet({
         celebrate: L.winTier && L.lastResult?.win > 0 ? L.winTier : null,
         screenChildren: [

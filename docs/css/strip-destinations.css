@@ -5,11 +5,30 @@
 
 /* ── Destination shell tokens (also set inline by applyDestinationTheme) ── */
 
+html.dest-mandalay,
+html[data-destination="mandalay_bay"] {
+  --bg: #0b1210;
+  --felt: #0f3d2e;
+  --gold: #c9a227;
+  --cyan: #39c5cf;
+  --cyan-dim: #2a9299;
+  --magenta: #c678dd;
+  --bg-panel: #111820;
+  --bg-input: #0d1219;
+  --border: #1f2833;
+}
+
 html.dest-luxor,
 html[data-destination="luxor"] {
   --bg: #0a0806;
   --felt: #1a1208;
   --gold: #e6b422;
+  --cyan: #e6b422;
+  --cyan-dim: #b8921a;
+  --magenta: #d4a017;
+  --bg-panel: #14100a;
+  --bg-input: #0e0b07;
+  --border: #3a2a12;
 }
 
 html.dest-excalibur,
@@ -17,6 +36,12 @@ html[data-destination="excalibur"] {
   --bg: #12080c;
   --felt: #3a0f18;
   --gold: #d4af37;
+  --cyan: #c23a3a;
+  --cyan-dim: #8f2a2a;
+  --magenta: #d4af37;
+  --bg-panel: #1a0c12;
+  --bg-input: #12080c;
+  --border: #4a2030;
 }
 
 html.dest-bellagio,
@@ -24,6 +49,12 @@ html[data-destination="bellagio"] {
   --bg: #0c1018;
   --felt: #0e2a24;
   --gold: #b8a46a;
+  --cyan: #7eb8c8;
+  --cyan-dim: #5a8fa0;
+  --magenta: #c4a882;
+  --bg-panel: #121a22;
+  --bg-input: #0e141c;
+  --border: #2a3a44;
 }
 
 html.dest-circa,
@@ -31,13 +62,170 @@ html[data-destination="circa"] {
   --bg: #08081a;
   --felt: #0d1a3a;
   --gold: #ff2bd6;
+  --cyan: #00e5ff;
+  --cyan-dim: #00a8bc;
+  --magenta: #ff2bd6;
+  --bg-panel: #0e0e28;
+  --bg-input: #0a0a1e;
+  --border: #2a2a55;
 }
 
 body.strip-away .banner h1 {
   letter-spacing: 0.04em;
 }
 
+/* ── Per-destination menu / display chrome ── */
+
+html.dest-luxor body,
+html[data-destination="luxor"] body {
+  background:
+    radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--cyan) 14%, transparent) 0%, transparent 55%),
+    linear-gradient(180deg, #120e08 0%, var(--bg) 40%),
+    var(--bg);
+}
+
+html.dest-luxor .banner,
+html[data-destination="luxor"] .banner {
+  border-image: linear-gradient(90deg, transparent, var(--gold), transparent) 1;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--gold) 8%, transparent), transparent);
+}
+
+html.dest-luxor .banner h1,
+html.dest-luxor .banner h2,
+html[data-destination="luxor"] .banner h1,
+html[data-destination="luxor"] .banner h2 {
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-shadow: 0 0 18px color-mix(in srgb, var(--gold) 35%, transparent);
+}
+
+html.dest-luxor .hub-feature,
+html[data-destination="luxor"] .hub-feature {
+  border-left-width: 4px;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--gold) 12%, transparent), transparent 70%),
+    color-mix(in srgb, var(--cyan) 6%, transparent);
+}
+
+html.dest-luxor .panel,
+html[data-destination="luxor"] .panel {
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--gold) 18%, transparent);
+}
+
+html.dest-excalibur body,
+html[data-destination="excalibur"] body {
+  background:
+    radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--cyan) 16%, transparent) 0%, transparent 55%),
+    linear-gradient(180deg, #1a0a10 0%, var(--bg) 45%),
+    var(--bg);
+}
+
+html.dest-excalibur .banner h1,
+html.dest-excalibur .banner h2,
+html[data-destination="excalibur"] .banner h1,
+html[data-destination="excalibur"] .banner h2 {
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.45);
+}
+
+html.dest-excalibur .hub-feature,
+html[data-destination="excalibur"] .hub-feature {
+  border-left-color: var(--gold);
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--cyan) 14%, transparent), transparent 65%),
+    color-mix(in srgb, var(--cyan) 5%, transparent);
+}
+
+html.dest-excalibur .menu-btn .num,
+html[data-destination="excalibur"] .menu-btn .num {
+  font-weight: 700;
+}
+
+html.dest-bellagio body,
+html[data-destination="bellagio"] body {
+  background:
+    radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--cyan) 12%, transparent) 0%, transparent 58%),
+    linear-gradient(180deg, #101820 0%, var(--bg) 42%),
+    var(--bg);
+}
+
+html.dest-bellagio .banner,
+html[data-destination="bellagio"] .banner {
+  border-top-width: 1px;
+  border-bottom-width: 1px;
+  border-color: color-mix(in srgb, var(--gold) 70%, var(--cyan));
+}
+
+html.dest-bellagio .banner h1,
+html.dest-bellagio .banner h2,
+html[data-destination="bellagio"] .banner h1,
+html[data-destination="bellagio"] .banner h2 {
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: color-mix(in srgb, var(--cyan) 70%, var(--gold));
+}
+
+html.dest-bellagio .panel,
+html[data-destination="bellagio"] .panel {
+  border-color: color-mix(in srgb, var(--border) 80%, var(--gold));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--cyan) 5%, transparent), transparent 40%),
+    var(--bg-panel);
+}
+
+html.dest-bellagio .hub-feature,
+html[data-destination="bellagio"] .hub-feature {
+  border-left-color: var(--gold);
+}
+
+html.dest-circa body,
+html[data-destination="circa"] body {
+  background:
+    radial-gradient(ellipse at 30% 0%, color-mix(in srgb, var(--magenta) 18%, transparent) 0%, transparent 45%),
+    radial-gradient(ellipse at 70% 0%, color-mix(in srgb, var(--cyan) 16%, transparent) 0%, transparent 50%),
+    var(--bg);
+}
+
+html.dest-circa .banner h1,
+html.dest-circa .banner h2,
+html[data-destination="circa"] .banner h1,
+html[data-destination="circa"] .banner h2 {
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-shadow:
+    0 0 10px color-mix(in srgb, var(--cyan) 55%, transparent),
+    0 0 22px color-mix(in srgb, var(--magenta) 40%, transparent);
+}
+
+html.dest-circa .menu-btn .num,
+html[data-destination="circa"] .menu-btn .num {
+  text-shadow: 0 0 8px color-mix(in srgb, var(--cyan) 50%, transparent);
+}
+
+html.dest-circa .hub-feature,
+html[data-destination="circa"] .hub-feature {
+  border-left-color: var(--magenta);
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--cyan) 10%, transparent), transparent 60%),
+    color-mix(in srgb, var(--magenta) 6%, transparent);
+}
+
+html.dest-circa .panel,
+html[data-destination="circa"] .panel {
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--cyan) 18%, transparent),
+    inset 0 0 24px color-mix(in srgb, var(--magenta) 6%, transparent);
+}
+
 /* ── Table / video machine destination themes ── */
+
+.video-machine.table-theme-mandalay {
+  --machine-accent: #c9a227;
+  --machine-felt: #0f3d2e;
+}
 
 .video-machine.table-theme-luxor {
   --machine-accent: #d4a017;
@@ -52,6 +240,17 @@ body.strip-away .banner h1 {
   color: #c9a227;
   font-style: italic;
 }
+.video-machine.table-theme-luxor .machine-screen {
+  border-color: #3a2a12;
+  box-shadow: inset 0 0 28px rgba(230, 180, 34, 0.12);
+}
+.video-machine.table-theme-luxor .machine-controls {
+  background: linear-gradient(180deg, #2a1a0a 0%, #120e08 100%);
+  border-top-color: #c9a227;
+}
+.video-machine.table-theme-luxor .machine-led {
+  color: #e6b422;
+}
 
 .video-machine.table-theme-excalibur {
   --machine-accent: #b22222;
@@ -61,9 +260,21 @@ body.strip-away .banner h1 {
 .video-machine.table-theme-excalibur .machine-marquee {
   background: linear-gradient(90deg, #2a0a10, #5a1520, #2a0a10);
   color: #f0d080;
+  font-family: "Cormorant Garamond", Georgia, serif;
 }
 .video-machine.table-theme-excalibur .machine-brand {
   color: #e8c060;
+}
+.video-machine.table-theme-excalibur .machine-screen {
+  border-color: #5a2030;
+  box-shadow: inset 0 0 28px rgba(178, 34, 34, 0.15);
+}
+.video-machine.table-theme-excalibur .machine-controls {
+  background: linear-gradient(180deg, #3a1520 0%, #180810 100%);
+  border-top-color: #b22222;
+}
+.video-machine.table-theme-excalibur .machine-led {
+  color: #d4af37;
 }
 
 .video-machine.table-theme-bellagio {
@@ -80,6 +291,17 @@ body.strip-away .banner h1 {
 .video-machine.table-theme-bellagio .machine-brand {
   color: #b8a46a;
 }
+.video-machine.table-theme-bellagio .machine-screen {
+  border-color: #2a4850;
+  box-shadow: inset 0 0 28px rgba(142, 184, 200, 0.12);
+}
+.video-machine.table-theme-bellagio .machine-controls {
+  background: linear-gradient(180deg, #1a3038 0%, #0c1820 100%);
+  border-top-color: #8eb8c8;
+}
+.video-machine.table-theme-bellagio .machine-led {
+  color: #8eb8c8;
+}
 
 .video-machine.table-theme-circa {
   --machine-accent: #00e5ff;
@@ -93,6 +315,20 @@ body.strip-away .banner h1 {
 }
 .video-machine.table-theme-circa .machine-brand {
   color: #ff2bd6;
+}
+.video-machine.table-theme-circa .machine-screen {
+  border-color: #2a2a60;
+  box-shadow:
+    inset 0 0 28px rgba(0, 229, 255, 0.1),
+    inset 0 0 48px rgba(255, 43, 214, 0.06);
+}
+.video-machine.table-theme-circa .machine-controls {
+  background: linear-gradient(180deg, #1a1040 0%, #0a0818 100%);
+  border-top-color: #00e5ff;
+}
+.video-machine.table-theme-circa .machine-led {
+  color: #00e5ff;
+  text-shadow: 0 0 8px rgba(0, 229, 255, 0.45);
 }
 
 /* ── Exclusive slot cabinets ── */
@@ -171,11 +407,107 @@ body.strip-away .banner h1 {
   box-shadow: 0 0 20px rgba(255, 43, 214, 0.3);
 }
 
+.slot-theme-scarab { --slot-accent: #c9a227; --slot-panel: #1a1208; }
+.slot-cabinet.slot-theme-scarab {
+  background: linear-gradient(160deg, #2a1a05, #0a0806 60%, #3a2808);
+  box-shadow: inset 0 0 28px rgba(230, 180, 34, 0.2);
+}
+.slot-theme-nile { --slot-accent: #6ec6ff; --slot-panel: #0a1520; }
+.slot-cabinet.slot-theme-nile {
+  background: linear-gradient(180deg, #0c2030, #0a0806);
+  border: 1px solid #e6b422;
+}
+.slot-theme-ra { --slot-accent: #ffcc33; --slot-panel: #2a1800; }
+.slot-cabinet.slot-theme-ra {
+  background: radial-gradient(ellipse at top, #4a3008, #0a0806 70%);
+  box-shadow: 0 0 28px rgba(255, 200, 50, 0.35);
+  border: 1px solid #ffcc33;
+}
+
+.slot-theme-dragon { --slot-accent: #ff4500; --slot-panel: #2a0c10; }
+.slot-cabinet.slot-theme-dragon {
+  background: linear-gradient(160deg, #4a1018, #12080c 55%, #5a1820);
+  box-shadow: inset 0 0 30px rgba(255, 69, 0, 0.2);
+}
+.slot-theme-round-table { --slot-accent: #d4af37; --slot-panel: #3a1520; }
+.slot-cabinet.slot-theme-round-table {
+  background: linear-gradient(180deg, #5a2030, #12080c);
+  border: 1px solid #d4af37;
+}
+.slot-theme-grail { --slot-accent: #f0e68c; --slot-panel: #2a1018; }
+.slot-cabinet.slot-theme-grail {
+  background: radial-gradient(ellipse at center, #3a2030, #12080c 75%);
+  box-shadow: 0 0 26px rgba(240, 230, 140, 0.3);
+  border: 1px solid #f0e68c;
+}
+
+.slot-theme-lake { --slot-accent: #7ec8e3; --slot-panel: #0e2430; }
+.slot-cabinet.slot-theme-lake {
+  background: linear-gradient(160deg, #143848, #0c1018 55%, #1a4048);
+  box-shadow: inset 0 0 36px rgba(126, 200, 227, 0.2);
+}
+.slot-theme-glass-garden { --slot-accent: #e8a0c8; --slot-panel: #1a2830; }
+.slot-cabinet.slot-theme-glass-garden {
+  background: linear-gradient(180deg, #203838, #0c1018);
+  border: 1px solid #e8a0c8;
+}
+.slot-theme-fontana { --slot-accent: #b8d4e8; --slot-panel: #102830; }
+.slot-cabinet.slot-theme-fontana {
+  background: radial-gradient(ellipse at top, #1a4850, #0c1018 70%);
+  box-shadow: 0 0 30px rgba(142, 184, 200, 0.35);
+  border: 1px solid #b8d4e8;
+}
+
+.slot-theme-vamp { --slot-accent: #ff2bd6; --slot-panel: #1a0028; }
+.slot-cabinet.slot-theme-vamp {
+  background: linear-gradient(160deg, #2a0040, #08081a 55%, #001030);
+  box-shadow: inset 0 0 28px rgba(255, 43, 214, 0.22);
+}
+.slot-theme-stadium-swipe { --slot-accent: #00e5ff; --slot-panel: #101848; }
+.slot-cabinet.slot-theme-stadium-swipe {
+  background: linear-gradient(180deg, #002850, #08081a);
+  border: 1px solid #00e5ff;
+}
+.slot-theme-downtown-drop { --slot-accent: #c44cff; --slot-panel: #120028; }
+.slot-cabinet.slot-theme-downtown-drop {
+  background: radial-gradient(ellipse at top, #300060, #08081a 70%);
+  box-shadow: 0 0 28px rgba(196, 76, 255, 0.4), 0 0 12px rgba(0, 229, 255, 0.2);
+  border: 1px solid #c44cff;
+}
+
+.video-machine .machine-dest-flavor {
+  font-size: 0.78em;
+  opacity: 0.85;
+  margin: 2px 8px 6px;
+  letter-spacing: 0.02em;
+}
+
 /* ── Limo dispatch UI ── */
 
 .strip-limo-panel {
   position: relative;
   overflow: hidden;
+  max-width: 100%;
+}
+
+.strip-dest-list {
+  max-height: min(50vh, 28rem);
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 0.5rem 0 0.75rem;
+  padding-right: 0.15rem;
+}
+
+@media (max-height: 500px), (orientation: landscape) and (max-height: 500px) {
+  .strip-dest-list {
+    max-height: min(38vh, 16rem);
+  }
+
+  .strip-dest-card {
+    padding: 8px 10px;
+    margin: 4px 0;
+  }
 }
 
 .strip-limo-panel::before {

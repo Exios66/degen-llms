@@ -2,6 +2,7 @@
 import { ACTIVITIES } from "../core.js";
 import { STAKE_TIERS, TIER_ORDER, formatTierLabel, getTier } from "../stakes.js";
 import { SALON_STAKE_TIER_ORDER } from "../salon-exclusives.js";
+import { getActivityBranding } from "../strip-destinations.js";
 
 function applyTierToRuntime(runtime, activityId, tier) {
   runtime.stakeTier = tier;
@@ -30,8 +31,9 @@ export function buildStakesRenderers(ctx) {
       }
       return formatTierLabel(tier, balance);
     });
+    const brand = getActivityBranding(ctx.session, activityId, act?.name ?? "Activity");
     return el("div", { className: "panel" }, [
-      banner(`${act?.name ?? "Activity"} — Stake Tier`),
+      banner(`${brand.name} — Stake Tier`),
       el("p", {
         className: "dim",
         textContent: salonExclusive

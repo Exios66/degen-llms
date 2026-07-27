@@ -5,10 +5,19 @@ import { createRacePreview, createRaceTrackView } from "../horse-race-track.js";
 import { assignHorseSprites, createHorseSpriteCanvas, getHorseSprite, getJockeySilks } from "../horse-sprites.js";
 import { fmtOdds as fmtRaceOdds, generateRace, getHorseNamePool, parseHorseNamesCSV, setCustomHorseNames, settleTicket, simulateRace } from "../horse_racing.js";
 import { effectiveTableStakes, formatStakeRange } from "../stakes.js";
+import { getActivityBranding, casinoDisplayName } from "../strip-destinations.js";
 
 export function buildRacingRenderers(ctx) {
   const { el, banner, chipLine, showStatus, menu, dealerPanel, pushView, goBack, render, persist, recordActivityVisit, recordActivityResult } = ctx;
   const runtime = ctx.runtime;
+
+  function racingBrandName() {
+    return getActivityBranding(ctx.session, "horse_racing", "Horse Racing").name;
+  }
+
+  function stablesBannerTitle() {
+    return `${casinoDisplayName(ctx.session).replace(/^The\s+/i, "")} Stables`;
+  }
 
   // ── Horse Stables ──────────────────────────────────────────────────────────
   const STABLE_HORSE_DATA = [
@@ -67,9 +76,9 @@ export function buildRacingRenderers(ctx) {
   function renderHorseStables() {
     recordActivityVisit("horse_stables");
     return el("div", { className: "panel racing-pavilion" }, [
-      banner("Mandalay Stables"),
+      banner(stablesBannerTitle()),
       chipLine(),
-      el("p", { className: "horse-stables-intro", textContent: "Behind the Racing Pavilion, past the clockers' stand, eight residents call the Mandalay Stables home. Step through the barn doors to meet them in the pasture or visit them in their stalls." }),
+      el("p", { className: "horse-stables-intro", textContent: `Behind the Racing Pavilion, past the clockers' stand, eight residents call the ${stablesBannerTitle()} home. Step through the barn doors to meet them in the pasture or visit them in their stalls.` }),
       menu(
         ["Visit the Pasture", "Visit the Stalls"],
         "Stables:",
@@ -145,7 +154,7 @@ export function buildRacingRenderers(ctx) {
     const act = ACTIVITIES.horse_racing;
     if (ctx.session.wallet.balance < act.minBet && !runtime.horseRacing.pending.length) {
       return el("div", { className: "panel" }, [
-        banner("Mandalay Racing"),
+        banner(racingBrandName()),
         el("p", { className: "error", textContent: `You need at least ${act.minBet} chips to wager.` }),
         el("div", { className: "action-bar" }, [
           el("button", { className: "btn", textContent: "Back", onclick: () => goBack() }),
@@ -179,7 +188,7 @@ export function buildRacingRenderers(ctx) {
     }
 
     return el("div", { className: "panel racing-pavilion" }, [
-      banner("Mandalay Racing"),
+      banner(racingBrandName()),
       chipLine(),
       tier ? el("p", { className: "dim", textContent: `${tier.name}: ${formatStakeRange(wagerStakes.minBet, wagerStakes.maxBet, { noCap: tier.maxBet == null })}` }) : null,
       dealerPanel("horse_racing"),

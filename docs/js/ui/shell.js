@@ -4,7 +4,9 @@ import { CASINO_NAME, fmtChips } from "../core.js";
 import { ensureBank } from "../bank-account.js";
 import { getSessionDealer, pickQuip } from "../dealers.js";
 import { createPlayingCardEl, createCardSpriteRow } from "./card-sprites.js";
-import { casinoDisplayName, getCurrentDestination } from "../strip-destinations.js";
+import {
+  casinoDisplayName, getActivityBranding, getCurrentDestination,
+} from "../strip-destinations.js";
 
 export function el(tag, attrs = {}, children = []) {
   const node = document.createElement(tag);
@@ -197,13 +199,18 @@ export function createShell(ctx) {
     const game = MACHINE_GAMES[gameId] || { label: title, icon: "★", variant: "blackjack" };
     const dest = getCurrentDestination(ctx.session);
     const brand = casinoDisplayName(ctx.session);
+    const activityBrand = getActivityBranding(ctx.session, gameId, title || game.label);
+    const marqueeTitle = title || activityBrand.name || game.label;
     const footer = [el("span", { className: "machine-led", textContent: "CREDIT" }), chipLine()];
     if (footerExtra) footer.push(footerExtra);
     const parts = [
       el("div", { className: "machine-cabinet-top" }, [
-        el("div", { className: "machine-marquee", textContent: `${game.icon}  ${title || game.label}  ${game.icon}` }),
+        el("div", { className: "machine-marquee", textContent: `${game.icon}  ${marqueeTitle}  ${game.icon}` }),
         el("div", { className: "machine-brand", textContent: brand }),
-      ]),
+        activityBrand.blurb
+          ? el("div", { className: "machine-dest-flavor", textContent: activityBrand.blurb })
+          : null,
+      ].filter(Boolean)),
       el("div", { className: "machine-screen" }, [
         el("div", { className: "machine-screen-inner" }, [
           machineGameNav(gameId),

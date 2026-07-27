@@ -39,6 +39,19 @@ Salon tiers apply across **every** machine and table. Progressive jackpots still
 
 Max bet is capped by your current chip balance. Progressive machines display the current jackpot in the machine picker.
 
+## Destination exclusives (Strip Ride)
+
+On the web terminal, [[Strip-Ride|Strip Ride]] limo / Uber / Lyft travel swaps you onto away-property floors. Each destination adds **five exclusive cabinets** (including a signature progressive) and hides home-only machines such as **Mandalay Fortune**:
+
+| Destination | Exclusives | Signature progressive |
+|-------------|------------|------------------------|
+| Luxor | Obelisk, Sphinx, Scarab Stampede, Nile Nights, Beam of Ra | Beam of Ra |
+| Excalibur | Castle Jackpot, Joust, Dragon Keep, Round Table, Holy Grail Spin | Holy Grail |
+| Bellagio | Fountain Fortune, Conservatory, Lake Lights, Glass Garden, Prima Fontana | Prima Fontana |
+| Circa | Neon Stadium, Fremont Flash, Vegas Vamp, Stadium Swipe, Downtown Drop | Downtown Drop |
+
+Away slot boards also use destination menu themes. See [[Strip-Ride]].
+
 ## Game flow
 
 ```

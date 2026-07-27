@@ -28,6 +28,7 @@ import {
   phoneUnreadCount,
   sendText,
   startCall,
+  startRideshareCall,
   startWrongNumberCall,
   syncContactIntros,
   updatePhoneSettings,
@@ -44,13 +45,14 @@ export class RewardsPhone {
   /**
    * @param {HTMLElement} mountRoot
    * @param {import("./core.js").PlayerSession} session
-   * @param {{ onPersist?: () => void, onTierPromoted?: (tierId: string) => void, compact?: boolean }} [options]
+   * @param {{ onPersist?: () => void, onTierPromoted?: (tierId: string) => void, compact?: boolean, onOpenStripTravel?: () => void }} [options]
    */
   constructor(mountRoot, session, options = {}) {
     this.root = mountRoot;
     this.session = session;
     this.onPersist = options.onPersist ?? (() => {});
     this.onTierPromoted = options.onTierPromoted ?? (() => {});
+    this.onOpenStripTravel = options.onOpenStripTravel ?? null;
     this.compact = options.compact ?? false;
     this.tracker = new RewardsTracker(session, {
       onNotify: (note) => this._showToast(note),
@@ -440,6 +442,28 @@ export class RewardsPhone {
       body.appendChild(row);
       body.appendChild(this._line(c.resolveRole(this.session), "dim"));
     }
+    const rideshareBtn = document.createElement("button");
+    rideshareBtn.type = "button";
+    rideshareBtn.textContent = "Call Uber / Lyft";
+    rideshareBtn.onclick = () => {
+      phoneAudio.unlock();
+      phoneAudio.playOutboundDialSequence();
+      const r = startRideshareCall(this.session);
+      if (!r.ok) {
+        this._showToast({ title: "Rideshare", body: r.message ?? "Line busy." });
+        this.onPersist();
+        return;
+      }
+      this._showToast({ title: "Uber / Lyft", body: "Strip dispatch unlocked — connecting…" });
+      this._callContactId = r.contactId;
+      this._threadContactId = r.contactId;
+      this._screen = "call";
+      this.onPersist();
+      this._renderScreen();
+      this._scheduleCallConnect(r.contactId);
+    };
+    body.appendChild(rideshareBtn);
+
     const wrongBtn = document.createElement("button");
     wrongBtn.type = "button";
     wrongBtn.textContent = "Dial 555-0199";
@@ -462,6 +486,16 @@ export class RewardsPhone {
       this._scheduleCallConnect(r.contactId);
     };
     body.appendChild(wrongBtn);
+  }
+
+  /** Bridge Connect rideshare → web terminal Strip Ride dispatch when pending. */
+  _flushStripDispatchPending() {
+    const st = this.session.stripTravel;
+    if (!st?.openDispatchPending || typeof this.onOpenStripTravel !== "function") return;
+    st.openDispatchPending = false;
+    this.onPersist();
+    this.close();
+    this.onOpenStripTravel();
   }
 
   _renderThread(body) {
@@ -678,6 +712,7 @@ export class RewardsPhone {
               this._screen = "thread";
               this._renderScreen();
               this._updateBadge();
+              this._flushStripDispatchPending();
               return;
             }
             this._renderScreen();

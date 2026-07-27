@@ -45,6 +45,9 @@ export function normalizeThread(thread) {
   if (thread.dialogueState != null && typeof thread.dialogueState !== "object") {
     thread.dialogueState = null;
   }
+  if (thread.callState != null && typeof thread.callState !== "object") {
+    thread.callState = null;
+  }
   return thread;
 }
 

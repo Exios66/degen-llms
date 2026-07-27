@@ -27,6 +27,8 @@ check(css.includes("body:not(.has-touch-pad) .rewards-phone-shell"), "desktop sh
 check(css.includes("width: 224px") || css.includes("width:224px"), "desktop shell width ~224px");
 check(css.includes("min-height: 320px"), "desktop LCD min-height enlarged");
 check(css.includes("rewards-home-actions"), "home shortcut styles present");
+check(css.includes("rewards-phone-sounds"), "phone sounds settings styles present");
+check(css.includes("rewards-call-connecting"), "call connecting styles present");
 check(css.includes("@media (min-width: 1100px)"), "large-desktop media query present");
 
 const {
@@ -36,18 +38,27 @@ const { RewardsTracker, COMP_CATALOG } = await import(js("rewards.js"));
 const {
   startCall,
   resolveCallChoice,
+  advanceCall,
+  connectCall,
+  endCall,
   sendText,
   advanceDialogue,
   applyPhoneEffect,
   onIntoxicationChange,
   syncContactIntros,
   ensurePhoneBook,
+  getPhoneSettings,
+  updatePhoneSettings,
   markThreadRead,
   phoneUnreadCount,
+  getActiveCallNode,
 } = await import(js("phone-contacts.js"));
+const { CALL_TREES, getCallNode } = await import(js("phone-dialogue-data.js"));
+const { RINGTONE_CATALOG, PhoneAudio, phoneAudio } = await import(js("phone-audio.js"));
 const { ensureDining, orderAndConsume, createSitting } = await import(js("dining.js"));
 const { recordConsumption, ensureIntoxication } = await import(js("intoxication-effects.js"));
 const { ensureHotel, extendStay, upgradeRoom } = await import(js("hotel.js"));
+const { buildDialogueContext } = await import(js("phone-rapport.js"));
 
 function makeSession(overrides = {}) {
   const session = new PlayerSession({
@@ -98,7 +109,7 @@ function makeSession(overrides = {}) {
   check(String(result.message).toLowerCase().includes("buffet"), "order message mentions buffet");
 }
 
-// ── Call fallback script resolves Wrong number? ────────────────────────────
+// ── Call multi-turn + fallback script resolves ─────────────────────────────
 {
   const session = makeSession();
   const tracker = new RewardsTracker(session);
@@ -108,9 +119,11 @@ function makeSession(overrides = {}) {
   // chip_chandler always unlocked
   const started = startCall(session, "chip_chandler");
   check(started.ok && started.script?.choices?.length, "startCall returns script with choices");
-  const idx = started.script.choices.findIndex((c) => /wrong number/i.test(c.label));
-  // chip_chandler has a real script; use last choice or first
-  const choiceIdx = idx >= 0 ? idx : 0;
+  check(Boolean(started.node?.text), "startCall returns live call node");
+  check(Boolean(ensurePhoneBook(session).threads.chip_chandler.callState), "startCall sets callState");
+  connectCall(session, "chip_chandler");
+  check(getActiveCallNode(session, "chip_chandler")?.phase === "talking", "connectCall moves to talking");
+  const choiceIdx = 0;
   const resolved = resolveCallChoice(session, "chip_chandler", choiceIdx, started.script, {
     redeemComp: (id) => tracker.redeemComp(id),
     upgradeRoom: (t) => upgradeRoom(session, t, tracker),
@@ -118,6 +131,77 @@ function makeSession(overrides = {}) {
   });
   check(!/call dropped/i.test(resolved.response), `call choice resolves (got: ${resolved.response})`);
   check(Boolean(resolved.response), "call response non-empty");
+}
+
+// ── Multi-turn advanceCall until end ───────────────────────────────────────
+{
+  const session = makeSession();
+  const tracker = new RewardsTracker(session);
+  tracker.ensureRewards();
+  syncContactIntros(session);
+  const started = startCall(session, "chip_chandler");
+  check(started.ok, "multi-turn startCall ok");
+  connectCall(session, "chip_chandler");
+  let guard = 0;
+  let ended = false;
+  while (getActiveCallNode(session, "chip_chandler") && guard < 8) {
+    guard += 1;
+    const r = advanceCall(session, "chip_chandler", 0, {
+      redeemComp: (id) => tracker.redeemComp(id),
+      upgradeRoom: (t) => upgradeRoom(session, t, tracker),
+      extendStay: (n) => extendStay(session, n, tracker),
+    });
+    check(r.ok, `advanceCall step ${guard} ok`);
+    if (r.ended) {
+      ended = true;
+      break;
+    }
+  }
+  check(ended || !getActiveCallNode(session, "chip_chandler"), "call eventually ends or clears");
+  endCall(session, "chip_chandler");
+  check(!ensurePhoneBook(session).threads.chip_chandler.callState, "endCall clears callState");
+}
+
+// ── CALL_TREES coverage for key contacts ───────────────────────────────────
+{
+  const required = [
+    "attorney_brief", "steve_harvey", "host_representative", "chip_chandler",
+    "barkeep_betty", "pete_bookie", "tourist_tina", "pavilion_paula",
+    "meryl_screech", "judi_bench", "jennifer_lawless", "sofia_volume",
+    "octavia_spectacular", "nicole_widechart", "clerk_carmen", "lifeguard_lou",
+    "shark_reef_guide", "beach_dj",
+  ];
+  for (const id of required) {
+    check(Boolean(CALL_TREES[id]?.voice?.hello), `CALL_TREES has voice hello for ${id}`);
+  }
+  const session = makeSession();
+  new RewardsTracker(session).ensureRewards();
+  const ctx = buildDialogueContext(session, "chip_chandler");
+  const node = getCallNode("chip_chandler", "voice", "hello", ctx);
+  check(node?.choices?.length > 0, "getCallNode hello has choices");
+}
+
+// ── Phone settings + audio module exports ──────────────────────────────────
+{
+  const session = makeSession();
+  new RewardsTracker(session).ensureRewards();
+  const defaults = getPhoneSettings(session);
+  check(defaults.ringtoneId === "classic", "default ringtone classic");
+  check(defaults.smsSound === true, "default smsSound on");
+  check(defaults.muted === false, "default unmuted");
+  updatePhoneSettings(session, { ringtoneId: "neon", muted: true, smsSound: false });
+  const next = getPhoneSettings(session);
+  check(next.ringtoneId === "neon", "ringtone persists neon");
+  check(next.muted === true, "mute persists");
+  check(next.smsSound === false, "smsSound persists off");
+  check(RINGTONE_CATALOG.length >= 5, "ringtone catalog has presets");
+  check(typeof PhoneAudio === "function", "PhoneAudio class exported");
+  check(typeof phoneAudio.smsSend === "function", "phoneAudio.smsSend exists");
+  check(typeof phoneAudio.playOutboundDialSequence === "function", "dial sequence exists");
+  check(typeof phoneAudio.playRingtone === "function", "playRingtone exists");
+  // Safe no-op in Node (no AudioContext)
+  phoneAudio.smsSend();
+  phoneAudio.hangup();
 }
 
 // ── Fallback script (unknown contact path via empty dynamic) ───────────────
@@ -134,6 +218,22 @@ function makeSession(overrides = {}) {
   const r = resolveCallChoice(session, "chip_chandler", 0, fallback, null);
   check(r.response.includes("Wrong numbers"), "activeScript fallback choice works");
   check(r.egg === "wrong_number", "fallback egg recorded");
+}
+
+// ── Thin contact SMS trees start ───────────────────────────────────────────
+{
+  const session = makeSession();
+  const tracker = new RewardsTracker(session);
+  tracker.ensureRewards();
+  session.rpg.flags.met_carmen = true;
+  session.rpg.flags.met_lou = true;
+  session.rpg.flags.met_reef_guide = true;
+  session.rpg.flags.met_beach_dj = true;
+  syncContactIntros(session);
+  const carmen = sendText(session, "clerk_carmen", "desk_tree", null);
+  check(carmen.ok && carmen.startedTree, "Carmen front desk tree starts");
+  const lou = sendText(session, "lifeguard_lou", "wave_tree", null);
+  check(lou.ok && lou.startedTree, "Lou wave tree starts");
 }
 
 // ── Betty text pour applies intoxication ───────────────────────────────────

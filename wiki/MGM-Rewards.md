@@ -44,7 +44,10 @@ Press **P** in the web app (or access via RPG HUD):
 - View tier status and progress to next tier
 - Claim available comps
 - Locate hotel reservation
-- Text staff contacts (concierge, bookie, etc.)
+- Text and **call** staff contacts (Connect tab) with multi-turn conversations
+- Phone **Sounds** on Home: mute, SMS tones, and selectable ringtones (procedural dial / ringback / SMS SFX)
+
+Calls play dial tone → keypad → ringback, then branch like a real conversation until you hang up. Texts play send/receive tones when Sounds are enabled.
 
 ## Wagering tracking
 

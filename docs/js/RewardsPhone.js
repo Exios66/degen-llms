@@ -8,12 +8,17 @@ import {
 import { ensureHotel, findReservation, reservationHint, getRoomType, upgradeRoom, extendStay } from "./hotel.js";
 import { getReservationRequirement, reservationStatusMessage, grantRoomKeyIfReservationReady } from "./world-cycle.js";
 import {
+  advanceCall,
   advanceDialogue,
+  connectCall,
   dialWrongNumber,
   easterEggCount,
+  endCall,
   formatMessageTime,
+  getActiveCallNode,
   getActiveDialogueChoices,
   getContactDef,
+  getPhoneSettings,
   getRapportSummary,
   getTextOptions,
   getThread,
@@ -21,13 +26,15 @@ import {
   markThreadRead,
   onIntoxicationChange,
   phoneUnreadCount,
-  resolveCallChoice,
   sendText,
   startCall,
+  startWrongNumberCall,
   syncContactIntros,
+  updatePhoneSettings,
 } from "./phone-contacts.js";
 import { isHeightenedIntoxication } from "./intoxication-effects.js";
 import { ensureDining } from "./dining.js";
+import { phoneAudio, RINGTONE_CATALOG } from "./phone-audio.js";
 
 /**
  * Era-styled flip-phone DOM widget for the MGM Rewards app.
@@ -53,11 +60,11 @@ export class RewardsPhone {
     this._screen = "home";
     this._threadContactId = null;
     this._callContactId = null;
-    this._callChoicePending = false;
-    this._callScript = null;
+    this._callConnectTimer = null;
     this._toastTimer = null;
     this.tracker.ensureRewards();
     this.tracker.syncFromWallet();
+    phoneAudio.bindSettings(() => getPhoneSettings(this.session));
     this._renderChrome();
   }
 
@@ -82,15 +89,14 @@ export class RewardsPhone {
   }
 
   open(screen = "home") {
+    phoneAudio.unlock();
     this._open = true;
     this._screen = screen;
     if (screen === "home" || screen === "connect" || screen === "inbox" || screen === "card"
       || screen === "reservation" || screen === "comps" || screen === "offers" || screen === "perks") {
       if (screen !== "thread" && screen !== "call") {
+        this._clearCallUi();
         this._threadContactId = null;
-        this._callContactId = null;
-        this._callChoicePending = false;
-        this._callScript = null;
       }
     }
     this.tracker.syncFromWallet();
@@ -98,15 +104,17 @@ export class RewardsPhone {
     const intoxDirty = onIntoxicationChange(this.session);
     this._phoneEl.hidden = false;
     this.root?.classList.add("is-open");
-    if (intoxDirty) this.onPersist();
+    if (intoxDirty) {
+      phoneAudio.smsReceive();
+      this.onPersist();
+    }
     this._renderScreen();
   }
 
   openConnect(contactId = null) {
+    phoneAudio.unlock();
     this._open = true;
-    this._callContactId = null;
-    this._callChoicePending = false;
-    this._callScript = null;
+    this._clearCallUi();
     if (contactId) {
       this._threadContactId = contactId;
       this._screen = "thread";
@@ -121,6 +129,7 @@ export class RewardsPhone {
     this._phoneEl.hidden = false;
     this.root?.classList.add("is-open");
     this.onPersist();
+    if (intoxDirty) phoneAudio.smsReceive();
     this._renderScreen();
     this._updateBadge();
   }
@@ -130,6 +139,8 @@ export class RewardsPhone {
   }
 
   close() {
+    this._clearCallUi();
+    phoneAudio.stopLoops();
     this._open = false;
     this._phoneEl.hidden = true;
     this.root?.classList.remove("is-open");
@@ -139,11 +150,26 @@ export class RewardsPhone {
     return this._open;
   }
 
-  /** @param {{ title: string, body: string }} note */
+  _clearCallUi() {
+    if (this._callConnectTimer) {
+      clearTimeout(this._callConnectTimer);
+      this._callConnectTimer = null;
+    }
+    if (this._callContactId) {
+      endCall(this.session, this._callContactId);
+    }
+    this._callContactId = null;
+  }
+
+  /** @param {{ title: string, body: string, sms?: boolean }} note */
   _showToast(note) {
     if (!this._toastEl) return;
     this._toastEl.textContent = `${note.title}: ${note.body}`;
     this._toastEl.hidden = false;
+    if (note.sms) {
+      phoneAudio.unlock();
+      phoneAudio.smsReceive();
+    }
     clearTimeout(this._toastTimer);
     this._toastTimer = setTimeout(() => {
       this._toastEl.hidden = true;
@@ -252,7 +278,15 @@ export class RewardsPhone {
       btn.type = "button";
       btn.className = "rewards-tab" + (activeFor.includes(this._screen) ? " active" : "");
       btn.textContent = label;
-      btn.onclick = () => { this._screen = id; this._renderScreen(); };
+      btn.onclick = () => {
+        if (!activeFor.includes("call") && this._callContactId) {
+          phoneAudio.hangup();
+          this._clearCallUi();
+          this.onPersist();
+        }
+        this._screen = id;
+        this._renderScreen();
+      };
       nav.appendChild(btn);
     }
 
@@ -276,6 +310,7 @@ export class RewardsPhone {
     const prog = this.tracker.progressToNextTier();
     const hotel = ensureHotel(this.session);
     const room = getRoomType(hotel);
+    const settings = getPhoneSettings(this.session);
     body.innerHTML = "";
     body.className = `rewards-lcd-body rewards-tier-${tier.id}`;
     body.appendChild(this._line(`Member ${rewards.memberId}`));
@@ -310,6 +345,64 @@ export class RewardsPhone {
       shortcuts.appendChild(btn);
     }
     body.appendChild(shortcuts);
+
+    const sounds = document.createElement("div");
+    sounds.className = "rewards-phone-sounds";
+    sounds.appendChild(this._line("Sounds", ""));
+
+    const muteBtn = document.createElement("button");
+    muteBtn.type = "button";
+    muteBtn.className = "rewards-sound-toggle";
+    muteBtn.textContent = settings.muted ? "Unmute phone" : "Mute phone";
+    muteBtn.onclick = () => {
+      phoneAudio.unlock();
+      updatePhoneSettings(this.session, { muted: !settings.muted });
+      this.onPersist();
+      this._renderScreen();
+    };
+    sounds.appendChild(muteBtn);
+
+    const smsBtn = document.createElement("button");
+    smsBtn.type = "button";
+    smsBtn.className = "rewards-sound-toggle";
+    smsBtn.textContent = settings.smsSound ? "SMS tones: On" : "SMS tones: Off";
+    smsBtn.onclick = () => {
+      phoneAudio.unlock();
+      updatePhoneSettings(this.session, { smsSound: !settings.smsSound });
+      this.onPersist();
+      this._renderScreen();
+    };
+    sounds.appendChild(smsBtn);
+
+    sounds.appendChild(this._line("Ringtone", "dim"));
+    const ringRow = document.createElement("div");
+    ringRow.className = "rewards-ringtone-list";
+    for (const tone of RINGTONE_CATALOG) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "rewards-ringtone-option"
+        + (tone.id === settings.ringtoneId ? " active" : "");
+      btn.textContent = tone.label;
+      btn.onclick = () => {
+        phoneAudio.unlock();
+        updatePhoneSettings(this.session, { ringtoneId: tone.id });
+        phoneAudio.playRingtone(tone.id);
+        this.onPersist();
+        this._renderScreen();
+      };
+      ringRow.appendChild(btn);
+    }
+    sounds.appendChild(ringRow);
+
+    const preview = document.createElement("button");
+    preview.type = "button";
+    preview.textContent = "Preview ringtone";
+    preview.onclick = () => {
+      phoneAudio.unlock();
+      phoneAudio.playRingtone();
+    };
+    sounds.appendChild(preview);
+    body.appendChild(sounds);
   }
 
   _screenHeaderLabel() {
@@ -351,10 +444,22 @@ export class RewardsPhone {
     wrongBtn.type = "button";
     wrongBtn.textContent = "Dial 555-0199";
     wrongBtn.onclick = () => {
-      const r = dialWrongNumber(this.session);
-      this._showToast({ title: "Wrong #", body: r.opening });
+      phoneAudio.unlock();
+      phoneAudio.playOutboundDialSequence();
+      const r = startWrongNumberCall(this.session);
+      if (!r.ok) {
+        const legacy = dialWrongNumber(this.session);
+        this._showToast({ title: "Wrong #", body: legacy.opening, sms: true });
+        this.onPersist();
+        this._updateBadge();
+        return;
+      }
+      this._callContactId = r.contactId;
+      this._threadContactId = r.contactId;
+      this._screen = "call";
       this.onPersist();
-      this._updateBadge();
+      this._renderScreen();
+      this._scheduleCallConnect(r.contactId);
     };
     body.appendChild(wrongBtn);
   }
@@ -410,11 +515,14 @@ export class RewardsPhone {
         btn.textContent = `↳ ${choice.label}`;
         const idx = i;
         btn.onclick = () => {
+          phoneAudio.unlock();
+          phoneAudio.smsSend();
           const r = advanceDialogue(this.session, contactId, idx, this._phoneEffectHooks());
           if (!r.ok) {
             this._showToast({ title: "Message failed", body: r.message ?? "" });
             return;
           }
+          phoneAudio.smsReceive();
           if (r.effectNotes?.length) {
             this._showToast({ title: "Action applied", body: r.effectNotes.join(" · ") });
           }
@@ -429,17 +537,18 @@ export class RewardsPhone {
       callBtn.type = "button";
       callBtn.textContent = "📞 Call";
       callBtn.onclick = () => {
+        phoneAudio.unlock();
+        phoneAudio.playOutboundDialSequence();
         const r = startCall(this.session, contactId);
         if (!r.ok) {
           this._showToast({ title: "Call failed", body: r.message ?? "" });
           return;
         }
         this._callContactId = contactId;
-        this._callScript = r.script;
-        this._callChoicePending = false;
         this._screen = "call";
         this.onPersist();
         this._renderScreen();
+        this._scheduleCallConnect(contactId);
       };
       actions.appendChild(callBtn);
 
@@ -455,11 +564,14 @@ export class RewardsPhone {
         ].filter(Boolean).join(" ");
         btn.textContent = `💬 ${opt.label}`;
         btn.onclick = () => {
+          phoneAudio.unlock();
+          phoneAudio.smsSend();
           const r = sendText(this.session, contactId, opt.key, this._phoneEffectHooks());
           if (!r.ok) {
             this._showToast({ title: "Text failed", body: r.message ?? "" });
             return;
           }
+          phoneAudio.smsReceive();
           if (r.effectNotes?.length) {
             this._showToast({ title: "Action applied", body: r.effectNotes.join(" · ") });
           }
@@ -485,59 +597,105 @@ export class RewardsPhone {
     body.appendChild(backBtn);
   }
 
+  _scheduleCallConnect(contactId) {
+    if (this._callConnectTimer) clearTimeout(this._callConnectTimer);
+    this._callConnectTimer = setTimeout(() => {
+      this._callConnectTimer = null;
+      if (this._callContactId !== contactId || this._screen !== "call") return;
+      connectCall(this.session, contactId);
+      phoneAudio.connect();
+      // Soft ringtone flavor when the line picks up (selected preset).
+      phoneAudio.playRingtone();
+      this.onPersist();
+      this._renderScreen();
+    }, 1600);
+  }
+
   _renderCall(body) {
     const contactId = this._callContactId;
     const def = contactId ? getContactDef(this.session, contactId) : null;
-    const script = this._callScript;
+    const active = contactId ? getActiveCallNode(this.session, contactId) : null;
     body.innerHTML = "";
-    body.className = "rewards-lcd-body";
-    if (!def || !script) {
+    body.className = "rewards-lcd-body rewards-call-body";
+
+    if (!def) {
       body.appendChild(this._line("Call ended."));
       return;
     }
-    body.appendChild(this._line(`📞 ${def.resolveName(this.session)}`, ""));
-    body.appendChild(this._line(script.opening, ""));
-    for (const line of script.lines ?? []) {
-      body.appendChild(this._line(line, "dim"));
+
+    const isWrong = getThread(this.session, contactId)?.callState?.treeId === "wrong_number";
+    body.appendChild(this._line(
+      isWrong ? "📞 555-0199" : `📞 ${def.resolveName(this.session)}`,
+      "",
+    ));
+
+    if (!active) {
+      body.appendChild(this._line("Call ended.", "dim"));
+      const back = document.createElement("button");
+      back.type = "button";
+      back.textContent = "Back to thread";
+      back.onclick = () => {
+        phoneAudio.hangup();
+        this._callContactId = null;
+        this._threadContactId = contactId;
+        this._screen = "thread";
+        this._renderScreen();
+      };
+      body.appendChild(back);
+      return;
     }
-    if (!this._callChoicePending) {
-      body.appendChild(this._line("Choose:", "dim"));
-      script.choices.forEach((choice, i) => {
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.textContent = choice.label;
-        btn.onclick = () => {
-          const r = resolveCallChoice(
-            this.session,
-            contactId,
-            i,
-            this._callScript,
-            this._phoneEffectHooks(),
-          );
-          this._callChoicePending = true;
-          this.onPersist();
-          this._renderCall(body);
-          if (r.egg) {
-            this._showToast({ title: "Easter egg!", body: "Hidden dialog unlocked." });
-          } else if (r.effectNotes?.length) {
-            this._showToast({ title: "Action applied", body: r.effectNotes.join(" · ") });
-          }
-        };
-        body.appendChild(btn);
-      });
+
+    if (active.phase === "connecting") {
+      const connecting = document.createElement("div");
+      connecting.className = "rewards-call-connecting";
+      connecting.appendChild(this._line("Calling…", ""));
+      connecting.appendChild(this._line("Ringing…", "dim"));
+      body.appendChild(connecting);
     } else {
-      const lastIn = [...(getThread(this.session, contactId)?.messages ?? [])].reverse().find((m) => m.dir === "in");
-      if (lastIn?.body.startsWith("[Call]")) {
-        body.appendChild(this._line(lastIn.body.replace("[Call] ", ""), ""));
+      body.appendChild(this._line("Live call", "dim rewards-call-live"));
+      body.appendChild(this._line(active.text, "rewards-call-line"));
+      if (active.choices?.length) {
+        body.appendChild(this._line("Say:", "dim"));
+        active.choices.forEach((choice, i) => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "rewards-call-choice";
+          btn.textContent = choice.label;
+          btn.onclick = () => {
+            phoneAudio.unlock();
+            phoneAudio.dtmf(i);
+            const r = advanceCall(this.session, contactId, i, this._phoneEffectHooks());
+            this.onPersist();
+            if (r.egg) {
+              this._showToast({ title: "Easter egg!", body: "Hidden dialog unlocked." });
+            } else if (r.effectNotes?.length) {
+              this._showToast({ title: "Action applied", body: r.effectNotes.join(" · ") });
+            }
+            if (r.ended) {
+              phoneAudio.hangup();
+              this._callContactId = null;
+              this._threadContactId = contactId;
+              this._screen = "thread";
+              this._renderScreen();
+              this._updateBadge();
+              return;
+            }
+            this._renderScreen();
+            this._updateBadge();
+          };
+          body.appendChild(btn);
+        });
       }
     }
+
     const hangUp = document.createElement("button");
     hangUp.type = "button";
+    hangUp.className = "rewards-call-hangup";
     hangUp.textContent = "Hang up";
     hangUp.onclick = () => {
+      phoneAudio.hangup();
+      endCall(this.session, contactId);
       this._callContactId = null;
-      this._callChoicePending = false;
-      this._callScript = null;
       this._threadContactId = contactId;
       this._screen = "thread";
       this.onPersist();

@@ -6,8 +6,8 @@ import {
   HIGH_LIMIT_SALON_CHIP_MIN,
   canEnterFoundationRoom,
   canEnterHighLimitSalon,
-} from "../../../js/venues.js?v=1929133";
-import { canEnterGentlemansClub } from "../../../js/gentlemans-club.js?v=1929133";
+} from "../../../js/venues.js?v=5ebd452";
+import { canEnterGentlemansClub } from "../../../js/gentlemans-club.js?v=5ebd452";
 import { createCardSpriteRow } from "../../../js/ui/card-sprites.js";
 import { RouletteOverlay } from "./overlays/RouletteOverlay.js";
 import { HoldemOverlay } from "./overlays/HoldemOverlay.js";

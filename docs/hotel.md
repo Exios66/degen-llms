@@ -24,7 +24,7 @@ MGM Rewards tier comps can cover upgrades and room nights. See [MGM Rewards](mgm
 2. **Room key** — activates as soon as check-in is satisfied. The key does **not** skip the hallway by itself — Carmen and the lobby still offer **Find my room** plus an optional **Use key — skip to door** courtesy
 3. **Hallway mini-game** — three beats of directional choices to reach your door (wrong turns are comedic; a dining food coma forces one zig). Reaching the door sets `reachedRoom` and unlocks in-room amenities
 4. **Suite / penthouse upgrades** — reprint a new room number on your MGM Rewards phone (Home, Card, Room tabs). You must re-locate / re-confirm check-in, then walk (or skip) to the new door
-5. **Your room** — TV, minibar, phone, balcony decisions, unlockable Vegas vignettes. Foundation Room phone line unlocks from a suite or penthouse (Noir+). Gentleman's Club (**The Velvet Ledger**) opens from Gold+, a suite key, or the club phone line. **Call limo / private driver** unlocks Strip travel (web terminal only) to Luxor, Excalibur, Bellagio, and Circa — each with exclusive slots and themed table overlays.
+5. **Your room** — TV, minibar, phone, balcony decisions, unlockable Vegas vignettes. Foundation Room phone line unlocks from a suite or penthouse (Noir+). Gentleman's Club (**The Velvet Ledger**) opens from Gold+, a suite key, or the club phone line. **Call limo / private driver** (room phone) or **Call Uber / Lyft** (MGM Rewards Connect) unlocks Strip travel (web terminal only) to Luxor, Excalibur, Bellagio, and Circa — each with five exclusive slots, destination-branded activities, and themed table overlays.
 
 ## Resort dining
 
@@ -38,25 +38,30 @@ Carmen books the three tables that matter: **Aureole**, **Border Grill**, and **
 |---------|------------|
 | **TV** | Shark Reef (ch. 47), wave pool cam, ULTRA Arena boxing, House of Blues (Gold+ tier) |
 | **Minibar** | Sensor-enabled charges; concierge suggests items |
-| **Phone** | Concierge, bookie, Foundation Room (Noir+), Gentleman's Club / Velvet Ledger (Gold+), spa, Delano, **limo / private driver** (Strip travel) |
+| **Phone** | Concierge, bookie, Foundation Room (Noir+), Gentleman's Club / Velvet Ledger (Gold+), spa, Delano, **limo / private driver** (Strip travel). Alternate unlock: Rewards Phone **Connect → Call Uber / Lyft** |
 | **Gentleman's Club** | Hotel lobby amenity — make it rain, encounters, stocked bar, minigames, ledger easter eggs |
 | **Decisions** | Balcony, sky bridge to Mandalay Place, suite/penthouse perks, wake-up roulette |
 | **Suite balcony POV** | Fullscreen Strip vista smoke-break overlay (suite/penthouse) — take hits, savor the view, step inside |
 
-### Strip limo / private driver (web terminal)
+### Strip Ride — Limo / Uber / Lyft (web terminal)
 
-Call **limo / private driver** from the room phone to unlock Strip dispatch. Ride a black car to:
+Unlock Strip dispatch either way:
 
-| Destination | Vibe | Exclusive slots |
-|-------------|------|-----------------|
-| **Luxor** | Black pyramid / Egyptian gold | Luxor Obelisk, Sphinx Spin |
-| **Excalibur** | Castle crimson | Castle Jackpot, Joust Reels |
-| **Bellagio** | Fountain elegance | Fountain Fortune, Conservatory Spin |
-| **Circa** | Downtown Fremont neon | Neon Stadium, Fremont Flash |
+1. Room phone → **Call limo / private driver**
+2. MGM Rewards Phone → **Connect → Call Uber / Lyft** (rideshare contact + multi-turn voice tree)
 
-Each property restyles hub banners, table video-machine overlays, and slot cabinets via `data-destination` CSS themes. Return to Mandalay Bay is complimentary. Not available in the pixel RPG.
+Both paths open the same chip-fare dispatch UI (**Strip Ride — Limo / Uber / Lyft**). Ride to:
 
-→ Logic: `docs/js/strip-destinations.js` · UI: `docs/js/strip-limo-ui.js` · CSS: `docs/css/strip-destinations.css`
+| Destination | Vibe | Exclusive slots (5) | Signature progressive |
+|-------------|------|---------------------|------------------------|
+| **Luxor** | Black pyramid / Egyptian gold | Obelisk, Sphinx, Scarab Stampede, Nile Nights, Beam of Ra | Beam of Ra (`luxor_ra`) |
+| **Excalibur** | Castle crimson | Castle Jackpot, Joust, Dragon Keep, Round Table, Holy Grail Spin | Holy Grail (`excalibur_grail`) |
+| **Bellagio** | Fountain elegance | Fountain Fortune, Conservatory, Lake Lights, Glass Garden, Prima Fontana | Prima Fontana (`bellagio_fontana`) |
+| **Circa** | Downtown Fremont neon | Neon Stadium, Fremont Flash, Vegas Vamp, Stadium Swipe, Downtown Drop | Downtown Drop (`circa_downtown`) |
+
+Away floors use destination `activityBranding` (e.g. Sphinx Blackjack) plus table `gameFlavor` overlays. Select Mandalay cabinets (e.g. Fortune) are `homeOnly`. Each property restyles hub banners, tables, and slot cabinets via `data-destination` CSS themes. Return to Mandalay Bay is complimentary. Not available in the pixel RPG.
+
+→ Logic: `docs/js/strip-destinations.js` · UI: `docs/js/strip-limo-ui.js` · CSS: `docs/css/strip-destinations.css` · Phone: `rideshare_driver` in `phone-contacts.js` / `phone-call-trees.js`
 
 ### Suite balcony POV smoke break
 

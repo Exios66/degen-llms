@@ -4,7 +4,8 @@ import { applyTierSpeedCss, getActivityTiming } from "../rewards-perks.js";
 import { SLOT_CATEGORIES, getMachineUI, paytableEntries } from "../slots-ui.js";
 import { isSalonOnlySlot, isSalonVenue } from "../salon-exclusives.js";
 import {
-  casinoDisplayName, filterMachinesForDestination, getCurrentDestination, isAwayFromHome,
+  casinoDisplayName, filterMachinesForDestination, getActivityBranding,
+  getCurrentDestination, isAwayFromHome,
 } from "../strip-destinations.js";
 import { MACHINES, calculatePayout, contributeToProgressive, displaySymbol, progressivePool, randomSymbol, spinReels, tryJackpot } from "../slots.js";
 import { effectiveSlotStakes, getTier, getTierPayoutBoost } from "../stakes.js";
@@ -228,9 +229,10 @@ export function buildSlotsRenderers(ctx) {
     const salon = isSalonVenue(runtime) || runtime.slots?.salonOnly;
     const dest = getCurrentDestination(ctx.session);
     const propertyName = casinoDisplayName(ctx.session);
+    const slotsBrand = getActivityBranding(ctx.session, "slots", `Slot Machines — ${propertyName}`);
 
     const floor = el("div", { className: "slot-floor" }, [
-      banner(salon ? "High Limit Salon — Exclusive Slots" : `Slot Machines — ${propertyName}`),
+      banner(salon ? "High Limit Salon — Exclusive Slots" : slotsBrand.name),
       el("p", {
         className: "dim",
         textContent: salon
@@ -243,7 +245,7 @@ export function buildSlotsRenderers(ctx) {
         textContent: salon
           ? "Obsidian Vault, Whale Watch, and Chairman Vault — salon stake limits apply."
           : (isAwayFromHome(ctx.session)
-            ? `${dest.gameFlavor.slots} Shared classics still run; exclusive cabinets are property-only.`
+            ? `${slotsBrand.blurb} Shared classics still run; exclusive cabinets are property-only.`
             : "Penny slots to high-limit progressives — each machine has its own cabinet theme and playstyle."),
       }),
     ]);

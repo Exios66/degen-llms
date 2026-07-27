@@ -16,7 +16,7 @@ import {
   playFeltFlip,
   clubSummary,
   canEnterGentlemansClub,
-} from "../gentlemans-club.js?v=ae04ebc";
+} from "../gentlemans-club.js?v=6815570";
 import { fmtChips } from "../core.js";
 
 /**

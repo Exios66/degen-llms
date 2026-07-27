@@ -175,9 +175,7 @@ export function buildHotelRenderers(ctx) {
   function schematicZoneView(zoneId) {
     if (zoneId === "balcony") {
       const hotel = ensureHotel(session);
-      if (hotel.roomType === "suite" || hotel.roomType === "penthouse") {
-        if (openBalconySmokePov({ recordDecision: true })) return;
-      }
+      if (hotel.reachedRoom && openBalconySmokePov({ recordDecision: true })) return;
     }
     const map = {
       tv: "hotel-room-tv",
@@ -765,12 +763,12 @@ export function buildHotelRenderers(ctx) {
     const hotel = ensureHotel(session);
     const log = el("div", { className: "log-area hotel-log" });
     const decisions = filterRoomDecisions(session, hotel);
-    const suiteBalcony = hotel.roomType === "suite" || hotel.roomType === "penthouse";
+    const hasBalcony = hotel.reachedRoom;
 
     const decisionButtons = decisions.map((dec) => {
       const priceTag = dec.price ? ` — $${dec.price}` : "";
       return menuBtn(`${dec.label}${priceTag}`, () => {
-        if (dec.id === "balcony_smoke_pov" || (dec.id === "balcony" && suiteBalcony)) {
+        if (dec.id === "balcony_smoke_pov" || dec.id === "balcony") {
           if (openBalconySmokePov({ recordDecision: true })) return;
         }
         const res = makeRoomDecision(session, dec.id);
@@ -792,12 +790,12 @@ export function buildHotelRenderers(ctx) {
           ? el("p", { className: "dim", textContent: "Penthouse perks: telescope, butler, Foundation access, Strip POV balcony." })
           : hotel.roomType === "suite"
             ? el("p", { className: "dim", textContent: "Suite living room and Strip POV balcony smoke break available." })
-            : null,
+            : el("p", { className: "dim", textContent: "Balcony smoke-break POV available — the Strip is right there." }),
         log,
         el("ul", { className: "menu-list" }, [
           ...decisionButtons,
-          suiteBalcony
-            ? menuBtn("Open Strip POV balcony (smoke break)", () => {
+          hasBalcony
+            ? menuBtn("Open balcony smoke-break POV", () => {
                 openBalconySmokePov({ recordDecision: true });
               })
             : null,
@@ -913,14 +911,30 @@ export function buildHotelRenderers(ctx) {
   }
 
   function openPoolComplex(zoneId = "hub") {
-    const overlay = ctx.poolOverlay;
+    if (typeof ctx.openPoolComplexVisual === "function") {
+      const wasActive = ctx.poolOverlay?.active;
+      const opened = ctx.openPoolComplexVisual(zoneId, { returnView: "hotel-lobby" });
+      if (opened && !wasActive) pushView("pool-complex");
+      else if (!opened) pushView("pool-complex");
+      return;
+    }
+    const overlay = typeof ctx.ensurePoolOverlay === "function"
+      ? ctx.ensurePoolOverlay()
+      : ctx.poolOverlay;
     if (!overlay) {
       showStatus("Pool overlay not ready.", "error");
       pushView("pool-complex");
       return;
     }
     overlay.setSession(session);
-    overlay.open(zoneId);
+    overlay.returnView = "hotel-lobby";
+    const target = zoneId || "hub";
+    if (!overlay.active) {
+      pushView("pool-complex");
+      overlay.open(target);
+    } else if (target !== "hub" && overlay.zoneId !== target) {
+      overlay.openZone(target);
+    }
   }
 
   return {

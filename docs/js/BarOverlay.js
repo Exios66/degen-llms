@@ -45,11 +45,12 @@ export class BarOverlay {
     this._lastDrinkId = null;
     this._fpv = null;
     this._barMounted = false;
+    this._fromSelect = false;
     this._onKey = (e) => {
-      if (e.key === "Escape" && this.active) {
-        e.preventDefault();
-        this.requestClose();
-      }
+      if (e.key !== "Escape" || !this.active) return;
+      e.preventDefault();
+      e.stopPropagation();
+      this.requestClose();
     };
   }
 
@@ -79,6 +80,7 @@ export class BarOverlay {
     this._fpv = null;
     this._barMounted = false;
     this.phase = venueId && getBarVenueById(venueId) ? "bar" : "select";
+    this._fromSelect = this.phase === "select";
     this._chipsAtOpen = this.session.wallet.balance;
     if (this.phase === "bar") {
       this.round = createBarRound(venueId);
@@ -93,6 +95,23 @@ export class BarOverlay {
 
   requestClose() {
     if (!this.active) return;
+    // Esc from a pour returns to the lounge picker when the guest started there.
+    if (this.phase === "bar" && this._fromSelect && this.round && !this.round.closed) {
+      if (this.round.pendingEncounter) {
+        resolveBarEncounter(this.session, this.round, this.round.pendingEncounter.choices[0].id);
+      }
+      const result = settleBarRound(this.session, this.round);
+      this.hooks.onStatus?.(result.message, "success");
+      this.round = null;
+      this.phase = "select";
+      this._ordering = false;
+      this._lastDrinkId = null;
+      this._fpv = null;
+      this._barMounted = false;
+      this.hooks.onPersist?.();
+      this.render();
+      return;
+    }
     if (this.round && !this.round.closed) {
       if (this.round.pendingEncounter) {
         resolveBarEncounter(this.session, this.round, this.round.pendingEncounter.choices[0].id);
@@ -203,9 +222,10 @@ export class BarOverlay {
         el("button", {
           className: "bar-overlay__exit",
           textContent: "EXIT  ESC",
+          title: "Leave the bar menu",
           onclick: () => this.close(),
         }),
-        el("span", { className: "dim", textContent: "Hard refresh if overlays look stale." }),
+        el("span", { className: "dim", textContent: "Esc closes the lounge menu." }),
       ]),
     ]);
   }

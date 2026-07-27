@@ -109,11 +109,12 @@ export function totalWageredFromWallet(wallet) {
 export class RewardsTracker {
   /**
    * @param {import("./core.js").PlayerSession} session
-   * @param {{ onNotify?: (n: object) => void }} [hooks]
+   * @param {{ onNotify?: (n: object) => void, onTierPromoted?: (tierId: string, prevTierId: string) => void }} [hooks]
    */
   constructor(session, hooks = {}) {
     this.session = session;
     this.onNotify = hooks.onNotify ?? null;
+    this.onTierPromoted = hooks.onTierPromoted ?? null;
   }
 
   ensureRewards() {
@@ -168,6 +169,7 @@ export class RewardsTracker {
       created.push(note);
       this.onNotify?.(note);
       onTierRankUp(this.session, newTier.id);
+      this.onTierPromoted?.(newTier.id, prevTier.id);
     }
     return created;
   }

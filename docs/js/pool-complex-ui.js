@@ -28,11 +28,18 @@ export function buildPoolRenderers(ctx) {
   } = ctx;
 
   function openOverlay(zoneId) {
-    const overlay = ctx.poolOverlay;
+    if (typeof ctx.openPoolComplexVisual === "function" && !ctx.poolOverlay?.active) {
+      return ctx.openPoolComplexVisual(zoneId, { returnView: "hotel-lobby" });
+    }
+    const overlay = typeof ctx.ensurePoolOverlay === "function"
+      ? ctx.ensurePoolOverlay()
+      : ctx.poolOverlay;
     if (!overlay) return false;
     overlay.setSession(session);
-    if (overlay.active) overlay.openZone(zoneId);
-    else overlay.open(zoneId);
+    overlay.returnView = "hotel-lobby";
+    // Keep the active zone on re-render; only open or switch when needed.
+    if (!overlay.active) overlay.open(zoneId);
+    else if (zoneId && zoneId !== "hub" && overlay.zoneId !== zoneId) overlay.openZone(zoneId);
     return true;
   }
 
@@ -68,20 +75,12 @@ export function buildPoolRenderers(ctx) {
 
   function overlayGateway(viewName) {
     const zoneId = VIEW_TO_ZONE[viewName] || "hub";
-    if (openOverlay(zoneId)) {
-      return el("div", { className: "panel hotel-panel pool-complex-panel" }, [
-        statusBanner(),
-        banner("Mandalay Beach"),
-        chipLine(),
-        el("p", { className: "subtitle", textContent: "Pool Complex overlay" }),
-        el("p", { className: "dim", textContent: "Opening the graphic beach deck…" }),
-        el("ul", { className: "menu-list" }, [
-          menuBtn("Re-open pool complex", () => openOverlay(zoneId)),
-          menuBtn("Back", () => (viewName === "pool-complex" ? navigateTo("hotel-lobby") : navigateTo("pool-complex")), true),
-        ]),
-      ]);
-    }
-    return null;
+    if (!openOverlay(zoneId)) return null;
+    return el("div", {
+      className: "pool-overlay-host",
+      hidden: true,
+      "aria-hidden": "true",
+    });
   }
 
   function renderPoolComplexHub() {

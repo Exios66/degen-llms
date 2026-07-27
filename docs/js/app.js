@@ -19,7 +19,7 @@ import { RewardsPhone } from "./RewardsPhone.js";
 import { buildHotelRenderers } from "./hotel-ui.js";
 import { buildPoolRenderers } from "./pool-complex-ui.js";
 import { buildAmenitiesRenderers } from "./casino-amenities-ui.js";
-import { ensureHotel } from "./hotel.js";
+import { ensureHotel, applyPromotedTierRoomUpgrade } from "./hotel.js";
 import { createShell, createRuntime, createViewStack } from "./ui/shell.js";
 import { buildTitleSceneRenderer, shouldSkipCasinoTitle } from "./ui/title-scene.js";
 import { buildStakesRenderers } from "./ui/stakes-ui.js";
@@ -37,7 +37,7 @@ import { PoolComplexOverlay } from "./PoolComplexOverlay.js";
 import { BalconySmokeOverlay } from "./BalconySmokeOverlay.js";
 import { buildRacingRenderers } from "./ui/racing-renderers.js";
 import { buildVenueRenderers } from "./ui/venue-renderers.js";
-import { buildGentlemansClubRenderers } from "./ui/gentlemans-club-renderers.js?v=ae04ebc";
+import { buildGentlemansClubRenderers } from "./ui/gentlemans-club-renderers.js?v=6815570";
 import { buildCashierRenderers } from "./ui/cashier-renderers.js";
 import { buildMetaRenderers } from "./ui/meta-renderers.js";
 
@@ -149,7 +149,20 @@ function mountRewardsPhone() {
   const root = document.getElementById("rewards-phone");
   if (!root) return;
   ensureHotel(session);
-  rewardsPhone = new RewardsPhone(root, session, { onPersist: persist });
+  rewardsPhone = new RewardsPhone(root, session, {
+    onPersist: () => {
+      persist();
+      render();
+    },
+    onTierPromoted: (tierId) => {
+      const result = applyPromotedTierRoomUpgrade(session, tierId, rewardsPhone?.tracker);
+      if (result?.ok) {
+        rewardsPhone?.tracker.pushNotification("Room Upgraded", result.message);
+        persist();
+        render();
+      }
+    },
+  });
   rewardsPhone.sync();
 }
 
@@ -206,14 +219,42 @@ function mountBarOverlay() {
   barOverlay.setSession(session);
 }
 
+const POOL_LAUNCH_ZONES = {
+  "pool-complex": "hub",
+  "pool-wave": "wave_pool",
+  "pool-hot-tubs": "hot_tubs",
+  "pool-cabanas": "cabanas",
+  "pool-reef": "shark_reef",
+  "pool-beach-club": "beach_club",
+  "pool-rave": "beach_rave",
+  "pool-events": "events",
+};
+
+function poolOverlayReturnView() {
+  const name = viewStack.at(-1)?.name ?? "hub";
+  if (name.startsWith("pool") || name.startsWith("hotel")) return "hotel-lobby";
+  return null;
+}
+
+function handlePoolOverlayClosed() {
+  const ret = poolOverlay?.returnView ?? poolOverlayReturnView();
+  if (poolOverlay) poolOverlay.returnView = null;
+  if (ret === "hotel-lobby") {
+    ensureHotel(session);
+    navigateTo("hotel-lobby");
+    return;
+  }
+  render();
+}
+
 function mountPoolOverlay() {
   const root = document.getElementById("pool-overlay");
-  if (!root) return;
+  if (!root) return null;
   poolOverlay = new PoolComplexOverlay(root, {
     onPersist: () => persist(),
     onStatus: (msg, kind) => showStatus(msg, kind),
-    onClosed: () => render(),
-    barOverlay,
+    onClosed: () => handlePoolOverlayClosed(),
+    get barOverlay() { return barOverlay; },
     onChipDelta: () => {
       const line = document.querySelector(".chip-line");
       if (line) {
@@ -224,7 +265,35 @@ function mountPoolOverlay() {
     },
   });
   poolOverlay.setSession(session);
+  return poolOverlay;
 }
+
+/** Remount if the graphic beach deck was never attached (stale host / missing root race). */
+function ensurePoolOverlay() {
+  if (poolOverlay && typeof poolOverlay.open === "function") {
+    poolOverlay.setSession(session);
+    return poolOverlay;
+  }
+  return mountPoolOverlay();
+}
+
+/** Open the Mandalay Beach graphic overlay from any casino entry point. */
+function openPoolComplexVisual(zoneId = "hub", opts = {}) {
+  const overlay = ensurePoolOverlay();
+  if (!overlay) {
+    showStatus("Pool overlay not ready — try Hotel Lobby → Pool Complex.", "error");
+    return false;
+  }
+  overlay.setSession(session);
+  overlay.returnView = opts.returnView ?? poolOverlayReturnView();
+  const target = zoneId || "hub";
+  // Avoid re-open/reset on every render() while the beach deck is already up.
+  if (!overlay.active) overlay.open(target);
+  else if (target !== "hub" && overlay.zoneId !== target) overlay.openZone(target);
+  return true;
+}
+
+Object.assign(ctx, { ensurePoolOverlay, openPoolComplexVisual });
 
 function mountBalconySmokeOverlay() {
   const root = document.getElementById("balcony-smoke-overlay");
@@ -540,6 +609,7 @@ function renderHub() {
     "Player Stats",
     "Save Game",
     "Exit to Hotel",
+    "Pool Complex — Mandalay Beach",
     "Casino Amenities",
     "Explore Resort (RPG)",
     "Leave Casino",
@@ -625,8 +695,10 @@ function renderHub() {
       ensureHotel(session);
       pushView("hotel-lobby");
     } else if (choice === FLOOR_ORDER.length + 7) {
-      pushView("casino-floor");
+      if (!openPoolComplexVisual("hub")) pushView("pool-complex");
     } else if (choice === FLOOR_ORDER.length + 8) {
+      pushView("casino-floor");
+    } else if (choice === FLOOR_ORDER.length + 9) {
       persist();
       const rpgUrl = session.slotId != null
         ? `./rpg/?slot=${session.slotId}&skipIntro=1`
@@ -803,7 +875,8 @@ function render() {
     app.appendChild(renderNotFound({ requestedView: current.name }));
   }
   const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
-  if (!reduceMotion) {
+  const slotsSpinning = runtime.slots?.spinning === true;
+  if (!reduceMotion && !slotsSpinning) {
     app.classList.remove("view-transition");
     void app.offsetWidth;
     app.classList.add("view-transition");
@@ -817,6 +890,17 @@ function render() {
   window.__casinoReady = true;
 }
 
+function applyDeepView(deepView) {
+  if (!deepView) return;
+  const poolZone = POOL_LAUNCH_ZONES[deepView];
+  if (poolZone) {
+    if (openPoolComplexVisual(poolZone, { returnView: "hotel-lobby" })) return;
+    if (RENDERERS[deepView]) pushView(deepView);
+    return;
+  }
+  if (RENDERERS[deepView]) pushView(deepView);
+}
+
 function applyLaunchParams() {
   const params = new URLSearchParams(window.location.search);
   if (params.get("guest") === "1") {
@@ -824,8 +908,7 @@ function applyLaunchParams() {
       playerName: params.get("name") || "Guest",
       chips: Math.max(0, parseInt(params.get("chips") || "1000", 10)),
     }));
-    const deepView = params.get("view");
-    if (deepView && RENDERERS[deepView]) pushView(deepView);
+    applyDeepView(params.get("view"));
     return true;
   }
   const slotParam = params.get("slot");
@@ -839,8 +922,7 @@ function applyLaunchParams() {
       const loaded = loadSlot(slotId);
       if (loaded) {
         enterCasino(loaded);
-        const deepView = params.get("view");
-        if (deepView && RENDERERS[deepView]) pushView(deepView);
+        applyDeepView(params.get("view"));
         return true;
       }
       pushView("save-create", { slotId });

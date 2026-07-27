@@ -6,6 +6,7 @@
 
 import { tierForWagered } from "./rewards.js";
 import { tierIndex } from "./rewards-perks.js";
+import { getEffectiveLifetimeWagered } from "./resort-bridge.js";
 import { getRapport } from "./phone-rapport.js";
 import { getIntoxicationSummary, isHeightenedIntoxication } from "./intoxication-effects.js";
 import { STAKE_TIERS } from "./stakes.js";
@@ -52,7 +53,7 @@ export function canEnterHighLimitSalon(session, stakeTier) {
  * @param {import("./core.js").PlayerSession} session
  */
 export function canEnterFoundationRoom(session) {
-  const rewardsTier = tierForWagered(session.rewards?.lifetimeWagered ?? 0);
+  const rewardsTier = tierForWagered(getEffectiveLifetimeWagered(session));
   const rewardsIdx = tierIndex(rewardsTier.id);
   if (rewardsIdx < FOUNDATION_MIN_REWARDS_TIER_IDX) {
     return {

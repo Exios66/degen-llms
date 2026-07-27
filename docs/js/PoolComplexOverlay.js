@@ -114,11 +114,13 @@ export class PoolComplexOverlay {
     this.fxClass = null;
     this._fxTimer = null;
     this._onKey = (e) => {
-      if (e.key === "Escape" && this.active) {
-        e.preventDefault();
-        if (this.zoneId !== "hub") this.openZone("hub");
-        else this.close();
-      }
+      if (e.key !== "Escape" || !this.active) return;
+      // Nested bar FPV (beach club) owns Escape until it closes.
+      if (document.body.classList.contains("bar-overlay-active")) return;
+      e.preventDefault();
+      e.stopPropagation();
+      if (this.zoneId !== "hub") this.openZone("hub");
+      else this.close();
     };
   }
 
@@ -284,6 +286,7 @@ export class PoolComplexOverlay {
           ? el("button", {
             className: "pool-overlay__exit",
             textContent: "LEAVE BEACH  ESC",
+            title: "Return to hotel lobby",
             onclick: () => this.close(),
           })
           : el("button", {
@@ -294,7 +297,7 @@ export class PoolComplexOverlay {
         el("span", {
           className: "dim pool-overlay__footer-note",
           textContent: this.zoneId === "hub"
-            ? "Sun, sand, and bad decisions — all chip-compatible."
+            ? "Esc leaves the beach for the hotel lobby."
             : (meta.eyebrow || "Mandalay Beach"),
         }),
       ]),

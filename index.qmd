@@ -81,11 +81,12 @@ This deployment is a **new** JackJBurleson Posit Connect Cloud content item for 
 |------|------------|
 | **Casino floor** | Blackjack, Hold'em, roulette, craps, 14 slots, lottery, sports book, trading floor, arcade alley, racing, dressage & jumping |
 | **Cashier & bank** | Buy/cash chips, ledger, off-strip bank account |
-| **Hotel** | Clerk Carmen, hallway mini-game, in-room amenities, guest directory |
+| **Hotel** | Clerk Carmen, hallway mini-game, in-room amenities, Velvet Ledger, guest directory |
+| **Strip Ride** | Web-only limo / Uber / Lyft to Luxor, Excalibur, Bellagio, Circa — exclusive slots + themed menus |
 | **Resort dining** | Aureole, Border Grill, Stripsteak — capacity minigame + drink-scaled encounters |
 | **Pool complex** | Wave pool, cabanas, Shark Reef collection, beach club |
-| **MGM Rewards** | Sapphire → Chairman tiers, comps, phone (press **P** on web) |
-| **Pixel RPG** | 28 walkable rooms, 61 NPCs, quests, and a dex — see [Pixel RPG](rpg.qmd) |
+| **MGM Rewards** | Sapphire → Chairman tiers, comps, phone with audio + Connect rideshare (press **P** on web) |
+| **Pixel RPG** | 32 walkable rooms, NPCs, quests, and a dex — see [Pixel RPG](rpg.qmd) |
 :::
 
 ```{python}

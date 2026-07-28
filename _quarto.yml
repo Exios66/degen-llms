@@ -21,6 +21,7 @@ project:
     - docs/arcade.md
     - docs/racing.md
     - docs/hotel.md
+    - docs/strip-ride.md
     - docs/dining.md
     - docs/pool-complex.md
     - docs/mgm-rewards.md
@@ -61,6 +62,8 @@ website:
             text: Casino Offerings
           - href: docs/hotel.md
             text: Resort Hotel
+          - href: docs/strip-ride.md
+            text: Strip Ride
           - href: docs/dining.md
             text: Resort Dining
           - href: docs/pool-complex.md
@@ -150,6 +153,7 @@ website:
           - docs/access-points.md
           - docs/casino-offerings.md
           - docs/hotel.md
+          - docs/strip-ride.md
           - docs/dining.md
           - docs/pool-complex.md
           - docs/mgm-rewards.md

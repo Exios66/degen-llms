@@ -81,9 +81,10 @@ Exit the casino floor to the **Mandalay Bay Hotel Experience**:
 - **Hallway mini-game** — three beats of directional choices to reach your door
 - **In-room amenities** — TV (Shark Reef ch. 47, wave pool cam), sensor-enabled minibar, unlimited foreign calls, balcony decisions / suite balcony POV smoke-break, 17 unlockable Vegas vignettes
 - **Gentleman's Club — The Velvet Ledger** — Gold+ / suite key / club phone line; tip storms, stocked bar, minigames, ledger eggs
+- **Strip Ride (web)** — room-phone limo or Rewards Connect Uber / Lyft to Luxor, Excalibur, Bellagio, Circa with exclusive slots and per-property menu themes
 - **Guest Directory** — leather-bound lobby guest book with persistent signatures
 - **Real-time day/night cycle** — 2 hours real time = 1 in-game day; daily room/resort/parking charges; rotating check-in requirements (phone, desk, both, or whale net-positive)
-- **MGM Rewards phone** — press **P** in the web app for tier status, comps, reservation locate, and textable staff contacts
+- **MGM Rewards phone** — press **P** for tier status, comps, reservation locate, audio call trees, and Connect rideshare
 
 Room types: Deluxe King → Panorama Suite → Chairman Penthouse. MGM Rewards tier comps can cover upgrades and room nights.
 
@@ -198,7 +199,7 @@ Full docs in [`docs/`](docs/README.md) and on the **[GitHub Wiki](https://github
 | [Trading Floor](docs/trading-floor.md) | Futures & options (NYSE, commodities, crypto) |
 | [Arcade Alley](docs/arcade.md) | CRT cabinets — Strip Cross, Invaders, Breakout, rhythm |
 | [Racing](docs/racing.md) | Thoroughbred + equestrian |
-| [Hotel](docs/hotel.md) / [Pool](docs/pool-complex.md) / [Rewards](docs/mgm-rewards.md) | Resort off the floor |
+| [Hotel](docs/hotel.md) / [Strip Ride](docs/strip-ride.md) / [Pool](docs/pool-complex.md) / [Rewards](docs/mgm-rewards.md) | Resort off the floor |
 | [Architecture](docs/architecture.md) | Packages, data flow, activity system |
 | [Adding Activities](docs/adding-activities.md) | Plug in new games |
 | [Testing](docs/testing.md) | Running and writing tests |

@@ -124,14 +124,15 @@ Thoroughbred sim with win/place/show wagering. Real horse names, strength-based 
 
 | Zone | Highlights |
 |------|------------|
-| **Hotel** | Front desk, hallway mini-game, 17 room vignettes, dining overlay, suite balcony Strip POV smoke-break |
+| **Hotel** | Front desk, hallway mini-game, 17 room vignettes, dining overlay, suite balcony Strip POV smoke-break, Velvet Ledger |
+| **Strip Ride** | Web-only limo / Uber / Lyft to Luxor, Excalibur, Bellagio, Circa — exclusive slots + per-property menu themes |
 | **Pool complex** | Wave pool, cabanas, Shark Reef, beach club |
-| **MGM Rewards** | Tier progression, comps, phone hotline |
+| **MGM Rewards** | Tier progression, comps, phone hotline (Connect rideshare unlock) |
 
-→ [Resort Hotel](hotel.md) · [Pool Complex](pool-complex.md) · [MGM Rewards](mgm-rewards.md)
+→ [Resort Hotel](hotel.md) · [Strip Ride](strip-ride.md) · [Pool Complex](pool-complex.md) · [MGM Rewards](mgm-rewards.md)
 
 ## Pixel RPG access
 
-Every major offering above is playable as an in-world encounter in the pixel RPG — no terminal redirect required.
+Every major offering above is playable as an in-world encounter in the pixel RPG — no terminal redirect required. **Strip Ride destination floors** are web-terminal only; the RPG has its own walkable Strip overworld.
 
 → [Pixel RPG](pixel-rpg.md)

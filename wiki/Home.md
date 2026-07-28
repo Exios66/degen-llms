@@ -27,6 +27,7 @@ See [[Access-Points]] for full details on every surface.
 - [[Casino-Offerings]] — Every floor, activity, and amenity on property
 - [[MGM-Rewards]] — Tier progression, comps, and perks
 - [[Resort-Hotel]] — Check-in, rooms, amenities, and day/night cycle
+- [[Strip-Ride]] — Limo / Uber / Lyft to Luxor, Excalibur, Bellagio, Circa (web)
 - [[Resort-Dining]] — Aureole, Border Grill, Stripsteak capacity overlay
 - [[Pool-Complex]] — 11-acre pool expansion, Shark Reef, beach club
 

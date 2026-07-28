@@ -1,5 +1,5 @@
 /**
- * Strip limo dispatch UI — web terminal only.
+ * Strip limo dispatch UI for the web terminal casino.
  */
 import {
   applyDestinationTheme,
@@ -38,6 +38,7 @@ export function buildStripLimoRenderers(ctx) {
     return ctx.session;
   }
 
+  /** Local helper — menuBtn is not on the shared web-terminal ctx (only hotel/pool factories define it). */
   function menuBtn(label, onclick, isBack = false) {
     return el("li", {}, [
       el("button", {

@@ -5,6 +5,20 @@ All notable changes to **degen-llms** (The Mandalay Bay) are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.2] - 2026-08-24
+
+### Fixed
+
+- **Strip limo / private driver** — local `menuBtn` helper in strip-limo UI prevents blank-screen crash from room-phone dispatch; strip-limo render smoke test added (#144)
+
+### Documentation
+
+- **Strip Ride guide** — `docs/strip-ride.md` and `wiki/Strip-Ride.md` wired into Quarto nav; hotel, slots, MGM Rewards, and player-guide parity across docs and wiki (#152)
+
+### Notes
+
+- Intentionally excluded: meta-changelog PR (#151), no-op merge #87 (save carry-over already on main via #92), Quarto freeze refresh commits
+
 ## [1.2.1] - 2026-07-27
 
 ### Changed

@@ -56,7 +56,7 @@ export const REDEEM_OFFERS = [
   },
   {
     id: "slot_voucher",
-    label: "Free-spin voucher (narrative)",
+    label: "Free-spin voucher",
     costTickets: 12,
     kind: "flag",
     flag: "arcade_slot_voucher",

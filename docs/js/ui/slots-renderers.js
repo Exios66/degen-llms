@@ -9,6 +9,7 @@ import {
 } from "../strip-destinations.js";
 import { MACHINES, calculatePayout, contributeToProgressive, displaySymbol, progressivePool, randomSymbol, spinReels, tryJackpot } from "../slots.js";
 import { effectiveSlotStakes, getTier, getTierPayoutBoost } from "../stakes.js";
+import { consumeArcadeSlotVoucher, hasArcadeSlotVoucher } from "../arcade/state.js";
 
 export function buildSlotsRenderers(ctx) {
   const { el, banner, chipLine, pushView, popView, goBack, render, persist, recordActivityVisit, recordActivityResult } = ctx;
@@ -359,7 +360,10 @@ export function buildSlotsRenderers(ctx) {
         render();
         return;
       }
-      if (!ctx.session.wallet.debit(bet, "slots", `${machine.name} spin ${fmtChips(bet)}`)) {
+      const usedArcadeVoucher = consumeArcadeSlotVoucher(ctx.session);
+      if (usedArcadeVoucher) {
+        persist();
+      } else if (!ctx.session.wallet.debit(bet, "slots", `${machine.name} spin ${fmtChips(bet)}`)) {
         runtime.slots.lastMessage = { text: "Insufficient chips.", type: "error" };
         render();
         return;
@@ -387,8 +391,13 @@ export function buildSlotsRenderers(ctx) {
       runtime.slots.landedReel = -1;
       runtime.slots.displayReels = [...finalReels];
       runtime.slots.pendingFinalReels = finalReels;
-      runtime.slots.pendingOutcome = { win, reason, jackpotAmount, bet, winTier, isJackpot };
-      runtime.slots.lastMessage = null;
+      runtime.slots.pendingOutcome = {
+        win, reason, jackpotAmount, bet, winTier, isJackpot,
+        voucher: usedArcadeVoucher,
+      };
+      runtime.slots.lastMessage = usedArcadeVoucher
+        ? { text: "Arcade free-spin voucher — no chips deducted.", type: "success" }
+        : null;
 
       const cycleSymbols = () => {
         if (!runtime.slots.spinning || runtime.slots.reelsStopped >= 3) return;
@@ -444,16 +453,19 @@ export function buildSlotsRenderers(ctx) {
 
         if (outcome.win > 0) {
           ctx.session.wallet.credit(outcome.win, "slots", outcome.reason);
-          runtime.slots.sessionNet += outcome.win - outcome.bet;
+          runtime.slots.sessionNet += outcome.voucher ? outcome.win : outcome.win - outcome.bet;
           runtime.slots.lastMessage = {
-            text: outcome.reason,
+            text: outcome.voucher ? `${outcome.reason} (arcade voucher)` : outcome.reason,
             amount: outcome.win,
             type: outcome.isJackpot ? "jackpot-win" : "success",
             winTier: outcome.winTier,
           };
         } else {
-          runtime.slots.sessionNet -= outcome.bet;
-          runtime.slots.lastMessage = { text: "No win this spin.", type: "dim" };
+          if (!outcome.voucher) runtime.slots.sessionNet -= outcome.bet;
+          runtime.slots.lastMessage = {
+            text: outcome.voucher ? "Arcade voucher spin — no win, no chip loss." : "No win this spin.",
+            type: "dim",
+          };
         }
         persist();
         render();
@@ -473,6 +485,9 @@ export function buildSlotsRenderers(ctx) {
       ],
       baseChildren: [
         el("p", { className: "chip-line", textContent: `Chips: ${fmtChips(ctx.session.wallet.balance)}` }),
+        hasArcadeSlotVoucher(ctx.session)
+          ? el("p", { className: "dim", textContent: "Arcade free-spin voucher ready — next pull costs 0 chips." })
+          : null,
         el("div", { className: "form-row" }, [
           el("label", { textContent: `Spin amount (${minBet}–${maxBet}, 0 to leave)` }),
           betInput,

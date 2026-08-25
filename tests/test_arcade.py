@@ -35,3 +35,8 @@ def test_ticket_math_js_parity() -> None:
     assert tickets_from_score(250, cleared=True) == 4
     assert payout_from_mult(10, 2.5) == 25
     assert payout_from_mult(10, 9) == 30
+
+
+def test_cabinet_costs_within_plan_range() -> None:
+    for _name, cost, _blurb in CABINETS:
+        assert 5 <= cost <= 25

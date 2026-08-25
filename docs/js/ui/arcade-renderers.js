@@ -104,7 +104,7 @@ export function buildArcadeRenderers(ctx) {
           disabled: !can,
           onclick: () => {
             const live = state();
-            const result = live.redeem(offer.id);
+            const result = live.redeem(offer.id, ctx.session);
             if (!result.ok) {
               showStatus(result.message, "error");
               return;

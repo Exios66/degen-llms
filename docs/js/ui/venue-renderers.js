@@ -11,7 +11,7 @@ import { recordConsumption } from "../intoxication-effects.js";
 import { adjustRapport } from "../phone-rapport.js";
 
 export function buildVenueRenderers(ctx) {
-  const { el, banner, chipLine, statusBanner, showStatus, menu, pushView, goBack, navigateTo, recordActivityVisit, persist } = ctx;
+  const { el, banner, chipLine, statusBanner, showStatus, menu, pushView, goBack, navigateTo, recordActivityVisitOnce, persist } = ctx;
   const runtime = ctx.runtime;
 
   function launchSalonGame(def) {
@@ -49,7 +49,7 @@ export function buildVenueRenderers(ctx) {
     }
 
     const tier = enterSalonContext(runtime);
-    recordActivityVisit("high_limit_salon");
+    recordActivityVisitOnce("high_limit_salon");
 
     const tableLabels = SALON_TABLE_GAMES.map((g) => `${g.label} — ${g.blurb}`);
     const options = [
@@ -114,7 +114,7 @@ export function buildVenueRenderers(ctx) {
       ]);
     }
 
-    recordActivityVisit("foundation_room");
+    recordActivityVisitOnce("foundation_room");
 
     return el("div", { className: "panel amenities-panel foundation-room" }, [
       statusBanner(),

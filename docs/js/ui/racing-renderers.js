@@ -6,9 +6,10 @@ import { assignHorseSprites, createHorseSpriteCanvas, getHorseSprite, getJockeyS
 import { fmtOdds as fmtRaceOdds, generateRace, getHorseNamePool, parseHorseNamesCSV, setCustomHorseNames, settleTicket, simulateRace } from "../horse_racing.js";
 import { effectiveTableStakes, formatStakeRange } from "../stakes.js";
 import { getActivityBranding, casinoDisplayName } from "../strip-destinations.js";
+import { refundSlips } from "../pendingRefunds.js";
 
 export function buildRacingRenderers(ctx) {
-  const { el, banner, chipLine, showStatus, menu, dealerPanel, pushView, goBack, render, persist, recordActivityVisit, recordActivityResult } = ctx;
+  const { el, banner, chipLine, showStatus, menu, dealerPanel, pushView, goBack, render, persist, recordActivityVisitOnce, clearActivityVisit, recordActivityResult } = ctx;
   const runtime = ctx.runtime;
 
   function racingBrandName() {
@@ -17,6 +18,58 @@ export function buildRacingRenderers(ctx) {
 
   function stablesBannerTitle() {
     return `${casinoDisplayName(ctx.session).replace(/^The\s+/i, "")} Stables`;
+  }
+
+  function cleanupRaceTrack() {
+    runtime.horseRacing.activeTrack?.cleanup?.();
+    runtime.horseRacing.activeTrack = null;
+  }
+
+  function leaveHorseRacing() {
+    cleanupRaceTrack();
+    if (runtime.horseRacing.pending.length) {
+      const refunded = refundSlips(
+        ctx.session,
+        "horse_racing",
+        runtime.horseRacing.pending,
+        "Racing leave — open tickets returned",
+      );
+      runtime.horseRacing.pending = [];
+      if (refunded > 0) {
+        showStatus(`Returned ${refunded.toLocaleString()} chips from unsettled tickets.`, "success");
+        persist();
+      }
+    }
+    runtime.horseRacing.cachedResults = null;
+    runtime.horseRacing.settleCompleted = false;
+    clearActivityVisit("horse_racing");
+    goBack();
+  }
+
+  function leaveDressage() {
+    if (runtime.dressage.pending.length) {
+      const refunded = refundSlips(ctx.session, "dressage", runtime.dressage.pending, "Dressage leave — open tickets returned");
+      runtime.dressage.pending = [];
+      if (refunded > 0) {
+        showStatus(`Returned ${refunded.toLocaleString()} chips from unsettled tickets.`, "success");
+        persist();
+      }
+    }
+    clearActivityVisit("dressage");
+    goBack();
+  }
+
+  function leaveJumper() {
+    if (runtime.jumper.pending.length) {
+      const refunded = refundSlips(ctx.session, "jumper", runtime.jumper.pending, "Jumper leave — open tickets returned");
+      runtime.jumper.pending = [];
+      if (refunded > 0) {
+        showStatus(`Returned ${refunded.toLocaleString()} chips from unsettled tickets.`, "success");
+        persist();
+      }
+    }
+    clearActivityVisit("jumper");
+    goBack();
   }
 
   // ── Horse Stables ──────────────────────────────────────────────────────────
@@ -74,7 +127,7 @@ export function buildRacingRenderers(ctx) {
   }
 
   function renderHorseStables() {
-    recordActivityVisit("horse_stables");
+    recordActivityVisitOnce("horse_stables");
     return el("div", { className: "panel racing-pavilion" }, [
       banner(stablesBannerTitle()),
       chipLine(),
@@ -161,7 +214,7 @@ export function buildRacingRenderers(ctx) {
         ]),
       ]);
     }
-    recordActivityVisit("horse_racing");
+    recordActivityVisitOnce("horse_racing");
     if (!runtime.horseRacing.card) runtime.horseRacing.card = generateRace(ctx.session);
     persist();
     const tier = runtime.horseRacing.tier ?? runtime.stakeTier;
@@ -203,7 +256,7 @@ export function buildRacingRenderers(ctx) {
         ["Place a wager", "Run race & settle", "New race card", "Manage horse names", "Visit the Stables"],
         "Racing pavilion:",
         (choice) => {
-          if (choice === 0) { goBack(); return; }
+          if (choice === 0) { leaveHorseRacing(); return; }
           if (choice === 1) pushView("horse-racing-wager");
           else if (choice === 2) pushView("horse-racing-settle");
           else if (choice === 3) { runtime.horseRacing.card = generateRace(ctx.session); render(); }
@@ -295,14 +348,20 @@ export function buildRacingRenderers(ctx) {
 
     if (!runtime.horseRacing.pending.length) {
       body.appendChild(el("p", { className: "error", textContent: "No open tickets." }));
+    } else if (runtime.horseRacing.settleCompleted) {
+      body.appendChild(el("p", { className: "dim", textContent: "Race already settled — place new tickets or return to the pavilion." }));
     } else {
       if (!runtime.horseRacing.card) runtime.horseRacing.card = generateRace(ctx.session);
       const card = runtime.horseRacing.card;
-      const results = simulateRace(card);
+      if (!runtime.horseRacing.cachedResults) {
+        runtime.horseRacing.cachedResults = simulateRace(card);
+      }
+      const results = runtime.horseRacing.cachedResults;
       const slips = [...runtime.horseRacing.pending];
       const resultsPanel = el("div", { className: "race-results-panel is-hidden" });
       const log = el("div", { className: "log-area" });
 
+      cleanupRaceTrack();
       const track = createRaceTrackView({
         card,
         results,
@@ -310,6 +369,8 @@ export function buildRacingRenderers(ctx) {
         raceNumber: runtime.horseRacing.races + 1,
         autoRun: true,
         onComplete: () => {
+          if (runtime.horseRacing.settleCompleted) return;
+          runtime.horseRacing.settleCompleted = true;
           log.appendChild(el("p", { className: "subtitle", textContent: "FINISH ORDER" }));
           const finishLine = el("div", { className: "racing-finish-line" });
           results.forEach((num, i) => {
@@ -348,11 +409,13 @@ export function buildRacingRenderers(ctx) {
           }
           runtime.horseRacing.races += 1;
           runtime.horseRacing.pending = [];
+          runtime.horseRacing.cachedResults = null;
           recordActivityResult("horse_racing", runtime.horseRacing.sessionNet, runtime.horseRacing.races);
           persist();
           resultsPanel.classList.remove("is-hidden");
         },
       });
+      runtime.horseRacing.activeTrack = track;
 
       body.appendChild(track);
       body.appendChild(resultsPanel);
@@ -364,7 +427,14 @@ export function buildRacingRenderers(ctx) {
       chipLine(),
       body,
       el("div", { className: "action-bar" }, [
-        el("button", { className: "btn", textContent: "Back", onclick: () => goBack() }),
+        el("button", {
+          className: "btn",
+          textContent: "Back",
+          onclick: () => {
+            cleanupRaceTrack();
+            goBack();
+          },
+        }),
       ]),
     ]);
   }
@@ -460,7 +530,7 @@ export function buildRacingRenderers(ctx) {
         ]),
       ]);
     }
-    recordActivityVisit("dressage");
+    recordActivityVisitOnce("dressage");
     if (!runtime.dressage.card) runtime.dressage.card = generateDressage();
     persist();
     const tier = runtime.dressage.tier ?? runtime.stakeTier;
@@ -503,7 +573,7 @@ export function buildRacingRenderers(ctx) {
         ["Place a wager", "Run test & settle", "New entry list"],
         "Dressage arena:",
         (choice) => {
-          if (choice === 0) { goBack(); return; }
+          if (choice === 0) { leaveDressage(); return; }
           if (choice === 1) pushView("dressage-wager");
           else if (choice === 2) pushView("dressage-settle");
           else if (choice === 3) { runtime.dressage.card = generateDressage(); render(); }
@@ -624,7 +694,7 @@ export function buildRacingRenderers(ctx) {
         ]),
       ]);
     }
-    recordActivityVisit("jumper");
+    recordActivityVisitOnce("jumper");
     if (!runtime.jumper.card) runtime.jumper.card = generateJumper();
     persist();
     const tier = runtime.jumper.tier ?? runtime.stakeTier;
@@ -667,7 +737,7 @@ export function buildRacingRenderers(ctx) {
         ["Place a wager", "Run course & settle", "New draw"],
         "Show jumping:",
         (choice) => {
-          if (choice === 0) { goBack(); return; }
+          if (choice === 0) { leaveJumper(); return; }
           if (choice === 1) pushView("jumper-wager");
           else if (choice === 2) pushView("jumper-settle");
           else if (choice === 3) { runtime.jumper.card = generateJumper(); render(); }

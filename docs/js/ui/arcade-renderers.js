@@ -6,7 +6,7 @@ import { getActivityBranding } from "../strip-destinations.js";
 export function buildArcadeRenderers(ctx) {
   const {
     el, banner, chipLine, showStatus, menu, pushView, popView, goBack,
-    render, persist, recordActivityVisit, recordActivityResult,
+    render, persist, recordActivityVisitOnce, recordActivityResult,
   } = ctx;
   const runtime = ctx.runtime;
 
@@ -31,7 +31,7 @@ export function buildArcadeRenderers(ctx) {
       ]);
     }
 
-    recordActivityVisit("arcade");
+    recordActivityVisitOnce("arcade");
     persist();
     const st = state();
 

@@ -12,7 +12,7 @@ import { effectiveSlotStakes, getTier, getTierPayoutBoost } from "../stakes.js";
 import { consumeArcadeSlotVoucher, hasArcadeSlotVoucher } from "../arcade/state.js";
 
 export function buildSlotsRenderers(ctx) {
-  const { el, banner, chipLine, pushView, popView, goBack, render, persist, recordActivityVisit, recordActivityResult } = ctx;
+  const { el, banner, chipLine, pushView, popView, goBack, render, persist, recordActivityVisitOnce, clearActivityVisit, recordActivityResult } = ctx;
   const runtime = ctx.runtime;
 
   function slotMachineCard(machine, onSelect) {
@@ -224,7 +224,7 @@ export function buildSlotsRenderers(ctx) {
         ]),
       ]);
     }
-    recordActivityVisit("slots");
+    recordActivityVisitOnce("slots");
     persist();
     const tier = runtime.slots.tier ?? runtime.stakeTier;
     const salon = isSalonVenue(runtime) || runtime.slots?.salonOnly;
@@ -340,14 +340,55 @@ export function buildSlotsRenderers(ctx) {
       ? el("p", { className: "dim", textContent: `Max bet (${maxBet.toLocaleString()} chips) required to qualify for the progressive jackpot.` })
       : null;
 
+    function applyPendingSpinOutcome() {
+      const outcome = runtime.slots.pendingOutcome;
+      if (!outcome) return false;
+      clearSlotsSpinTimers();
+      runtime.slots.spinning = false;
+      runtime.slots.reelsStopped = 3;
+      runtime.slots.landedReel = -1;
+      runtime.slots.lastReels = runtime.slots.pendingFinalReels;
+      runtime.slots.displayReels = runtime.slots.pendingFinalReels;
+      runtime.slots.pendingFinalReels = null;
+      runtime.slots.pendingOutcome = null;
+      runtime.slots.spins += 1;
+      runtime.slots.lastWin = outcome.win > 0;
+      runtime.slots.winTier = outcome.winTier;
+      runtime.slots.lastWinAmount = outcome.win;
+      if (outcome.win > 0) {
+        ctx.session.wallet.credit(outcome.win, "slots", outcome.reason);
+        runtime.slots.sessionNet += outcome.voucher ? outcome.win : outcome.win - outcome.bet;
+        runtime.slots.lastMessage = {
+          text: outcome.voucher ? `${outcome.reason} (arcade voucher)` : outcome.reason,
+          amount: outcome.win,
+          type: outcome.isJackpot ? "jackpot-win" : "success",
+          winTier: outcome.winTier,
+        };
+      } else {
+        if (!outcome.voucher) runtime.slots.sessionNet -= outcome.bet;
+        runtime.slots.lastMessage = {
+          text: outcome.voucher ? "Arcade voucher spin — no win, no chip loss." : "No win this spin.",
+          type: "dim",
+        };
+      }
+      persist();
+      return true;
+    }
+
+    function leaveSlotMachine() {
+      if (runtime.slots.spinning) applyPendingSpinOutcome();
+      clearSlotsSpinTimers();
+      recordActivityResult("slots", runtime.slots.sessionNet, runtime.slots.spins);
+      clearActivityVisit("slots");
+      persist();
+      popView();
+      render();
+    }
+
     function doSpin() {
       const bet = parseInt(betInput.value, 10);
       if (bet === 0) {
-        clearSlotsSpinTimers();
-        recordActivityResult("slots", runtime.slots.sessionNet, runtime.slots.spins);
-        persist();
-        popView();
-        render();
+        leaveSlotMachine();
         return;
       }
       if (bet < minBet) {
@@ -435,39 +476,7 @@ export function buildSlotsRenderers(ctx) {
       scheduleSlotsSpin(() => stopReel(2), timing.slotsReel3);
 
       scheduleSlotsSpin(() => {
-        clearSlotsSpinTimers();
-        const outcome = runtime.slots.pendingOutcome;
-        if (!outcome) return;
-
-        runtime.slots.spinning = false;
-        runtime.slots.reelsStopped = 3;
-        runtime.slots.landedReel = -1;
-        runtime.slots.lastReels = runtime.slots.pendingFinalReels;
-        runtime.slots.displayReels = runtime.slots.pendingFinalReels;
-        runtime.slots.pendingFinalReels = null;
-        runtime.slots.pendingOutcome = null;
-        runtime.slots.spins += 1;
-        runtime.slots.lastWin = outcome.win > 0;
-        runtime.slots.winTier = outcome.winTier;
-        runtime.slots.lastWinAmount = outcome.win;
-
-        if (outcome.win > 0) {
-          ctx.session.wallet.credit(outcome.win, "slots", outcome.reason);
-          runtime.slots.sessionNet += outcome.voucher ? outcome.win : outcome.win - outcome.bet;
-          runtime.slots.lastMessage = {
-            text: outcome.voucher ? `${outcome.reason} (arcade voucher)` : outcome.reason,
-            amount: outcome.win,
-            type: outcome.isJackpot ? "jackpot-win" : "success",
-            winTier: outcome.winTier,
-          };
-        } else {
-          if (!outcome.voucher) runtime.slots.sessionNet -= outcome.bet;
-          runtime.slots.lastMessage = {
-            text: outcome.voucher ? "Arcade voucher spin — no win, no chip loss." : "No win this spin.",
-            type: "dim",
-          };
-        }
-        persist();
+        applyPendingSpinOutcome();
         render();
       }, timing.slotsReel3 + 380);
     }
@@ -497,13 +506,7 @@ export function buildSlotsRenderers(ctx) {
           el("button", {
             className: "btn",
             textContent: "Leave machine",
-            onclick: () => {
-              clearSlotsSpinTimers();
-              recordActivityResult("slots", runtime.slots.sessionNet, runtime.slots.spins);
-              persist();
-              popView();
-              render();
-            },
+            onclick: () => leaveSlotMachine(),
           }),
         ]),
       ],

@@ -8,6 +8,7 @@ import {
 import { effectiveTableStakes, formatStakeRange } from "../stakes.js";
 import { resolveActivityMin } from "../salon-exclusives.js";
 import { getActivityBranding } from "../strip-destinations.js";
+import { refundSportsbookOpen } from "../pendingRefunds.js";
 
 function eventCardLines(el, event, i) {
   const kids = [
@@ -43,13 +44,23 @@ function eventCardLines(el, event, i) {
 }
 
 export function buildSportsbookRenderers(ctx) {
-  const { el, banner, chipLine, showStatus, menu, pushView, popView, goBack, render, persist, recordActivityVisit, recordActivityResult } = ctx;
+  const { el, banner, chipLine, showStatus, menu, pushView, popView, goBack, render, persist, recordActivityVisitOnce, clearActivityVisit, recordActivityResult } = ctx;
   const runtime = ctx.runtime;
 
   function sportsbookBannerTitle() {
     if (runtime.sportsbook.salonDesk) return "Salon Sports Desk — Whale Lines";
     const brand = getActivityBranding(ctx.session, "sportsbook", "Sports Book");
     return `Sports Book — ${brand.name}`;
+  }
+
+  function leaveSportsbook() {
+    const refunded = refundSportsbookOpen(ctx.session, runtime.sportsbook);
+    if (refunded > 0) {
+      showStatus(`Returned ${refunded.toLocaleString()} chips from unsettled tickets.`, "success");
+      persist();
+    }
+    clearActivityVisit("sportsbook");
+    goBack();
   }
 
   function renderSportsbook() {
@@ -64,7 +75,7 @@ export function buildSportsbookRenderers(ctx) {
         ]),
       ]);
     }
-    recordActivityVisit("sportsbook");
+    recordActivityVisitOnce("sportsbook");
     persist();
 
     if (!runtime.sportsbook.events.length) {
@@ -210,7 +221,7 @@ export function buildSportsbookRenderers(ctx) {
       board,
       pendingEl,
       menu(menuItems, "Sports Book:", (choice) => {
-        if (choice === 0) { goBack(); return; }
+        if (choice === 0) { leaveSportsbook(); return; }
         if (runtime.sportsbook.activeTab === "sports") {
           if (choice === 1) pushView("sportsbook-wager");
           else if (choice === 2) pushView("sportsbook-parlay");
@@ -351,7 +362,7 @@ export function buildSportsbookRenderers(ctx) {
               propLabel = event.props?.find((p) => p.id === propId)?.label ?? propId;
             }
             const odds = oddsForSelection(event, betType, pick, propId);
-            if (!ctx.session.wallet.debit(amount, "runtime.sportsbook", `${betType} on ${pick}`)) {
+            if (!ctx.session.wallet.debit(amount, "sportsbook", `${betType} on ${pick}`)) {
               alert("Insufficient chips."); return;
             }
             runtime.sportsbook.addTicket({ event, betType, pick, amount, odds, propId, propLabel });
@@ -461,7 +472,7 @@ export function buildSportsbookRenderers(ctx) {
             if (amount < wagerStakes.minBet) { alert(`Minimum wager is ${wagerStakes.minBet} chips.`); return; }
             if (amount > wagerStakes.maxBet) { alert(`Maximum wager is ${wagerStakes.maxBet} chips.`); return; }
             const odds = combineAmericanOdds(legs.map((l) => l.odds));
-            if (!ctx.session.wallet.debit(amount, "runtime.sportsbook", `${legs.length}-leg parlay`)) {
+            if (!ctx.session.wallet.debit(amount, "sportsbook", `${legs.length}-leg parlay`)) {
               alert("Insufficient chips."); return;
             }
             runtime.sportsbook.addTicket({
@@ -585,7 +596,7 @@ export function buildSportsbookRenderers(ctx) {
             : (r.event?.label ?? "Ticket");
           log.appendChild(el("div", { className: "line", innerHTML: `<strong>${label}:</strong> ${r.slip.betType === "parlay" ? "" : formatEventScore(r.event)}` }));
           if (r.won) {
-            ctx.session.wallet.credit(r.payout, "runtime.sportsbook", r.reason);
+            ctx.session.wallet.credit(r.payout, "sportsbook", r.reason);
             sessionNet += r.payout - r.slip.amount;
             log.appendChild(el("div", { className: "line success", textContent: `  WIN: ${r.reason} (+${(r.payout - r.slip.amount).toLocaleString()} chips)` }));
           } else {
@@ -602,7 +613,7 @@ export function buildSportsbookRenderers(ctx) {
         for (const r of predResult.results) {
           log.appendChild(el("div", { className: "line", innerHTML: `<strong>${r.market.question}</strong> → ${r.resolution.toUpperCase()}` }));
           if (r.won) {
-            ctx.session.wallet.credit(r.payout, "runtime.sportsbook", r.reason);
+            ctx.session.wallet.credit(r.payout, "sportsbook", r.reason);
             sessionNet += r.payout - r.position.amount;
             log.appendChild(el("div", { className: "line success", textContent: `  WIN: ${r.reason}` }));
           } else {
@@ -613,7 +624,7 @@ export function buildSportsbookRenderers(ctx) {
         count += predResult.count;
       }
 
-      recordActivityResult("runtime.sportsbook", sessionNet, count);
+      recordActivityResult("sportsbook", sessionNet, count);
       persist();
     }
 

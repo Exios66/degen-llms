@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
+from pathlib import Path
 
 from blackjack.rng import SECURE_RANDOM
 from mandalay_bay.activities.base import Activity, ActivityInfo
@@ -12,6 +14,7 @@ from mandalay_bay.stakes import (
     pick_stake_tier,
     tier_uses_salon_limits,
 )
+from mandalay_bay.terminal_fx import animate_reel_tease, spin_pause
 
 
 @dataclass(frozen=True, slots=True)
@@ -37,383 +40,90 @@ class SlotMachine:
     progressive_seed: int = 100_000
     jackpot_key: str | None = None
     cherry_rules: bool = False
+    salon_only: bool = False
+    destination_only: bool = False
+    destination_id: str | None = None
+    home_only: bool = False
+
+
+_CATALOG_PATH = Path(__file__).resolve().parent.parent / "data" / "slots_catalog.json"
+
+STRIP_DESTINATIONS = {
+    "luxor": "Luxor",
+    "excalibur": "Excalibur",
+    "bellagio": "Bellagio",
+    "circa": "Circa",
+}
 
 
 def _sym(name: str, display: str, weight: int) -> Symbol:
     return Symbol(name, display, weight)
 
 
-CLASSIC_SYMBOLS = (
-    _sym("seven", "7", 1),
-    _sym("diamond", "💎", 2),
-    _sym("bar", "BAR", 5),
-    _sym("bell", "🔔", 5),
-    _sym("cherry", "🍒", 11),
-    _sym("lemon", "🍋", 8),
-)
 
-CLASSIC_PAYTABLE = {
-    "seven|seven|seven": 200,
-    "diamond|diamond|diamond": 100,
-    "bell|bell|bell": 50,
-    "bar|bar|bar": 30,
-    "cherry|cherry|cherry": 20,
-    "cherry|cherry": 4,
-    "cherry": 1,
-}
+def _machine_from_record(rec: dict) -> SlotMachine:
+    symbols = tuple(_sym(s["name"], s["display"], s["weight"]) for s in rec["symbols"])
+    paytable = {k: int(v) for k, v in rec["paytable"].items()}
+    pool_id = rec.get("progressivePoolId")
+    return SlotMachine(
+        id=rec["id"],
+        name=rec["name"],
+        min_bet=int(rec["minBet"]),
+        max_bet=int(rec["maxBet"]),
+        symbols=symbols,
+        paytable=paytable,
+        tagline=str(rec.get("tagline") or ""),
+        progressive=bool(rec.get("progressive")),
+        progressive_pool_id=pool_id if pool_id else None,
+        jackpot_requires_max_bet=bool(rec.get("jackpotRequiresMaxBet")),
+        progressive_contribution_rate=float(rec.get("progressiveContributionRate") or 0),
+        progressive_seed=int(rec.get("progressiveSeed") or 0),
+        jackpot_key=rec.get("jackpotKey"),
+        cherry_rules=bool(rec.get("cherryRules")),
+        salon_only=bool(rec.get("salonOnly")),
+        destination_only=bool(rec.get("destinationOnly")),
+        destination_id=rec.get("destinationId"),
+        home_only=bool(rec.get("homeOnly")),
+    )
 
-MACHINES: dict[str, SlotMachine] = {
-    "fortune": SlotMachine(
-        id="fortune",
-        name="Mandalay Fortune",
-        min_bet=5,
-        max_bet=50,
-        symbols=CLASSIC_SYMBOLS,
-        paytable=CLASSIC_PAYTABLE,
-        tagline="Classic three-reel floor favorite.",
-        cherry_rules=True,
-    ),
-    "high_roller": SlotMachine(
-        id="high_roller",
-        name="High Roller",
-        min_bet=25,
-        max_bet=500,
-        symbols=CLASSIC_SYMBOLS,
-        paytable=CLASSIC_PAYTABLE,
-        tagline="High-limit room — same reels, bigger bets.",
-        cherry_rules=True,
-    ),
-    "megabucks": SlotMachine(
-        id="megabucks",
-        name="Megabucks",
-        min_bet=1,
-        max_bet=3,
-        symbols=(
-            _sym("megabuck", "💵", 2),
-            _sym("seven", "7", 2),
-            _sym("bar", "BAR", 5),
-            _sym("bell", "🔔", 5),
-            _sym("cherry", "🍒", 10),
-            _sym("lemon", "🍋", 8),
-        ),
-        paytable={
-            "seven|seven|seven": 200,
-            "bar|bar|bar": 50,
-            "bell|bell|bell": 40,
-            "cherry|cherry|cherry": 25,
-            "cherry|cherry": 5,
-            "cherry": 1,
-            "megabuck|megabuck": 25,
-            "megabuck": 3,
-        },
-        tagline="Wide-area progressive — max bet qualifies for the jackpot.",
-        progressive=True,
-        progressive_pool_id="megabucks",
-        jackpot_requires_max_bet=True,
-        progressive_contribution_rate=0.03,
-        progressive_seed=1_000_000,
-        jackpot_key="megabuck|megabuck|megabuck",
-        cherry_rules=True,
-    ),
-    "wheel_of_fortune": SlotMachine(
-        id="wheel_of_fortune",
-        name="Wheel of Fortune",
-        min_bet=1,
-        max_bet=25,
-        symbols=(
-            _sym("wheel", "🎡", 1),
-            _sym("diamond", "💎", 2),
-            _sym("bar", "BAR", 5),
-            _sym("bell", "🔔", 5),
-            _sym("cherry", "🍒", 11),
-            _sym("lemon", "🍋", 8),
-        ),
-        paytable={
-            "wheel|wheel|wheel": 500,
-            "diamond|diamond|diamond": 200,
-            "bar|bar|bar": 60,
-            "bell|bell|bell": 40,
-            "cherry|cherry|cherry": 25,
-            "cherry|cherry": 5,
-            "cherry": 1,
-        },
-        tagline="Spin the wheel for bonus-sized wins.",
-        cherry_rules=True,
-    ),
-    "blazin_7s": SlotMachine(
-        id="blazin_7s",
-        name="Blazin' 7s",
-        min_bet=1,
-        max_bet=25,
-        symbols=(
-            _sym("seven", "7", 3),
-            _sym("bar", "BAR", 6),
-            _sym("bell", "🔔", 5),
-            _sym("cherry", "🍒", 12),
-            _sym("lemon", "🍋", 8),
-            _sym("diamond", "💎", 2),
-        ),
-        paytable={
-            "seven|seven|seven": 400,
-            "diamond|diamond|diamond": 100,
-            "bar|bar|bar": 50,
-            "bell|bell|bell": 30,
-            "cherry|cherry|cherry": 20,
-            "cherry|cherry": 7,
-            "cherry": 1,
-        },
-        tagline="Flaming sevens with sizzling top-line pays.",
-        cherry_rules=True,
-    ),
-    "buffalo_gold": SlotMachine(
-        id="buffalo_gold",
-        name="Buffalo Gold",
-        min_bet=1,
-        max_bet=50,
-        symbols=(
-            _sym("buffalo", "🦬", 6),
-            _sym("gold", "🥇", 6),
-            _sym("sunset", "🌅", 6),
-            _sym("eagle", "🦅", 7),
-            _sym("ace", "A", 8),
-            _sym("king", "K", 9),
-        ),
-        paytable={
-            "buffalo|buffalo|buffalo": 300,
-            "gold|gold|gold": 150,
-            "sunset|sunset|sunset": 75,
-            "eagle|eagle|eagle": 50,
-            "ace|ace|ace": 25,
-            "buffalo|buffalo": 10,
-            "ace|ace": 5,
-        },
-        tagline="Stampede the reels for gold-coin bonuses.",
-    ),
-    "monte_carlo": SlotMachine(
-        id="monte_carlo",
-        name="Monte Carlo",
-        min_bet=1,
-        max_bet=5,
-        symbols=(
-            _sym("crown", "👑", 2),
-            _sym("diamond", "💎", 3),
-            _sym("bar", "BAR", 6),
-            _sym("bell", "🔔", 6),
-            _sym("cherry", "🍒", 12),
-            _sym("lemon", "🍋", 8),
-        ),
-        paytable={
-            "crown|crown|crown": 250,
-            "diamond|diamond|diamond": 125,
-            "bar|bar|bar": 60,
-            "bell|bell|bell": 40,
-            "cherry|cherry|cherry": 25,
-            "cherry|cherry": 7,
-            "cherry": 1,
-        },
-        tagline="Linked progressive with European elegance.",
-        progressive=True,
-        progressive_pool_id="mandalay_linked",
-        jackpot_requires_max_bet=True,
-        progressive_contribution_rate=0.025,
-        progressive_seed=250_000,
-        jackpot_key="crown|crown|crown",
-        cherry_rules=True,
-    ),
-    "super_spin": SlotMachine(
-        id="super_spin",
-        name="Super Spin",
-        min_bet=1,
-        max_bet=5,
-        symbols=(
-            _sym("star", "⭐", 2),
-            _sym("seven", "7", 3),
-            _sym("bar", "BAR", 5),
-            _sym("bell", "🔔", 6),
-            _sym("cherry", "🍒", 12),
-            _sym("lemon", "🍋", 8),
-        ),
-        paytable={
-            "seven|seven|seven": 225,
-            "bar|bar|bar": 60,
-            "bell|bell|bell": 40,
-            "cherry|cherry|cherry": 25,
-            "cherry|cherry": 5,
-            "cherry": 1,
-        },
-        tagline="Linked progressive — three stars trigger the jackpot.",
-        progressive=True,
-        progressive_pool_id="mandalay_linked",
-        jackpot_requires_max_bet=True,
-        progressive_contribution_rate=0.025,
-        progressive_seed=250_000,
-        jackpot_key="star|star|star",
-        cherry_rules=True,
-    ),
-    "triple_red_hot_7s": SlotMachine(
-        id="triple_red_hot_7s",
-        name="Triple Red Hot 7s",
-        min_bet=1,
-        max_bet=25,
-        symbols=(
-            _sym("seven", "7", 2),
-            _sym("bar", "BAR", 5),
-            _sym("bell", "🔔", 5),
-            _sym("cherry", "🍒", 11),
-            _sym("lemon", "🍋", 8),
-        ),
-        paytable={
-            "seven|seven|seven": 175,
-            "bar|bar|bar": 60,
-            "bell|bell|bell": 30,
-            "cherry|cherry|cherry": 20,
-            "cherry|cherry": 5,
-            "cherry": 1,
-        },
-        tagline="Red-hot triple sevens on every spin.",
-        cherry_rules=True,
-    ),
-    "double_jackpot": SlotMachine(
-        id="double_jackpot",
-        name="Double Jackpot",
-        min_bet=1,
-        max_bet=25,
-        symbols=(
-            _sym("jackpot", "JP", 3),
-            _sym("seven", "7", 3),
-            _sym("bar", "BAR", 5),
-            _sym("bell", "🔔", 6),
-            _sym("cherry", "🍒", 10),
-            _sym("lemon", "🍋", 8),
-        ),
-        paytable={
-            "jackpot|jackpot|jackpot": 500,
-            "seven|seven|seven": 200,
-            "bar|bar|bar": 60,
-            "bell|bell|bell": 40,
-            "cherry|cherry|cherry": 25,
-            "cherry|cherry": 5,
-            "cherry": 1,
-            "jackpot|jackpot": 25,
-        },
-        tagline="Two-tier jackpots with blazing top symbols.",
-        cherry_rules=True,
-    ),
-    "spooky_link": SlotMachine(
-        id="spooky_link",
-        name="Spooky Link",
-        min_bet=1,
-        max_bet=25,
-        symbols=(
-            _sym("ghost", "👻", 4),
-            _sym("mummy", "🧟", 5),
-            _sym("yeti", "❄️", 5),
-            _sym("moon", "🌙", 6),
-            _sym("skull", "💀", 7),
-            _sym("bat", "🦇", 8),
-        ),
-        paytable={
-            "ghost|ghost|ghost": 250,
-            "mummy|mummy|mummy": 150,
-            "yeti|yeti|yeti": 100,
-            "moon|moon|moon": 60,
-            "skull|skull|skull": 40,
-            "ghost|ghost": 12,
-            "skull|skull": 5,
-            "bat|bat": 5,
-        },
-        tagline="Mo Mummy, Yo Yeti, and Go Ghost bonus features.",
-    ),
-    "wizard_of_oz": SlotMachine(
-        id="wizard_of_oz",
-        name="Wizard of Oz — I'll Get You My Pretty",
-        min_bet=1,
-        max_bet=25,
-        symbols=(
-            _sym("witch", "🧙", 4),
-            _sym("slipper", "👠", 5),
-            _sym("emerald", "💚", 5),
-            _sym("tin", "🤖", 6),
-            _sym("lion", "🦁", 7),
-            _sym("scarecrow", "🌾", 8),
-        ),
-        paytable={
-            "witch|witch|witch": 400,
-            "slipper|slipper|slipper": 200,
-            "emerald|emerald|emerald": 125,
-            "tin|tin|tin": 60,
-            "lion|lion|lion": 40,
-            "slipper|slipper": 12,
-        },
-        tagline="Follow the yellow-brick road to Hold & Spin bonuses.",
-    ),
-    "emerald_guardian": SlotMachine(
-        id="emerald_guardian",
-        name="Emerald Guardian",
-        min_bet=1,
-        max_bet=25,
-        symbols=(
-            _sym("guardian", "🐉", 4),
-            _sym("emerald", "💚", 5),
-            _sym("shield", "🛡️", 5),
-            _sym("sword", "⚔️", 6),
-            _sym("gem", "💎", 7),
-            _sym("coin", "🪙", 8),
-        ),
-        paytable={
-            "guardian|guardian|guardian": 450,
-            "emerald|emerald|emerald": 200,
-            "shield|shield|shield": 100,
-            "sword|sword|sword": 60,
-            "gem|gem|gem": 40,
-            "emerald|emerald": 12,
-        },
-        tagline="Defend the emerald vault for guardian jackpots.",
-    ),
-    "tiger_and_dragon": SlotMachine(
-        id="tiger_and_dragon",
-        name="Tiger and Dragon — Super Bonus",
-        min_bet=1,
-        max_bet=50,
-        symbols=(
-            _sym("tiger", "🐯", 4),
-            _sym("dragon", "🐲", 4),
-            _sym("pearl", "🔮", 5),
-            _sym("fan", "🪭", 6),
-            _sym("coin", "🪙", 7),
-            _sym("lantern", "🏮", 8),
-        ),
-        paytable={
-            "tiger|tiger|tiger": 300,
-            "dragon|dragon|dragon": 300,
-            "tiger|tiger|dragon": 90,
-            "dragon|dragon|tiger": 90,
-            "pearl|pearl|pearl": 100,
-            "fan|fan|fan": 50,
-            "coin|coin|coin": 25,
-            "coin|coin": 8,
-            "fan|fan": 5,
-        },
-        tagline="East-meets-West super bonus with dual jackpots.",
-    ),
-}
 
-MACHINE_ORDER = [
-    "fortune",
-    "high_roller",
-    "megabucks",
-    "wheel_of_fortune",
-    "blazin_7s",
-    "buffalo_gold",
-    "monte_carlo",
-    "super_spin",
-    "triple_red_hot_7s",
-    "double_jackpot",
-    "spooky_link",
-    "wizard_of_oz",
-    "emerald_guardian",
-    "tiger_and_dragon",
-]
+def _load_catalog() -> tuple[dict[str, SlotMachine], list[str]]:
+    raw = json.loads(_CATALOG_PATH.read_text(encoding="utf-8"))
+    machines = {rec["id"]: _machine_from_record(rec) for rec in raw}
+    order = [rec["id"] for rec in raw]
+    return machines, order
+
+
+MACHINES, MACHINE_ORDER = _load_catalog()
+
+
+def machines_for_catalog(catalog: str, *, tier_id: str | None = None) -> list[str]:
+    """Filter machine ids: main_floor | salon | destination:<id> | all."""
+    if catalog == "all":
+        return list(MACHINE_ORDER)
+    if catalog == "salon":
+        return [mid for mid in MACHINE_ORDER if MACHINES[mid].salon_only]
+    if catalog.startswith("destination:"):
+        dest = catalog.split(":", 1)[1]
+        return [
+            mid for mid in MACHINE_ORDER
+            if MACHINES[mid].destination_only and MACHINES[mid].destination_id == dest
+        ]
+    # main floor — exclude salon and destination exclusives
+    return [
+        mid for mid in MACHINE_ORDER
+        if not MACHINES[mid].salon_only and not MACHINES[mid].destination_only
+    ]
+
+
+def salon_catalog_available(tier_id: str) -> bool:
+    from mandalay_bay.stakes import tier_uses_salon_limits, get_tier
+
+    try:
+        tier = get_tier(tier_id)
+    except KeyError:
+        return False
+    return tier_uses_salon_limits(tier)
 
 
 def get_machine(machine_id: str) -> SlotMachine:
@@ -466,7 +176,12 @@ _ASCII_SYMBOLS = {
     "ghost", "mummy", "yeti", "moon", "skull", "bat", "witch", "slipper",
     "emerald", "tin", "lion", "scarecrow", "guardian", "shield", "sword", "gem",
     "coin", "tiger", "dragon", "pearl", "fan", "lantern", "wheel", "crown",
-    "star", "megabuck",
+    "star", "megabuck", "obelisk", "scarab", "ankh", "sphinx", "pyramid", "eye",
+    "castle", "lance", "helmet", "banner", "fountain", "glass", "orchid", "bloom",
+    "marble", "stadium", "neon", "chip", "flash", "vamp", "dice", "vault", "whale",
+    "champagne", "boat", "lotus", "cobra", "sun", "flame", "table", "chalice",
+    "grail", "cross", "lake", "spark", "glassflower", "vase", "butterfly",
+    "fontana", "fang", "ball", "ticket", "drop", "obsidian",
 }
 
 
@@ -588,8 +303,18 @@ class SlotsActivity(Activity):
             return
         ui.dim(tier.description)
 
+        catalog_choice = self._pick_catalog(ui, tier.id)
+        if catalog_choice is None:
+            return
+
+        machine_ids = machines_for_catalog(catalog_choice, tier_id=tier.id)
+        if not machine_ids:
+            ui.error("No machines in that catalog.")
+            ui.pause()
+            return
+
         menu_labels = []
-        for mid in MACHINE_ORDER:
+        for mid in machine_ids:
             m = MACHINES[mid]
             stakes = effective_slot_stakes(m.min_bet, m.max_bet, tier, session.wallet.balance)
             range_label = format_stake_range(
@@ -607,7 +332,7 @@ class SlotsActivity(Activity):
         if choice == 0:
             return
 
-        machine = MACHINES[MACHINE_ORDER[choice - 1]]
+        machine = MACHINES[machine_ids[choice - 1]]
         min_bet, max_bet = effective_slot_stakes(
             machine.min_bet, machine.max_bet, tier, session.wallet.balance
         )
@@ -658,9 +383,11 @@ class SlotsActivity(Activity):
 
             last_bet = bet
             _contribute_to_progressive(session, machine, bet)
+            spin_pause(0.15)
             reels = _spin_reels(machine)
-            shown = " | ".join(_display_symbol(r, session.use_unicode) for r in reels)
-            ui.print(f"\n  [ {shown} ]")
+            reel_displays = [_display_symbol(r, session.use_unicode) for r in reels]
+            symbol_pool = [_display_symbol(s, session.use_unicode) for s in machine.symbols]
+            animate_reel_tease(ui, symbol_pool, " | ".join(reel_displays))
 
             jackpot_amount = _try_jackpot(session, machine, reels, bet, max_bet)
             win, reason = _payout(reels, bet, machine, jackpot_amount=jackpot_amount, tier_boost=tier_boost)
@@ -682,3 +409,24 @@ class SlotsActivity(Activity):
         session.record_result(self.info.id, session_net, bets=spins)
         ui.print(f"\nSlots session: {'+' if session_net >= 0 else ''}{session_net:,} chips over {spins} spin(s)")
         ui.pause()
+
+    def _pick_catalog(self, ui, tier_id: str) -> str | None:
+        options = ["Main floor"]
+        keys = ["main_floor"]
+        if salon_catalog_available(tier_id):
+            options.append("High Limit Salon exclusives")
+            keys.append("salon")
+        options.append("Strip destination exclusives")
+        keys.append("destination_menu")
+        pick = ui.menu_choice(options, title="Slot catalog:")
+        if pick == 0:
+            return None
+        key = keys[pick - 1]
+        if key != "destination_menu":
+            return key
+        dest_labels = [STRIP_DESTINATIONS[d] for d in STRIP_DESTINATIONS]
+        dest_pick = ui.menu_choice(dest_labels, title="Away casino:")
+        if dest_pick == 0:
+            return None
+        dest_id = list(STRIP_DESTINATIONS.keys())[dest_pick - 1]
+        return f"destination:{dest_id}"

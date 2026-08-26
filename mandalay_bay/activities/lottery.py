@@ -19,6 +19,7 @@ from mandalay_bay.lottery import (
 )
 from mandalay_bay.session import PlayerSession
 from mandalay_bay.stakes import get_tier_payout_boost, pick_stake_tier
+from mandalay_bay.terminal_fx import spin_pause
 
 
 class LotteryActivity(Activity):
@@ -134,15 +135,26 @@ class LotteryActivity(Activity):
             assert result is not None
             tickets += 1
             session_net -= price
-            ui.print(f"\n  {result.reason}")
             if result.draw:
                 draw = list(result.draw)
                 if kind == "mega" and len(draw) >= 6:
-                    ui.dim(
-                        f"  Draw: {' '.join(map(str, draw[:-1]))} + Powerball {draw[-1]}"
-                    )
-                else:
-                    ui.dim(f"  Draw: {' '.join(map(str, draw))}")
+                    ui.print("  Drawing balls…")
+                    for i, ball in enumerate(draw[:-1]):
+                        spin_pause(0.15)
+                        ui.print(f"    Ball {i + 1}: {ball}")
+                    spin_pause(0.2)
+                    ui.print(f"    Powerball: {draw[-1]}")
+                elif kind in {"pick3", "pick4"}:
+                    ui.print("  Drawing…")
+                    for i, digit in enumerate(draw):
+                        spin_pause(0.12)
+                        ui.print(f"    Digit {i + 1}: {digit}")
+                elif kind == "scratch":
+                    ui.print("  Scratching…")
+                    spin_pause(0.25)
+            ui.print(f"\n  {result.reason}")
+            if result.draw and kind == "scratch" and result.symbols:
+                ui.dim(f"  Symbols: {' '.join(result.symbols)}")
             if result.win > 0:
                 session.wallet.credit(result.win, self.info.id, result.reason)
                 session_net += result.win

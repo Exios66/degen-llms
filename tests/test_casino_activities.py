@@ -1,14 +1,16 @@
 from mandalay_bay.activities.registry import ALL_ACTIVITIES, FLOOR_ORDER
 from mandalay_bay.activities.slots import (
-    MACHINES,
     MACHINE_ORDER,
+    MACHINES,
     Symbol,
     _contribute_to_progressive,
     _payout,
     _try_jackpot,
     estimate_base_game_rtp,
     get_machine,
+    machines_for_catalog,
     progressive_pool,
+    salon_catalog_available,
 )
 from mandalay_bay.session import PlayerSession
 
@@ -25,8 +27,28 @@ def test_machine_catalog_includes_megabucks() -> None:
     assert MACHINES["megabucks"].progressive is True
 
 
+def test_full_slot_catalog_parity() -> None:
+    assert len(MACHINE_ORDER) == 37
+    assert len(MACHINES) == 37
+    assert "salon_obsidian" in MACHINES
+    assert "luxor_obelisk" in MACHINES
+    assert "downtown_drop" in MACHINES
+
+
+def test_slot_catalog_filters() -> None:
+    main = machines_for_catalog("main_floor")
+    salon = machines_for_catalog("salon")
+    luxor = machines_for_catalog("destination:luxor")
+    assert "fortune" in main
+    assert "luxor_obelisk" not in main
+    assert len(salon) == 3
+    assert "sphinx_spin" in luxor
+    assert salon_catalog_available("401k_contribution") is True
+    assert salon_catalog_available("penny") is False
+
+
 def test_full_mgm_lineup_present() -> None:
-    expected = {
+    expected_floor = {
         "fortune",
         "high_roller",
         "megabucks",
@@ -42,7 +64,8 @@ def test_full_mgm_lineup_present() -> None:
         "emerald_guardian",
         "tiger_and_dragon",
     }
-    assert set(MACHINE_ORDER) == expected
+    main = set(machines_for_catalog("main_floor"))
+    assert expected_floor <= main
 
 
 def test_three_sevens_paytable() -> None:

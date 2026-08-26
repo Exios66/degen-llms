@@ -7,6 +7,7 @@ from mandalay_bay.activities.base import Activity, ActivityInfo
 from mandalay_bay.dealers import announce_dealer, pick_quip
 from mandalay_bay.session import PlayerSession
 from mandalay_bay.stakes import effective_table_stakes, pick_stake_tier
+from mandalay_bay.terminal_fx import animate_countdown, spin_pause
 
 RED_NUMBERS = {
     1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36,
@@ -134,6 +135,8 @@ class RouletteActivity(Activity):
                 continue
 
             last_wager = amount
+            spin_pause(0.2)
+            animate_countdown(ui, "Wheel spinning", ticks=3)
             number = spin_wheel()
             ui.dim(f'  {dealer.name}: "{pick_quip(dealer, "deal")}"')
             win, reason = resolve_bet(bet_type, amount, number, straight_pick)

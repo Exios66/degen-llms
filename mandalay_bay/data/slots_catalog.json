@@ -1,0 +1,2187 @@
+[
+  {
+    "id": "fortune",
+    "name": "Mandalay Fortune",
+    "minBet": 5,
+    "maxBet": 50,
+    "symbols": [
+      {
+        "name": "seven",
+        "display": "7",
+        "weight": 1
+      },
+      {
+        "name": "diamond",
+        "display": "💎",
+        "weight": 2
+      },
+      {
+        "name": "bar",
+        "display": "BAR",
+        "weight": 5
+      },
+      {
+        "name": "bell",
+        "display": "🔔",
+        "weight": 5
+      },
+      {
+        "name": "cherry",
+        "display": "🍒",
+        "weight": 11
+      },
+      {
+        "name": "lemon",
+        "display": "🍋",
+        "weight": 8
+      }
+    ],
+    "paytable": {
+      "seven|seven|seven": 200,
+      "diamond|diamond|diamond": 100,
+      "bell|bell|bell": 50,
+      "bar|bar|bar": 30,
+      "cherry|cherry|cherry": 20,
+      "cherry|cherry": 4,
+      "cherry": 1
+    },
+    "tagline": "Classic three-reel floor favorite.",
+    "cherryRules": true,
+    "progressive": false,
+    "progressivePoolId": null,
+    "jackpotRequiresMaxBet": false,
+    "progressiveContributionRate": 0,
+    "progressiveSeed": 0,
+    "jackpotKey": null,
+    "salonOnly": false,
+    "destinationOnly": false,
+    "destinationId": null,
+    "homeOnly": true
+  },
+  {
+    "id": "high_roller",
+    "name": "High Roller",
+    "minBet": 25,
+    "maxBet": 500,
+    "symbols": [
+      {
+        "name": "seven",
+        "display": "7",
+        "weight": 1
+      },
+      {
+        "name": "diamond",
+        "display": "💎",
+        "weight": 2
+      },
+      {
+        "name": "bar",
+        "display": "BAR",
+        "weight": 5
+      },
+      {
+        "name": "bell",
+        "display": "🔔",
+        "weight": 5
+      },
+      {
+        "name": "cherry",
+        "display": "🍒",
+        "weight": 11
+      },
+      {
+        "name": "lemon",
+        "display": "🍋",
+        "weight": 8
+      }
+    ],
+    "paytable": {
+      "seven|seven|seven": 200,
+      "diamond|diamond|diamond": 100,
+      "bell|bell|bell": 50,
+      "bar|bar|bar": 30,
+      "cherry|cherry|cherry": 20,
+      "cherry|cherry": 4,
+      "cherry": 1
+    },
+    "tagline": "High-limit room — same reels, bigger bets.",
+    "cherryRules": true,
+    "progressive": false,
+    "progressivePoolId": null,
+    "jackpotRequiresMaxBet": false,
+    "progressiveContributionRate": 0,
+    "progressiveSeed": 0,
+    "jackpotKey": null,
+    "salonOnly": false,
+    "destinationOnly": false,
+    "destinationId": null,
+    "homeOnly": false
+  },
+  {
+    "id": "megabucks",
+    "name": "Megabucks",
+    "minBet": 1,
+    "maxBet": 3,
+    "symbols": [
+      {
+        "name": "megabuck",
+        "display": "💵",
+        "weight": 2
+      },
+      {
+        "name": "seven",
+        "display": "7",
+        "weight": 2
+      },
+      {
+        "name": "bar",
+        "display": "BAR",
+        "weight": 5
+      },
+      {
+        "name": "bell",
+        "display": "🔔",
+        "weight": 5
+      },
+      {
+        "name": "cherry",
+        "display": "🍒",
+        "weight": 10
+      },
+      {
+        "name": "lemon",
+        "display": "🍋",
+        "weight": 8
+      }
+    ],
+    "paytable": {
+      "seven|seven|seven": 200,
+      "bar|bar|bar": 50,
+      "bell|bell|bell": 40,
+      "cherry|cherry|cherry": 25,
+      "cherry|cherry": 5,
+      "cherry": 1,
+      "megabuck|megabuck": 25,
+      "megabuck": 3
+    },
+    "tagline": "Wide-area progressive — max bet qualifies for the jackpot.",
+    "cherryRules": true,
+    "progressive": true,
+    "progressivePoolId": "megabucks",
+    "jackpotRequiresMaxBet": true,
+    "progressiveContributionRate": 0.03,
+    "progressiveSeed": 1000000,
+    "jackpotKey": "megabuck|megabuck|megabuck",
+    "salonOnly": false,
+    "destinationOnly": false,
+    "destinationId": null,
+    "homeOnly": false
+  },
+  {
+    "id": "wheel_of_fortune",
+    "name": "Wheel of Fortune",
+    "minBet": 1,
+    "maxBet": 25,
+    "symbols": [
+      {
+        "name": "wheel",
+        "display": "🎡",
+        "weight": 1
+      },
+      {
+        "name": "diamond",
+        "display": "💎",
+        "weight": 2
+      },
+      {
+        "name": "bar",
+        "display": "BAR",
+        "weight": 5
+      },
+      {
+        "name": "bell",
+        "display": "🔔",
+        "weight": 5
+      },
+      {
+        "name": "cherry",
+        "display": "🍒",
+        "weight": 11
+      },
+      {
+        "name": "lemon",
+        "display": "🍋",
+        "weight": 8
+      }
+    ],
+    "paytable": {
+      "wheel|wheel|wheel": 500,
+      "diamond|diamond|diamond": 200,
+      "bar|bar|bar": 60,
+      "bell|bell|bell": 40,
+      "cherry|cherry|cherry": 25,
+      "cherry|cherry": 5,
+      "cherry": 1
+    },
+    "tagline": "Spin the wheel for bonus-sized wins.",
+    "cherryRules": true,
+    "progressive": false,
+    "progressivePoolId": null,
+    "jackpotRequiresMaxBet": false,
+    "progressiveContributionRate": 0,
+    "progressiveSeed": 0,
+    "jackpotKey": null,
+    "salonOnly": false,
+    "destinationOnly": false,
+    "destinationId": null,
+    "homeOnly": false
+  },
+  {
+    "id": "blazin_7s",
+    "name": "Blazin' 7s",
+    "minBet": 1,
+    "maxBet": 25,
+    "symbols": [
+      {
+        "name": "seven",
+        "display": "7",
+        "weight": 3
+      },
+      {
+        "name": "bar",
+        "display": "BAR",
+        "weight": 6
+      },
+      {
+        "name": "bell",
+        "display": "🔔",
+        "weight": 5
+      },
+      {
+        "name": "cherry",
+        "display": "🍒",
+        "weight": 12
+      },
+      {
+        "name": "lemon",
+        "display": "🍋",
+        "weight": 8
+      },
+      {
+        "name": "diamond",
+        "display": "💎",
+        "weight": 2
+      }
+    ],
+    "paytable": {
+      "seven|seven|seven": 400,
+      "diamond|diamond|diamond": 100,
+      "bar|bar|bar": 50,
+      "bell|bell|bell": 30,
+      "cherry|cherry|cherry": 20,
+      "cherry|cherry": 7,
+      "cherry": 1
+    },
+    "tagline": "Flaming sevens with sizzling top-line pays.",
+    "cherryRules": true,
+    "progressive": false,
+    "progressivePoolId": null,
+    "jackpotRequiresMaxBet": false,
+    "progressiveContributionRate": 0,
+    "progressiveSeed": 0,
+    "jackpotKey": null,
+    "salonOnly": false,
+    "destinationOnly": false,
+    "destinationId": null,
+    "homeOnly": false
+  },
+  {
+    "id": "buffalo_gold",
+    "name": "Buffalo Gold",
+    "minBet": 1,
+    "maxBet": 50,
+    "symbols": [
+      {
+        "name": "buffalo",
+        "display": "🦬",
+        "weight": 6
+      },
+      {
+        "name": "gold",
+        "display": "🥇",
+        "weight": 6
+      },
+      {
+        "name": "sunset",
+        "display": "🌅",
+        "weight": 6
+      },
+      {
+        "name": "eagle",
+        "display": "🦅",
+        "weight": 7
+      },
+      {
+        "name": "ace",
+        "display": "A",
+        "weight": 8
+      },
+      {
+        "name": "king",
+        "display": "K",
+        "weight": 9
+      }
+    ],
+    "paytable": {
+      "buffalo|buffalo|buffalo": 300,
+      "gold|gold|gold": 150,
+      "sunset|sunset|sunset": 75,
+      "eagle|eagle|eagle": 50,
+      "ace|ace|ace": 25,
+      "buffalo|buffalo": 10,
+      "ace|ace": 5
+    },
+    "tagline": "Stampede the reels for gold-coin bonuses.",
+    "cherryRules": false,
+    "progressive": false,
+    "progressivePoolId": null,
+    "jackpotRequiresMaxBet": false,
+    "progressiveContributionRate": 0,
+    "progressiveSeed": 0,
+    "jackpotKey": null,
+    "salonOnly": false,
+    "destinationOnly": false,
+    "destinationId": null,
+    "homeOnly": false
+  },
+  {
+    "id": "monte_carlo",
+    "name": "Monte Carlo",
+    "minBet": 1,
+    "maxBet": 5,
+    "symbols": [
+      {
+        "name": "crown",
+        "display": "👑",
+        "weight": 2
+      },
+      {
+        "name": "diamond",
+        "display": "💎",
+        "weight": 3
+      },
+      {
+        "name": "bar",
+        "display": "BAR",
+        "weight": 6
+      },
+      {
+        "name": "bell",
+        "display": "🔔",
+        "weight": 6
+      },
+      {
+        "name": "cherry",
+        "display": "🍒",
+        "weight": 12
+      },
+      {
+        "name": "lemon",
+        "display": "🍋",
+        "weight": 8
+      }
+    ],
+    "paytable": {
+      "crown|crown|crown": 250,
+      "diamond|diamond|diamond": 125,
+      "bar|bar|bar": 60,
+      "bell|bell|bell": 40,
+      "cherry|cherry|cherry": 25,
+      "cherry|cherry": 7,
+      "cherry": 1
+    },
+    "tagline": "Linked progressive with European elegance.",
+    "cherryRules": true,
+    "progressive": true,
+    "progressivePoolId": "mandalay_linked",
+    "jackpotRequiresMaxBet": true,
+    "progressiveContributionRate": 0.025,
+    "progressiveSeed": 250000,
+    "jackpotKey": "crown|crown|crown",
+    "salonOnly": false,
+    "destinationOnly": false,
+    "destinationId": null,
+    "homeOnly": false
+  },
+  {
+    "id": "super_spin",
+    "name": "Super Spin",
+    "minBet": 1,
+    "maxBet": 5,
+    "symbols": [
+      {
+        "name": "star",
+        "display": "⭐",
+        "weight": 2
+      },
+      {
+        "name": "seven",
+        "display": "7",
+        "weight": 3
+      },
+      {
+        "name": "bar",
+        "display": "BAR",
+        "weight": 5
+      },
+      {
+        "name": "bell",
+        "display": "🔔",
+        "weight": 6
+      },
+      {
+        "name": "cherry",
+        "display": "🍒",
+        "weight": 12
+      },
+      {
+        "name": "lemon",
+        "display": "🍋",
+        "weight": 8
+      }
+    ],
+    "paytable": {
+      "seven|seven|seven": 225,
+      "bar|bar|bar": 60,
+      "bell|bell|bell": 40,
+      "cherry|cherry|cherry": 25,
+      "cherry|cherry": 5,
+      "cherry": 1
+    },
+    "tagline": "Linked progressive — three stars trigger the jackpot.",
+    "cherryRules": true,
+    "progressive": true,
+    "progressivePoolId": "mandalay_linked",
+    "jackpotRequiresMaxBet": true,
+    "progressiveContributionRate": 0.025,
+    "progressiveSeed": 250000,
+    "jackpotKey": "star|star|star",
+    "salonOnly": false,
+    "destinationOnly": false,
+    "destinationId": null,
+    "homeOnly": false
+  },
+  {
+    "id": "triple_red_hot_7s",
+    "name": "Triple Red Hot 7s",
+    "minBet": 1,
+    "maxBet": 25,
+    "symbols": [
+      {
+        "name": "seven",
+        "display": "7",
+        "weight": 2
+      },
+      {
+        "name": "bar",
+        "display": "BAR",
+        "weight": 5
+      },
+      {
+        "name": "bell",
+        "display": "🔔",
+        "weight": 5
+      },
+      {
+        "name": "cherry",
+        "display": "🍒",
+        "weight": 11
+      },
+      {
+        "name": "lemon",
+        "display": "🍋",
+        "weight": 8
+      }
+    ],
+    "paytable": {
+      "seven|seven|seven": 175,
+      "bar|bar|bar": 60,
+      "bell|bell|bell": 30,
+      "cherry|cherry|cherry": 20,
+      "cherry|cherry": 5,
+      "cherry": 1
+    },
+    "tagline": "Red-hot triple sevens on every spin.",
+    "cherryRules": true,
+    "progressive": false,
+    "progressivePoolId": null,
+    "jackpotRequiresMaxBet": false,
+    "progressiveContributionRate": 0,
+    "progressiveSeed": 0,
+    "jackpotKey": null,
+    "salonOnly": false,
+    "destinationOnly": false,
+    "destinationId": null,
+    "homeOnly": false
+  },
+  {
+    "id": "double_jackpot",
+    "name": "Double Jackpot",
+    "minBet": 1,
+    "maxBet": 25,
+    "symbols": [
+      {
+        "name": "jackpot",
+        "display": "JP",
+        "weight": 3
+      },
+      {
+        "name": "seven",
+        "display": "7",
+        "weight": 3
+      },
+      {
+        "name": "bar",
+        "display": "BAR",
+        "weight": 5
+      },
+      {
+        "name": "bell",
+        "display": "🔔",
+        "weight": 6
+      },
+      {
+        "name": "cherry",
+        "display": "🍒",
+        "weight": 10
+      },
+      {
+        "name": "lemon",
+        "display": "🍋",
+        "weight": 8
+      }
+    ],
+    "paytable": {
+      "jackpot|jackpot|jackpot": 500,
+      "seven|seven|seven": 200,
+      "bar|bar|bar": 60,
+      "bell|bell|bell": 40,
+      "cherry|cherry|cherry": 25,
+      "cherry|cherry": 5,
+      "cherry": 1,
+      "jackpot|jackpot": 25
+    },
+    "tagline": "Two-tier jackpots with blazing top symbols.",
+    "cherryRules": true,
+    "progressive": false,
+    "progressivePoolId": null,
+    "jackpotRequiresMaxBet": false,
+    "progressiveContributionRate": 0,
+    "progressiveSeed": 0,
+    "jackpotKey": null,
+    "salonOnly": false,
+    "destinationOnly": false,
+    "destinationId": null,
+    "homeOnly": false
+  },
+  {
+    "id": "spooky_link",
+    "name": "Spooky Link",
+    "minBet": 1,
+    "maxBet": 25,
+    "symbols": [
+      {
+        "name": "ghost",
+        "display": "👻",
+        "weight": 4
+      },
+      {
+        "name": "mummy",
+        "display": "🧟",
+        "weight": 5
+      },
+      {
+        "name": "yeti",
+        "display": "❄️",
+        "weight": 5
+      },
+      {
+        "name": "moon",
+        "display": "🌙",
+        "weight": 6
+      },
+      {
+        "name": "skull",
+        "display": "💀",
+        "weight": 7
+      },
+      {
+        "name": "bat",
+        "display": "🦇",
+        "weight": 8
+      }
+    ],
+    "paytable": {
+      "ghost|ghost|ghost": 250,
+      "mummy|mummy|mummy": 150,
+      "yeti|yeti|yeti": 100,
+      "moon|moon|moon": 60,
+      "skull|skull|skull": 40,
+      "ghost|ghost": 12,
+      "skull|skull": 5,
+      "bat|bat": 5
+    },
+    "tagline": "Mo Mummy, Yo Yeti, and Go Ghost bonus features.",
+    "cherryRules": false,
+    "progressive": false,
+    "progressivePoolId": null,
+    "jackpotRequiresMaxBet": false,
+    "progressiveContributionRate": 0,
+    "progressiveSeed": 0,
+    "jackpotKey": null,
+    "salonOnly": false,
+    "destinationOnly": false,
+    "destinationId": null,
+    "homeOnly": false
+  },
+  {
+    "id": "wizard_of_oz",
+    "name": "Wizard of Oz — I'll Get You My Pretty",
+    "minBet": 1,
+    "maxBet": 25,
+    "symbols": [
+      {
+        "name": "witch",
+        "display": "🧙",
+        "weight": 4
+      },
+      {
+        "name": "slipper",
+        "display": "👠",
+        "weight": 5
+      },
+      {
+        "name": "emerald",
+        "display": "💚",
+        "weight": 5
+      },
+      {
+        "name": "tin",
+        "display": "🤖",
+        "weight": 6
+      },
+      {
+        "name": "lion",
+        "display": "🦁",
+        "weight": 7
+      },
+      {
+        "name": "scarecrow",
+        "display": "🌾",
+        "weight": 8
+      }
+    ],
+    "paytable": {
+      "witch|witch|witch": 400,
+      "slipper|slipper|slipper": 200,
+      "emerald|emerald|emerald": 125,
+      "tin|tin|tin": 60,
+      "lion|lion|lion": 40,
+      "slipper|slipper": 12
+    },
+    "tagline": "Follow the yellow-brick road to Hold & Spin bonuses.",
+    "cherryRules": false,
+    "progressive": false,
+    "progressivePoolId": null,
+    "jackpotRequiresMaxBet": false,
+    "progressiveContributionRate": 0,
+    "progressiveSeed": 0,
+    "jackpotKey": null,
+    "salonOnly": false,
+    "destinationOnly": false,
+    "destinationId": null,
+    "homeOnly": false
+  },
+  {
+    "id": "emerald_guardian",
+    "name": "Emerald Guardian",
+    "minBet": 1,
+    "maxBet": 25,
+    "symbols": [
+      {
+        "name": "guardian",
+        "display": "🐉",
+        "weight": 4
+      },
+      {
+        "name": "emerald",
+        "display": "💚",
+        "weight": 5
+      },
+      {
+        "name": "shield",
+        "display": "🛡️",
+        "weight": 5
+      },
+      {
+        "name": "sword",
+        "display": "⚔️",
+        "weight": 6
+      },
+      {
+        "name": "gem",
+        "display": "💎",
+        "weight": 7
+      },
+      {
+        "name": "coin",
+        "display": "🪙",
+        "weight": 8
+      }
+    ],
+    "paytable": {
+      "guardian|guardian|guardian": 450,
+      "emerald|emerald|emerald": 200,
+      "shield|shield|shield": 100,
+      "sword|sword|sword": 60,
+      "gem|gem|gem": 40,
+      "emerald|emerald": 12
+    },
+    "tagline": "Defend the emerald vault for guardian jackpots.",
+    "cherryRules": false,
+    "progressive": false,
+    "progressivePoolId": null,
+    "jackpotRequiresMaxBet": false,
+    "progressiveContributionRate": 0,
+    "progressiveSeed": 0,
+    "jackpotKey": null,
+    "salonOnly": false,
+    "destinationOnly": false,
+    "destinationId": null,
+    "homeOnly": false
+  },
+  {
+    "id": "tiger_and_dragon",
+    "name": "Tiger and Dragon — Super Bonus",
+    "minBet": 1,
+    "maxBet": 50,
+    "symbols": [
+      {
+        "name": "tiger",
+        "display": "🐯",
+        "weight": 4
+      },
+      {
+        "name": "dragon",
+        "display": "🐲",
+        "weight": 4
+      },
+      {
+        "name": "pearl",
+        "display": "🔮",
+        "weight": 5
+      },
+      {
+        "name": "fan",
+        "display": "🪭",
+        "weight": 6
+      },
+      {
+        "name": "coin",
+        "display": "🪙",
+        "weight": 7
+      },
+      {
+        "name": "lantern",
+        "display": "🏮",
+        "weight": 8
+      }
+    ],
+    "paytable": {
+      "tiger|tiger|tiger": 300,
+      "dragon|dragon|dragon": 300,
+      "tiger|tiger|dragon": 90,
+      "dragon|dragon|tiger": 90,
+      "pearl|pearl|pearl": 100,
+      "fan|fan|fan": 50,
+      "coin|coin|coin": 25,
+      "coin|coin": 8,
+      "fan|fan": 5
+    },
+    "tagline": "East-meets-West super bonus with dual jackpots.",
+    "cherryRules": false,
+    "progressive": false,
+    "progressivePoolId": null,
+    "jackpotRequiresMaxBet": false,
+    "progressiveContributionRate": 0,
+    "progressiveSeed": 0,
+    "jackpotKey": null,
+    "salonOnly": false,
+    "destinationOnly": false,
+    "destinationId": null,
+    "homeOnly": false
+  },
+  {
+    "id": "salon_obsidian",
+    "name": "Obsidian Vault",
+    "minBet": 100,
+    "maxBet": 2500,
+    "symbols": [
+      {
+        "name": "obsidian",
+        "display": "⬛",
+        "weight": 2
+      },
+      {
+        "name": "diamond",
+        "display": "💎",
+        "weight": 3
+      },
+      {
+        "name": "crown",
+        "display": "👑",
+        "weight": 4
+      },
+      {
+        "name": "seven",
+        "display": "7",
+        "weight": 5
+      },
+      {
+        "name": "bar",
+        "display": "BAR",
+        "weight": 6
+      },
+      {
+        "name": "cherry",
+        "display": "🍒",
+        "weight": 8
+      }
+    ],
+    "paytable": {
+      "obsidian|obsidian|obsidian": 2000,
+      "diamond|diamond|diamond": 800,
+      "crown|crown|crown": 400,
+      "seven|seven|seven": 200,
+      "bar|bar|bar": 80,
+      "cherry|cherry|cherry": 40,
+      "cherry|cherry": 8,
+      "cherry": 2
+    },
+    "tagline": "Salon exclusive — black-glass reels for whales only.",
+    "cherryRules": true,
+    "progressive": false,
+    "progressivePoolId": null,
+    "jackpotRequiresMaxBet": false,
+    "progressiveContributionRate": 0,
+    "progressiveSeed": 0,
+    "jackpotKey": null,
+    "salonOnly": true,
+    "destinationOnly": false,
+    "destinationId": null,
+    "homeOnly": false
+  },
+  {
+    "id": "salon_whale_watch",
+    "name": "Whale Watch Progressive",
+    "minBet": 250,
+    "maxBet": 5000,
+    "symbols": [
+      {
+        "name": "whale",
+        "display": "🐋",
+        "weight": 2
+      },
+      {
+        "name": "champagne",
+        "display": "🍾",
+        "weight": 3
+      },
+      {
+        "name": "chip",
+        "display": "🪙",
+        "weight": 4
+      },
+      {
+        "name": "diamond",
+        "display": "💎",
+        "weight": 5
+      },
+      {
+        "name": "seven",
+        "display": "7",
+        "weight": 6
+      },
+      {
+        "name": "lemon",
+        "display": "🍋",
+        "weight": 8
+      }
+    ],
+    "paytable": {
+      "whale|whale|whale": 500,
+      "champagne|champagne|champagne": 300,
+      "chip|chip|chip": 150,
+      "diamond|diamond|diamond": 100,
+      "seven|seven|seven": 75
+    },
+    "tagline": "Linked salon progressive — max bet qualifies.",
+    "cherryRules": false,
+    "progressive": true,
+    "progressivePoolId": "salon_whale",
+    "jackpotRequiresMaxBet": true,
+    "progressiveContributionRate": 0.04,
+    "progressiveSeed": 250000,
+    "jackpotKey": "whale|whale|whale",
+    "salonOnly": true,
+    "destinationOnly": false,
+    "destinationId": null,
+    "homeOnly": false
+  },
+  {
+    "id": "salon_chairman_vault",
+    "name": "Chairman Vault",
+    "minBet": 500,
+    "maxBet": 10000,
+    "symbols": [
+      {
+        "name": "vault",
+        "display": "🔐",
+        "weight": 2
+      },
+      {
+        "name": "crown",
+        "display": "👑",
+        "weight": 3
+      },
+      {
+        "name": "gold",
+        "display": "🥇",
+        "weight": 4
+      },
+      {
+        "name": "diamond",
+        "display": "💎",
+        "weight": 5
+      },
+      {
+        "name": "seven",
+        "display": "7",
+        "weight": 6
+      },
+      {
+        "name": "bar",
+        "display": "BAR",
+        "weight": 7
+      }
+    ],
+    "paytable": {
+      "vault|vault|vault": 5000,
+      "crown|crown|crown": 1200,
+      "gold|gold|gold": 600,
+      "diamond|diamond|diamond": 300,
+      "seven|seven|seven": 150,
+      "bar|bar|bar": 75
+    },
+    "tagline": "Chairman-tier salon cabinet — absurd multipliers, velvet rope.",
+    "cherryRules": false,
+    "progressive": false,
+    "progressivePoolId": null,
+    "jackpotRequiresMaxBet": false,
+    "progressiveContributionRate": 0,
+    "progressiveSeed": 0,
+    "jackpotKey": null,
+    "salonOnly": true,
+    "destinationOnly": false,
+    "destinationId": null,
+    "homeOnly": false
+  },
+  {
+    "id": "luxor_obelisk",
+    "name": "Luxor Obelisk",
+    "minBet": 5,
+    "maxBet": 100,
+    "symbols": [
+      {
+        "name": "obelisk",
+        "display": "🗼",
+        "weight": 2
+      },
+      {
+        "name": "scarab",
+        "display": "🪲",
+        "weight": 3
+      },
+      {
+        "name": "ankh",
+        "display": "☥",
+        "weight": 4
+      },
+      {
+        "name": "gold",
+        "display": "🥇",
+        "weight": 5
+      },
+      {
+        "name": "seven",
+        "display": "7",
+        "weight": 6
+      },
+      {
+        "name": "cherry",
+        "display": "🍒",
+        "weight": 8
+      }
+    ],
+    "paytable": {
+      "obelisk|obelisk|obelisk": 800,
+      "scarab|scarab|scarab": 300,
+      "ankh|ankh|ankh": 150,
+      "gold|gold|gold": 80,
+      "seven|seven|seven": 50,
+      "cherry|cherry|cherry": 20,
+      "cherry|cherry": 4,
+      "cherry": 1
+    },
+    "tagline": "Pyramid exclusive — three reels under the Luxor beam.",
+    "cherryRules": true,
+    "progressive": false,
+    "progressivePoolId": null,
+    "jackpotRequiresMaxBet": false,
+    "progressiveContributionRate": 0,
+    "progressiveSeed": 0,
+    "jackpotKey": null,
+    "salonOnly": false,
+    "destinationOnly": true,
+    "destinationId": "luxor",
+    "homeOnly": false
+  },
+  {
+    "id": "sphinx_spin",
+    "name": "Sphinx Spin",
+    "minBet": 10,
+    "maxBet": 200,
+    "symbols": [
+      {
+        "name": "sphinx",
+        "display": "🦁",
+        "weight": 2
+      },
+      {
+        "name": "pyramid",
+        "display": "🔺",
+        "weight": 3
+      },
+      {
+        "name": "eye",
+        "display": "👁",
+        "weight": 4
+      },
+      {
+        "name": "diamond",
+        "display": "💎",
+        "weight": 5
+      },
+      {
+        "name": "seven",
+        "display": "7",
+        "weight": 6
+      },
+      {
+        "name": "bar",
+        "display": "BAR",
+        "weight": 7
+      }
+    ],
+    "paytable": {
+      "sphinx|sphinx|sphinx": 1000,
+      "pyramid|pyramid|pyramid": 400,
+      "eye|eye|eye": 200,
+      "diamond|diamond|diamond": 100,
+      "seven|seven|seven": 60,
+      "bar|bar|bar": 30
+    },
+    "tagline": "Luxor video cabinet — the Sphinx never blinks on a dry spin.",
+    "cherryRules": false,
+    "progressive": false,
+    "progressivePoolId": null,
+    "jackpotRequiresMaxBet": false,
+    "progressiveContributionRate": 0,
+    "progressiveSeed": 0,
+    "jackpotKey": null,
+    "salonOnly": false,
+    "destinationOnly": true,
+    "destinationId": "luxor",
+    "homeOnly": false
+  },
+  {
+    "id": "castle_jackpot",
+    "name": "Castle Jackpot",
+    "minBet": 5,
+    "maxBet": 75,
+    "symbols": [
+      {
+        "name": "castle",
+        "display": "🏰",
+        "weight": 2
+      },
+      {
+        "name": "sword",
+        "display": "⚔",
+        "weight": 3
+      },
+      {
+        "name": "shield",
+        "display": "🛡",
+        "weight": 4
+      },
+      {
+        "name": "crown",
+        "display": "👑",
+        "weight": 5
+      },
+      {
+        "name": "seven",
+        "display": "7",
+        "weight": 6
+      },
+      {
+        "name": "cherry",
+        "display": "🍒",
+        "weight": 8
+      }
+    ],
+    "paytable": {
+      "castle|castle|castle": 750,
+      "sword|sword|sword": 280,
+      "shield|shield|shield": 140,
+      "crown|crown|crown": 90,
+      "seven|seven|seven": 45,
+      "cherry|cherry|cherry": 18,
+      "cherry|cherry": 4,
+      "cherry": 1
+    },
+    "tagline": "Excalibur exclusive — drawbridge pays in scarlet and gold.",
+    "cherryRules": true,
+    "progressive": false,
+    "progressivePoolId": null,
+    "jackpotRequiresMaxBet": false,
+    "progressiveContributionRate": 0,
+    "progressiveSeed": 0,
+    "jackpotKey": null,
+    "salonOnly": false,
+    "destinationOnly": true,
+    "destinationId": "excalibur",
+    "homeOnly": false
+  },
+  {
+    "id": "joust_reels",
+    "name": "Joust Reels",
+    "minBet": 10,
+    "maxBet": 150,
+    "symbols": [
+      {
+        "name": "lance",
+        "display": "🏇",
+        "weight": 2
+      },
+      {
+        "name": "helmet",
+        "display": "🪖",
+        "weight": 3
+      },
+      {
+        "name": "banner",
+        "display": "🚩",
+        "weight": 4
+      },
+      {
+        "name": "gem",
+        "display": "💎",
+        "weight": 5
+      },
+      {
+        "name": "seven",
+        "display": "7",
+        "weight": 6
+      },
+      {
+        "name": "bar",
+        "display": "BAR",
+        "weight": 7
+      }
+    ],
+    "paytable": {
+      "lance|lance|lance": 900,
+      "helmet|helmet|helmet": 350,
+      "banner|banner|banner": 160,
+      "gem|gem|gem": 100,
+      "seven|seven|seven": 55,
+      "bar|bar|bar": 28
+    },
+    "tagline": "Castle video slots — tilt at the jackpot like a knight.",
+    "cherryRules": false,
+    "progressive": false,
+    "progressivePoolId": null,
+    "jackpotRequiresMaxBet": false,
+    "progressiveContributionRate": 0,
+    "progressiveSeed": 0,
+    "jackpotKey": null,
+    "salonOnly": false,
+    "destinationOnly": true,
+    "destinationId": "excalibur",
+    "homeOnly": false
+  },
+  {
+    "id": "fountain_fortune",
+    "name": "Fountain Fortune",
+    "minBet": 10,
+    "maxBet": 250,
+    "symbols": [
+      {
+        "name": "fountain",
+        "display": "⛲",
+        "weight": 2
+      },
+      {
+        "name": "glass",
+        "display": "🥂",
+        "weight": 3
+      },
+      {
+        "name": "orchid",
+        "display": "🌸",
+        "weight": 4
+      },
+      {
+        "name": "diamond",
+        "display": "💎",
+        "weight": 5
+      },
+      {
+        "name": "seven",
+        "display": "7",
+        "weight": 6
+      },
+      {
+        "name": "cherry",
+        "display": "🍒",
+        "weight": 8
+      }
+    ],
+    "paytable": {
+      "fountain|fountain|fountain": 1200,
+      "glass|glass|glass": 450,
+      "orchid|orchid|orchid": 200,
+      "diamond|diamond|diamond": 120,
+      "seven|seven|seven": 70,
+      "cherry|cherry|cherry": 25,
+      "cherry|cherry": 5,
+      "cherry": 1
+    },
+    "tagline": "Bellagio exclusive — lake choreography in three reels.",
+    "cherryRules": true,
+    "progressive": false,
+    "progressivePoolId": null,
+    "jackpotRequiresMaxBet": false,
+    "progressiveContributionRate": 0,
+    "progressiveSeed": 0,
+    "jackpotKey": null,
+    "salonOnly": false,
+    "destinationOnly": true,
+    "destinationId": "bellagio",
+    "homeOnly": false
+  },
+  {
+    "id": "conservatory_spin",
+    "name": "Conservatory Spin",
+    "minBet": 15,
+    "maxBet": 300,
+    "symbols": [
+      {
+        "name": "bloom",
+        "display": "🌺",
+        "weight": 2
+      },
+      {
+        "name": "marble",
+        "display": "🏛",
+        "weight": 3
+      },
+      {
+        "name": "pearl",
+        "display": "🫧",
+        "weight": 4
+      },
+      {
+        "name": "crown",
+        "display": "👑",
+        "weight": 5
+      },
+      {
+        "name": "seven",
+        "display": "7",
+        "weight": 6
+      },
+      {
+        "name": "bar",
+        "display": "BAR",
+        "weight": 7
+      }
+    ],
+    "paytable": {
+      "bloom|bloom|bloom": 1100,
+      "marble|marble|marble": 420,
+      "pearl|pearl|pearl": 180,
+      "crown|crown|crown": 110,
+      "seven|seven|seven": 65,
+      "bar|bar|bar": 32
+    },
+    "tagline": "Bellagio conservatory cabinet — seasonal floral multipliers.",
+    "cherryRules": false,
+    "progressive": false,
+    "progressivePoolId": null,
+    "jackpotRequiresMaxBet": false,
+    "progressiveContributionRate": 0,
+    "progressiveSeed": 0,
+    "jackpotKey": null,
+    "salonOnly": false,
+    "destinationOnly": true,
+    "destinationId": "bellagio",
+    "homeOnly": false
+  },
+  {
+    "id": "neon_stadium",
+    "name": "Neon Stadium",
+    "minBet": 5,
+    "maxBet": 200,
+    "symbols": [
+      {
+        "name": "stadium",
+        "display": "🏟",
+        "weight": 2
+      },
+      {
+        "name": "neon",
+        "display": "💜",
+        "weight": 3
+      },
+      {
+        "name": "chip",
+        "display": "🪙",
+        "weight": 4
+      },
+      {
+        "name": "star",
+        "display": "⭐",
+        "weight": 5
+      },
+      {
+        "name": "seven",
+        "display": "7",
+        "weight": 6
+      },
+      {
+        "name": "cherry",
+        "display": "🍒",
+        "weight": 8
+      }
+    ],
+    "paytable": {
+      "stadium|stadium|stadium": 950,
+      "neon|neon|neon": 380,
+      "chip|chip|chip": 170,
+      "star|star|star": 100,
+      "seven|seven|seven": 55,
+      "cherry|cherry|cherry": 22,
+      "cherry|cherry": 4,
+      "cherry": 1
+    },
+    "tagline": "Circa exclusive — downtown sportsbook swagger on reels.",
+    "cherryRules": true,
+    "progressive": false,
+    "progressivePoolId": null,
+    "jackpotRequiresMaxBet": false,
+    "progressiveContributionRate": 0,
+    "progressiveSeed": 0,
+    "jackpotKey": null,
+    "salonOnly": false,
+    "destinationOnly": true,
+    "destinationId": "circa",
+    "homeOnly": false
+  },
+  {
+    "id": "fremont_flash",
+    "name": "Fremont Flash",
+    "minBet": 10,
+    "maxBet": 250,
+    "symbols": [
+      {
+        "name": "flash",
+        "display": "⚡",
+        "weight": 2
+      },
+      {
+        "name": "vamp",
+        "display": "🦇",
+        "weight": 3
+      },
+      {
+        "name": "dice",
+        "display": "🎲",
+        "weight": 4
+      },
+      {
+        "name": "diamond",
+        "display": "💎",
+        "weight": 5
+      },
+      {
+        "name": "seven",
+        "display": "7",
+        "weight": 6
+      },
+      {
+        "name": "bar",
+        "display": "BAR",
+        "weight": 7
+      }
+    ],
+    "paytable": {
+      "flash|flash|flash": 1000,
+      "vamp|vamp|vamp": 400,
+      "dice|dice|dice": 180,
+      "diamond|diamond|diamond": 110,
+      "seven|seven|seven": 60,
+      "bar|bar|bar": 30
+    },
+    "tagline": "Fremont Street voltage — cyan jackpots, magenta near-misses.",
+    "cherryRules": false,
+    "progressive": false,
+    "progressivePoolId": null,
+    "jackpotRequiresMaxBet": false,
+    "progressiveContributionRate": 0,
+    "progressiveSeed": 0,
+    "jackpotKey": null,
+    "salonOnly": false,
+    "destinationOnly": true,
+    "destinationId": "circa",
+    "homeOnly": false
+  },
+  {
+    "id": "scarab_stampede",
+    "name": "Scarab Stampede",
+    "minBet": 5,
+    "maxBet": 125,
+    "symbols": [
+      {
+        "name": "scarab",
+        "display": "🪲",
+        "weight": 2
+      },
+      {
+        "name": "pyramid",
+        "display": "🔺",
+        "weight": 3
+      },
+      {
+        "name": "eye",
+        "display": "👁",
+        "weight": 4
+      },
+      {
+        "name": "ankh",
+        "display": "☥",
+        "weight": 5
+      },
+      {
+        "name": "gold",
+        "display": "🥇",
+        "weight": 6
+      },
+      {
+        "name": "cherry",
+        "display": "🍒",
+        "weight": 8
+      }
+    ],
+    "paytable": {
+      "scarab|scarab|scarab": 700,
+      "scarab|pyramid|eye": 500,
+      "pyramid|pyramid|pyramid": 280,
+      "eye|eye|eye": 160,
+      "ankh|ankh|ankh": 90,
+      "gold|gold|gold": 60,
+      "cherry|cherry|cherry": 18,
+      "cherry|cherry": 4,
+      "cherry": 1
+    },
+    "tagline": "🪲🔺👁 combo jackpot — the desert bugs out in your favor.",
+    "cherryRules": true,
+    "progressive": false,
+    "progressivePoolId": null,
+    "jackpotRequiresMaxBet": false,
+    "progressiveContributionRate": 0,
+    "progressiveSeed": 0,
+    "jackpotKey": null,
+    "salonOnly": false,
+    "destinationOnly": true,
+    "destinationId": "luxor",
+    "homeOnly": false
+  },
+  {
+    "id": "nile_nights",
+    "name": "Nile Nights",
+    "minBet": 10,
+    "maxBet": 200,
+    "symbols": [
+      {
+        "name": "moon",
+        "display": "🌙",
+        "weight": 2
+      },
+      {
+        "name": "boat",
+        "display": "🛶",
+        "weight": 3
+      },
+      {
+        "name": "lotus",
+        "display": "🪷",
+        "weight": 4
+      },
+      {
+        "name": "cobra",
+        "display": "🐍",
+        "weight": 5
+      },
+      {
+        "name": "seven",
+        "display": "7",
+        "weight": 6
+      },
+      {
+        "name": "bar",
+        "display": "BAR",
+        "weight": 7
+      }
+    ],
+    "paytable": {
+      "moon|moon|moon": 850,
+      "moon|boat|lotus": 420,
+      "boat|boat|boat": 300,
+      "lotus|lotus|lotus": 180,
+      "cobra|cobra|cobra": 120,
+      "seven|seven|seven": 55,
+      "bar|bar|bar": 28
+    },
+    "tagline": "🌙🛶🪷 night cruise pays — emoji moonrise on black felt.",
+    "cherryRules": false,
+    "progressive": false,
+    "progressivePoolId": null,
+    "jackpotRequiresMaxBet": false,
+    "progressiveContributionRate": 0,
+    "progressiveSeed": 0,
+    "jackpotKey": null,
+    "salonOnly": false,
+    "destinationOnly": true,
+    "destinationId": "luxor",
+    "homeOnly": false
+  },
+  {
+    "id": "beam_of_ra",
+    "name": "Beam of Ra",
+    "minBet": 10,
+    "maxBet": 250,
+    "symbols": [
+      {
+        "name": "sun",
+        "display": "☀️",
+        "weight": 1
+      },
+      {
+        "name": "obelisk",
+        "display": "🗼",
+        "weight": 3
+      },
+      {
+        "name": "eye",
+        "display": "👁",
+        "weight": 4
+      },
+      {
+        "name": "scarab",
+        "display": "🪲",
+        "weight": 5
+      },
+      {
+        "name": "gold",
+        "display": "🥇",
+        "weight": 6
+      },
+      {
+        "name": "seven",
+        "display": "7",
+        "weight": 7
+      }
+    ],
+    "paytable": {
+      "sun|sun|sun": 0,
+      "sun|obelisk|eye": 600,
+      "obelisk|obelisk|obelisk": 350,
+      "eye|eye|eye": 200,
+      "scarab|scarab|scarab": 140,
+      "gold|gold|gold": 90,
+      "seven|seven|seven": 50
+    },
+    "tagline": "Pyramid progressive — three ☀️ lock the Luxor beam jackpot.",
+    "cherryRules": false,
+    "progressive": true,
+    "progressivePoolId": "luxor_ra",
+    "jackpotRequiresMaxBet": true,
+    "progressiveContributionRate": 0.04,
+    "progressiveSeed": 250000,
+    "jackpotKey": "sun|sun|sun",
+    "salonOnly": false,
+    "destinationOnly": true,
+    "destinationId": "luxor",
+    "homeOnly": false
+  },
+  {
+    "id": "dragon_keep",
+    "name": "Dragon Keep",
+    "minBet": 5,
+    "maxBet": 150,
+    "symbols": [
+      {
+        "name": "dragon",
+        "display": "🐉",
+        "weight": 2
+      },
+      {
+        "name": "sword",
+        "display": "⚔",
+        "weight": 3
+      },
+      {
+        "name": "flame",
+        "display": "🔥",
+        "weight": 4
+      },
+      {
+        "name": "shield",
+        "display": "🛡",
+        "weight": 5
+      },
+      {
+        "name": "crown",
+        "display": "👑",
+        "weight": 6
+      },
+      {
+        "name": "cherry",
+        "display": "🍒",
+        "weight": 8
+      }
+    ],
+    "paytable": {
+      "dragon|dragon|dragon": 900,
+      "dragon|sword|flame": 550,
+      "sword|sword|sword": 320,
+      "flame|flame|flame": 180,
+      "shield|shield|shield": 110,
+      "crown|crown|crown": 80,
+      "cherry|cherry|cherry": 20,
+      "cherry|cherry": 4,
+      "cherry": 1
+    },
+    "tagline": "🐉⚔🔥 keep combo — castle fire in three emoji reels.",
+    "cherryRules": true,
+    "progressive": false,
+    "progressivePoolId": null,
+    "jackpotRequiresMaxBet": false,
+    "progressiveContributionRate": 0,
+    "progressiveSeed": 0,
+    "jackpotKey": null,
+    "salonOnly": false,
+    "destinationOnly": true,
+    "destinationId": "excalibur",
+    "homeOnly": false
+  },
+  {
+    "id": "round_table_reels",
+    "name": "Round Table Reels",
+    "minBet": 10,
+    "maxBet": 175,
+    "symbols": [
+      {
+        "name": "table",
+        "display": "🪑",
+        "weight": 2
+      },
+      {
+        "name": "chalice",
+        "display": "🏆",
+        "weight": 3
+      },
+      {
+        "name": "banner",
+        "display": "🚩",
+        "weight": 4
+      },
+      {
+        "name": "helmet",
+        "display": "🪖",
+        "weight": 5
+      },
+      {
+        "name": "gem",
+        "display": "💎",
+        "weight": 6
+      },
+      {
+        "name": "seven",
+        "display": "7",
+        "weight": 7
+      }
+    ],
+    "paytable": {
+      "table|table|table": 800,
+      "chalice|table|chalice": 480,
+      "chalice|chalice|chalice": 300,
+      "banner|banner|banner": 160,
+      "helmet|helmet|helmet": 120,
+      "gem|gem|gem": 90,
+      "seven|seven|seven": 50
+    },
+    "tagline": "🪑🏆 knights of the soft 17 — round-table emoji pomp.",
+    "cherryRules": false,
+    "progressive": false,
+    "progressivePoolId": null,
+    "jackpotRequiresMaxBet": false,
+    "progressiveContributionRate": 0,
+    "progressiveSeed": 0,
+    "jackpotKey": null,
+    "salonOnly": false,
+    "destinationOnly": true,
+    "destinationId": "excalibur",
+    "homeOnly": false
+  },
+  {
+    "id": "holy_grail_spin",
+    "name": "Holy Grail Spin",
+    "minBet": 15,
+    "maxBet": 300,
+    "symbols": [
+      {
+        "name": "grail",
+        "display": "🏺",
+        "weight": 1
+      },
+      {
+        "name": "crown",
+        "display": "👑",
+        "weight": 3
+      },
+      {
+        "name": "cross",
+        "display": "✝️",
+        "weight": 4
+      },
+      {
+        "name": "sword",
+        "display": "⚔",
+        "weight": 5
+      },
+      {
+        "name": "gem",
+        "display": "💎",
+        "weight": 6
+      },
+      {
+        "name": "seven",
+        "display": "7",
+        "weight": 7
+      }
+    ],
+    "paytable": {
+      "grail|grail|grail": 0,
+      "grail|crown|grail": 700,
+      "crown|crown|crown": 400,
+      "cross|cross|cross": 220,
+      "sword|sword|sword": 140,
+      "gem|gem|gem": 100,
+      "seven|seven|seven": 55
+    },
+    "tagline": "🏺 progressive quest — three grails claim the castle vault.",
+    "cherryRules": false,
+    "progressive": true,
+    "progressivePoolId": "excalibur_grail",
+    "jackpotRequiresMaxBet": true,
+    "progressiveContributionRate": 0.04,
+    "progressiveSeed": 200000,
+    "jackpotKey": "grail|grail|grail",
+    "salonOnly": false,
+    "destinationOnly": true,
+    "destinationId": "excalibur",
+    "homeOnly": false
+  },
+  {
+    "id": "lake_lights",
+    "name": "Lake Lights",
+    "minBet": 10,
+    "maxBet": 220,
+    "symbols": [
+      {
+        "name": "lake",
+        "display": "🌊",
+        "weight": 2
+      },
+      {
+        "name": "spark",
+        "display": "✨",
+        "weight": 3
+      },
+      {
+        "name": "glass",
+        "display": "🥂",
+        "weight": 4
+      },
+      {
+        "name": "orchid",
+        "display": "🌸",
+        "weight": 5
+      },
+      {
+        "name": "diamond",
+        "display": "💎",
+        "weight": 6
+      },
+      {
+        "name": "cherry",
+        "display": "🍒",
+        "weight": 8
+      }
+    ],
+    "paytable": {
+      "lake|lake|lake": 950,
+      "lake|spark|glass": 520,
+      "spark|spark|spark": 300,
+      "glass|glass|glass": 180,
+      "orchid|orchid|orchid": 120,
+      "diamond|diamond|diamond": 90,
+      "cherry|cherry|cherry": 22,
+      "cherry|cherry": 5,
+      "cherry": 1
+    },
+    "tagline": "🌊✨🥂 fountain show line — lake lights in emoji choreography.",
+    "cherryRules": true,
+    "progressive": false,
+    "progressivePoolId": null,
+    "jackpotRequiresMaxBet": false,
+    "progressiveContributionRate": 0,
+    "progressiveSeed": 0,
+    "jackpotKey": null,
+    "salonOnly": false,
+    "destinationOnly": true,
+    "destinationId": "bellagio",
+    "homeOnly": false
+  },
+  {
+    "id": "glass_garden",
+    "name": "Glass Garden",
+    "minBet": 10,
+    "maxBet": 250,
+    "symbols": [
+      {
+        "name": "glassflower",
+        "display": "🌷",
+        "weight": 2
+      },
+      {
+        "name": "vase",
+        "display": "🪴",
+        "weight": 3
+      },
+      {
+        "name": "butterfly",
+        "display": "🦋",
+        "weight": 4
+      },
+      {
+        "name": "pearl",
+        "display": "🫧",
+        "weight": 5
+      },
+      {
+        "name": "crown",
+        "display": "👑",
+        "weight": 6
+      },
+      {
+        "name": "seven",
+        "display": "7",
+        "weight": 7
+      }
+    ],
+    "paytable": {
+      "glassflower|glassflower|glassflower": 880,
+      "butterfly|vase|butterfly": 460,
+      "vase|vase|vase": 280,
+      "butterfly|butterfly|butterfly": 160,
+      "pearl|pearl|pearl": 110,
+      "crown|crown|crown": 85,
+      "seven|seven|seven": 50
+    },
+    "tagline": "🌷🦋 Chihuly vibes — garden glass pays in soft neon pastels.",
+    "cherryRules": false,
+    "progressive": false,
+    "progressivePoolId": null,
+    "jackpotRequiresMaxBet": false,
+    "progressiveContributionRate": 0,
+    "progressiveSeed": 0,
+    "jackpotKey": null,
+    "salonOnly": false,
+    "destinationOnly": true,
+    "destinationId": "bellagio",
+    "homeOnly": false
+  },
+  {
+    "id": "prima_fontana",
+    "name": "Prima Fontana",
+    "minBet": 20,
+    "maxBet": 400,
+    "symbols": [
+      {
+        "name": "fontana",
+        "display": "⛲",
+        "weight": 1
+      },
+      {
+        "name": "diamond",
+        "display": "💎",
+        "weight": 3
+      },
+      {
+        "name": "glass",
+        "display": "🥂",
+        "weight": 4
+      },
+      {
+        "name": "orchid",
+        "display": "🌸",
+        "weight": 5
+      },
+      {
+        "name": "star",
+        "display": "⭐",
+        "weight": 6
+      },
+      {
+        "name": "seven",
+        "display": "7",
+        "weight": 7
+      }
+    ],
+    "paytable": {
+      "fontana|fontana|fontana": 0,
+      "fontana|diamond|glass": 750,
+      "diamond|diamond|diamond": 420,
+      "glass|glass|glass": 240,
+      "orchid|orchid|orchid": 150,
+      "star|star|star": 100,
+      "seven|seven|seven": 60
+    },
+    "tagline": "⛲ progressive elegance — three fountains open the lake vault.",
+    "cherryRules": false,
+    "progressive": true,
+    "progressivePoolId": "bellagio_fontana",
+    "jackpotRequiresMaxBet": true,
+    "progressiveContributionRate": 0.045,
+    "progressiveSeed": 350000,
+    "jackpotKey": "fontana|fontana|fontana",
+    "salonOnly": false,
+    "destinationOnly": true,
+    "destinationId": "bellagio",
+    "homeOnly": false
+  },
+  {
+    "id": "vegas_vamp",
+    "name": "Vegas Vamp",
+    "minBet": 5,
+    "maxBet": 180,
+    "symbols": [
+      {
+        "name": "vamp",
+        "display": "🦇",
+        "weight": 2
+      },
+      {
+        "name": "neon",
+        "display": "💜",
+        "weight": 3
+      },
+      {
+        "name": "fang",
+        "display": "🩸",
+        "weight": 4
+      },
+      {
+        "name": "moon",
+        "display": "🌙",
+        "weight": 5
+      },
+      {
+        "name": "dice",
+        "display": "🎲",
+        "weight": 6
+      },
+      {
+        "name": "cherry",
+        "display": "🍒",
+        "weight": 8
+      }
+    ],
+    "paytable": {
+      "vamp|vamp|vamp": 900,
+      "vamp|neon|fang": 540,
+      "neon|neon|neon": 320,
+      "fang|fang|fang": 180,
+      "moon|moon|moon": 120,
+      "dice|dice|dice": 90,
+      "cherry|cherry|cherry": 20,
+      "cherry|cherry": 4,
+      "cherry": 1
+    },
+    "tagline": "🦇💜🩸 downtown after-dark — Fremont fangs optional.",
+    "cherryRules": true,
+    "progressive": false,
+    "progressivePoolId": null,
+    "jackpotRequiresMaxBet": false,
+    "progressiveContributionRate": 0,
+    "progressiveSeed": 0,
+    "jackpotKey": null,
+    "salonOnly": false,
+    "destinationOnly": true,
+    "destinationId": "circa",
+    "homeOnly": false
+  },
+  {
+    "id": "stadium_swipe",
+    "name": "Stadium Swipe",
+    "minBet": 10,
+    "maxBet": 220,
+    "symbols": [
+      {
+        "name": "stadium",
+        "display": "🏟",
+        "weight": 2
+      },
+      {
+        "name": "ball",
+        "display": "🏈",
+        "weight": 3
+      },
+      {
+        "name": "ticket",
+        "display": "🎟",
+        "weight": 4
+      },
+      {
+        "name": "chip",
+        "display": "🪙",
+        "weight": 5
+      },
+      {
+        "name": "flash",
+        "display": "⚡",
+        "weight": 6
+      },
+      {
+        "name": "seven",
+        "display": "7",
+        "weight": 7
+      }
+    ],
+    "paytable": {
+      "stadium|stadium|stadium": 920,
+      "ball|ticket|chip": 500,
+      "ball|ball|ball": 300,
+      "ticket|ticket|ticket": 170,
+      "chip|chip|chip": 120,
+      "flash|flash|flash": 90,
+      "seven|seven|seven": 55
+    },
+    "tagline": "🏟🏈🎟 sportsbook swagger — swipe for emoji field goals.",
+    "cherryRules": false,
+    "progressive": false,
+    "progressivePoolId": null,
+    "jackpotRequiresMaxBet": false,
+    "progressiveContributionRate": 0,
+    "progressiveSeed": 0,
+    "jackpotKey": null,
+    "salonOnly": false,
+    "destinationOnly": true,
+    "destinationId": "circa",
+    "homeOnly": false
+  },
+  {
+    "id": "downtown_drop",
+    "name": "Downtown Drop",
+    "minBet": 15,
+    "maxBet": 350,
+    "symbols": [
+      {
+        "name": "drop",
+        "display": "💜",
+        "weight": 1
+      },
+      {
+        "name": "flash",
+        "display": "⚡",
+        "weight": 3
+      },
+      {
+        "name": "neon",
+        "display": "💙",
+        "weight": 4
+      },
+      {
+        "name": "dice",
+        "display": "🎲",
+        "weight": 5
+      },
+      {
+        "name": "star",
+        "display": "⭐",
+        "weight": 6
+      },
+      {
+        "name": "seven",
+        "display": "7",
+        "weight": 7
+      }
+    ],
+    "paytable": {
+      "drop|drop|drop": 0,
+      "flash|drop|neon": 680,
+      "flash|flash|flash": 380,
+      "neon|neon|neon": 220,
+      "dice|dice|dice": 140,
+      "star|star|star": 100,
+      "seven|seven|seven": 60
+    },
+    "tagline": "💜 progressive canopy — three drops claim the Fremont jackpot.",
+    "cherryRules": false,
+    "progressive": true,
+    "progressivePoolId": "circa_downtown",
+    "jackpotRequiresMaxBet": true,
+    "progressiveContributionRate": 0.04,
+    "progressiveSeed": 280000,
+    "jackpotKey": "drop|drop|drop",
+    "salonOnly": false,
+    "destinationOnly": true,
+    "destinationId": "circa",
+    "homeOnly": false
+  }
+]

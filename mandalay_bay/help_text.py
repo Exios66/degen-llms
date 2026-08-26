@@ -261,10 +261,10 @@ Browser: localStorage per slot at https://exios66.github.io/degen-llms/
 """
 
 ARCADE_HELP = """
-ARCADE ALLEY — CRT CABINETS (WEB)
-=================================
-Vegas-styled classic minigames in a fullscreen CRT overlay.
-Play on the web terminal (CLI lists cabinets only).
+ARCADE ALLEY — CRT CABINETS
+===========================
+Vegas-styled classic minigames — full text-mode play in the CLI,
+or CRT overlays in the web terminal.
 
 Cabinets:
   Strip Cross      — 5 chips  — Frogger across Las Vegas Blvd
@@ -274,7 +274,6 @@ Cabinets:
 
 Earn arcade tickets from score; redeem for small chip packs,
 a free-spin voucher flag, or a welcome-drink refill.
-ESC or EXIT leaves the cabinet overlay.
 """
 
 SECTIONS = {

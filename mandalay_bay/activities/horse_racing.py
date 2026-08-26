@@ -7,7 +7,9 @@ from pathlib import Path
 from blackjack.rng import SECURE_RANDOM, fisher_yates_shuffle
 from mandalay_bay.activities.base import Activity, ActivityInfo
 from mandalay_bay.dealers import announce_dealer, pick_quip
+from mandalay_bay.pending_refunds import refund_slips
 from mandalay_bay.session import PlayerSession
+from mandalay_bay.terminal_fx import animate_countdown
 from mandalay_bay.stakes import effective_table_stakes, pick_stake_tier
 
 HORSE_NAMES = [
@@ -200,6 +202,7 @@ class HorseRacingActivity(Activity):
                     continue
                 card.results = _simulate_race(card)
                 ui.dim(f'  {dealer.name}: "{pick_quip(dealer, "deal")}"')
+                animate_countdown(ui, "And they're off", ticks=3)
                 ui.print("\nFINISH ORDER:")
                 for pos, num in enumerate(card.results, 1):
                     horse = next(h for h in card.horses if h.number == num)
@@ -231,6 +234,13 @@ class HorseRacingActivity(Activity):
             elif choice == 3:
                 card = _generate_race()
                 ui.print("Fresh race card posted.")
+
+        if pending:
+            returned = refund_slips(
+                session, self.info.id, pending, reason="Racing leave — open tickets returned",
+            )
+            ui.dim(f"Returned {returned:,} chips from unsettled tickets.")
+            pending.clear()
 
         session.record_result(self.info.id, session_net, bets=races)
         ui.print(f"\nRacing session: {'+' if session_net >= 0 else ''}{session_net:,} over {races} race(s)")

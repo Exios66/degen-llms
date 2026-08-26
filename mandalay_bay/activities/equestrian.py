@@ -5,7 +5,9 @@ from dataclasses import dataclass
 from blackjack.rng import SECURE_RANDOM
 from mandalay_bay.activities.base import Activity, ActivityInfo
 from mandalay_bay.dealers import announce_dealer, pick_quip
+from mandalay_bay.pending_refunds import refund_slips
 from mandalay_bay.session import PlayerSession
+from mandalay_bay.terminal_fx import animate_countdown
 from mandalay_bay.stakes import effective_table_stakes, pick_stake_tier
 
 # ── Dressage ──────────────────────────────────────────────────────────────────
@@ -53,6 +55,7 @@ class DressageCard:
     arena: str
     entries: list[DressageEntry]
     results: list[int] | None = None
+    movements_shown: list[str] | None = None
 
 
 def _generate_dressage() -> DressageCard:
@@ -84,10 +87,13 @@ def _simulate_dressage(card: DressageCard) -> list[int]:
     """Return entry numbers ordered by simulated final score (highest first)."""
     scored = []
     for e in card.entries:
+        movement_bonus = SECURE_RANDOM.uniform(0.0, 2.5)
+        movement = SECURE_RANDOM.choice(DRESSAGE_MOVEMENTS)
         noise = SECURE_RANDOM.uniform(-3.0, 3.0)
-        scored.append((e.number, e.total_score + noise))
+        scored.append((e.number, e.total_score + movement_bonus + noise, movement))
     scored.sort(key=lambda x: x[1], reverse=True)
-    return [num for num, _ in scored]
+    card.movements_shown = [movement for _, _, movement in scored]
+    return [num for num, _, _ in scored]
 
 
 def _payout_win(amount: int, odds: int) -> int:
@@ -186,6 +192,9 @@ class DressageActivity(Activity):
                     continue
                 card.results = _simulate_dressage(card)
                 ui.dim(f'  {dealer.name}: "{pick_quip(dealer, "deal")}"')
+                animate_countdown(ui, "Judges scoring", ticks=3)
+                if card.movements_shown:
+                    ui.dim("  Highlights: " + ", ".join(card.movements_shown[:4]))
                 ui.print("\nFINAL STANDINGS:")
                 for pos, num in enumerate(card.results, 1):
                     entry = next(e for e in card.entries if e.number == num)
@@ -217,6 +226,13 @@ class DressageActivity(Activity):
             elif choice == 3:
                 card = _generate_dressage()
                 ui.print("New entry list posted.")
+
+        if pending:
+            returned = refund_slips(
+                session, self.info.id, pending, reason="Dressage leave — open tickets returned",
+            )
+            ui.dim(f"Returned {returned:,} chips from unsettled tickets.")
+            pending.clear()
 
         session.record_result(self.info.id, session_net, bets=events)
         ui.print(f"\nDressage session: {'+' if session_net >= 0 else ''}{session_net:,} over {events} event(s)")
@@ -399,6 +415,7 @@ class JumperActivity(Activity):
                     continue
                 card.results = _simulate_jumper(card)
                 ui.dim(f'  {dealer.name}: "{pick_quip(dealer, "deal")}"')
+                animate_countdown(ui, "Course running", ticks=3)
                 ui.print("\nFINAL STANDINGS:")
                 for pos, r in enumerate(card.results, 1):
                     entry = next(e for e in card.entries if e.number == r.entry_number)
@@ -437,6 +454,13 @@ class JumperActivity(Activity):
             elif choice == 3:
                 card = _generate_jumper()
                 ui.print("New draw posted.")
+
+        if pending:
+            returned = refund_slips(
+                session, self.info.id, pending, reason="Jumper leave — open tickets returned",
+            )
+            ui.dim(f"Returned {returned:,} chips from unsettled tickets.")
+            pending.clear()
 
         session.record_result(self.info.id, session_net, bets=events)
         ui.print(f"\nJumper session: {'+' if session_net >= 0 else ''}{session_net:,} over {events} event(s)")

@@ -15,6 +15,7 @@ import { buildHotelRenderers } from "../../../js/hotel-ui.js";
 import { buildPoolRenderers } from "../../../js/pool-complex-ui.js";
 import { buildAmenitiesRenderers } from "../../../js/casino-amenities-ui.js";
 import { ensureHotel } from "../../../js/hotel.js";
+import { teardownHostedView } from "../../../js/activity-teardown.js";
 import { recordDex } from "./Dex.js";
 
 /** View the host stack falls back to when the player backs out of the entry screen. */
@@ -77,9 +78,20 @@ export class TerminalHostOverlay {
         session.recordVisit(activity);
         onActivityVisit(session, activity);
       },
+      recordActivityVisitOnce: (activity) => {
+        this.runtime._visitRecorded ??= new Set();
+        if (this.runtime._visitRecorded.has(activity)) return;
+        this.runtime._visitRecorded.add(activity);
+        session.recordVisit(activity);
+        onActivityVisit(session, activity);
+      },
+      clearActivityVisit: (activity) => {
+        this.runtime._visitRecorded?.delete(activity);
+      },
       recordActivityResult: (activity, net, bets = 1) => {
         session.recordResult(activity, net, bets);
         onSessionSwing(session, activity, net);
+        this.runtime._visitRecorded?.delete(activity);
       },
       settingsBar: () => null,
       // Terminal screens that "return to the casino floor" reset to the hub view;
@@ -175,10 +187,6 @@ export class TerminalHostOverlay {
     this.title = options.title ?? null;
     this.activityId = options.activityId ?? null;
     this._chipsAtOpen = this.session.wallet.balance;
-    if (this.activityId) {
-      this.session.recordVisit(this.activityId);
-      onActivityVisit(this.session, this.activityId);
-    }
     ensureHotel(this.session);
     this.runtime.sportsbook = SportsbookState.fromJSON(this.session.sportsbookData);
     if (options.tab) this.runtime.sportsbook.activeTab = options.tab;
@@ -193,6 +201,10 @@ export class TerminalHostOverlay {
 
   close() {
     if (!this._active) return;
+    const current = this.views.current();
+    if (current?.name && current.name !== EXIT_VIEW) {
+      teardownHostedView(this.ctx, current.name, { clearSlotsSpinTimers: this.clearSlotsSpinTimers });
+    }
     this.clearSlotsSpinTimers?.();
     const net = this.session.wallet.balance - this._chipsAtOpen;
     this.persist();
@@ -237,7 +249,13 @@ export class TerminalHostOverlay {
     exit.type = "button";
     exit.className = "terminal-host-exit";
     exit.textContent = "✕ EXIT";
-    exit.onclick = () => this.close();
+    exit.onclick = () => {
+      if (current.name && current.name !== EXIT_VIEW) {
+        teardownHostedView(this.ctx, current.name, { clearSlotsSpinTimers: this.clearSlotsSpinTimers });
+      }
+      this.views.reset([{ name: EXIT_VIEW, data: {} }]);
+      this.render();
+    };
     bar.append(label, exit);
     panel.appendChild(bar);
 

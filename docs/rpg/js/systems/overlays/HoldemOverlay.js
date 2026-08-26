@@ -17,6 +17,7 @@ export class HoldemOverlay extends OverlayBase {
     this.buyIn = 0;
     this.phase = "buyin";
     this.log = [];
+    this.handsPlayed = 0;
     return super.open(options);
   }
 
@@ -29,7 +30,18 @@ export class HoldemOverlay extends OverlayBase {
       this.sessionNet += stack - this.buyIn;
     }
     this.table = null;
-    super.close();
+    const bets = Math.max(1, this.handsPlayed);
+    this.session.recordResult(this.activityId, this.sessionNet, bets);
+    this.root.hidden = true;
+    this.root.innerHTML = "";
+    this.root.classList.remove("encounter-overlay--active");
+    this._active = false;
+    const net = this.sessionNet;
+    this.sessionNet = 0;
+    const resolve = this._resolve;
+    this._resolve = null;
+    if (resolve) resolve({ net });
+    this.hooks.onClose?.({ net });
   }
 
   _streetLabel(street) {
@@ -38,16 +50,21 @@ export class HoldemOverlay extends OverlayBase {
 
   _render() {
     if (this.phase === "buyin") {
+      const minBuyIn = this._options.minBet ?? 10;
+      const maxBuyIn = Math.min(this._options.maxBet ?? this.session.wallet.balance, this.session.wallet.balance);
       const panel = this._panel(`TEXAS HOLD'EM · ${this._options.dealerName ?? "Dealer"}`);
+      if (this._options.tier) {
+        this._msg(panel, `${this._options.tier.name} stakes · buy-in $${minBuyIn}–$${maxBuyIn}`, "dim");
+      }
       this._msg(panel, "No-limit · 5-handed (you + 4 bots). Buy-in stays on the table across hands.");
       const form = document.createElement("div");
       form.className = "bj-form";
       const input = document.createElement("input");
       input.type = "number";
       const max = this.session.wallet.balance;
-      input.min = "10";
+      input.min = String(minBuyIn);
       input.max = String(max);
-      input.value = String(Math.min(200, Math.max(10, max)));
+      input.value = String(Math.min(maxBuyIn, Math.max(minBuyIn, max)));
       form.appendChild(input);
       panel.appendChild(form);
       actionRow(panel, [
@@ -56,7 +73,8 @@ export class HoldemOverlay extends OverlayBase {
           primary: true,
           onClick: () => {
             const amt = parseInt(input.value, 10) || 0;
-            if (amt < 10) { alert("Minimum buy-in $10."); return; }
+            if (amt < minBuyIn) { alert(`Minimum buy-in $${minBuyIn}.`); return; }
+            if (amt > maxBuyIn) { alert(`Maximum buy-in $${maxBuyIn}.`); return; }
             if (!this.session.wallet.debit(amt, "holdem", "Buy-in")) {
               alert("Not enough chips.");
               return;
@@ -64,6 +82,7 @@ export class HoldemOverlay extends OverlayBase {
             this.buyIn = amt;
             this.table = HoldemTable.quickTable(amt, 4);
             this.table.startHand();
+            this.handsPlayed = 1;
             this.phase = "play";
             this.session.ensureRpgState().flags.played_holdem = true;
             this._runBots();
@@ -138,6 +157,7 @@ export class HoldemOverlay extends OverlayBase {
               return;
             }
             t.startHand();
+            this.handsPlayed += 1;
             this._runBots();
             this._render();
           },

@@ -7,13 +7,15 @@ export class RouletteOverlay extends OverlayBase {
     this.lastResult = null;
     this.history = [];
     this.historyPulse = false;
-    this.lastWager = 10;
+    this.lastWager = null;
+    this.spins = 0;
   }
 
   open(options = {}) {
     this.lastResult = null;
     this.history = [];
     this.historyPulse = false;
+    this.spins = 0;
     return super.open(options);
   }
 
@@ -50,7 +52,13 @@ export class RouletteOverlay extends OverlayBase {
   }
 
   _render() {
+    const tier = this._options.tier;
+    const minBet = this._options.minBet ?? 5;
+    const maxBet = Math.min(this._options.maxBet ?? 500, this.session.wallet.balance);
     const panel = this._panel(`ROULETTE · ${this._options.dealerName ?? "Croupier"}`);
+    if (tier) {
+      this._msg(panel, `${tier.name} stakes · $${minBet}–$${maxBet}`, "dim");
+    }
     if (this.lastResult) {
       this._msg(panel, this.lastResult, this.lastResult.includes("Winner") || this.lastResult.includes("Hit") ? "success" : "");
     } else {
@@ -77,13 +85,13 @@ export class RouletteOverlay extends OverlayBase {
     straight.placeholder = "Straight #";
     form.appendChild(straight);
 
-    const maxWager = Math.min(500, this.session.wallet.balance);
+    const maxWager = maxBet;
     const remembered = Number.isFinite(this.lastWager)
-      ? Math.min(maxWager, Math.max(5, this.lastWager))
-      : 10;
+      ? Math.min(maxWager, Math.max(minBet, this.lastWager))
+      : minBet;
     const amount = document.createElement("input");
     amount.type = "number";
-    amount.min = "5";
+    amount.min = String(minBet);
     amount.max = String(maxWager);
     amount.value = String(remembered);
     amount.oninput = () => {
@@ -100,7 +108,7 @@ export class RouletteOverlay extends OverlayBase {
         onClick: () => {
           const bet = BET_TYPES[parseInt(betSel.value, 10)];
           const amt = parseInt(amount.value, 10) || 0;
-          if (amt < 5) { alert("Minimum $5."); return; }
+          if (amt < minBet) { alert(`Minimum $${minBet}.`); return; }
           if (!this.session.wallet.debit(amt, "roulette", bet.label)) {
             alert("Not enough chips.");
             return;
@@ -116,6 +124,7 @@ export class RouletteOverlay extends OverlayBase {
           } else {
             this.sessionNet -= amt;
           }
+          this.spins += 1;
           this.history = appendSpinHistory(this.history, number, { limit: 18 });
           this.historyPulse = true;
           this.lastResult = `Ball: ${number} (${color}). ${result.reason}`;
@@ -126,5 +135,20 @@ export class RouletteOverlay extends OverlayBase {
       },
       { label: "Leave table", onClick: () => this.close() },
     ]);
+  }
+
+  close() {
+    const bets = Math.max(1, this.spins);
+    this.session.recordResult(this.activityId, this.sessionNet, bets);
+    this.root.hidden = true;
+    this.root.innerHTML = "";
+    this.root.classList.remove("encounter-overlay--active");
+    this._active = false;
+    const net = this.sessionNet;
+    this.sessionNet = 0;
+    const resolve = this._resolve;
+    this._resolve = null;
+    if (resolve) resolve({ net });
+    this.hooks.onClose?.({ net });
   }
 }

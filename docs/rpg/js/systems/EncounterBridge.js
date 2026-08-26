@@ -34,6 +34,7 @@ export class BlackjackOverlay {
     this.dealerProfile = null;
     this.dealerName = "Dealer";
     this._settlementQuipShown = false;
+    this._natural21Shown = false;
   }
 
   isActive() {
@@ -47,6 +48,7 @@ export class BlackjackOverlay {
     this.dealerProfile = options.dealerProfile ?? null;
     this.dealerName = options.dealerName ?? this.dealerProfile?.name ?? "Dealer";
     this._settlementQuipShown = false;
+    this._natural21Shown = false;
     this.session.recordVisit("blackjack");
     this.root.hidden = false;
 
@@ -190,7 +192,10 @@ export class BlackjackOverlay {
       let suffix = "";
       if (row.blackjack) {
         suffix = " [BJ]";
-        this.hooks.onNatural21?.();
+        if (!this._natural21Shown) {
+          this._natural21Shown = true;
+          this.hooks.onNatural21?.();
+        }
       } else if (row.bust) suffix = " [BUST]";
       else if (row.surrendered) suffix = " [SURR]";
       const heading = document.createElement("div");
@@ -300,6 +305,7 @@ export class BlackjackOverlay {
           this.sessionNet += game.humanNet;
           game.beginRound();
           this._settlementQuipShown = false;
+          this._natural21Shown = false;
           this._injectDealerQuip("deal");
           this._render();
         };

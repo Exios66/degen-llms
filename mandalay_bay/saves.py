@@ -238,6 +238,11 @@ def session_to_dict(session: PlayerSession) -> dict:
         "progressive_pools": dict(session.progressive_pools),
         "casino_time_ms": session.casino_time_ms,
     }
+    if getattr(session, "arcade", None) is not None:
+        from mandalay_bay.arcade_state import ArcadeState
+
+        arcade = session.arcade
+        payload["arcade"] = arcade.to_dict() if isinstance(arcade, ArcadeState) else arcade
     if hasattr(session, "hotel") and session.hotel is not None:
         payload["hotel"] = asdict(session.hotel)
     if hasattr(session, "pool_complex") and session.pool_complex is not None:
@@ -318,6 +323,7 @@ def session_from_dict(data: dict) -> PlayerSession:
         slot_label=data.get("slot_label", ""),
         progressive_pools=dict(data.get("progressive_pools", {})),
         casino_time_ms=int(data.get("casino_time_ms", 0)),
+        arcade=data.get("arcade"),
     )
     if "hotel" in data:
         hotel_data = dict(data["hotel"])

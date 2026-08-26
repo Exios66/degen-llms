@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from mandalay_bay.activities.base import Activity, ActivityInfo
+from mandalay_bay.pending_refunds import refund_slips, refund_trading_positions
 from mandalay_bay.session import PlayerSession
 from mandalay_bay.trading_desk import (
     drift_spot,
@@ -144,6 +145,13 @@ class TradingDeskActivity(Activity):
                         f"1W {q.get('perf1wPct', 0):+6.2f}%  — {q['underlying']}"
                     )
                 ui.pause()
+
+        if positions:
+            returned = refund_trading_positions(
+                session, self.info.id, positions, reason="Trading leave — open positions refunded",
+            )
+            ui.dim(f"Returned {returned:,} chips from unsettled positions.")
+            positions = []
 
         if trades:
             session.record_result(self.info.id, session_net, bets=trades)

@@ -14,6 +14,7 @@ from mandalay_bay.prediction_markets import (
     resolve_market,
     resolve_position,
 )
+from mandalay_bay.pending_refunds import refund_slips
 from mandalay_bay.session import PlayerSession
 from mandalay_bay.sport_simulator import (
     board_from_scenarios,
@@ -136,6 +137,24 @@ class SportsbookActivity(Activity):
                     f"Next slate loaded — sports cursor {self._scenario_cursor}, "
                     f"predictions cursor {self._predictions.scenario_cursor}."
                 )
+
+        refunded = 0
+        if self._pending:
+            refunded += refund_slips(
+                session, self.info.id, [{"amount": s.amount} for s in self._pending],
+                reason="Sportsbook leave — open tickets returned",
+            )
+            self._pending = []
+        if self._predictions.positions:
+            refunded += refund_slips(
+                session,
+                self.info.id,
+                [{"amount": p["amount"]} for p in self._predictions.positions],
+                reason="Sportsbook leave — prediction stakes returned",
+            )
+            self._predictions.positions = []
+        if refunded:
+            ui.dim(f"Returned {refunded:,} chips from unsettled tickets.")
 
         session.record_result(self.info.id, session_net, bets=bets_placed)
         ui.pause()

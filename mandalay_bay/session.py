@@ -25,6 +25,7 @@ class PlayerSession:
     slot_label: str = ""
     progressive_pools: dict[str, int] = field(default_factory=dict)
     casino_time_ms: int = 0
+    arcade: dict | None = None
     #: Save keys owned by the web build (pixel RPG state, web sportsbook) that
     #: the CLI carries through untouched. See saves.WEB_ONLY_SAVE_KEYS.
     web_only_state: dict = field(default_factory=dict)

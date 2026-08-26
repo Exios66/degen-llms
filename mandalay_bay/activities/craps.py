@@ -5,6 +5,7 @@ from mandalay_bay.craps import SIDE_BETS, CrapsTable
 from mandalay_bay.dealers import announce_dealer, pick_quip
 from mandalay_bay.session import PlayerSession
 from mandalay_bay.stakes import effective_table_stakes, pick_stake_tier
+from mandalay_bay.terminal_fx import animate_dice_roll
 
 
 class CrapsActivity(Activity):
@@ -120,7 +121,7 @@ class CrapsActivity(Activity):
             point_before = table.point
             roll = table.roll()
             rolls += 1
-            ui.print(f"\n  🎲 {roll.label()}")
+            animate_dice_roll(ui, roll.label())
             ui.dim(f'  {dealer.name}: "{pick_quip(dealer, "deal")}"')
 
             if line_bet:

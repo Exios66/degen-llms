@@ -490,6 +490,26 @@ html[data-destination="circa"] .panel {
   max-width: 100%;
 }
 
+.strip-ride-mode {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0.75rem 0 0.25rem;
+}
+
+.strip-ride-mode__btn {
+  flex: 1;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid rgba(201, 162, 39, 0.35);
+  background: rgba(0, 0, 0, 0.25);
+  color: inherit;
+  cursor: pointer;
+}
+
+.strip-ride-mode__btn--active {
+  border-color: rgba(201, 162, 39, 0.85);
+  background: rgba(201, 162, 39, 0.15);
+}
+
 .strip-dest-list {
   max-height: min(50vh, 28rem);
   overflow-x: hidden;

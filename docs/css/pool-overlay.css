@@ -37,6 +37,10 @@ body.pool-overlay-active {
   pointer-events: auto;
 }
 
+.pool-overlay--steady .pool-overlay__shell {
+  animation: none;
+}
+
 .pool-overlay__backdrop {
   position: absolute;
   inset: 0;

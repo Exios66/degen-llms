@@ -30,6 +30,10 @@ body.balcony-smoke-overlay-active {
   pointer-events: auto;
 }
 
+.balcony-smoke-overlay--steady .balcony-smoke-overlay__stage {
+  animation: none;
+}
+
 .balcony-smoke-overlay__stage {
   position: absolute;
   inset: 0;

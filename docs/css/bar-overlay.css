@@ -26,6 +26,10 @@ body.bar-overlay-active {
   pointer-events: auto;
 }
 
+body.pool-overlay-active .bar-overlay.bar-overlay--open {
+  z-index: 9350;
+}
+
 .bar-overlay__backdrop {
   position: absolute;
   inset: 0;

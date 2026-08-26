@@ -58,12 +58,39 @@ export function buildStripLimoRenderers(ctx) {
     const destinations = listLimoDestinations(s);
 
     const st = ensureStripTravel(s);
-    const rideFlavor = st.rideshareUnlocked && !st.limoUnlocked
+    const bothModes = st.limoUnlocked && st.rideshareUnlocked;
+    let rideFlavor = st.rideshareUnlocked && !st.limoUnlocked
       ? "rideshare"
       : st.limoUnlocked && !st.rideshareUnlocked
         ? "limo"
-        : (st.lastRideMode === "rideshare" ? "rideshare" : "limo");
+        : (st.preferredRideMode ?? st.lastRideMode ?? "limo");
+    if (bothModes && !st.preferredRideMode) {
+      st.preferredRideMode = rideFlavor;
+    }
     const modeLabel = rideFlavor === "rideshare" ? "Uber / Lyft" : "Black car";
+
+    const modeToggle = bothModes
+      ? el("div", { className: "strip-ride-mode" }, [
+        el("button", {
+          type: "button",
+          className: `strip-ride-mode__btn${rideFlavor === "limo" ? " strip-ride-mode__btn--active" : ""}`,
+          textContent: "Black car",
+          onclick: () => {
+            st.preferredRideMode = "limo";
+            render();
+          },
+        }),
+        el("button", {
+          type: "button",
+          className: `strip-ride-mode__btn${rideFlavor === "rideshare" ? " strip-ride-mode__btn--active" : ""}`,
+          textContent: "Uber / Lyft",
+          onclick: () => {
+            st.preferredRideMode = "rideshare";
+            render();
+          },
+        }),
+      ])
+      : null;
 
     const cards = unlocked
       ? destinations.map((dest) => {
@@ -119,6 +146,7 @@ export function buildStripLimoRenderers(ctx) {
         isAwayFromHome(s)
           ? el("span", { className: "strip-away-badge", textContent: `Away · ${current.shortName}` })
           : null,
+        modeToggle,
         el("div", { className: "strip-dest-list" }, cards),
         el("ul", { className: "menu-list" }, [
           menuBtn("Back", () => goBack(), true),

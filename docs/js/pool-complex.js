@@ -360,6 +360,9 @@ export function beachClubAction(session, actionId) {
 export function startRaveDance(session) {
   visitZone(session, "beach_rave");
   const pc = ensurePoolComplex(session);
+  if (pc.raveMoves.length && pc.raveStep < pc.raveMoves.length) {
+    return { ok: true, message: "Sequence already in progress — match the DJ's three moves." };
+  }
   pc.raveMoves = [secureRandomInt(0, 2), secureRandomInt(0, 2), secureRandomInt(0, 2)];
   pc.raveStep = 0;
   return { ok: true, message: "The DJ drops bass. Match three moves: Fist pump, Shuffling, Glow spin." };

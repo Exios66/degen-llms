@@ -1,6 +1,5 @@
 #!/usr/bin/env node
-/** Smoke-test horse sprite module imports and rendering. */
-import { createCanvas } from "canvas";
+/** Smoke-test horse sprite module imports and rendering (no native canvas dependency). */
 import {
   HORSE_GALLOP_FRAME_COUNT,
   HORSE_GALLOP_W,
@@ -12,6 +11,17 @@ import {
   getHorseAnimationFrameCount,
 } from "../docs/js/horse-sprites.js";
 
+function createMockCanvas(width, height) {
+  const canvas = { width, height };
+  const ctx = {
+    canvas,
+    fillStyle: "#000",
+    fillRect() {},
+    clearRect() {},
+  };
+  return { canvas, ctx };
+}
+
 if (HORSE_SPRITE_COUNT !== 8) throw new Error(`Expected 8 sprites, got ${HORSE_SPRITE_COUNT}`);
 if (getHorseAnimationFrameCount("gallop") !== 6) throw new Error("Gallop should use 6 frames");
 if (HORSE_GALLOP_FRAME_COUNT !== 6) throw new Error("GALLOP frame data should have 6 frames");
@@ -19,8 +29,7 @@ if (HORSE_SPRITE_ROSTER.some((s) => /unicorn|galaxy|neon|kawaii/i.test(s.label))
   throw new Error("Fantasy sprite labels still present");
 }
 
-const canvas = createCanvas(HORSE_GALLOP_W, 32);
-const ctx = canvas.getContext("2d");
+const { canvas, ctx } = createMockCanvas(HORSE_GALLOP_W, 32);
 for (const entry of HORSE_SPRITE_ROSTER) {
   drawHorseSprite(ctx, entry.id, { scale: 1, frame: 0, direction: "front", animation: "walk" });
   for (let f = 0; f < 6; f++) {

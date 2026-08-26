@@ -78,6 +78,8 @@ const ctx = {
   persist,
   render,
   recordActivityVisit,
+  recordActivityVisitOnce,
+  clearActivityVisit,
   recordActivityResult,
   settingsBar,
 };
@@ -145,9 +147,21 @@ function recordActivityVisit(activity) {
   onActivityVisit(session, activity);
 }
 
+function recordActivityVisitOnce(activity) {
+  runtime._visitRecorded ??= new Set();
+  if (runtime._visitRecorded.has(activity)) return;
+  runtime._visitRecorded.add(activity);
+  recordActivityVisit(activity);
+}
+
+function clearActivityVisit(activity) {
+  runtime._visitRecorded?.delete(activity);
+}
+
 function recordActivityResult(activity, net, bets = 1) {
   session.recordResult(activity, net, bets);
   onSessionSwing(session, activity, net);
+  clearActivityVisit(activity);
 }
 
 function mountRewardsPhone() {
@@ -409,11 +423,13 @@ function settingsBar() {
         if (runtime.blackjackGame) {
           if (!confirm("Leave the blackjack table and return to the save library?")) return;
           finishBlackjack(true);
+          returnToSavePicker();
           return;
         }
         if (runtime.holdem) {
           if (!confirm("Leave the Hold'em table and return to the save library?")) return;
           finishHoldem(true);
+          returnToSavePicker();
           return;
         }
         returnToSavePicker();
@@ -914,7 +930,8 @@ function render() {
   }
   const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
   const slotsSpinning = runtime.slots?.spinning === true;
-  if (!reduceMotion && !slotsSpinning) {
+  const rouletteSpinning = runtime.roulette?.spinning === true;
+  if (!reduceMotion && !slotsSpinning && !rouletteSpinning) {
     app.classList.remove("view-transition");
     void app.offsetWidth;
     app.classList.add("view-transition");

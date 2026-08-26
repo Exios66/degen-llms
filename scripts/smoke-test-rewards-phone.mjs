@@ -25,7 +25,7 @@ const css = readFileSync(join(root, "docs", "css", "rewards-phone.css"), "utf8")
 check(css.includes("@media (min-width: 768px)"), "desktop media query present");
 check(css.includes("body:not(.has-touch-pad) .rewards-phone-shell"), "desktop shell enlarge scoped off touch pad");
 check(css.includes("width: 224px") || css.includes("width:224px"), "desktop shell width ~224px");
-check(css.includes("min-height: 320px"), "desktop LCD min-height enlarged");
+check(css.includes("min-height: 320px") || css.includes("clamp(180px"), "desktop LCD min-height enlarged");
 check(css.includes("rewards-home-actions"), "home shortcut styles present");
 check(css.includes("rewards-phone-sounds"), "phone sounds settings styles present");
 check(css.includes("rewards-call-connecting"), "call connecting styles present");

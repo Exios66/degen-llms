@@ -10,7 +10,7 @@ import { effectiveTableStakes, formatStakeRange } from "../stakes.js";
 import { resolveActivityMin } from "../salon-exclusives.js";
 
 export function buildTableRenderers(ctx) {
-  const { el, statusBanner, showStatus, menu, dealerPanel, videoMachine, cardRow, machineLog, pushView, popView, goBack, popToView, render, persist, recordActivityVisit, recordActivityResult } = ctx;
+  const { el, statusBanner, showStatus, menu, dealerPanel, videoMachine, cardRow, machineLog, pushView, popView, goBack, popToView, render, persist, recordActivityVisitOnce, clearActivityVisit, recordActivityResult } = ctx;
   const runtime = ctx.runtime;
 
   function renderTable(snapshot) {
@@ -179,7 +179,7 @@ export function buildTableRenderers(ctx) {
         ]),
       });
     }
-    recordActivityVisit("blackjack");
+    recordActivityVisitOnce("blackjack");
     persist();
     const tier = runtime.stakeTier;
     const activityMin = resolveActivityMin(runtime, act.minBet);
@@ -281,7 +281,7 @@ export function buildTableRenderers(ctx) {
         ]),
       });
     }
-    recordActivityVisit("holdem");
+    recordActivityVisitOnce("holdem");
     persist();
     const tier = runtime.stakeTier;
     const activityMin = resolveActivityMin(runtime, act.minBet);
@@ -557,7 +557,7 @@ export function buildTableRenderers(ctx) {
         ]),
       });
     }
-    recordActivityVisit("roulette");
+    recordActivityVisitOnce("roulette");
     persist();
 
     const tier = runtime.roulette.tier ?? runtime.stakeTier;
@@ -641,27 +641,20 @@ export function buildTableRenderers(ctx) {
       resultEl.className = "dim";
       resultEl.textContent = `${dealer.name}: "${pickQuip(dealer, "deal")}"`;
       runtime.roulette.spinning = true;
+      const straightPick = bet.kind === "straight" ? parseInt(straightInput.value, 10) : null;
+      runtime.roulette.pendingSpin = { bet, amount, straightPick, dealer };
       render();
 
-      setTimeout(() => {
-        const number = spinWheel();
-        const straightPick = bet.kind === "straight" ? parseInt(straightInput.value, 10) : null;
-        const { win, reason } = resolveBet(bet, amount, number, straightPick);
-        runtime.roulette.spins += 1;
-        runtime.roulette.lastNumber = number;
-        runtime.roulette.spinning = false;
-        pushRouletteHistory(number);
+      if (runtime.roulette.spinTimeoutId) clearTimeout(runtime.roulette.spinTimeoutId);
+      runtime.roulette.spinTimeoutId = setTimeout(() => {
+        runtime.roulette.spinTimeoutId = null;
+        const outcome = finalizeRouletteSpin();
+        if (!outcome) return;
+        const { number, win, reason, dealer } = outcome;
         resultEl.className = win > 0 ? "success" : "dim";
         const quip = pickQuip(dealer, win > 0 ? "win" : "lose");
         resultEl.textContent = `Ball lands on ${number} (${wheelColor(number)}) — ${reason}. ${dealer.name}: "${quip}"`;
-        if (win > 0) {
-          ctx.session.wallet.credit(win, "roulette", reason);
-          runtime.roulette.sessionNet += win - amount;
-        } else {
-          runtime.roulette.sessionNet -= amount;
-        }
         summaryEl.textContent = `Session: ${signedChips(runtime.roulette.sessionNet)} over ${runtime.roulette.spins} spin(s)`;
-        persist();
         render();
       }, spinMs);
     }
@@ -690,11 +683,8 @@ export function buildTableRenderers(ctx) {
         el("button", {
           className: "btn",
           textContent: "Leave table",
-          onclick: () => {
-            recordActivityResult("roulette", runtime.roulette.sessionNet, runtime.roulette.spins);
-            persist();
-            goBack();
-          },
+          onclick: () => leaveRoulette(),
+          disabled: false,
         }),
       ]),
       footerExtra: el("span", {
@@ -888,8 +878,43 @@ export function buildTableRenderers(ctx) {
       runtime.blackjackGame = null;
       runtime.blackjackSessionNet = 0;
     }
-    popToView("hub");
+    popToView("floor");
     render();
+  }
+
+  function finalizeRouletteSpin() {
+    const pending = runtime.roulette.pendingSpin;
+    if (!pending) return null;
+    const { bet, amount, straightPick, dealer } = pending;
+    const number = spinWheel();
+    const { win, reason } = resolveBet(bet, amount, number, straightPick);
+    runtime.roulette.spins += 1;
+    runtime.roulette.lastNumber = number;
+    runtime.roulette.spinning = false;
+    pushRouletteHistory(number);
+    if (win > 0) {
+      ctx.session.wallet.credit(win, "roulette", reason);
+      runtime.roulette.sessionNet += win - amount;
+    } else {
+      runtime.roulette.sessionNet -= amount;
+    }
+    runtime.roulette.pendingSpin = null;
+    persist();
+    return { number, win, reason, dealer, amount, bet, straightPick };
+  }
+
+  function leaveRoulette() {
+    if (runtime.roulette.spinTimeoutId) {
+      clearTimeout(runtime.roulette.spinTimeoutId);
+      runtime.roulette.spinTimeoutId = null;
+    }
+    if (runtime.roulette.spinning) {
+      finalizeRouletteSpin();
+    }
+    recordActivityResult("roulette", runtime.roulette.sessionNet, runtime.roulette.spins);
+    clearActivityVisit("roulette");
+    persist();
+    goBack();
   }
 
   return {

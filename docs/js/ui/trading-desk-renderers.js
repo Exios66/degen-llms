@@ -5,11 +5,12 @@ import {
 } from "../tradingDesk.js";
 import { effectiveTableStakes, formatStakeRange } from "../stakes.js";
 import { getActivityBranding } from "../strip-destinations.js";
+import { refundTradingPositions } from "../pendingRefunds.js";
 
 export function buildTradingDeskRenderers(ctx) {
   const {
     el, banner, chipLine, showStatus, menu, pushView, popView, goBack,
-    render, persist, recordActivityVisit, recordActivityResult,
+    render, persist, recordActivityVisitOnce, clearActivityVisit, recordActivityResult,
   } = ctx;
   const runtime = ctx.runtime;
 
@@ -25,6 +26,25 @@ export function buildTradingDeskRenderers(ctx) {
     }
   }
 
+  function leaveTradingDesk() {
+    if (runtime.tradingDesk.positions.length) {
+      const refunded = refundTradingPositions(
+        ctx.session,
+        "trading_desk",
+        runtime.tradingDesk.positions,
+        "Trading leave — open positions refunded",
+      );
+      runtime.tradingDesk.positions = [];
+      if (refunded > 0) {
+        showStatus(`Returned ${refunded.toLocaleString()} chips from unsettled positions.`, "success");
+        persist();
+      }
+    }
+    stopTicker();
+    clearActivityVisit("trading_desk");
+    goBack();
+  }
+
   function renderTradingDesk() {
     const act = ACTIVITIES.trading_desk;
     const open = runtime.tradingDesk.positions.length;
@@ -38,7 +58,7 @@ export function buildTradingDeskRenderers(ctx) {
         ]),
       ]);
     }
-    recordActivityVisit("trading_desk");
+    recordActivityVisitOnce("trading_desk");
     persist();
 
     if (!runtime.tradingDesk.catalog) {
@@ -155,7 +175,7 @@ export function buildTradingDeskRenderers(ctx) {
         ["Buy contract", "Settle / expire positions", "Next contract page"],
         "Trading Floor:",
         (choice) => {
-          if (choice === 0) { stopTicker(); goBack(); return; }
+          if (choice === 0) { leaveTradingDesk(); return; }
           if (choice === 1) { pushView("trading-buy"); }
           else if (choice === 2) { stopTicker(); pushView("trading-settle"); }
           else if (choice === 3) {

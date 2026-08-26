@@ -6,7 +6,7 @@ import { resolveActivityMin } from "../salon-exclusives.js";
 
 export function buildCrapsRenderers(ctx) {
   const { el, dealerPanel, videoMachine, machineLog, goBack, render, persist,
-    recordActivityVisit, recordActivityResult } = ctx;
+    recordActivityVisitOnce, recordActivityResult } = ctx;
   const runtime = ctx.runtime;
 
   function ensureCrapsTable() {
@@ -36,7 +36,7 @@ export function buildCrapsRenderers(ctx) {
         ]),
       });
     }
-    recordActivityVisit("craps");
+    recordActivityVisitOnce("craps");
     persist();
     const table = ensureCrapsTable();
     const tier = runtime.craps.tier ?? runtime.stakeTier;

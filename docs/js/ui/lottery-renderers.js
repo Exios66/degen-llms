@@ -25,7 +25,7 @@ import { getActivityBranding } from "../strip-destinations.js";
 export function buildLotteryRenderers(ctx) {
   const {
     el, banner, chipLine, goBack, render, persist,
-    recordActivityVisit, recordActivityResult,
+    recordActivityVisitOnce, recordActivityResult,
   } = ctx;
   const runtime = ctx.runtime;
 
@@ -408,7 +408,7 @@ export function buildLotteryRenderers(ctx) {
       ]);
     }
 
-    recordActivityVisit("lottery");
+    recordActivityVisitOnce("lottery");
     persist();
 
     const ticketId = L.lastTicketId || "pick3";

@@ -5,6 +5,30 @@ All notable changes to **degen-llms** (The Mandalay Bay) are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.2] - 2026-08-26
+
+### Added
+
+- **Python CLI gambling parity** — text-mode Arcade Alley cabinets, 37-machine slots catalog synced from web JS, terminal FX pacing, and arcade state in save slots (#155)
+
+### Changed
+
+- **Arcade Alley redeem shop** — ticket perks now wire into casino infrastructure: free-spin voucher consumes on next slot pull, welcome drink refill re-unlocks Sapphire cocktail on Rewards; arcade smoke test added (#154)
+
+### Fixed
+
+- **Web terminal casino audit** — pending-refund parity on leave for sportsbook/trading/racing; slots and roulette finalize in-flight spins; sportsbook wallet typo; blackjack leave/change-save navigation (#156)
+- **Phaser RPG hosted games & resort overlays** — shared activity-teardown on exit; stake-tier table limits; pool/bar z-index stacking; strip-limo black-car vs rideshare toggle; horse-sprite smoke test (#157)
+- **Strip limo / private driver** — local `menuBtn` helper in strip-limo UI prevents blank-screen crash from room-phone dispatch; strip-limo render smoke test added (#144)
+
+### Documentation
+
+- **Strip Ride guide** — `docs/strip-ride.md` and `wiki/Strip-Ride.md` wired into Quarto nav; hotel, slots, MGM Rewards, and player-guide parity across docs and wiki (#152)
+
+### Notes
+
+- Intentionally excluded: meta-changelog PR (#151), no-op merge #87 (save carry-over already on main via #92), Quarto freeze refresh commits
+
 ## [1.2.1] - 2026-07-27
 
 ### Changed

@@ -1,6 +1,8 @@
 // Run with: node --experimental-default-type=module scripts/test-arcade-slot-regressions.mjs
 import assert from "node:assert/strict";
 import { createStripCross } from "../docs/js/arcade/games/stripCross.js";
+import { createShowgirlBeat } from "../docs/js/arcade/games/showgirlBeat.js";
+import { paddleBounceVx } from "../docs/js/arcade/games/highRollerBreakout.js";
 import { ArcadeCabinetOverlay } from "../docs/js/arcade/ArcadeCabinetOverlay.js";
 import { ARCADE_GAMES } from "../docs/js/arcade/catalog.js";
 import { PlayerSession } from "../docs/js/core.js";
@@ -14,7 +16,11 @@ let frame = null;
 let clock = performance.now();
 globalThis.requestAnimationFrame = (callback) => { frame = callback; return 1; };
 globalThis.cancelAnimationFrame = () => { frame = null; };
-globalThis.window = { addEventListener: noop, removeEventListener: noop };
+const listeners = new Map();
+globalThis.window = {
+  addEventListener: (type, fn) => { listeners.set(type, fn); },
+  removeEventListener: (type, fn) => { if (listeners.get(type) === fn) listeners.delete(type); },
+};
 let context;
 context = new Proxy({}, { get: (target, key) => key in target ? target[key] : () => context });
 const canvas = { getContext: () => context };
@@ -88,5 +94,31 @@ test("dining encounter gifts contribute to recorded session net once", () => {
   assert.equal(session.wallet.balance - before, 32);
   settleSitting(session, sitting, 0);
   assert.equal(session.activityStats.dining.netWinnings, 32);
+});
+test("Breakout center hits keep sideways motion", () => {
+  assert.equal(Math.abs(paddleBounceVx(0, 240)), 120);
+  assert.equal(Math.abs(paddleBounceVx(0, -240)), 120);
+  assert.equal(paddleBounceVx(0.5, 0), 180);
+  assert.equal(paddleBounceVx(0.1, 0), 120);
+});
+test("Showgirl Beat ignores held-key auto-repeat", () => {
+  const originalRandom = Math.random;
+  Math.random = () => 0.5; // every note is SNARE
+  let lives = null; let ended = 0;
+  const game = createShowgirlBeat(canvas, {
+    onHud: (state) => { if (state.lives != null) lives = state.lives; },
+    onEnded: () => { ended += 1; },
+  });
+  game.start();
+  const onKey = listeners.get("keydown");
+  onKey({ key: "z", repeat: false, preventDefault() {} });
+  assert.equal(lives, 2, "one wrong press costs one life");
+  for (let i = 0; i < 12; i += 1) {
+    onKey({ key: "z", repeat: true, preventDefault() {} });
+  }
+  assert.equal(lives, 2, "auto-repeat must not cost more lives");
+  assert.equal(ended, 0);
+  game.stop();
+  Math.random = originalRandom;
 });
 console.log(`${cases} arcade, slot, and dining regression cases passed.`);

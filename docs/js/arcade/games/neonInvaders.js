@@ -171,10 +171,12 @@ export function createNeonInvaders(canvas, api) {
     enemyShots = enemyShots.filter((b) => {
       b.y += 320 * dt;
       if (Math.abs(b.x - shipX) < 28 && b.y > H - 80 && b.y < H - 32) {
-        fx.burst(shipX, H - 56, "#ff6b6b");
-        lives -= 1;
-        api.onHud?.({ score, lives, message: lives > 0 ? "Hit!" : "GAME OVER" });
-        if (lives <= 0) { end(false); return false; }
+        if (lives > 0) {
+          fx.burst(shipX, H - 56, "#ff6b6b");
+          lives -= 1;
+          api.onHud?.({ score, lives, message: lives > 0 ? "Hit!" : "GAME OVER" });
+          if (lives <= 0) { end(false); return false; }
+        }
         return false;
       }
       return b.y < H;

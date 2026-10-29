@@ -41,6 +41,7 @@ export class ArcadeCabinetOverlay {
     this.gameId = null;
     this.active = false;
     this.settled = false;
+    this._coinFlashTimer = null;
     this._onKey = (e) => {
       if (e.key === "Escape" && this.active) {
         e.preventDefault();
@@ -70,6 +71,8 @@ export class ArcadeCabinetOverlay {
     }
 
     this.closeGameOnly();
+    clearTimeout(this._coinFlashTimer);
+    this._coinFlashTimer = null;
     this.gameId = gameId;
     this.settled = false;
     this.active = true;
@@ -138,10 +141,13 @@ export class ArcadeCabinetOverlay {
     this.root.appendChild(el("div", { className: "arcade-overlay__backdrop" }, [cabinet]));
 
     // Coin flash
+    const coinFlash = this.root.querySelector(".arcade-overlay__coin-flash");
     requestAnimationFrame(() => {
-      this.root.querySelector(".arcade-overlay__coin-flash")?.classList.add("is-on");
-      setTimeout(() => {
-        this.root.querySelector(".arcade-overlay__coin-flash")?.classList.remove("is-on");
+      if (!coinFlash) return;
+      coinFlash.classList.add("is-on");
+      this._coinFlashTimer = setTimeout(() => {
+        coinFlash.classList.remove("is-on");
+        this._coinFlashTimer = null;
       }, 700);
     });
 
@@ -259,6 +265,8 @@ export class ArcadeCabinetOverlay {
 
   close() {
     this.closeGameOnly();
+    clearTimeout(this._coinFlashTimer);
+    this._coinFlashTimer = null;
     this.active = false;
     this.gameId = null;
     window.removeEventListener("keydown", this._onKey);

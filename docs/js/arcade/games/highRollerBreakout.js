@@ -6,6 +6,14 @@ import { easeOutCubic } from "../gfx/anim.js";
 import { createParticlePool } from "../gfx/fx.js";
 import { drawBrick, drawPaddle, drawChipBall } from "../gfx/sprites.js";
 
+/** Keep a paddled ball from bouncing straight up and down forever. */
+export function paddleBounceVx(hit, incomingVx = 0) {
+  const vx = hit * 360;
+  const min = 120;
+  if (Math.abs(vx) >= min) return vx;
+  return (incomingVx >= 0 ? 1 : -1) * min;
+}
+
 export function createHighRollerBreakout(canvas, api) {
   const ctx = setupArcadeCanvas(canvas);
   const fx = createParticlePool(120);
@@ -131,7 +139,7 @@ export function createHighRollerBreakout(canvas, api) {
         && ball.x > paddle.x && ball.x < paddle.x + paddle.w
       ) {
         const hit = (ball.x - (paddle.x + paddle.w / 2)) / (paddle.w / 2);
-        ball.vx = hit * 360;
+        ball.vx = paddleBounceVx(hit, ball.vx);
         ball.vy = -Math.abs(ball.vy);
         paddleSquash = 1;
         fx.spawn(ball.x, H - 80, {

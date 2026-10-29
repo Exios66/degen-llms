@@ -183,6 +183,7 @@ function finishResult(session, message, unlocked = []) {
 export function enterZone(session, zoneId) {
   const zone = POOL_ZONES[zoneId];
   if (!zone) return { ok: false, message: "That's a maintenance closet." };
+  if (zoneId === "beach_club") return enterBeachClub(session);
   const unlocked = visitZone(session, zoneId);
   return finishResult(session, `${zone.label}\n${zone.description}`, unlocked);
 }
@@ -214,15 +215,15 @@ export function playCatchWave(session, timingIndex) {
 
 /** @returns {PoolResult} */
 export function playRingToss(session, bet, ringIndex) {
+  const rings = ["Inner tube", "Lifeguard tower", "Cabana post"];
+  if (!Number.isInteger(ringIndex) || ringIndex < 0 || ringIndex >= rings.length) return { ok: false, message: "Pick a target." };
   const pc = ensurePoolComplex(session);
-  visitZone(session, "wave_pool");
   if (bet < 10) return { ok: false, message: "Minimum $10 ring toss." };
   if (!session.wallet.debit(bet, "pool", "Ring toss")) {
     return { ok: false, message: `Need ${fmtChips(bet)} for rings.` };
   }
-  const rings = ["Inner tube", "Lifeguard tower", "Cabana post"];
+  visitZone(session, "wave_pool");
   const pick = rings[ringIndex];
-  if (!pick) return { ok: false, message: "Pick a target." };
   const roll = secureRandomInt(1, 10);
   if (roll >= 8) {
     const payout = bet * 3;
@@ -316,10 +317,9 @@ export function cabanaService(session, serviceId) {
 
 /** @returns {PoolResult} */
 export function enterBeachClub(session) {
-  visitZone(session, "beach_club");
   const pc = ensurePoolComplex(session);
   if (pc.flags.beach_club_pass) {
-    const unlocked = tryUnlockEvents(session);
+    const unlocked = visitZone(session, "beach_club");
     return finishResult(session, "Welcome back to the beach club. The rope remembers you.", unlocked);
   }
   const cover = 75;
@@ -327,7 +327,7 @@ export function enterBeachClub(session) {
     return { ok: false, message: `Cover charge: ${fmtChips(cover)}. Confidence sold separately.` };
   }
   pc.flags.beach_club_pass = true;
-  const unlocked = tryUnlockEvents(session);
+  const unlocked = visitZone(session, "beach_club");
   return finishResult(
     session,
     `Cover paid (${fmtChips(cover)}). European-style deck. 21+ enforced. Sunscreen optional.`,

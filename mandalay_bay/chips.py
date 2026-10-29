@@ -3,6 +3,13 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
+from math import isfinite
+from numbers import Real
+
+
+def is_finite_amount(amount: object) -> bool:
+    """Reject nonnumeric and nonfinite values before they reach a ledger."""
+    return not isinstance(amount, bool) and isinstance(amount, Real) and (isinstance(amount, int) or isfinite(amount))
 
 
 class TransactionKind(str, Enum):
@@ -32,7 +39,7 @@ class ChipWallet:
     transactions: list[ChipTransaction] = field(default_factory=list)
 
     def __post_init__(self) -> None:
-        if self.balance < 0:
+        if not is_finite_amount(self.balance) or self.balance < 0:
             raise ValueError("Chip balance cannot be negative")
 
     def _record(self, kind: TransactionKind, amount: int, activity: str, description: str) -> None:
@@ -48,7 +55,7 @@ class ChipWallet:
         )
 
     def can_afford(self, amount: int) -> bool:
-        return amount > 0 and self.balance >= amount
+        return is_finite_amount(amount) and amount > 0 and self.balance >= amount
 
     def debit(self, amount: int, activity: str, description: str) -> bool:
         if not self.can_afford(amount):
@@ -58,19 +65,21 @@ class ChipWallet:
         return True
 
     def credit(self, amount: int, activity: str, description: str, *, kind: TransactionKind = TransactionKind.WIN) -> None:
+        if not is_finite_amount(amount) or not is_finite_amount(self.balance + amount):
+            raise ValueError("Credit must be finite")
         if amount <= 0:
             return
         self.balance += amount
         self._record(kind, amount, activity, description)
 
     def buy_in(self, amount: int) -> None:
-        if amount <= 0:
-            raise ValueError("Buy-in must be positive")
+        if not is_finite_amount(amount) or amount <= 0 or not is_finite_amount(self.balance + amount):
+            raise ValueError("Buy-in must be positive and finite")
         self.balance += amount
         self._record(TransactionKind.BUY_IN, amount, "cashier", f"Purchased ${amount:,} in chips")
 
     def cash_out(self, amount: int) -> bool:
-        if amount <= 0 or amount > self.balance:
+        if not self.can_afford(amount):
             return False
         self.balance -= amount
         self._record(TransactionKind.CASH_OUT, -amount, "cashier", f"Cashed out ${amount:,} in chips")
@@ -78,6 +87,8 @@ class ChipWallet:
 
     def apply_delta(self, delta: int, activity: str, description: str) -> None:
         """Apply a net chip change and record it in the ledger."""
+        if not is_finite_amount(delta) or not is_finite_amount(self.balance + delta) or self.balance + delta < 0:
+            raise ValueError("Chip balance must remain finite and nonnegative")
         if delta == 0:
             return
         self.balance += delta
@@ -86,6 +97,8 @@ class ChipWallet:
 
     def reconcile(self, expected_balance: int, activity: str, description: str) -> None:
         """Align wallet balance with an external source (e.g. table rail)."""
+        if not is_finite_amount(expected_balance) or expected_balance < 0:
+            raise ValueError("Chip balance must remain finite and nonnegative")
         self.apply_delta(expected_balance - self.balance, activity, description)
 
     def sync_balance(self, new_balance: int, activity: str, description: str) -> None:

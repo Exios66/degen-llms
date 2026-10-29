@@ -22,6 +22,7 @@ export class HoldemOverlay extends OverlayBase {
   }
 
   close() {
+    if (!this._active) return;
     if (this.table && this.buyIn > 0) {
       const stack = this.table.human.stack;
       if (stack > 0) {
@@ -30,6 +31,8 @@ export class HoldemOverlay extends OverlayBase {
       this.sessionNet += stack - this.buyIn;
     }
     this.table = null;
+    // Cash out clears the reload marker set while the table was live.
+    this.session.holdemEscrow = 0;
     const bets = Math.max(1, this.handsPlayed);
     this.session.recordResult(this.activityId, this.sessionNet, bets);
     this.root.hidden = true;
@@ -84,6 +87,9 @@ export class HoldemOverlay extends OverlayBase {
             this.table.startHand();
             this.handsPlayed = 1;
             this.phase = "play";
+            // The buy-in left the wallet; mirror the live stack so a reload can
+            // return the chips still on the felt (see PlayerSession.loadSlot).
+            this.session.holdemEscrow = this.table.human.stack;
             this.session.ensureRpgState().flags.played_holdem = true;
             this._runBots();
             this._render();
@@ -95,6 +101,9 @@ export class HoldemOverlay extends OverlayBase {
     }
 
     const t = this.table;
+    // Keep the saved marker in step with the stack after every action; close()
+    // credits it back and clears it.
+    this.session.holdemEscrow = t.human.stack;
     const sessionDelta = t.human.stack - this.buyIn;
     const panel = this._panel(`HOLD'EM · Pot ${fmtChips(t.pot)}`);
     this._msg(

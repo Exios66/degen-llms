@@ -49,6 +49,8 @@ export class Shoe {
     this._initialSize = numDecks * 52;
     this._cutIndex = Math.floor(this._initialSize * 0.25);
     this.shuffleCount = 0;
+    this._roundActive = false;
+    this._roundDealt = new Map();
     this.reshuffle();
   }
 
@@ -65,10 +67,54 @@ export class Shoe {
     if (this._cards.length <= this._cutIndex) this.reshuffle();
   }
 
+  _refillRoundShoe() {
+    // A cut-card shuffle waits for the next round, but a short shoe can still
+    // run dry mid-round. Rebuild from the complement so no card repeats in the
+    // live round; if all 52 are on the table, there is nothing left to deal.
+    const counts = new Map();
+    for (const card of makeSingleDeck()) {
+      const key = card.key();
+      counts.set(key, (counts.get(key) ?? 0) + this.numDecks);
+    }
+    for (const [key, count] of this._roundDealt) {
+      counts.set(key, (counts.get(key) ?? 0) - count);
+    }
+    this._cards = [];
+    for (let i = 0; i < this.numDecks; i += 1) {
+      for (const card of makeSingleDeck()) {
+        const key = card.key();
+        const remaining = counts.get(key) ?? 0;
+        if (remaining > 0) {
+          this._cards.push(card);
+          counts.set(key, remaining - 1);
+        }
+      }
+    }
+    if (!this._cards.length) return;
+    fisherYatesShuffle(this._cards);
+    this.shuffleCount += 1;
+  }
+
   deal() {
-    this._maybeReshuffle();
+    if (!this._roundActive) this._maybeReshuffle();
+    if (!this._cards.length && this._roundActive) this._refillRoundShoe();
     if (!this._cards.length) throw new Error("Shoe is empty");
-    return this._cards.pop();
+    const card = this._cards.pop();
+    if (this._roundActive) {
+      this._roundDealt.set(card.key(), (this._roundDealt.get(card.key()) ?? 0) + 1);
+    }
+    return card;
+  }
+
+  beginRound() {
+    this._maybeReshuffle();
+    this._roundDealt = new Map();
+    this._roundActive = true;
+  }
+
+  finishRound() {
+    this._roundActive = false;
+    this._roundDealt = new Map();
   }
 
   get remaining() { return this._cards.length; }

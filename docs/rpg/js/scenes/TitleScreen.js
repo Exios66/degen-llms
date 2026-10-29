@@ -1,3 +1,4 @@
+import { escapeHtml } from "../../../js/html.js";
 import {
   CASINO_NAME,
   listSlots,
@@ -474,7 +475,7 @@ export function renderHud(hudRoot, saveAdapter, questManager = null) {
     : "";
   hudRoot.innerHTML = `
     <div class="hud-bar">
-      <span class="hud-name">${lines.name}</span>
+      <span class="hud-name">${escapeHtml(lines.name)}</span>
       <span class="hud-chips">${lines.chips}</span>
       <span class="hud-time">Day ${cycle.displayDay} · ${hour}:${mins} · ${cycle.phase.label}</span>
       ${evicted}
@@ -503,7 +504,7 @@ export function renderTrainerCard(root, saveAdapter, questManager, hooks = {}) {
         <canvas class="trainer-card__portrait" id="trainer-portrait" width="64" height="88" aria-hidden="true"></canvas><!-- 32×44 @ 2× -->
         <div>
           <h2>Trainer Card</h2>
-          <p>${saveAdapter.session.playerName}</p>
+          <p>${escapeHtml(saveAdapter.session.playerName)}</p>
           <p class="dim">${archetypeLabel(rpg.archetype ?? "guest")}</p>
         </div>
       </div>

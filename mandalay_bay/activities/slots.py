@@ -6,6 +6,7 @@ from pathlib import Path
 
 from blackjack.rng import SECURE_RANDOM
 from mandalay_bay.activities.base import Activity, ActivityInfo
+from mandalay_bay.arcade_state import consume_arcade_slot_voucher
 from mandalay_bay.session import PlayerSession
 from mandalay_bay.stakes import (
     effective_slot_stakes,
@@ -211,7 +212,8 @@ def _payout(
         return bet * effective, f"{label} {effective}x{boost_tag}"
 
     if line in machine.paytable:
-        return _apply(machine.paytable[line], f"Three {reels[0].display}!")
+        label = f"Three {reels[0].display}!" if keys[0] == keys[1] == keys[2] else f"{''.join(r.display for r in reels)} combo!"
+        return _apply(machine.paytable[line], label)
 
     if machine.cherry_rules:
         if keys[0] == keys[1] == "cherry" and "cherry|cherry" in machine.paytable:
@@ -270,6 +272,8 @@ def format_paytable(machine: SlotMachine, *, tier_boost: float = 1.0) -> str:
                 lines.append(f"  {parts[0]} x3  {effective:,}x bet")
             elif len(parts) == 2:
                 lines.append(f"  {parts[0]} x2  {effective:,}x bet")
+            else:
+                lines.append(f"  {' / '.join(parts)}  {effective:,}x bet")
         else:
             lines.append(f"  {key} (1st reel)  {effective:,}x bet")
     if machine.progressive and machine.jackpot_key:
@@ -377,30 +381,35 @@ class SlotsActivity(Activity):
             if bet < min_bet:
                 ui.error(f"Minimum spin is {min_bet}.")
                 continue
-            if not session.wallet.debit(bet, self.info.id, f"{machine.name} spin ${bet}"):
+            used_voucher = consume_arcade_slot_voucher(session)
+            if not used_voucher and not session.wallet.debit(bet, self.info.id, f"{machine.name} spin ${bet}"):
                 ui.error("Insufficient chips.")
                 continue
 
             last_bet = bet
             _contribute_to_progressive(session, machine, bet)
-            spin_pause(0.15)
             reels = _spin_reels(machine)
-            reel_displays = [_display_symbol(r, session.use_unicode) for r in reels]
-            symbol_pool = [_display_symbol(s, session.use_unicode) for s in machine.symbols]
-            animate_reel_tease(ui, symbol_pool, " | ".join(reel_displays))
-
             jackpot_amount = _try_jackpot(session, machine, reels, bet, max_bet)
             win, reason = _payout(reels, bet, machine, jackpot_amount=jackpot_amount, tier_boost=tier_boost)
             spins += 1
+            # Settle the spin before the reveal animation so an interruption
+            # cannot leave a paid spin without its result.
             if win > 0:
                 session.wallet.credit(win, self.info.id, reason)
-                session_net += win - bet
+                session_net += win if used_voucher else win - bet
+            elif not used_voucher:
+                session_net -= bet
+
+            spin_pause(0.15)
+            reel_displays = [_display_symbol(r, session.use_unicode) for r in reels]
+            symbol_pool = [_display_symbol(s, session.use_unicode) for s in machine.symbols]
+            animate_reel_tease(ui, symbol_pool, " | ".join(reel_displays))
+            if win > 0:
                 if jackpot_amount is not None:
                     ui.success(f"🎰 {reason}")
                 else:
                     ui.success(f"{reason} — Won {win:,} chips!")
             else:
-                session_net -= bet
                 ui.dim("No win this spin.")
 
             if not ui.prompt_yes_no("Spin again?", default=True):

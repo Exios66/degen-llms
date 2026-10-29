@@ -167,8 +167,10 @@ export class RewardsTracker {
     const newTier = tierForWagered(newTotal);
     if (newTier.id !== prevTier.id) {
       rewards.tier = newTier.id;
-      if (newTier.comp && !rewards.unlockedComps.includes(newTier.comp)) {
-        rewards.unlockedComps.push(newTier.comp);
+      for (const tier of TIERS) {
+        if (tier.minWagered <= newTotal && tier.comp && !rewards.unlockedComps.includes(tier.comp)) {
+          rewards.unlockedComps.push(tier.comp);
+        }
       }
       const compLabel = newTier.comp ? COMP_CATALOG[newTier.comp]?.title : "exclusive offers";
       const exp = getTierExperience(newTier.id);
@@ -284,6 +286,11 @@ export function migrateSessionRewards(session, dataVersion) {
   const total = totalWageredFromWallet(session.wallet);
   session.rewards.lifetimeWagered = Math.max(session.rewards.lifetimeWagered, total);
   session.rewards.tier = tierForWagered(session.rewards.lifetimeWagered).id;
+  for (const tier of TIERS) {
+    if (tier.minWagered <= session.rewards.lifetimeWagered && tier.comp && !session.rewards.unlockedComps.includes(tier.comp)) {
+      session.rewards.unlockedComps.push(tier.comp);
+    }
+  }
   if (dataVersion < SAVE_VERSION_WITH_REWARDS && !session.rewards.notifications.length) {
     session.rewards.notifications.push({
       id: "welcome_enroll",

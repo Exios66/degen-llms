@@ -90,6 +90,10 @@ class CrapsTable:
     def resolve_dont_pass(self, stake: int, roll: DiceRoll, point_before: int | None) -> BetResult:
         total = roll.total
         if point_before is None:
+            self.point = total if total in (4, 5, 6, 8, 9, 10) else None
+        else:
+            self.point = None if total in (7, point_before) else point_before
+        if point_before is None:
             if total in (2, 3):
                 return BetResult(stake * 2, False, f"Come-out {roll.label()} — Don't Pass wins!")
             if total == 12:

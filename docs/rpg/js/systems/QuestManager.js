@@ -3,7 +3,8 @@ import { ensureHotel } from "../../../js/hotel.js";
 import { ensureRoomAmenities } from "../../../js/room-amenities.js";
 import { barForDrink, ensureAmenities } from "../../../js/casino-amenities.js";
 import { getResortCompletion } from "../../../js/resort-completion.js";
-import { dexProgress, syncDexFromSession } from "./Dex.js";
+import { DEALER_ROSTER } from "../../../js/dealers.js";
+import { dexProgress, hasDexEntry, syncDexFromSession } from "./Dex.js";
 
 /** Fallback registry used when js/data/quests.json cannot be fetched. */
 export const QUEST_DEFS = {
@@ -161,7 +162,10 @@ export class QuestManager {
     this.setProgress("bar_crawl", barsVisited.size);
 
     this.setProgress("jackpot_hunt", dexProgress(session, "slots").found);
-    this.setProgress("dealer_meet_and_greet", dexProgress(session, "staff").found);
+    // "Meet the Pit" counts the seven rotating dealers, not the wider staff
+    // dex (which also contains hosts, clerks, and lifeguards).
+    this.setProgress("dealer_meet_and_greet", DEALER_ROSTER
+      .filter((dealer) => hasDexEntry(session, "staff", dealer.id)).length);
     this.setProgress("egg_hunt", Object.keys(rpg.eggs ?? {}).length);
     this.setProgress("resort_completion", getResortCompletion(session).percent);
     if (rpg.flags?.played_blackjack) this.setProgress("dana_lucky_hand", 1);

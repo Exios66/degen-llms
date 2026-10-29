@@ -82,6 +82,9 @@ export class CrapsTable {
 
   resolveDontPass(stake, roll, pointBefore) {
     const total = roll.total;
+    this.point = pointBefore == null
+      ? ([4, 5, 6, 8, 9, 10].includes(total) ? total : null)
+      : ([7, pointBefore].includes(total) ? null : pointBefore);
     if (pointBefore == null) {
       if (total === 2 || total === 3) {
         return { payout: stake * 2, working: false, message: `Come-out ${roll.label} — Don't Pass wins!` };

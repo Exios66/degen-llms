@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import dataclass
 from enum import Enum
 
@@ -110,6 +111,8 @@ class Shoe:
         self._cut_index = int(self._initial_size * self.CUT_CARD_FRACTION)
         self.last_shuffle_id: str | None = None
         self.shuffle_count = 0
+        self._round_active = False
+        self._round_dealt: Counter[str] = Counter()
         self.reshuffle()
 
     def reshuffle(self) -> None:
@@ -122,11 +125,49 @@ class Shoe:
         if len(self._cards) <= self._cut_index:
             self.reshuffle()
 
+    def _refill_round_shoe(self) -> None:
+        """Refill from cards not already seen in the live round.
+
+        A cut-card shuffle is deferred until the next round, but a short shoe
+        can still run dry mid-round. Rebuilding from the complement keeps every
+        card in the round unique; if all 52 are already on the table there is
+        nothing left to deal and the caller gets a clear error.
+        """
+        counts = Counter(c.key() for c in make_single_deck() * self.num_decks)
+        counts.subtract(self._round_dealt)
+        self._cards = []
+        for card in make_single_deck() * self.num_decks:
+            key = card.key()
+            if counts[key] > 0:
+                self._cards.append(card)
+                counts[key] -= 1
+        if not self._cards:
+            return
+        fisher_yates_shuffle(self._cards, self._rng)
+        self.shuffle_count += 1
+        self.last_shuffle_id = shoe_fingerprint([c.key() for c in self._cards])
+
     def deal(self) -> Card:
-        self._maybe_reshuffle()
+        if not self._round_active:
+            self._maybe_reshuffle()
+        if not self._cards and self._round_active:
+            self._refill_round_shoe()
         if not self._cards:
             raise RuntimeError("Shoe is empty after reshuffle")
-        return self._cards.pop()
+        card = self._cards.pop()
+        if self._round_active:
+            self._round_dealt[card.key()] += 1
+        return card
+
+    def begin_round(self) -> None:
+        """Honor the cut card between rounds, keeping live cards out of a reshuffle."""
+        self._maybe_reshuffle()
+        self._round_dealt = Counter()
+        self._round_active = True
+
+    def finish_round(self) -> None:
+        self._round_active = False
+        self._round_dealt = Counter()
 
     @property
     def remaining(self) -> int:

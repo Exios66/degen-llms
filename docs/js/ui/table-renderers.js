@@ -324,6 +324,7 @@ export function buildTableRenderers(ctx) {
             if (!ctx.session.wallet.debit(buyIn, "holdem", `Hold'em buy-in ${fmtChips(buyIn)}`)) {
               alert("Insufficient chips."); return;
             }
+            ctx.session.holdemEscrow = buyIn;
             persist();
             runtime.holdem = {
               table: HoldemTable.quickTable(buyIn, 4),
@@ -367,6 +368,11 @@ export function buildTableRenderers(ctx) {
       ]),
     ]);
     const table = runtime.holdem.table;
+    // Mirror the felt stack into the save so a reload can return it.
+    if (ctx.session.holdemEscrow !== table.human.stack) {
+      ctx.session.holdemEscrow = table.human.stack;
+      persist();
+    }
 
     // Keep the action log in sync with engine street / bot messages.
     if (table.actionLog?.length) {
@@ -507,7 +513,10 @@ export function buildTableRenderers(ctx) {
       actionBar.appendChild(el("button", {
         className: "btn",
         textContent: "Leave table",
-        onclick: () => finishHoldem(),
+        onclick: () => {
+          if (!confirm("Leave mid-hand? Chips already committed to the pot are forfeited.")) return;
+          finishHoldem();
+        },
       }));
     }
 
@@ -533,6 +542,7 @@ export function buildTableRenderers(ctx) {
     if (runtime.holdem) {
       const cash = runtime.holdem.table.human.stack;
       ctx.session.wallet.credit(cash, "holdem", "Cash out from Hold'em table");
+      ctx.session.holdemEscrow = 0;
       runtime.holdem.sessionNet = cash - runtime.holdem.buyIn;
       recordActivityResult("holdem", runtime.holdem.sessionNet, runtime.holdem.hands);
       persist();

@@ -16,7 +16,7 @@ export const HAND_CLASS_NAMES = [
   "Royal flush",
 ];
 
-const UCI_SUIT_TO_KEY = { 1: "H", 2: "S", 3: "D", 4: "C" };
+const UCI_SUIT_TO_KEY = { 1: "hearts", 2: "spades", 3: "diamonds", 4: "clubs" };
 const UCI_RANK_NAMES = ["", "A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
 
 export function cardToUci(card) {
@@ -44,9 +44,10 @@ function straightHigh(ranks) {
 }
 
 export function evaluateFiveUci(suits, ranks) {
-  const sorted = [...ranks].sort((a, b) => b - a);
+  if (suits.length !== 5 || ranks.length !== 5) throw new Error("Expected exactly five cards");
+  const sorted = ranks.map((r) => r === 1 ? 14 : r).sort((a, b) => b - a);
   const isFlush = new Set(suits).size === 1;
-  const sh = straightHigh(sorted);
+  const sh = straightHigh(ranks);
   const isStraight = sh != null;
 
   const counts = {};
@@ -106,6 +107,7 @@ function combos(arr, k) {
 }
 
 export function bestHandFromCards(cards) {
+  if (cards.length < 5) throw new Error("Need at least five cards");
   let best = null;
   let bestFive = null;
   for (const combo of combos(cards, 5)) {

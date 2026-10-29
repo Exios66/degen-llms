@@ -69,8 +69,8 @@ def resolve_session(args: argparse.Namespace, ui: TerminalUI, library: SaveLibra
             occupied = library.load_slot(args.slot) is not None
             if occupied and not ui.prompt_yes_no(f"Overwrite save in slot {args.slot}?", default=False):
                 return None
-            if occupied:
-                library.delete_slot(args.slot)
+            # create_session's atomic save replaces the old file; deleting first
+            # would lose the old save if the new write fails.
             return library.create_session(
                 args.slot,
                 player_name=args.name,
@@ -107,7 +107,11 @@ def main(argv: list[str] | None = None) -> None:
         sys.exit(0)
 
     ui = TerminalUI(use_color=not args.no_color)
-    session = resolve_session(args, ui, library)
+    try:
+        session = resolve_session(args, ui, library)
+    except KeyboardInterrupt:
+        print(f"\n\nLeaving {CASINO_NAME}.")
+        sys.exit(0)
     if session is None:
         sys.exit(0)
 

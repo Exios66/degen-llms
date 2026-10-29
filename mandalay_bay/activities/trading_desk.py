@@ -11,6 +11,7 @@ from mandalay_bay.trading_desk import (
     load_catalog,
     settle_position,
     underlyings_from_catalog,
+    underlying_spot,
 )
 
 
@@ -40,118 +41,123 @@ class TradingDeskActivity(Activity):
         session_net = 0
         trades = 0
 
-        while True:
-            ui.banner("Trading Floor — Mandalay Markets")
-            ui.chip_line(session.wallet.balance)
-            ui.dim(
-                f"{len(contracts)} contracts · filter {asset_filter}/{instrument_filter} · "
-                f"{len(positions)} open"
-            )
-            quotes = underlyings_from_catalog(catalog, asset_class=asset_filter)
-            if quotes:
-                tape = "  |  ".join(
-                    f"{q['symbol']} {q['spot']:.4g} "
-                    f"(1D {q.get('perf1dPct', 0):+.2f}% / 1W {q.get('perf1wPct', 0):+.2f}%)"
-                    for q in quotes[:10]
+        try:
+            while True:
+                ui.banner("Trading Floor — Mandalay Markets")
+                ui.chip_line(session.wallet.balance)
+                ui.dim(
+                    f"{len(contracts)} contracts · filter {asset_filter}/{instrument_filter} · "
+                    f"{len(positions)} open"
                 )
-                scope = "ALL" if asset_filter == "all" else asset_filter.upper()
-                ui.print(
-                    f"LIVE TAPE [{scope} · {len(quotes)} symbols]  "
-                    f"{tape}{' …' if len(quotes) > 10 else ''}"
+                quotes = underlyings_from_catalog(catalog, asset_class=asset_filter)
+                if quotes:
+                    tape = "  |  ".join(
+                        f"{q['symbol']} {q['spot']:.4g} "
+                        f"(1D {q.get('perf1dPct', 0):+.2f}% / 1W {q.get('perf1wPct', 0):+.2f}%)"
+                        for q in quotes[:10]
+                    )
+                    scope = "ALL" if asset_filter == "all" else asset_filter.upper()
+                    ui.print(
+                        f"LIVE TAPE [{scope} · {len(quotes)} symbols]  "
+                        f"{tape}{' …' if len(quotes) > 10 else ''}"
+                    )
+                choice = ui.menu_choice(
+                    [
+                        "Browse / buy contracts",
+                        "Settle / expire positions",
+                        "Filter asset class",
+                        "Filter instrument",
+                        "Next contract page",
+                        "Underlying quotes",
+                    ],
+                    title="Trading Floor:",
                 )
-            choice = ui.menu_choice(
-                [
-                    "Browse / buy contracts",
-                    "Settle / expire positions",
-                    "Filter asset class",
-                    "Filter instrument",
-                    "Next contract page",
-                    "Underlying quotes",
-                ],
-                title="Trading Floor:",
-            )
-            if choice == 0:
-                break
-            if choice == 1:
-                filtered = filter_contracts(contracts, asset_filter, instrument_filter)
-                if not filtered:
-                    ui.error("No contracts match filter.")
+                if choice == 0:
+                    break
+                if choice == 1:
+                    filtered = filter_contracts(contracts, asset_filter, instrument_filter)
+                    if not filtered:
+                        ui.error("No contracts match filter.")
+                        ui.pause()
+                        continue
+                    start = cursor % len(filtered)
+                    page = [filtered[(start + i) % len(filtered)] for i in range(min(page_size, len(filtered)))]
+                    for i, c in enumerate(page, 1):
+                        strike = f" K{c['strike']}" if c.get("strike") is not None else ""
+                        ui.info(
+                            f"{i}) {c['instrument'].upper()} {c['symbol']}{strike} {c['expiry']} "
+                            f"— {entry_cost_chips(c)} chips · {c['underlying']}"
+                        )
+                    pick = ui.menu_choice([f"Buy #{i}" for i in range(1, len(page) + 1)], title="Select:")
+                    if pick == 0:
+                        continue
+                    contract = page[pick - 1]
+                    qty = ui.prompt_int("Quantity", 1, 20, default=1)
+                    cost = entry_cost_chips(contract, qty)
+                    entry_spot = underlying_spot(contract, catalog)
+                    if not session.wallet.debit(cost, self.info.id, f"Buy {contract['instrument']} {contract['symbol']}"):
+                        ui.error("Insufficient chips.")
+                        ui.pause()
+                        continue
+                    positions.append({
+                        "contract": contract,
+                        "qty": qty,
+                        "entryPrice": float(contract.get("ask") or contract["markPrice"]),
+                        "entrySpot": entry_spot,
+                        "cost": cost,
+                    })
+                    trades += 1
+                    ui.success(f"Opened {qty}× {contract['instrument']} {contract['symbol']}.")
                     ui.pause()
-                    continue
-                start = cursor % len(filtered)
-                page = [filtered[(start + i) % len(filtered)] for i in range(min(page_size, len(filtered)))]
-                for i, c in enumerate(page, 1):
-                    strike = f" K{c['strike']}" if c.get("strike") is not None else ""
-                    ui.info(
-                        f"{i}) {c['instrument'].upper()} {c['symbol']}{strike} {c['expiry']} "
-                        f"— {entry_cost_chips(c)} chips · {c['underlying']}"
-                    )
-                pick = ui.menu_choice([f"Buy #{i}" for i in range(1, len(page) + 1)], title="Select:")
-                if pick == 0:
-                    continue
-                contract = page[pick - 1]
-                qty = ui.prompt_int("Quantity", 1, 20, default=1)
-                cost = entry_cost_chips(contract, qty)
-                if not session.wallet.debit(cost, self.info.id, f"Buy {contract['instrument']} {contract['symbol']}"):
-                    ui.error("Insufficient chips.")
+                elif choice == 2:
+                    if not positions:
+                        ui.error("No open positions.")
+                        ui.pause()
+                        continue
+                    for pos in list(positions):
+                        spot = drift_spot(pos["entrySpot"])
+                        result = settle_position(pos, spot)
+                        if result["payout"] > 0:
+                            session.wallet.credit(result["payout"], self.info.id, result["reason"])
+                        session_net += result["pnl"]
+                        positions.remove(pos)
+                        ui.info(f"{pos['contract']['symbol']}: {result['reason']} ({result['pnl']:+d})")
+                    positions = []
                     ui.pause()
-                    continue
-                positions.append({
-                    "contract": contract,
-                    "qty": qty,
-                    "entryPrice": float(contract.get("ask") or contract["markPrice"]),
-                    "cost": cost,
-                })
-                trades += 1
-                ui.success(f"Opened {qty}× {contract['instrument']} {contract['symbol']}.")
-                ui.pause()
-            elif choice == 2:
-                if not positions:
-                    ui.error("No open positions.")
+                elif choice == 3:
+                    opts = ["all", "nyse", "commodities", "crypto"]
+                    c = ui.menu_choice(opts, title="Asset class:")
+                    if c:
+                        asset_filter = opts[c - 1]
+                elif choice == 4:
+                    opts = ["all", "future", "call", "put"]
+                    c = ui.menu_choice(opts, title="Instrument:")
+                    if c:
+                        instrument_filter = opts[c - 1]
+                elif choice == 5:
+                    filtered = filter_contracts(contracts, asset_filter, instrument_filter)
+                    cursor = (cursor + page_size) % max(1, len(filtered))
+                    ui.dim(f"Page cursor → {cursor}")
                     ui.pause()
-                    continue
-                for pos in positions:
-                    spot = drift_spot(float(pos["contract"]["markPrice"]))
-                    result = settle_position(pos, spot)
-                    if result["payout"] > 0:
-                        session.wallet.credit(result["payout"], self.info.id, result["reason"])
-                    session_net += result["pnl"]
-                    ui.info(f"{pos['contract']['symbol']}: {result['reason']} ({result['pnl']:+d})")
-                positions = []
-                ui.pause()
-            elif choice == 3:
-                opts = ["all", "nyse", "commodities", "crypto"]
-                c = ui.menu_choice(opts, title="Asset class:")
-                if c:
-                    asset_filter = opts[c - 1]
-            elif choice == 4:
-                opts = ["all", "future", "call", "put"]
-                c = ui.menu_choice(opts, title="Instrument:")
-                if c:
-                    instrument_filter = opts[c - 1]
-            elif choice == 5:
-                filtered = filter_contracts(contracts, asset_filter, instrument_filter)
-                cursor = (cursor + page_size) % max(1, len(filtered))
-                ui.dim(f"Page cursor → {cursor}")
-                ui.pause()
-            elif choice == 6:
-                scope = "ALL" if asset_filter == "all" else asset_filter.upper()
-                ui.print(f"\n--- Underlying spots [{scope}] (1D / 1W performance) ---")
-                for q in underlyings_from_catalog(catalog, asset_class=asset_filter):
-                    drifted = drift_spot(float(q["spot"]))
-                    ui.info(
-                        f"{q['symbol']:6} {q['assetClass']:12} "
-                        f"{drifted:>12.4g}  1D {q.get('perf1dPct', 0):+6.2f}%  "
-                        f"1W {q.get('perf1wPct', 0):+6.2f}%  — {q['underlying']}"
-                    )
-                ui.pause()
+                elif choice == 6:
+                    scope = "ALL" if asset_filter == "all" else asset_filter.upper()
+                    ui.print(f"\n--- Underlying spots [{scope}] (1D / 1W performance) ---")
+                    for q in underlyings_from_catalog(catalog, asset_class=asset_filter):
+                        drifted = drift_spot(float(q["spot"]))
+                        ui.info(
+                            f"{q['symbol']:6} {q['assetClass']:12} "
+                            f"{drifted:>12.4g}  1D {q.get('perf1dPct', 0):+6.2f}%  "
+                            f"1W {q.get('perf1wPct', 0):+6.2f}%  — {q['underlying']}"
+                        )
+                    ui.pause()
 
-        if positions:
-            returned = refund_trading_positions(
-                session, self.info.id, positions, reason="Trading leave — open positions refunded",
-            )
-            ui.dim(f"Returned {returned:,} chips from unsettled positions.")
-            positions = []
+        finally:
+            if positions:
+                returned = refund_trading_positions(
+                    session, self.info.id, positions, reason="Trading leave — open positions refunded",
+                )
+                positions = []
+                ui.dim(f"Returned {returned:,} chips from unsettled positions.")
 
         if trades:
             session.record_result(self.info.id, session_net, bets=trades)

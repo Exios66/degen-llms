@@ -142,8 +142,9 @@ def notify_tier_promotion(session_rewards: RewardsState, prev: int, new: int) ->
     if new_tier.id == prev_tier.id:
         return []
     session_rewards.tier = new_tier.id
-    if new_tier.comp and new_tier.comp not in session_rewards.unlocked_comps:
-        session_rewards.unlocked_comps.append(new_tier.comp)
+    for tier in TIERS:
+        if tier.min_wagered <= new and tier.comp and tier.comp not in session_rewards.unlocked_comps:
+            session_rewards.unlocked_comps.append(tier.comp)
     comp_label = COMP_CATALOG.get(new_tier.comp or "", {}).get("title", "exclusive offers")
     from mandalay_bay.rewards_perks import get_tier_experience
 
@@ -175,6 +176,9 @@ def migrate_session_rewards(session: PlayerSession, data_version: int) -> None:
     assert rewards is not None
     rewards.lifetime_wagered = max(rewards.lifetime_wagered, total)
     rewards.tier = tier_for_wagered(rewards.lifetime_wagered).id
+    for tier in TIERS:
+        if tier.min_wagered <= rewards.lifetime_wagered and tier.comp and tier.comp not in rewards.unlocked_comps:
+            rewards.unlocked_comps.append(tier.comp)
     if data_version < SAVE_VERSION_WITH_REWARDS and not rewards.notifications:
         rewards.notifications.append({
             "id": "welcome_enroll",

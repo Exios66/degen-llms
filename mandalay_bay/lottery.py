@@ -175,7 +175,7 @@ def _draw_digits(n: int) -> list[int]:
 
 
 def _parse_digits(raw: str, n: int) -> list[int] | None:
-    cleaned = "".join(ch for ch in raw.strip() if ch.isdigit())
+    cleaned = "".join(ch for ch in raw.strip() if ch in "0123456789")
     if len(cleaned) != n:
         return None
     return [int(ch) for ch in cleaned]
@@ -211,9 +211,9 @@ def validate_mega_picks(
     """Return an error message if picks are invalid, else None."""
     if len(balls) != count or len(set(balls)) != count:
         return f"Need exactly {count} unique lucky numbers from 1–{ball_max}."
-    if any(b < 1 or b > ball_max for b in balls):
+    if any(isinstance(b, bool) or not isinstance(b, int) or b < 1 or b > ball_max for b in balls):
         return f"Lucky numbers must be between 1 and {ball_max}."
-    if powerball < 1 or powerball > mega_max:
+    if isinstance(powerball, bool) or not isinstance(powerball, int) or powerball < 1 or powerball > mega_max:
         return f"Powerball must be between 1 and {mega_max}."
     return None
 

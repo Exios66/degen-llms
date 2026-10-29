@@ -361,9 +361,27 @@ export function onIntoxicationChange(session) {
  * }|null} [tracker]
  * @returns {string[]} human-readable notes
  */
-export function applyPhoneEffect(session, effect, tracker = null) {
+/**
+ * Claim a one-shot reward for a call/text choice. Positive chip and buffet
+ * gifts must not be farmable by replaying the same branch of a phone tree.
+ * @returns {boolean} whether the reward may be granted
+ */
+function claimPhoneEffect(session, key) {
+  if (!key) return true;
+  const book = ensurePhoneBook(session);
+  if (!book) return true;
+  book.claimedEffects = Array.isArray(book.claimedEffects) ? book.claimedEffects : [];
+  if (book.claimedEffects.includes(key)) return false;
+  book.claimedEffects.push(key);
+  return true;
+}
+
+export function applyPhoneEffect(session, effect, tracker = null, effectKey = null) {
   if (!effect || typeof effect !== "object") return [];
   const notes = [];
+  const grantsReward = (typeof effect.chips === "number" && effect.chips > 0)
+    || Number(effect.buffetCredit) > 0;
+  const rewardAllowed = grantsReward ? claimPhoneEffect(session, effectKey) : true;
 
   if (effect.drink) {
     const r = recordConsumption(session, effect.drink, { source: "phone" });
@@ -371,8 +389,12 @@ export function applyPhoneEffect(session, effect, tracker = null) {
   }
   if (typeof effect.chips === "number" && effect.chips !== 0 && session.wallet) {
     if (effect.chips > 0) {
-      session.wallet.credit(effect.chips, "phone", effect.chipReason ?? "Phone comp");
-      notes.push(`+${effect.chips} chips`);
+      if (rewardAllowed) {
+        session.wallet.credit(effect.chips, "phone", effect.chipReason ?? "Phone comp");
+        notes.push(`+${effect.chips} chips`);
+      } else {
+        notes.push("Comp already collected");
+      }
     } else {
       const owed = Math.abs(effect.chips);
       if (session.wallet.debit(owed, "phone", effect.chipReason ?? "Phone charge")) {
@@ -383,9 +405,13 @@ export function applyPhoneEffect(session, effect, tracker = null) {
     }
   }
   if (effect.buffetCredit) {
-    const dining = ensureDining(session);
-    dining.buffetCompCredits = (dining.buffetCompCredits ?? 0) + Number(effect.buffetCredit);
-    notes.push("Dining course credit queued");
+    if (rewardAllowed) {
+      const dining = ensureDining(session);
+      dining.buffetCompCredits = (dining.buffetCompCredits ?? 0) + Number(effect.buffetCredit);
+      notes.push("Dining course credit queued");
+    } else {
+      notes.push("Dining credit already collected");
+    }
   }
   if (effect.flag) {
     session.rpg = session.rpg ?? {};
@@ -534,7 +560,12 @@ export function advanceDialogue(session, contactId, choiceIndex, tracker = null)
   appendMessage(session, contactId, "out", choice.label);
   if (choice.rapport) adjustRapport(session, contactId, choice.rapport);
   if (choice.egg) recordEasterEgg(session, choice.egg);
-  const effectNotes = applyPhoneEffect(session, choice.effect, tracker);
+  const effectNotes = applyPhoneEffect(
+    session,
+    choice.effect,
+    tracker,
+    `sms:${contactId}:${state.treeId}:${state.nodeId}:${choiceIndex}`,
+  );
 
   if (choice.next) {
     const nextNode = getDialogueNode(contactId, state.treeId, choice.next, ctx);
@@ -571,7 +602,7 @@ export function sendText(session, contactId, optionKey, tracker = null) {
   if (opt.onceKey) thread.topicsSeen.push(opt.onceKey);
 
   appendMessage(session, contactId, "out", opt.label);
-  const effectNotes = applyPhoneEffect(session, opt.effect, tracker);
+  const effectNotes = applyPhoneEffect(session, opt.effect, tracker, `text:${contactId}:${optionKey}`);
 
   if (opt.startTree) {
     const node = getDialogueNode(contactId, opt.startTree.treeId, opt.startTree.nodeId, ctx);
@@ -681,7 +712,12 @@ export function advanceCall(session, contactId, choiceIndex, tracker = null) {
   if (choice.egg) recordEasterEgg(session, choice.egg);
   if (choice.rapport) adjustRapport(session, contactId, choice.rapport);
   else adjustRapport(session, contactId, 5);
-  const effectNotes = applyPhoneEffect(session, choice.effect, tracker);
+  const effectNotes = applyPhoneEffect(
+    session,
+    choice.effect,
+    tracker,
+    `call:${contactId}:${state.treeId}:${state.nodeId}:${choiceIndex}`,
+  );
 
   if (choice.next) {
     const nextNode = getCallNode(contactId, state.treeId, choice.next, ctx);
@@ -759,7 +795,12 @@ export function resolveCallChoice(session, contactId, choiceIndex, activeScript 
   if (choice.egg) recordEasterEgg(session, choice.egg);
   if (choice.rapport) adjustRapport(session, contactId, choice.rapport);
   else adjustRapport(session, contactId, 5);
-  const effectNotes = applyPhoneEffect(session, choice.effect, tracker);
+  const effectNotes = applyPhoneEffect(
+    session,
+    choice.effect,
+    tracker,
+    `call:${contactId}:legacy:${choiceIndex}:${choice.label ?? ""}`,
+  );
   appendMessage(session, contactId, "in", `[Call] ${choice.response}`, { read: false });
   return { response: choice.response, egg: choice.egg, effectNotes };
 }

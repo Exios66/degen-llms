@@ -151,96 +151,103 @@ class HorseRacingActivity(Activity):
         session_net = 0
         races = 0
 
-        while True:
-            ui.chip_line(session.wallet.balance)
-            ui.print(f"\n{card.label}")
-            for h in card.horses:
-                sign = "+" if h.odds > 0 else ""
-                ui.print(f"  #{h.number} {h.name} ({sign}{h.odds})")
+        try:
+            while True:
+                ui.chip_line(session.wallet.balance)
+                ui.print(f"\n{card.label}")
+                for h in card.horses:
+                    sign = "+" if h.odds > 0 else ""
+                    ui.print(f"  #{h.number} {h.name} ({sign}{h.odds})")
 
-            if pending:
-                ui.print("\nOpen tickets:")
-                for slip in pending:
-                    ui.print(f"  {slip['amount']:,} on #{slip['horse']} ({slip['bet_type']})")
+                if pending:
+                    ui.print("\nOpen tickets:")
+                    for slip in pending:
+                        ui.print(f"  {slip['amount']:,} on #{slip['horse']} ({slip['bet_type']})")
 
-            choice = ui.menu_choice(
-                ["Place a wager", "Run race & settle tickets", "New race card"],
-                title="Racing pavilion:",
-            )
-            if choice == 0:
-                break
-            if choice == 1:
-                labels = [f"#{h.number} {h.name}" for h in card.horses]
-                pick = ui.menu_choice(labels, title="Pick a horse:")
-                if pick == 0:
-                    continue
-                bet_choice = ui.menu_choice(["Win", "Place (top 2)", "Show (top 3)"], title="Bet type:")
-                if bet_choice == 0:
-                    continue
-                bet_types = ["win", "place", "show"]
-                amount = ui.prompt_int(
-                    f"Wager ({wager_min}-{wager_max})",
-                    wager_min,
-                    wager_max,
-                    default=wager_min,
+                choice = ui.menu_choice(
+                    ["Place a wager", "Run race & settle tickets", "New race card"],
+                    title="Racing pavilion:",
                 )
-                horse = card.horses[pick - 1]
-                if not session.wallet.debit(amount, self.info.id, f"{bet_types[bet_choice - 1]} on #{horse.number}"):
-                    ui.error("Insufficient chips.")
-                    continue
-                pending.append({
-                    "horse": horse.number,
-                    "horse_name": horse.name,
-                    "odds": horse.odds,
-                    "bet_type": bet_types[bet_choice - 1],
-                    "amount": amount,
-                })
-                ui.success(f"Ticket placed: {amount:,} chips on #{horse.number} ({bet_types[bet_choice - 1]}).")
-            elif choice == 2:
-                if not pending:
-                    ui.error("No open tickets.")
-                    continue
-                card.results = _simulate_race(card)
-                ui.dim(f'  {dealer.name}: "{pick_quip(dealer, "deal")}"')
-                animate_countdown(ui, "And they're off", ticks=3)
-                ui.print("\nFINISH ORDER:")
-                for pos, num in enumerate(card.results, 1):
-                    horse = next(h for h in card.horses if h.number == num)
-                    ui.print(f"  {pos}. #{num} {horse.name}")
-                races += 1
-                for slip in pending:
-                    pos = card.results.index(slip["horse"]) + 1
-                    won = False
-                    payout = 0
-                    if slip["bet_type"] == "win" and pos == 1:
-                        payout = _payout_win(slip["amount"], slip["odds"])
-                        won = True
-                    elif slip["bet_type"] == "place" and pos <= 2:
-                        payout = _payout_place_show(slip["amount"])
-                        won = True
-                    elif slip["bet_type"] == "show" and pos <= 3:
-                        payout = _payout_place_show(slip["amount"])
-                        won = True
-                    if won:
-                        session.wallet.credit(payout, self.info.id, f"{slip['bet_type']} #{slip['horse']}")
-                        session_net += payout - slip["amount"]
-                        ui.success(f"  WIN #{slip['horse']} {slip['bet_type']}: +{payout - slip['amount']:,}")
-                        ui.dim(f'  {dealer.name}: "{pick_quip(dealer, "win")}"')
-                    else:
-                        session_net -= slip["amount"]
-                        ui.dim(f"  LOSE #{slip['horse']} {slip['bet_type']}: -{slip['amount']:,}")
-                        ui.dim(f'  {dealer.name}: "{pick_quip(dealer, "lose")}"')
-                pending.clear()
-            elif choice == 3:
-                card = _generate_race()
-                ui.print("Fresh race card posted.")
+                if choice == 0:
+                    break
+                if choice == 1:
+                    labels = [f"#{h.number} {h.name}" for h in card.horses]
+                    pick = ui.menu_choice(labels, title="Pick a horse:")
+                    if pick == 0:
+                        continue
+                    bet_choice = ui.menu_choice(["Win", "Place (top 2)", "Show (top 3)"], title="Bet type:")
+                    if bet_choice == 0:
+                        continue
+                    bet_types = ["win", "place", "show"]
+                    amount = ui.prompt_int(
+                        f"Wager ({wager_min}-{wager_max})",
+                        wager_min,
+                        wager_max,
+                        default=wager_min,
+                    )
+                    horse = card.horses[pick - 1]
+                    if not session.wallet.debit(amount, self.info.id, f"{bet_types[bet_choice - 1]} on #{horse.number}"):
+                        ui.error("Insufficient chips.")
+                        continue
+                    pending.append({
+                        "horse": horse.number,
+                        "horse_name": horse.name,
+                        "odds": horse.odds,
+                        "bet_type": bet_types[bet_choice - 1],
+                        "amount": amount,
+                    })
+                    ui.success(f"Ticket placed: {amount:,} chips on #{horse.number} ({bet_types[bet_choice - 1]}).")
+                elif choice == 2:
+                    if not pending:
+                        ui.error("No open tickets.")
+                        continue
+                    card.results = _simulate_race(card)
+                    ui.dim(f'  {dealer.name}: "{pick_quip(dealer, "deal")}"')
+                    animate_countdown(ui, "And they're off", ticks=3)
+                    ui.print("\nFINISH ORDER:")
+                    for pos, num in enumerate(card.results, 1):
+                        horse = next(h for h in card.horses if h.number == num)
+                        ui.print(f"  {pos}. #{num} {horse.name}")
+                    races += 1
+                    for slip in list(pending):
+                        pos = card.results.index(slip["horse"]) + 1
+                        won = False
+                        payout = 0
+                        if slip["bet_type"] == "win" and pos == 1:
+                            payout = _payout_win(slip["amount"], slip["odds"])
+                            won = True
+                        elif slip["bet_type"] == "place" and pos <= 2:
+                            payout = _payout_place_show(slip["amount"])
+                            won = True
+                        elif slip["bet_type"] == "show" and pos <= 3:
+                            payout = _payout_place_show(slip["amount"])
+                            won = True
+                        if won:
+                            session.wallet.credit(payout, self.info.id, f"{slip['bet_type']} #{slip['horse']}")
+                            session_net += payout - slip["amount"]
+                            pending.remove(slip)
+                            ui.success(f"  WIN #{slip['horse']} {slip['bet_type']}: +{payout - slip['amount']:,}")
+                            ui.dim(f'  {dealer.name}: "{pick_quip(dealer, "win")}"')
+                        else:
+                            session_net -= slip["amount"]
+                            pending.remove(slip)
+                            ui.dim(f"  LOSE #{slip['horse']} {slip['bet_type']}: -{slip['amount']:,}")
+                            ui.dim(f'  {dealer.name}: "{pick_quip(dealer, "lose")}"')
+                    pending.clear()
+                elif choice == 3:
+                    if pending:
+                        ui.error("Settle open tickets before changing the race card.")
+                        continue
+                    card = _generate_race()
+                    ui.print("Fresh race card posted.")
 
-        if pending:
-            returned = refund_slips(
-                session, self.info.id, pending, reason="Racing leave — open tickets returned",
-            )
-            ui.dim(f"Returned {returned:,} chips from unsettled tickets.")
-            pending.clear()
+        finally:
+            if pending:
+                returned = refund_slips(
+                    session, self.info.id, pending, reason="Racing leave — open tickets returned",
+                )
+                pending.clear()
+                ui.dim(f"Returned {returned:,} chips from unsettled tickets.")
 
         session.record_result(self.info.id, session_net, bets=races)
         ui.print(f"\nRacing session: {'+' if session_net >= 0 else ''}{session_net:,} over {races} race(s)")

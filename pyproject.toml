@@ -19,7 +19,10 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["blackjack*", "mandalay_bay*"]
+include = ["blackjack*", "mandalay_bay*", "poker*"]
+
+[tool.setuptools.package-data]
+mandalay_bay = ["data/*.json", "data/*.csv"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

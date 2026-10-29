@@ -424,7 +424,14 @@ export function recordFolioCharge(hotel, label, amount) {
 }
 
 function hasAll(haystack, needles) {
-  return needles.every((n) => haystack.includes(n));
+  const counts = new Map();
+  for (const value of haystack) counts.set(value, (counts.get(value) ?? 0) + 1);
+  return needles.every((value) => {
+    const count = counts.get(value) ?? 0;
+    if (count <= 0) return false;
+    counts.set(value, count - 1);
+    return true;
+  });
 }
 
 function amenityAllowed(session, hotel, item) {

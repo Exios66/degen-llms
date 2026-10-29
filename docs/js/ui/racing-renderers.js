@@ -259,7 +259,10 @@ export function buildRacingRenderers(ctx) {
           if (choice === 0) { leaveHorseRacing(); return; }
           if (choice === 1) pushView("horse-racing-wager");
           else if (choice === 2) pushView("horse-racing-settle");
-          else if (choice === 3) { runtime.horseRacing.card = generateRace(ctx.session); render(); }
+          else if (choice === 3) {
+            if (runtime.horseRacing.pending.length) { showStatus("Settle your open tickets before replacing the field.", "error"); return; }
+            runtime.horseRacing.card = generateRace(ctx.session); render();
+          }
           else if (choice === 4) pushView("horse-racing-names");
           else if (choice === 5) pushView("horse-stables");
         },
@@ -495,7 +498,7 @@ export function buildRacingRenderers(ctx) {
               return;
             }
             setCustomHorseNames(ctx.session, names);
-            runtime.horseRacing.card = null;
+            if (!runtime.horseRacing.pending.length) runtime.horseRacing.card = null;
             persist();
             showStatus(`Saved ${names.length} custom horse names. New race cards will cycle through your roster.`);
             goBack();
@@ -506,7 +509,7 @@ export function buildRacingRenderers(ctx) {
           textContent: "Reset to default",
           onclick: () => {
             setCustomHorseNames(ctx.session, null);
-            runtime.horseRacing.card = null;
+            if (!runtime.horseRacing.pending.length) runtime.horseRacing.card = null;
             persist();
             showStatus("Restored default horse name roster.");
             render();
@@ -576,7 +579,10 @@ export function buildRacingRenderers(ctx) {
           if (choice === 0) { leaveDressage(); return; }
           if (choice === 1) pushView("dressage-wager");
           else if (choice === 2) pushView("dressage-settle");
-          else if (choice === 3) { runtime.dressage.card = generateDressage(); render(); }
+          else if (choice === 3) {
+            if (runtime.dressage.pending.length) { showStatus("Settle your open tickets before replacing the field.", "error"); return; }
+            runtime.dressage.card = generateDressage(); render();
+          }
         },
         { showCasinoBanner: false },
       ),
@@ -740,7 +746,10 @@ export function buildRacingRenderers(ctx) {
           if (choice === 0) { leaveJumper(); return; }
           if (choice === 1) pushView("jumper-wager");
           else if (choice === 2) pushView("jumper-settle");
-          else if (choice === 3) { runtime.jumper.card = generateJumper(); render(); }
+          else if (choice === 3) {
+            if (runtime.jumper.pending.length) { showStatus("Settle your open tickets before replacing the field.", "error"); return; }
+            runtime.jumper.card = generateJumper(); render();
+          }
         },
         { showCasinoBanner: false },
       ),

@@ -150,7 +150,8 @@ export class OverworldScene extends Phaser.Scene {
 
   /** The pad's A button: talk to whoever is in front of you, or open the menu. */
   touchInteract() {
-    if (!this.canMove || (this.dialogue?.isBlocking?.() ?? this.dialogue?.isActive?.())) return;
+    if (!this.canMove || this.isMenuOpen?.() || this.encounters.isAnyActive?.()
+        || (this.dialogue?.isBlocking?.() ?? this.dialogue?.isActive?.())) return;
     this._clearMovePath();
     this._tryInteract();
   }
@@ -302,6 +303,12 @@ export class OverworldScene extends Phaser.Scene {
     };
     this._onKeyDownMove = (e) => setMove(e, true);
     this._onKeyUpMove = (e) => setMove(e, false);
+    const clearHeldKeys = () => {
+      for (const key of Object.keys(this.moveKeys)) this.moveKeys[key] = false;
+      this.input.keyboard.resetKeys?.();
+      this.touchPad?._releaseAll();
+    };
+    window.addEventListener("blur", clearHeldKeys);
     this.input.keyboard.on("keydown", this._onKeyDownMove);
     this.input.keyboard.on("keyup", this._onKeyUpMove);
     // Also listen on window in case canvas loses focus briefly
@@ -310,6 +317,7 @@ export class OverworldScene extends Phaser.Scene {
     this.events.once("shutdown", () => {
       window.removeEventListener("keydown", this._onKeyDownMove);
       window.removeEventListener("keyup", this._onKeyUpMove);
+      window.removeEventListener("blur", clearHeldKeys);
     });
 
     this.input.keyboard.addCapture([
@@ -381,6 +389,7 @@ export class OverworldScene extends Phaser.Scene {
 
     this.onHudUpdate?.();
     this.scale.on("resize", this._fitCamera, this);
+    this.events.once("shutdown", () => this.scale.off("resize", this._fitCamera, this));
     this._fitCamera();
 
     this.cameras.main.fadeIn(300, 0, 0, 0);
@@ -661,7 +670,7 @@ export class OverworldScene extends Phaser.Scene {
     this.input.addPointer(2);
     this.input.on("pointerdown", (pointer) => {
       if (!pointer.wasTouch && pointer.button !== 0) return;
-      if (!this.canMove
+      if (!this.canMove || this.isMenuOpen?.()
           || (this.dialogue?.isBlocking?.() ?? this.dialogue?.isActive?.())
           || this.encounters.isAnyActive?.()) return;
 
@@ -1156,6 +1165,7 @@ export class OverworldScene extends Phaser.Scene {
       .find((id) => id && this.dialogues[id]) ?? npc.dialogueId;
 
     const result = await this.dialogue.start(dialogueId);
+    this._applyReputation(result);
     const encounterId = result.encounter || npc.encounter;
     if (encounterId) {
       await this._runEncounter(encounterId, npc, dealer);
@@ -1163,6 +1173,16 @@ export class OverworldScene extends Phaser.Scene {
     this._challengeRunning = false;
     this.canMove = true;
     this.onHudUpdate?.();
+  }
+
+  /** Add a dialogue result's reputation to the trainer card totals. */
+  _applyReputation(result) {
+    if (!result?.reputation) return;
+    const rep = this.saveAdapter.rpg.reputation ?? { whales: 0, staff: 0, tourists: 0 };
+    for (const [key, value] of Object.entries(result.reputation)) {
+      rep[key] = (rep[key] ?? 0) + value;
+    }
+    this.saveAdapter.rpg.reputation = rep;
   }
 
   /** Called by main.js when the START menu closes. */
@@ -1330,14 +1350,7 @@ export class OverworldScene extends Phaser.Scene {
     this.player.body.setVelocity(0, 0);
 
     const result = await this.dialogue.start(dialogueId);
-
-    if (result.reputation) {
-      const rep = this.saveAdapter.rpg.reputation ?? { whales: 0, staff: 0, tourists: 0 };
-      for (const [k, v] of Object.entries(result.reputation)) {
-        rep[k] = (rep[k] ?? 0) + v;
-      }
-      this.saveAdapter.rpg.reputation = rep;
-    }
+    this._applyReputation(result);
 
     if (result.encounter || npc.encounter) {
       const encounterId = result.encounter || npc.encounter;
@@ -1451,7 +1464,7 @@ export class OverworldScene extends Phaser.Scene {
     if (this._saveTimer < 2000) return;
     this._saveTimer = 0;
     const { x: tx, y: ty } = this.playerTile();
-    this.saveAdapter.updatePosition(tx, ty);
+    this.saveAdapter.updatePosition(tx, ty, this.currentMapId);
     this.saveAdapter.persist();
   }
 }

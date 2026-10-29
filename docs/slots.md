@@ -82,18 +82,18 @@ The flagship wide-area progressive at Mandalay Bay and across MGM properties:
 - **Bet range:** $1–$3 per spin (penny-slot style)
 - **Jackpot trigger:** Three Megabucks symbols (💵 💵 💵) on the payline
 - **Qualification:** Must bet the **maximum** ($3) to be eligible for the progressive
-- **Base pays:** Triple 7s (80x), BAR×3 (20x), and partial Megabuck matches
+- **Base pays:** Triple 7s (200x), BAR×3 (50x), and partial Megabuck matches
 
 ## Mandalay Fortune (classic paytable)
 
 | Result | Multiplier |
 |--------|------------|
-| 7 — 7 — 7 | 100x |
-| 💎 — 💎 — 💎 | 50x |
-| 🔔 — 🔔 — 🔔 | 25x |
-| BAR — BAR — BAR | 15x |
-| 🍒 — 🍒 — 🍒 | 10x |
-| 🍒 — 🍒 (first two) | 2x |
+| 7 — 7 — 7 | 200x |
+| 💎 — 💎 — 💎 | 100x |
+| 🔔 — 🔔 — 🔔 | 50x |
+| BAR — BAR — BAR | 30x |
+| 🍒 — 🍒 — 🍒 | 20x |
+| 🍒 — 🍒 (first two) | 4x |
 | 🍒 (first reel only) | 1x (bet returned) |
 
 Each machine has its own symbols, weights, and paytable. See the in-game paytable when you sit down at a machine.

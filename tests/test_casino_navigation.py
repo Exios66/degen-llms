@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from mandalay_bay.activities.registry import FLOOR_ORDER
 from mandalay_bay.chips import ChipWallet
 from mandalay_bay.display import TerminalUI
@@ -95,3 +97,16 @@ def test_main_lobby_has_no_back_option(capsys, tmp_path: Path) -> None:
     run_hub(session, ui, library=library, show_intro=False)
     lobby_section = capsys.readouterr().out.split("Choose your adventure")[1].split("Choose:")[0]
     assert "0) Back" not in lobby_section
+
+
+def test_main_interrupt_at_save_picker_exits_cleanly(monkeypatch, capsys, tmp_path: Path) -> None:
+    import mandalay_bay.main as main_module
+
+    def interrupted(*args, **kwargs):
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(main_module, "resolve_session", interrupted)
+    with pytest.raises(SystemExit) as excinfo:
+        main_module.main(["--save-dir", str(tmp_path / "saves")])
+    assert excinfo.value.code == 0
+    assert "Leaving The Mandalay Bay" in capsys.readouterr().out

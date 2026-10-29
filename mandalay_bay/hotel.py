@@ -279,9 +279,11 @@ def upgrade_room(session: PlayerSession, target: str) -> ActionResult:
 
 
 def extend_stay(session: PlayerSession, nights: int = 1) -> ActionResult:
+    if type(nights) is not int or nights <= 0:
+        return ActionResult(False, "Nights must be a positive whole number.")
     hotel = ensure_hotel(session)
     rewards: RewardsState | None = getattr(session, "rewards", None)
-    if rewards and has_unredeemed_comp(rewards, "room_night"):
+    if nights == 1 and rewards and has_unredeemed_comp(rewards, "room_night"):
         redeem_comp(rewards, "room_night")
         hotel.nights_remaining += nights
         return ActionResult(True, f"{hotel.nights_remaining} night(s) remaining.")
@@ -370,7 +372,9 @@ def wake_up_call(session: PlayerSession) -> ActionResult:
     import random
 
     hotel = ensure_hotel(session)
-    ra = hotel.room_amenities or RoomAmenitiesState()
+    if hotel.room_amenities is None:
+        hotel.room_amenities = RoomAmenitiesState()
+    ra = hotel.room_amenities
     alarms = [
         "Steve Harvey: \"Rise and shine! Survey says… you're late for brunch!\"",
         "Shark Reef feed narration: \"The sand tiger approaches… your alarm clock.\"",
@@ -383,7 +387,9 @@ def wake_up_call(session: PlayerSession) -> ActionResult:
 
 def checkout_stay(session: PlayerSession) -> ActionResult:
     hotel = ensure_hotel(session)
-    ra = hotel.room_amenities or RoomAmenitiesState()
+    if hotel.room_amenities is None:
+        hotel.room_amenities = RoomAmenitiesState()
+    ra = hotel.room_amenities
     if ra.checked_out:
         return ActionResult(False, "You already checked out. The carpet misses you.")
     ra.checked_out = True
@@ -402,7 +408,9 @@ def express_checkout(session: PlayerSession) -> ActionResult:
 
     tier_idx = get_session_tier_index(session)
     hotel = ensure_hotel(session)
-    ra = hotel.room_amenities or RoomAmenitiesState()
+    if hotel.room_amenities is None:
+        hotel.room_amenities = RoomAmenitiesState()
+    ra = hotel.room_amenities
     if ra.checked_out:
         return ActionResult(False, "Already checked out.")
     if tier_idx < 1:

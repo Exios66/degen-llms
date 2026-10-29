@@ -124,6 +124,15 @@ if ! git archive "origin/$SOURCE_BRANCH" docs | tar -x -C "$STAGING"; then
 fi
 touch "$STAGING/docs/.nojekyll"
 
+# Bundle entry points so the site boots from a handful of requests. Source
+# modules ship as before; on bundler failure fall back to the unbundled tree.
+if bash "$ROOT/scripts/build-site-bundles.sh" "$STAGING/docs"; then
+  gh_pages_build_log_set "site_bundles" "built"
+else
+  gh_pages_build_log_set "site_bundles" "fallback_unbundled"
+  echo "build-site-bundles failed; syncing the unbundled docs tree" >&2
+fi
+
 # Stamp versioned import maps + __ASSET_SHA__ on the staged tree before
 # checking out gh-pages (that branch has no scripts/ directory).
 python3 "$ROOT/scripts/generate-docs-importmap.py" "$STAGING/docs" "$MAIN_SHA_SHORT"

@@ -93,11 +93,27 @@ def underlyings_from_catalog(
 
 
 def entry_cost_chips(contract: dict[str, Any], qty: int = 1) -> int:
+    if isinstance(qty, bool) or not isinstance(qty, int) or qty < 1:
+        raise ValueError("Quantity must be a positive integer.")
     px = float(contract.get("ask") or contract.get("markPrice") or 0)
     mult = int(contract.get("multiplier") or 1)
     if contract.get("instrument") == "future":
         return max(25, int(px * mult * 0.1 * qty))
     return max(1, int(px * mult * qty))
+
+
+def underlying_spot(contract: dict[str, Any], catalog: dict[str, Any] | None = None) -> float:
+    """Options markPrice is the premium; expire against the underlying quote."""
+    if contract.get("instrument") == "future":
+        return float(contract["markPrice"])
+    futures = [c for c in (catalog or load_catalog()).get("contracts", [])
+               if c.get("instrument") == "future" and c.get("symbol") == contract.get("symbol")]
+    quote = next((c for c in futures if c.get("expiry") == contract.get("expiry")), None)
+    if quote is None and futures:
+        quote = futures[0]
+    if quote is None:
+        raise ValueError(f"No underlying quote for {contract.get('symbol')}")
+    return float(quote["markPrice"])
 
 
 def drift_spot(mark: float) -> float:
@@ -121,11 +137,14 @@ def settle_position(position: dict[str, Any], exit_spot: float) -> dict[str, Any
         proceeds = int(intrinsic * mult * qty)
         pnl = proceeds - cost
         reason = f"Call {contract['symbol']} {contract.get('strike')} intrinsic {intrinsic}"
-    else:
+    elif instrument == "put":
         intrinsic = max(0.0, float(contract.get("strike") or 0) - exit_spot)
         proceeds = int(intrinsic * mult * qty)
         pnl = proceeds - cost
         reason = f"Put {contract['symbol']} {contract.get('strike')} intrinsic {intrinsic}"
+    else:
+        raise ValueError(f"Unknown instrument: {instrument}")
 
     payout = max(0, cost + pnl)
+    pnl = payout - cost
     return {"won": pnl >= 0, "pnl": pnl, "payout": payout, "exitSpot": exit_spot, "reason": reason}

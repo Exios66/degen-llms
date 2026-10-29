@@ -262,8 +262,11 @@ export function buildTradingDeskRenderers(ctx) {
           textContent: "Buy",
           onclick: () => {
             const c = selectedContract();
-            const qty = Math.max(1, parseInt(qtyInput.value, 10) || 1);
+            const qty = Number(qtyInput.value);
+            if (!c) { alert("Select an available contract."); return; }
+            if (!Number.isSafeInteger(qty) || qty < 1 || qty > 20) { alert("Quantity must be a whole number from 1 to 20."); return; }
             const cost = entryCostChips(c, qty);
+            if (cost < stakes.minBet) { alert(`Minimum trade cost is ${stakes.minBet} chips.`); return; }
             if (cost > stakes.maxBet) { alert(`Cost exceeds stake max (${stakes.maxBet}).`); return; }
             if (!ctx.session.wallet.debit(cost, "trading_desk", `Buy ${c.instrument} ${c.symbol}`)) {
               alert("Insufficient chips."); return;

@@ -53,7 +53,7 @@ TERMINAL_FLOWS = [
     ("horse-racing", "horse-racing", [".menu-list li:nth-child(1) .menu-btn"]),
     ("cashier", "cashier", [".menu-list li:nth-child(1) .menu-btn", ".btn.primary"]),
     ("hotel", "hotel-front-desk", [".menu-list li:nth-child(1) .menu-btn"]),
-    ("pool", "pool-complex", [".pool-zone-card, .menu-list li:nth-child(1) .menu-btn"]),
+    ("pool", "pool-complex", ["#pool-overlay .pool-zone-card"]),
     ("amenities", "casino-floor", [".menu-list li:nth-child(1) .menu-btn"]),
     ("dining", "hotel-dining", [".dining-card .btn.primary, .menu-list li:nth-child(1) .menu-btn"]),
     ("stake-tier", "floor", [".menu-list li:nth-child(1) .menu-btn", ".menu-list li:nth-child(2) .menu-btn"]),
@@ -70,10 +70,11 @@ SEED_SLOT = """async ([slotId, chips]) => {
 
 VISIBLE_OVERLAY_TEXT = """() => {
   const roots = ['terminal-overlay', 'blackjack-overlay', 'roulette-overlay',
-                 'holdem-overlay', 'rhythm-overlay'];
+                 'holdem-overlay', 'rhythm-overlay', 'vegas-strip-drive-overlay',
+                 'dining-overlay', 'bar-overlay', 'pool-overlay'];
   for (const id of roots) {
     const el = document.getElementById(id);
-    if (el && !el.hidden) return el.innerText;
+    if (el && !el.hidden && el.getAttribute('aria-hidden') !== 'true') return el.innerText;
   }
   return '';
 }"""
@@ -169,8 +170,8 @@ def rpg_journey(page, base, failures: list[str], errors: list[str]) -> None:
     page.evaluate("""() => {
       const s = window.__rpg.scene;
       const size = s.tileSize;
-      // Stand on the north door tile (15,3) at feet.
-      s.player.setPosition(15 * size + size / 2, 3 * size + size / 2);
+      // Stand on the authored north door tile (15,2) at feet.
+      s.player.setPosition(15 * size + size / 2, 2 * size + size / 2);
       s._lastDoorTile = null;
     }""")
     page.wait_for_timeout(400)
@@ -239,7 +240,7 @@ def rpg_journey(page, base, failures: list[str], errors: list[str]) -> None:
         "Upgrade to Panorama",
         "Review folio",
         "Standard checkout",
-        "Dining recommendations",
+        "Resort dining",
         "Guest Directory",
     )
     missing = [n for n in needed if not any(n.lower() in lab.lower() for lab in desk_actions["labels"])]
@@ -252,7 +253,7 @@ def rpg_journey(page, base, failures: list[str], errors: list[str]) -> None:
          f"front desk not scroll-friendly: {desk_actions}")
 
     room_btn = page.query_selector(
-        "#terminal-overlay .menu-btn:text-matches('Enter your room|Find my room')")
+        "#terminal-overlay .menu-btn:text-matches('Enter your room|Skip hallway')")
     if room_btn:
         room_btn.click()
         page.wait_for_timeout(300)
@@ -380,14 +381,25 @@ def rpg_phone(browser, base, failures: list[str]) -> None:
     step("tap_walks", bool(arrived) and (arrived["x"], arrived["y"]) == (target["x"], target["y"]),
          f"tapping {target} ended at {arrived}")
 
-    # Tap a guest: walk over, then talk. Then tap anywhere to read on.
+    # Teleport next to the guest, let Arcade Physics sync the body, then walk
+    # onto them. Setting the sprite and reading playerFoot() in the same tick
+    # would still see the old body position and plan a long route.
     page.evaluate("""() => {
       const s = window.__rpg.scene;
       const npc = s.currentNpcs[0];
       s.player.setPosition((npc.x + 1) * s.tileSize + s.tileSize / 2, npc.y * s.tileSize);
+    }""")
+    page.wait_for_timeout(200)
+    page.evaluate("""() => {
+      const s = window.__rpg.scene;
+      const npc = s.currentNpcs[0];
       s.walkTo(npc.x, npc.y);
     }""")
-    page.wait_for_timeout(1500)
+    for _ in range(20):
+        page.wait_for_timeout(150)
+        if page.evaluate("() => window.__rpg.dialogue.isActive()"):
+            break
+    page.wait_for_timeout(100)
     step("tap_talks", page.evaluate("() => window.__rpg.dialogue.isActive()"),
          "tapping a guest did not start a conversation")
     step("pad_yields", page.evaluate(
@@ -464,6 +476,230 @@ def rpg_phone(browser, base, failures: list[str]) -> None:
     context.close()
 
 
+def ui_regressions(page, failures: list[str]) -> None:
+    """Check input ownership, dialogue disposal/effects, and map autosaves."""
+    checks = page.evaluate("""async () => {
+      const [{el}, {RewardsPhone}, {PlayerSession}, {DialogueManager}, {EncounterBridge}] = await Promise.all([
+        import('/js/ui/shell.js'), import('/js/RewardsPhone.js'), import('/js/core.js'),
+        import('/rpg/js/systems/DialogueManager.js'), import('/rpg/js/systems/EncounterBridge.js'),
+      ]);
+      const checks = [];
+      const check = (name, ok) => checks.push({name, ok: Boolean(ok)});
+      check('unchecked_settings', el('input', {type: 'checkbox', checked: false}).checked === false);
+      const session = new PlayerSession();
+      session.playerName = '<b>A & B</b>';
+      const root = document.createElement('div');
+      document.body.append(root);
+      const phone = new RewardsPhone(root, session);
+      phone.open('card');
+      const name = root.querySelector('.rewards-member-name');
+      check('literal_member_name', name.textContent === session.playerName && !name.querySelector('b'));
+      phone.destroy();
+      check('phone_disposed', root.childElementCount === 0);
+      root.remove();
+      const injSession = new PlayerSession();
+      injSession.staffOverrides = { dealers: {}, npcs: { chip_chandler: { name: '<img src=x onerror=1>' } } };
+      const injRoot = document.createElement('div');
+      document.body.append(injRoot);
+      const injPhone = new RewardsPhone(injRoot, injSession);
+      injPhone.open('connect');
+      const injRow = injRoot.querySelector('.rewards-contact-row');
+      check('contact_name_escaped', Boolean(injRow) && !injRow.querySelector('img') && injRow.textContent.includes('<img'));
+      injPhone.destroy();
+      injRoot.remove();
+      const dialogueRoot = document.createElement('div');
+      document.body.append(dialogueRoot);
+      let items = 0, quests = 0;
+      const d = new DialogueManager(dialogueRoot, {onItem: () => items++});
+      d.setQuestManager({start: () => quests++});
+      d.load({a: {text: 'First', setFlag: 'visited', giveItem: 'camera', startQuest: 'reef', next: 'b'},
+              b: {text: 'Second', choices: [{label: 'Close', giveItem: 'card'}]}});
+      const result = d.start('a');
+      for (let i = 0; i < 3; i++) d._keyHandler(new KeyboardEvent('keydown', {key: 'Enter'}));
+      await new Promise(r => setTimeout(r, 200));
+      check('dialogue_intermediate_effects', d.flags.visited && items === 1 && quests === 1);
+      check('dialogue_skip_single_choices', dialogueRoot.querySelectorAll('.dialogue-choices').length === 1);
+      dialogueRoot.querySelector('button').click();
+      await result;
+      check('choice_effect_once', items === 2);
+      check('dialogue_disposed', !d.isActive() && dialogueRoot.childElementCount === 0);
+      dialogueRoot.remove();
+      const nodeEncounterRoot = document.createElement('div');
+      document.body.append(nodeEncounterRoot);
+      const nd = new DialogueManager(nodeEncounterRoot, {});
+      nd.load({go: {text: 'Go', reputation: {staff: 1}, encounter: 'slots'}});
+      const nodeEncounterPromise = nd.start('go');
+      nd._keyHandler(new KeyboardEvent('keydown', {key: 'Enter'}));
+      nd._keyHandler(new KeyboardEvent('keydown', {key: 'Enter'}));
+      const nodeEncounterResult = await nodeEncounterPromise;
+      check('node_encounter_reputation',
+        nodeEncounterResult?.encounter === 'slots' && nodeEncounterResult?.reputation?.staff === 1);
+      nodeEncounterRoot.remove();
+      const bouncerRoot = document.createElement('div');
+      document.body.append(bouncerRoot);
+      const bouncer = new DialogueManager(bouncerRoot, {});
+      bouncer.load(await (await fetch('/rpg/js/data/dialogues.json')).json());
+      const bouncerPromise = bouncer.start('hob_bouncer_greet');
+      bouncer._keyHandler(new KeyboardEvent('keydown', {key: 'Enter'}));
+      const backstageChoice = [...bouncerRoot.querySelectorAll('button')]
+        .find((b) => b.textContent.includes("I'm with the headliner"));
+      check('backstage_choice', Boolean(backstageChoice));
+      if (backstageChoice) {
+        backstageChoice.click();
+        for (let i = 0; i < 4; i++) {
+          bouncer._keyHandler(new KeyboardEvent('keydown', {key: 'Enter'}));
+        }
+        await bouncerPromise;
+      } else {
+        bouncer.close();
+      }
+      check('backstage_flag', bouncer.flags.hob_backstage === true);
+      bouncerRoot.remove();
+      const denied = {active: false, setSession() {}, open() {}, onceClosed(cb) {this.cb = cb;}};
+      const bridge = new EncounterBridge({session, overlays: {}, barOverlay: denied, diningOverlay: denied, onPersist() {}});
+      const deniedResult = await Promise.race([bridge.start('bar_foundation'), new Promise(r => setTimeout(() => r(null), 100))]);
+      check('denied_encounter_resolves', deniedResult?.net === 0 && denied.cb === null);
+      const queueRoot = document.createElement('div');
+      document.body.append(queueRoot);
+      const queued = new DialogueManager(queueRoot, {});
+      queued.showSystemMessage('first toast', { durationMs: 10000 });
+      queued.showSystemMessage('second toast', { durationMs: 10000 });
+      queued._dismissSystem();
+      check('system_message_queue', queueRoot.textContent.includes('second toast'));
+      queued._dismissSystem();
+      queueRoot.remove();
+      const cancelSession = new PlayerSession();
+      let questAdvances = 0;
+      const cancelBridge = new EncounterBridge({
+        session: cancelSession,
+        overlays: { blackjack: { open: async () => ({ net: 0 }) } },
+        terminalHost: { pickStakeTier: async () => null },
+        onPersist() {},
+        questManager: { advance() { questAdvances += 1; }, syncDerived() {} },
+      });
+      const cancelled = await cancelBridge.start('blackjack');
+      check('blackjack_cancel_not_played', cancelled?.cancelled === true && questAdvances === 0
+        && !cancelSession.rpg?.flags?.played_blackjack);
+      const [{buildSportsbookRenderers}, {SportsbookState}, shell] = await Promise.all([
+        import('/js/ui/sportsbook-renderers.js'), import('/js/sportsbook.js'), import('/js/ui/shell.js'),
+      ]);
+      const book = new SportsbookState();
+      const ctx = {session, runtime: shell.createRuntime({sportsbook: book}),
+        render() {}, persist() {}, recordActivityResult() {}, recordActivityVisitOnce() {}, clearActivityVisit() {},
+        pushView() {}, popView() {}, goBack() {}};
+      Object.assign(ctx, shell.createShell(ctx));
+      const sports = buildSportsbookRenderers(ctx);
+      book.predictions.positions = [{marketId: 'orphan', question: 'Retired market', amount: 25, side: 'yes', priceCents: 50}];
+      const balanceBeforeRefund = session.wallet.balance;
+      const refundPanel = sports['sportsbook-settle']();
+      check('orphan_prediction_refunded', session.wallet.balance === balanceBeforeRefund + 25 && refundPanel.textContent.includes('Retired market'));
+      const event = {eventId: 'test-event', eventType: 'game', label: 'A at B', home: 'B', away: 'A',
+        homeOdds: -110, awayOdds: -110, spread: 0, total: 200, settled: false};
+      book.events = [event];
+      const ticketPanel = sports['sportsbook-wager']();
+      event.settled = true;
+      const balanceBeforeRejectedTicket = session.wallet.balance;
+      ticketPanel.querySelector('.primary').click();
+      check('settled_ticket_not_debited', session.wallet.balance === balanceBeforeRejectedTicket && !book.pending.length);
+      const market = {marketId: 'test-market', question: 'Will B win?', category: 'sports-pulse',
+        yesPrice: 50, noPrice: 50, resolution: null, linkedEvent: {settled: false}};
+      book.predictions.markets = [market];
+      const predictionPanel = sports['sportsbook-prediction']();
+      market.linkedEvent.settled = true;
+      predictionPanel.querySelector('.primary').click();
+      check('settled_linked_market_not_debited', session.wallet.balance === balanceBeforeRejectedTicket && !book.predictions.positions.length);
+      const [{buildAmenitiesRenderers}, barMod, amenityShell] = await Promise.all([
+        import('/js/casino-amenities-ui.js'), import('/js/bar.js'), import('/js/ui/shell.js'),
+      ]);
+      const bagCtx = { session, runtime: amenityShell.createRuntime(),
+        render() {}, persist() {}, pushView() {}, goBack() {}, navigateTo() {}, showStatus() {} };
+      Object.assign(bagCtx, amenityShell.createShell(bagCtx));
+      bagCtx.el = el;
+      const amenitiesUi = buildAmenitiesRenderers(bagCtx);
+      const barRound = barMod.createBarRound("betty_bar");
+      barMod.orderBarVenueDrink(session, "betty_bar", "betty_comp_marg", barRound);
+      const bagText = amenitiesUi["mall-bag"]().textContent;
+      check('bag_lists_generic_bar_order', bagText.includes("Comp Margarita") && bagText.includes("Betty's Bar"));
+      const [{teardownHostedView}, {HoldemTable}, core] = await Promise.all([
+        import('/js/activity-teardown.js'), import('/js/holdem/game.js'), import('/js/core.js'),
+      ]);
+      const holdemSession = new PlayerSession({chips: 1000});
+      holdemSession.wallet.debit(200, 'holdem', 'test buy-in');
+      const holdemRuntime = {holdem: {table: HoldemTable.quickTable(200, 4), buyIn: 200, sessionNet: 0, hands: 2, log: []}};
+      holdemRuntime.holdem.table.human.stack = 250;
+      let holdemResults = 0;
+      const holdemCtx = {session: holdemSession, runtime: holdemRuntime,
+        recordActivityResult() { holdemResults += 1; }, clearActivityVisit() {}, persist() {}};
+      teardownHostedView(holdemCtx, 'holdem-play');
+      check('holdem_exit_cashes_out', holdemSession.wallet.balance === 1050 && holdemRuntime.holdem === null && holdemResults === 1);
+      teardownHostedView(holdemCtx, 'holdem-play');
+      check('holdem_exit_idempotent', holdemSession.wallet.balance === 1050 && holdemResults === 1);
+      core.deleteSlot(5);
+      const escrowSession = core.createSlot(5, {playerName: 'Escrow', chips: 1000});
+      escrowSession.wallet.debit(200, 'holdem', 'test buy-in');
+      escrowSession.holdemEscrow = 240;
+      core.saveSlot(escrowSession);
+      const recovered = core.loadSlot(5);
+      check('holdem_escrow_recovered', recovered?.wallet.balance === 1040 && recovered.holdemEscrow === 0);
+      check('holdem_escrow_idempotent', core.loadSlot(5)?.wallet.balance === 1040);
+      core.deleteSlot(5);
+      const {HoldemOverlay} = await import('/rpg/js/systems/overlays/HoldemOverlay.js');
+      const rpgHoldemSession = core.createSlot(5, {playerName: 'RPG Escrow', chips: 1000});
+      const rpgHoldemRoot = document.createElement('div');
+      document.body.append(rpgHoldemRoot);
+      const rpgHoldem = new HoldemOverlay(rpgHoldemRoot, rpgHoldemSession, {});
+      rpgHoldem.open({minBet: 100, maxBet: 1000});
+      rpgHoldemRoot.querySelector('input').value = '200';
+      rpgHoldemRoot.querySelector('.primary').click();
+      const feltStack = rpgHoldem.table?.human?.stack ?? -1;
+      check('rpg_holdem_escrow', feltStack > 0 && rpgHoldemSession.holdemEscrow === feltStack);
+      core.saveSlot(rpgHoldemSession);
+      const recoveredRpgHoldem = core.loadSlot(5);
+      check('rpg_holdem_escrow_recovered',
+        recoveredRpgHoldem?.wallet.balance === 800 + feltStack && recoveredRpgHoldem.holdemEscrow === 0);
+      rpgHoldem.close();
+      check('rpg_holdem_cashout',
+        rpgHoldemSession.wallet.balance === 800 + feltStack && rpgHoldemSession.holdemEscrow === 0);
+      rpgHoldemRoot.remove();
+      core.deleteSlot(5);
+      const lotterySession = new PlayerSession({ chips: 1000 });
+      const lotteryRuntime = { lottery: { sessionNet: 0, tickets: 0, drawing: true,
+        pendingOutcome: { result: { ticketId: "pick3", win: 500, reason: "Straight hit", draw: [1, 2, 3] },
+          price: 2, winTier: "small" } } };
+      let lotteryRecord = null;
+      const lotteryCtx = { session: lotterySession, runtime: lotteryRuntime,
+        recordActivityResult(activity, net, bets) { lotteryRecord = { activity, net, bets }; },
+        clearActivityVisit() {}, persist() {} };
+      teardownHostedView(lotteryCtx, "lottery");
+      check('lottery_pending_settled', lotterySession.wallet.balance === 1500
+        && lotteryRuntime.lottery.pendingOutcome === null
+        && lotteryRecord?.net === 498 && lotteryRecord?.bets === 1);
+      const s = window.__rpg.scene;
+      s._autosavePosition(2000);
+      check('autosave_preserves_map', s.saveAdapter.rpg.mapId === s.currentMapId);
+      if (window.__rpg.dialogue.isActive()) window.__rpg.dialogue.close();
+      const staffBeforeChallenge = s.saveAdapter.rpg.reputation?.staff ?? 0;
+      const realDialogueStart = s.dialogue.start;
+      try {
+        s.dialogue.start = async () => ({reputation: {staff: 2}});
+        await s._runChallenge({id: 'regression_challenger', name: 'Regression',
+          x: s.playerTile().x, y: s.playerTile().y});
+      } finally {
+        s.dialogue.start = realDialogueStart;
+      }
+      check('challenge_reputation',
+        (s.saveAdapter.rpg.reputation?.staff ?? 0) === staffBeforeChallenge + 2);
+      window.__rpg.rewardsPhone.open();
+      check('phone_owns_world_input', s.isMenuOpen());
+      window.__rpg.rewardsPhone.close();
+      return checks;
+    }""")
+    for result in checks:
+        print(f"  regression/{result['name']:<25} {'ok' if result['ok'] else 'FAIL'}")
+        if not result["ok"]:
+            failures.append(f"regression/{result['name']}: failed")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--terminal-only", action="store_true")
@@ -478,7 +714,10 @@ def main() -> int:
     failures: list[str] = []
 
     with sync_playwright() as pw:
-        browser = pw.chromium.launch()
+        # Headless SwiftShader can synchronously stall WebGL context creation.
+        # Exercise Phaser AUTO's supported Canvas fallback here; WebGL visual
+        # verification uses the collaborative browser with its normal GPU.
+        browser = pw.chromium.launch(args=["--disable-webgl"])
         page = browser.new_page()
         errors: list[str] = []
         page.on("console", lambda m: errors.append(f"console.{m.type}: {m.text}")
@@ -527,6 +766,8 @@ def main() -> int:
             for err in errors:
                 failures.append(f"rpg: {err}")
 
+            ui_regressions(page, failures)
+
             encounters = page.evaluate("window.__rpg.encounters.knownEncounters()")
             for encounter in encounters:
                 errors.clear()
@@ -547,12 +788,22 @@ def main() -> int:
                     if "Stake Tier" in text:
                         failures.append(f"rpg encounter {encounter}: stuck on the stake picker")
                 if len(text.strip()) < 10:
-                    failures.append(f"rpg encounter {encounter}: nothing rendered")
+                    completed = page.evaluate("""async () => Promise.race([
+                      window.__rpgEncounterPromise.then(() => true),
+                      new Promise(r => setTimeout(() => r(false), 100)),
+                    ])""")
+                    gated_venues = {"bar_foundation", "bar_velvet", "bar_beach_club"}
+                    if not completed or encounter not in gated_venues:
+                        failures.append(f"rpg encounter {encounter}: nothing rendered (completed={completed})")
                 if encounter == "predictions" and "Prediction Markets" not in text:
                     failures.append("rpg encounter predictions: did not open on the prediction tab")
                 page.evaluate(
                     """() => {
                         window.__rpg.terminalHost?.isActive() && window.__rpg.terminalHost.close();
+                        for (const key of ["diningOverlay", "barOverlay", "poolOverlay"]) {
+                          const o = window.__rpg.encounters[key];
+                          if (o?.active) o.close();
+                        }
                         for (const o of Object.values(window.__rpg.encounters.overlays)) {
                           if (o?.isActive?.()) o.close();
                         }
@@ -575,7 +826,16 @@ def main() -> int:
                 print(f"  rpg/menu/{page_id:<29} {'FAIL' if errors else 'ok'}")
             page.evaluate("() => window.__rpg.menu.close()")
 
-            rpg_journey(page, base, failures, errors)
+            # The journey owns its saved profile and starts from a fresh browser
+            # context instead of inheriting every overlay walk's storage/audio.
+            page.close()
+            journey_context = browser.new_context()
+            journey_page = journey_context.new_page()
+            journey_page.on("console", lambda m: errors.append(f"console.{m.type}: {m.text}")
+                            if m.type == "error" and not any(i in m.text for i in IGNORED) else None)
+            journey_page.on("pageerror", lambda e: errors.append(f"pageerror: {e}"))
+            rpg_journey(journey_page, base, failures, errors)
+            journey_context.close()
             rpg_phone(browser, base, failures)
 
         browser.close()

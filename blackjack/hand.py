@@ -30,7 +30,11 @@ class Hand:
     @property
     def is_soft(self) -> bool:
         total = sum(card.value for card in self.cards)
-        return any(card.is_ace for card in self.cards) and total <= 21
+        aces = sum(card.is_ace for card in self.cards)
+        while total > 21 and aces:
+            total -= 10
+            aces -= 1
+        return aces > 0 and total <= 21
 
     @property
     def is_bust(self) -> bool:

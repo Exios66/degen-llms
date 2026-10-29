@@ -90,31 +90,37 @@ export function buildCrapsRenderers(ctx) {
     function doRoll() {
       const sideStakes = {};
       const sides = [
-        ["field", parseInt(fieldInput.value, 10) || 0],
-        ["any_craps", parseInt(anyCrapsInput.value, 10) || 0],
-        ["any_seven", parseInt(anySevenInput.value, 10) || 0],
+        ["field", Number(fieldInput.value)],
+        ["any_craps", Number(anyCrapsInput.value)],
+        ["any_seven", Number(anySevenInput.value)],
       ];
       for (const [id, amt] of sides) {
-        if (amt <= 0) continue;
-        if (amt < wagerStakes.minBet) { alert(`Side bets need at least ${wagerStakes.minBet}.`); return; }
-        if (!ctx.session.wallet.debit(amt, "craps", `Craps ${id}`)) { alert("Insufficient chips."); return; }
+        if (!Number.isSafeInteger(amt) || amt < 0) { alert("Enter whole-chip side bets."); return; }
+        if (amt === 0) continue;
+        if (amt < wagerStakes.minBet || amt > wagerStakes.maxBet) { alert(`Side bets must be ${wagerStakes.minBet}-${wagerStakes.maxBet}.`); return; }
         sideStakes[id] = amt;
-        runtime.craps.sessionNet -= amt;
       }
 
+      let newLine = null;
       if (!runtime.craps.lineBet) {
         const kind = lineSelect.value;
         if (kind !== "none") {
-          const amount = parseInt(amountInput.value, 10);
-          if (amount < wagerStakes.minBet) { alert(`Minimum line bet is ${wagerStakes.minBet}.`); return; }
-          if (!ctx.session.wallet.debit(amount, "craps", `Craps ${kind}`)) { alert("Insufficient chips."); return; }
-          runtime.craps.lineBet = { kind, amount };
-          runtime.craps.lastWager = amount;
-          runtime.craps.sessionNet -= amount;
-        } else if (!Object.keys(sideStakes).length) {
+          const amount = Number(amountInput.value);
+          if (!Number.isSafeInteger(amount) || amount < wagerStakes.minBet || amount > wagerStakes.maxBet) { alert(`Line bets must be whole chips, ${wagerStakes.minBet}-${wagerStakes.maxBet}.`); return; }
+          newLine = { kind, amount };
+        } else if (!Object.keys(sideStakes).length && !Object.keys(runtime.craps.hardways || {}).length) {
           alert("Place a line bet or at least one side bet.");
           return;
         }
+      }
+
+      // Validate the complete roll before committing any of its wagers.
+      const total = Object.values(sideStakes).reduce((sum, amt) => sum + amt, newLine?.amount ?? 0);
+      if (total > 0 && !ctx.session.wallet.debit(total, "craps", "Craps roll wagers")) { alert("Insufficient chips."); return; }
+      runtime.craps.sessionNet -= total;
+      if (newLine) {
+        runtime.craps.lineBet = newLine;
+        runtime.craps.lastWager = newLine.amount;
       }
 
       const pointBefore = table.point;
@@ -163,9 +169,9 @@ export function buildCrapsRenderers(ctx) {
     }
 
     function pressHardway(id) {
-      const amount = parseInt(amountInput.value, 10) || wagerStakes.minBet;
+      const amount = Number(amountInput.value);
       if (runtime.craps.hardways[id]) { alert("That hardway is already working."); return; }
-      if (amount < wagerStakes.minBet) { alert(`Minimum is ${wagerStakes.minBet}.`); return; }
+      if (!Number.isSafeInteger(amount) || amount < wagerStakes.minBet || amount > wagerStakes.maxBet) { alert(`Hardways must be whole chips, ${wagerStakes.minBet}-${wagerStakes.maxBet}.`); return; }
       if (!ctx.session.wallet.debit(amount, "craps", `Craps ${id}`)) { alert("Insufficient chips."); return; }
       runtime.craps.hardways[id] = amount;
       runtime.craps.lastWager = amount;

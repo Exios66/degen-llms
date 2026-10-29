@@ -162,7 +162,8 @@ export class BankAccount {
     transactions = [],
     resortPerks = {},
   } = {}) {
-    this.balance = Math.max(0, balance);
+    if (!Number.isFinite(balance) || balance < 0) throw new Error("Bank balance must be finite and nonnegative");
+    this.balance = balance;
     this.accountName = accountName;
     this.transactions = transactions;
     this.resortPerks = { ...(resortPerks || {}) };
@@ -180,7 +181,7 @@ export class BankAccount {
   }
 
   canAfford(amount) {
-    return amount > 0 && this.balance >= amount;
+    return Number.isFinite(amount) && amount > 0 && this.balance >= amount;
   }
 
   hasPerk(perkId) {
@@ -198,7 +199,7 @@ export class BankAccount {
   }
 
   deposit(amount, category, description) {
-    if (amount <= 0) throw new Error("Deposit must be positive");
+    if (!Number.isFinite(amount) || amount <= 0 || !Number.isFinite(this.balance + amount)) throw new Error("Deposit must be positive and finite");
     this.balance += amount;
     this._record(BankTransactionKind.DEPOSIT, amount, category, description);
   }
@@ -249,7 +250,7 @@ export function ensureBank(session) {
 }
 
 export function cashOutToBank(session, amount) {
-  if (amount <= 0 || amount > session.wallet.balance) return false;
+  if (!Number.isFinite(amount) || amount <= 0 || amount > session.wallet.balance) return false;
   if (amount > CASHOUT_TO_BANK_MAX) return false;
   if (!session.wallet.cashOut(amount)) return false;
   ensureBank(session).deposit(
@@ -261,7 +262,7 @@ export function cashOutToBank(session, amount) {
 }
 
 export function buyInForSession(session, amount, { useOutsideFunds = false } = {}) {
-  if (amount <= 0) throw new Error("Buy-in must be positive");
+  if (!Number.isFinite(amount) || amount <= 0) throw new Error("Buy-in must be positive and finite");
   if (amount > BUY_CHIPS_MAX) return "over_buy_limit";
   const bank = ensureBank(session);
   if (bank.balance >= amount) {
@@ -281,7 +282,7 @@ export function buyInForSession(session, amount, { useOutsideFunds = false } = {
 
 /** Pay an outside expense, capped by MGM Rewards tier withdraw limit. */
 export function payBankExpense(session, amount, category, description) {
-  if (amount <= 0) return "invalid";
+  if (!Number.isFinite(amount) || amount <= 0) return "invalid";
   if (!isKnownExpenseCategory(category)) return "invalid_category";
   if (amount > bankWithdrawMaxForSession(session)) return "tier_withdraw_limit";
   const bank = ensureBank(session);

@@ -19,6 +19,7 @@ def play_strip_cross(ui: TerminalUI) -> tuple[int, bool, float]:
     goal_r = 0
     lives = 3
     score = 0
+    best_row = player_r
     hazards: list[dict] = []
     lane_dirs = {
         8: 1, 7: -1, 6: 1, 4: -1, 3: 1, 2: -1,
@@ -78,7 +79,9 @@ def play_strip_cross(ui: TerminalUI) -> tuple[int, bool, float]:
             player_c, player_r = cols // 2, rows - 1
             ui.error("Splat! A limo clipped you.")
             continue
-        score += 10
+        if player_r < best_row:
+            score += (best_row - player_r) * 10
+            best_row = player_r
         if player_r == goal_r and player_c == cols // 2:
             score += 150
             ui.success("Neon marquee reached!")
@@ -120,10 +123,9 @@ def play_neon_invaders(ui: TerminalUI) -> tuple[int, bool, float]:
         elif cmd in {"f", "fire", " "}:
             target_col = player_x
             hit = None
-            for idx, (c, r) in enumerate(invaders):
-                if c == target_col:
-                    hit = idx
-                    break
+            targets = [idx for idx, (c, _) in enumerate(invaders) if c == target_col]
+            if targets:
+                hit = max(targets, key=lambda idx: invaders[idx][1])
             if hit is not None:
                 invaders.pop(hit)
                 score += 50
@@ -135,10 +137,10 @@ def play_neon_invaders(ui: TerminalUI) -> tuple[int, bool, float]:
             continue
         # Invaders creep down occasionally
         if SECURE_RANDOM.random() < 0.35:
-            invaders = [(c, r + 1) for c, r in invaders if r + 1 < 5]
-            if any(c == player_x and r == 4 for c, r in invaders):
-                lives -= 1
-                ui.error("They landed on you!")
+            invaders = [(c, r + 1) for c, r in invaders]
+            if any(r >= 5 for _, r in invaders):
+                lives = 0
+                ui.error("The invaders reached the Strip!")
     cleared = not invaders and lives > 0
     if cleared:
         score += 120
@@ -165,7 +167,8 @@ def play_high_roller_breakout(ui: TerminalUI) -> tuple[int, bool, float]:
                     row[c] = "█"
             if r == 4:
                 row[paddle] = "_"
-                row[ball_c] = "●" if ball_c != paddle else "●"
+            if r == ball_r:
+                row[ball_c] = "●"
             ui.print("  " + "".join(row))
         ui.print(f"  Bricks: {len(bricks)}  Lives: {lives}  Score: {score}  (A/D paddle, F launch, Q quit)")
 
@@ -198,7 +201,7 @@ def play_high_roller_breakout(ui: TerminalUI) -> tuple[int, bool, float]:
             ball_c = max(0, min(10, ball_c))
         if ball_r <= 0:
             ball_v = (ball_v[0], 1)
-            ball_r = 1
+            ball_r = 0
         hit = None
         for idx, (c, r) in enumerate(bricks):
             if c == ball_c and r == ball_r:

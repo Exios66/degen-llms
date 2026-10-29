@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import tempfile
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -60,6 +61,8 @@ class SaveLibrary:
         self._load_index()
 
     def _slot_path(self, slot_id: int) -> Path:
+        if type(slot_id) is not int or not 1 <= slot_id <= MAX_SLOTS:
+            raise ValueError(f"slot_id must be between 1 and {MAX_SLOTS}")
         return self.save_dir / f"slot_{slot_id}.json"
 
     def _load_index(self) -> None:
@@ -69,16 +72,24 @@ class SaveLibrary:
             return
         try:
             data = json.loads(self.library_path.read_text(encoding="utf-8"))
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, UnicodeDecodeError, OSError):
             self._recent = []
             self._summaries = {}
             return
-        self._recent = [int(x) for x in data.get("recent", [])]
-        self._summaries = {str(k): v for k, v in data.get("slots", {}).items()}
+        if not isinstance(data, dict):
+            return
+        recent = data.get("recent", [])
+        self._recent = list(dict.fromkeys(
+            x for x in recent if type(x) is int and 1 <= x <= MAX_SLOTS
+        )) if isinstance(recent, list) else []
+        summaries = data.get("slots", {})
+        self._summaries = {
+            str(k): v for k, v in summaries.items() if isinstance(v, dict)
+        } if isinstance(summaries, dict) else {}
 
     def _write_index(self) -> None:
         payload = {"recent": self._recent, "slots": self._summaries}
-        self.library_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        _atomic_write_json(self.library_path, payload)
 
     def _touch_recent(self, slot_id: int) -> None:
         if slot_id in self._recent:
@@ -105,15 +116,18 @@ class SaveLibrary:
             meta = self._summaries.get(str(slot_id), {})
             if path.exists():
                 updated_raw = meta.get("updated_at")
-                updated = datetime.fromisoformat(updated_raw) if updated_raw else None
+                try:
+                    updated = datetime.fromisoformat(updated_raw) if updated_raw else None
+                except (TypeError, ValueError):
+                    updated = None
                 slots.append(
                     SlotSummary(
                         slot_id=slot_id,
                         label=meta.get("label", f"Slot {slot_id}"),
                         player_name=meta.get("player_name", "Guest"),
-                        balance=meta.get("balance", 0),
+                        balance=_nonnegative_int(meta.get("balance", 0)),
                         updated_at=updated,
-                        casino_time_ms=int(meta.get("casino_time_ms", 0)),
+                        casino_time_ms=_nonnegative_int(meta.get("casino_time_ms", 0)),
                         occupied=True,
                     )
                 )
@@ -148,10 +162,14 @@ class SaveLibrary:
             return None
         try:
             data = json.loads(path.read_text(encoding="utf-8"))
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, UnicodeDecodeError, OSError):
             return None
-        session = session_from_dict(data)
+        try:
+            session = session_from_dict(data)
+        except (ValueError, TypeError, KeyError, AttributeError, OverflowError):
+            return None
         session.slot_id = slot_id
+        self._update_summary(session)
         self._touch_recent(slot_id)
         self._write_index()
         return session
@@ -161,7 +179,7 @@ class SaveLibrary:
             raise ValueError("Session has no slot_id — cannot save")
         flush_casino_time(session)
         path = self._slot_path(session.slot_id)
-        path.write_text(json.dumps(session_to_dict(session), indent=2), encoding="utf-8")
+        _atomic_write_json(path, session_to_dict(session))
         self._update_summary(session)
         self._touch_recent(session.slot_id)
         self._write_index()
@@ -204,6 +222,29 @@ class SaveLibrary:
         ensure_bank(session)
         self.save_slot(session)
         return session
+
+
+def _nonnegative_int(value: object) -> int:
+    try:
+        return max(0, int(value))
+    except (ValueError, TypeError, OverflowError):
+        return 0
+
+
+def _atomic_write_json(path: Path, payload: dict) -> None:
+    """Replace only complete serialized saves; interrupted writes preserve the old file."""
+    serialized = json.dumps(payload, indent=2, allow_nan=False)
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent, delete=False) as handle:
+            temporary = Path(handle.name)
+            handle.write(serialized)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, path)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
 
 
 def session_to_dict(session: PlayerSession) -> dict:
@@ -283,13 +324,21 @@ def session_to_dict(session: PlayerSession) -> dict:
         payload["intoxication"] = asdict(session.intoxication)
     if hasattr(session, "dining") and session.dining is not None:
         payload["dining"] = asdict(session.dining)
-    payload.update(getattr(session, "web_only_state", None) or {})
+    # Web-only blobs are carried through untouched, but they must never replace
+    # a section the CLI models itself (see WEB_ONLY_SAVE_KEYS).
+    payload.update({
+        key: value
+        for key, value in (getattr(session, "web_only_state", None) or {}).items()
+        if key not in payload
+    })
     return payload
 
 
 def session_from_dict(data: dict) -> PlayerSession:
     from mandalay_bay.chips import ChipTransaction
 
+    if not isinstance(data, dict):
+        raise ValueError("Save data must be an object")
     wallet_data = data.get("wallet", {})
     wallet = ChipWallet(balance=wallet_data.get("balance", DEFAULT_STARTING_CHIPS))
     wallet.transactions = []
@@ -435,9 +484,9 @@ def run_save_picker(
         choice = ui.menu_choice(options, title="Save slots:")
         if choice == 0:
             continue
-        if choice == len(options) - 1:
-            return None
         if choice == len(options):
+            return None
+        if choice == len(options) - 1:
             _delete_save_flow(ui, library)
             continue
 

@@ -154,6 +154,8 @@ def enter_zone(session: PlayerSession, zone_id: str) -> PoolResult:
     zone = POOL_ZONES.get(zone_id)
     if not zone:
         return PoolResult(False, "That's a maintenance closet.")
+    if zone_id == "beach_club":
+        return enter_beach_club(session)
     unlocked = _visit_zone(session, zone_id)
     return _finish(f"{zone['label']}\n{zone['description']}", unlocked)
 
@@ -178,15 +180,15 @@ def play_catch_wave(session: PlayerSession, timing_index: int) -> PoolResult:
 
 
 def play_ring_toss(session: PlayerSession, bet: int, ring_index: int) -> PoolResult:
+    rings = ["Inner tube", "Lifeguard tower", "Cabana post"]
+    if type(ring_index) is not int or not 0 <= ring_index < len(rings):
+        return PoolResult(False, "Pick a target.")
     pc = ensure_pool_complex(session)
     _visit_zone(session, "wave_pool")
     if bet < 10:
         return PoolResult(False, "Minimum $10 ring toss.")
     if not session.wallet.debit(bet, "pool", "Ring toss"):
         return PoolResult(False, f"Need {fmt_chips(bet)}.")
-    rings = ["Inner tube", "Lifeguard tower", "Cabana post"]
-    if ring_index < 0 or ring_index >= len(rings):
-        return PoolResult(False, "Pick a target.")
     pick = rings[ring_index]
     roll = random.randint(1, 10)
     if roll >= 8:
@@ -267,16 +269,15 @@ def cabana_service(session: PlayerSession, service_id: str) -> PoolResult:
 
 
 def enter_beach_club(session: PlayerSession) -> PoolResult:
-    _visit_zone(session, "beach_club")
     pc = ensure_pool_complex(session)
     if pc.flags.get("beach_club_pass"):
-        unlocked = _try_unlock_events(session)
+        unlocked = _visit_zone(session, "beach_club")
         return _finish("Welcome back to the beach club.", unlocked)
     cover = 75
     if not session.wallet.debit(cover, "pool", "Beach club cover"):
         return PoolResult(False, f"Cover charge: {fmt_chips(cover)}.")
     pc.flags["beach_club_pass"] = True
-    unlocked = _try_unlock_events(session)
+    unlocked = _visit_zone(session, "beach_club")
     return _finish(f"Cover paid ({fmt_chips(cover)}). 21+ enforced.", unlocked)
 
 

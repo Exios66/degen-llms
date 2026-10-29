@@ -30,6 +30,7 @@ function makePlayer(name, isHuman, stack) {
     folded: false,
     allIn: false,
     hasActed: false,
+    lastActionBet: null,
     reset() {
       this.hole = [];
       this.betThisStreet = 0;
@@ -37,6 +38,7 @@ function makePlayer(name, isHuman, stack) {
       this.folded = false;
       this.allIn = false;
       this.hasActed = false;
+      this.lastActionBet = null;
     },
   };
 }
@@ -64,7 +66,8 @@ export class HoldemTable {
 
   /** Always seats 1 human + up to 4 bots (5-max table). */
   static quickTable(humanStack, numBots = 4) {
-    const bots = Math.max(1, Math.min(Number(numBots) || 4, 4));
+    const requestedBots = Number(numBots);
+    const bots = Math.max(1, Math.min(Number.isFinite(requestedBots) ? Math.trunc(requestedBots) : 4, 4));
     const players = [makePlayer("You", true, humanStack)];
     const botStack = Math.max(humanStack, 500);
     for (let i = 0; i < bots; i++) players.push(makePlayer(`Bot ${i + 1}`, false, botStack));
@@ -109,7 +112,7 @@ export class HoldemTable {
         p.stack = this.defaultBotStack || Math.max(this.bigBlind * 20, 500);
       }
     }
-    this.players.forEach((p) => p.reset());
+    this.players.forEach((p) => { p.reset(); p.folded = p.stack <= 0; });
 
     const eligible = this.players.filter((p) => p.stack > 0);
     if (eligible.length < 2) {
@@ -119,6 +122,7 @@ export class HoldemTable {
     }
 
     const n = this.players.length;
+    this.shoe.reshuffle();
     let sbIdx;
     let bbIdx;
     if (n === 2) {
@@ -132,6 +136,7 @@ export class HoldemTable {
     this._postBlind(sbIdx, this.smallBlind);
     this._postBlind(bbIdx, this.bigBlind);
     this.currentBet = Math.max(...this.players.map((p) => p.betThisStreet));
+    if (this._activeActors().length > 1) this.currentBet = Math.max(this.bigBlind, this.currentBet);
 
     for (const p of this.players) {
       if (!p.folded) p.hole = [this.shoe.deal(), this.shoe.deal()];
@@ -140,6 +145,7 @@ export class HoldemTable {
     this._seekActor();
     this.lastMessage = "Cards dealt — pre-flop betting.";
     this.actionLog.push(this.lastMessage);
+    if (this._roundComplete()) this._advanceStreet();
   }
 
   _postBlind(idx, amount) {
@@ -180,12 +186,14 @@ export class HoldemTable {
     const actions = new Set([BettingAction.FOLD]);
     if (toCall <= 0) actions.add(BettingAction.CHECK);
     else if (player.stack > 0) actions.add(BettingAction.CALL);
-    if (player.stack > toCall) actions.add(BettingAction.RAISE);
+    const canReopen = player.lastActionBet == null || this.currentBet - player.lastActionBet >= this.minRaise;
+    if (player.stack > toCall && canReopen && this._activeActors().length > 1) actions.add(BettingAction.RAISE);
     return actions;
   }
 
   applyAction(player, action, raiseTo = null) {
     if (this.handOver) return "Hand is over.";
+    if (player !== this.players[this.actionIndex]) throw new Error("It is not this player's turn");
     const legal = this.legalActions(player);
     if (!legal.has(action)) throw new Error(`${player.name} cannot ${action} now`);
 
@@ -213,7 +221,7 @@ export class HoldemTable {
       const maxTotal = this.maxRaiseTo(player);
       const minTotal = this.minRaiseTo(player);
       let target = raiseTo == null ? minTotal : Number(raiseTo);
-      if (!Number.isFinite(target)) throw new Error("Raise amount must be a number");
+      if (!Number.isSafeInteger(target)) throw new Error("Raise amount must be an integer");
       if (target < minTotal && target < maxTotal) {
         throw new Error(`Raise must be at least ${minTotal} (or all-in)`);
       }
@@ -242,6 +250,7 @@ export class HoldemTable {
     }
 
     player.hasActed = true;
+    player.lastActionBet = action === BettingAction.CHECK ? null : this.currentBet;
     if (raised) {
       for (const other of this.players) {
         if (other !== player && !other.folded && !other.allIn) other.hasActed = false;
@@ -269,6 +278,7 @@ export class HoldemTable {
   _roundComplete() {
     const active = this._activeActors();
     if (!active.length) return true;
+    if (active.length === 1 && active[0].betThisStreet >= this.currentBet) return true;
     return active.every((p) => p.hasActed && p.betThisStreet === this.currentBet);
   }
 
@@ -281,6 +291,7 @@ export class HoldemTable {
     for (const p of this.players) {
       p.betThisStreet = 0;
       p.hasActed = false;
+      p.lastActionBet = null;
     }
     this.currentBet = 0;
     this.minRaise = this.bigBlind;
@@ -318,11 +329,30 @@ export class HoldemTable {
     this.street = Street.SHOWDOWN;
     const live = this._inHand();
     const scored = live.map((p) => ({ player: p, ...bestHandFromCards([...p.hole, ...this.community]) }));
-    let best = scored[0].score;
-    for (const s of scored) if (compareScores(s.score, best) > 0) best = s.score;
-    const winners = scored.filter((s) => compareScores(s.score, best) === 0).map((s) => s.player.name);
     this.showdownScores = scored.map((s) => ({ name: s.player.name, score: s.score }));
-    this._splitPot(winners);
+    const winnerNames = [];
+    let previous = 0;
+    const levels = [...new Set(this.players.map((p) => p.totalInHand).filter((n) => n > 0))].sort((a, b) => a - b);
+    for (const level of levels) {
+      const contributors = this.players.filter((p) => p.totalInHand >= level);
+      const amount = (level - previous) * contributors.length;
+      const eligible = scored.filter((s) => s.player.totalInHand >= level);
+      if (eligible.length) {
+        let best = eligible[0].score;
+        for (const s of eligible) if (compareScores(s.score, best) > 0) best = s.score;
+        const winners = eligible.filter((s) => compareScores(s.score, best) === 0).map((s) => s.player);
+        const seatOrder = (p) => (this.players.indexOf(p) - this.dealerIndex - 1 + this.players.length) % this.players.length;
+        winners.sort((a, b) => seatOrder(a) - seatOrder(b));
+        const share = Math.floor(amount / winners.length);
+        const remainder = amount % winners.length;
+        winners.forEach((p, i) => {
+          p.stack += share + (i < remainder ? 1 : 0);
+          if (!winnerNames.includes(p.name)) winnerNames.push(p.name);
+        });
+      }
+      previous = level;
+    }
+    this._finishHand(winnerNames);
     this.lastMessage = "Showdown complete.";
     this.actionLog.push(this.lastMessage);
   }
@@ -343,6 +373,10 @@ export class HoldemTable {
       const p = this.players.find((x) => x.name === name);
       if (p) p.stack += payout;
     });
+    this._finishHand(winnerNames);
+  }
+
+  _finishHand(winnerNames) {
     this.winners = winnerNames;
     this.handOver = true;
     this.dealerIndex = (this.dealerIndex + 1) % this.players.length;

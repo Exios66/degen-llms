@@ -38,6 +38,7 @@ export function filterContracts(contracts, { assetClass = "all", instrument = "a
 
 /** Chip cost to open a long position (1 unit). */
 export function entryCostChips(contract, qty = 1) {
+  if (!Number.isSafeInteger(qty) || qty < 1) throw new Error("Quantity must be a positive integer.");
   const px = contract.ask ?? contract.markPrice;
   const mult = contract.multiplier ?? 1;
   if (contract.instrument === "future") {
@@ -46,6 +47,14 @@ export function entryCostChips(contract, qty = 1) {
   }
   // Options: pay premium × multiplier
   return Math.max(1, Math.floor(px * mult * qty));
+}
+
+export function underlyingSpot(contract, catalog = catalogCache) {
+  if (contract.instrument === "future") return contract.markPrice;
+  const futures = (catalog?.contracts ?? []).filter((c) => c.instrument === "future" && c.symbol === contract.symbol);
+  const quote = futures.find((c) => c.expiry === contract.expiry) ?? futures[0];
+  if (!quote) throw new Error(`No underlying quote for ${contract.symbol}`);
+  return quote.markPrice;
 }
 
 export function driftSpot(mark, instrument) {
@@ -62,7 +71,7 @@ export function settlePosition(position, exitSpot) {
   let reason = "";
 
   if (contract.instrument === "future") {
-    pnl = Math.floor((exitSpot - entryPrice) * mult * qty);
+    pnl = Math.trunc((exitSpot - entryPrice) * mult * qty);
     reason = `Future ${contract.symbol} ${exitSpot >= entryPrice ? "rallied" : "sold off"} (${entryPrice} → ${exitSpot})`;
   } else if (contract.instrument === "call") {
     const intrinsic = Math.max(0, exitSpot - (contract.strike ?? 0));
@@ -74,9 +83,12 @@ export function settlePosition(position, exitSpot) {
     const proceeds = Math.floor(intrinsic * mult * qty);
     pnl = proceeds - cost;
     reason = `Put ${contract.symbol} ${contract.strike} expires — intrinsic ${intrinsic}`;
+  } else {
+    throw new Error(`Unknown instrument: ${contract.instrument}`);
   }
 
   const payout = Math.max(0, cost + pnl);
+  pnl = payout - cost;
   return {
     won: pnl >= 0,
     pnl,
@@ -137,6 +149,7 @@ export class TradingDeskState {
       contract: { ...contract },
       qty,
       entryPrice,
+      entrySpot: underlyingSpot(contract, this.catalog ?? catalogCache),
       cost,
       openedAt: Date.now(),
     };
@@ -147,11 +160,8 @@ export class TradingDeskState {
   settleAll() {
     const results = [];
     for (const position of this.positions) {
-      const spot = driftSpot(position.contract.markPrice, position.contract.instrument);
-      // For options, spot is underlying mark drifted; for futures exit is the drifted mark
-      const exitSpot = position.contract.instrument === "future"
-        ? spot
-        : driftSpot(position.contract.markPrice * (1 + (secureRandomInt(-30, 30) / 1000)), "future");
+      const spot = position.entrySpot ?? underlyingSpot(position.contract, this.catalog ?? catalogCache);
+      const exitSpot = driftSpot(spot, position.contract.instrument);
       const resolved = settlePosition(position, exitSpot);
       results.push({ position, ...resolved });
     }

@@ -20,6 +20,11 @@
   <link rel="stylesheet" href="../css/bar-overlay.css">
   <link rel="stylesheet" href="../css/pool-overlay.css">
   <link rel="stylesheet" href="../css/balcony-smoke-overlay.css">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.esm.js" crossorigin>
+  <!-- Start the map waterfall at HTML parse instead of after module eval. -->
+  <link rel="preload" as="fetch" href="js/data/maps/index.json" crossorigin>
+  <link rel="preload" as="fetch" href="js/data/dialogues.json" crossorigin>
   <script type="importmap">
   {
     "imports": {

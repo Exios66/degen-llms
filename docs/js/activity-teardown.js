@@ -1,6 +1,7 @@
 /** Shared leave/settle cleanup for hosted casino screens (web terminal + RPG host). */
 import { refundSportsbookOpen, refundSlips, refundTradingPositions } from "./pendingRefunds.js";
 import { spinWheel, resolveBet } from "./roulette.js";
+import { settlePendingLottery } from "./lottery.js";
 
 function finalizeSlotsSpin(ctx, clearSlotsSpinTimers) {
   const { session, runtime, persist } = ctx;
@@ -39,7 +40,8 @@ export function teardownHostedView(ctx, viewName, helpers = {}) {
   const baseView = viewName.startsWith("horse-racing") ? "horse-racing"
     : viewName.startsWith("dressage") ? "dressage"
       : viewName.startsWith("jumper") ? "jumper"
-        : viewName.startsWith("trading-") ? "trading-desk"
+        : viewName.startsWith("sportsbook-") ? "sportsbook"
+          : viewName.startsWith("trading-") ? "trading-desk"
           : viewName;
   const { session, runtime, recordActivityResult, clearActivityVisit, persist } = ctx;
   const { clearSlotsSpinTimers } = helpers;
@@ -118,6 +120,23 @@ export function teardownHostedView(ctx, viewName, helpers = {}) {
       clearActivityVisit?.("horse_racing");
       break;
     }
+    case "holdem-play": {
+      // The table stack lives outside the wallet between hands, so a host close
+      // must cash it out or the guest loses every chip still on the felt.
+      const holdem = runtime.holdem;
+      if (holdem?.table) {
+        const cash = holdem.table.human.stack;
+        if (cash > 0) {
+          session.wallet.credit(cash, "holdem", "Hold'em leave — table stack returned");
+        }
+        holdem.sessionNet = cash - holdem.buyIn;
+        recordActivityResult?.("holdem", holdem.sessionNet, holdem.hands ?? 0);
+        runtime.holdem = null;
+      }
+      session.holdemEscrow = 0;
+      clearActivityVisit?.("holdem");
+      break;
+    }
     case "dressage": {
       if (runtime.dressage?.pending?.length) {
         refundSlips(session, "dressage", runtime.dressage.pending, "Dressage leave — open tickets returned");
@@ -155,6 +174,7 @@ export function teardownHostedView(ctx, viewName, helpers = {}) {
     }
     case "lottery": {
       const L = runtime.lottery;
+      if (L) settlePendingLottery(session, L);
       if (L?.tickets > 0 || L?.sessionNet) {
         recordActivityResult?.("lottery", L.sessionNet, L.tickets || 1);
         L.sessionNet = 0;

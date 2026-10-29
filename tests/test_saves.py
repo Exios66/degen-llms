@@ -72,3 +72,23 @@ def test_session_serialization_preserves_transactions(tmp_path: Path) -> None:
     assert len(restored.wallet.transactions) == 2
     assert restored.bank.balance == 400
     assert restored.staff_overrides["dealers"]["steve_harvey"]["name"] == "Steve H."
+
+
+def test_web_only_state_cannot_override_modeled_save_sections() -> None:
+    from mandalay_bay.rewards import ensure_rewards
+    from mandalay_bay.saves import session_from_dict, session_to_dict
+
+    session = PlayerSession(player_name="Ledger", wallet=ChipWallet(balance=1000), slot_id=1)
+    ensure_rewards(session).lifetime_wagered = 12_345
+    session.web_only_state = {
+        "rpg": {"mapId": "sky_bridge"},
+        "rewards": {"unlockedComps": ["welcome_drink"], "redeemedComps": []},
+    }
+
+    data = session_to_dict(session)
+
+    assert data["rpg"] == {"mapId": "sky_bridge"}
+    assert data["rewards"]["lifetime_wagered"] == 12_345
+    restored = session_from_dict(data)
+    assert restored.rewards.lifetime_wagered == 12_345
+    assert restored.web_only_state["rpg"] == {"mapId": "sky_bridge"}

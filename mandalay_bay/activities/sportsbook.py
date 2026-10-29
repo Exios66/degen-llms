@@ -11,8 +11,6 @@ from mandalay_bay.prediction_markets import (
     filter_markets,
     prediction_payout,
     refresh_market_prices,
-    resolve_market,
-    resolve_position,
 )
 from mandalay_bay.pending_refunds import refund_slips
 from mandalay_bay.session import PlayerSession
@@ -105,56 +103,57 @@ class SportsbookActivity(Activity):
         bets_placed = 0
         n_scenarios = len(self._scenario_db.get("scenarios") or [])
 
-        while True:
-            self._predictions.sync_markets(self._events)
-            choice = ui.menu_choice(
-                [
-                    f"Sports board ({len(self._events)} events, {len(self._pending)} ticket(s))",
-                    f"Prediction markets ({len(self._predictions.positions)} open)",
-                    "Settle all open positions",
-                    f"Next scenario slate (cursor {self._scenario_cursor}/{n_scenarios})",
-                ],
-                title="Sports Book:",
-            )
-            if choice == 0:
-                break
-            if choice == 1:
-                net, count = self._sports_board_loop(session, ui, wager_min, wager_max)
-                session_net += net
-                bets_placed += count
-            elif choice == 2:
-                net, count = self._prediction_markets_loop(session, ui, wager_min, wager_max)
-                session_net += net
-                bets_placed += count
-            elif choice == 3:
-                net, count = self._settle_all(session, ui)
-                session_net += net
-                bets_placed += count
-            elif choice == 4:
-                self._refresh_board(force=True)
-                self._predictions.next_slate(self._events)
-                ui.success(
-                    f"Next slate loaded — sports cursor {self._scenario_cursor}, "
-                    f"predictions cursor {self._predictions.scenario_cursor}."
+        try:
+            while True:
+                self._predictions.sync_markets(self._events)
+                choice = ui.menu_choice(
+                    [
+                        f"Sports board ({len(self._events)} events, {len(self._pending)} ticket(s))",
+                        f"Prediction markets ({len(self._predictions.positions)} open)",
+                        "Settle all open positions",
+                        f"Next scenario slate (cursor {self._scenario_cursor}/{n_scenarios})",
+                    ],
+                    title="Sports Book:",
                 )
+                if choice == 0:
+                    break
+                if choice == 1:
+                    net, count = self._sports_board_loop(session, ui, wager_min, wager_max)
+                    session_net += net
+                    bets_placed += count
+                elif choice == 2:
+                    net, count = self._prediction_markets_loop(session, ui, wager_min, wager_max)
+                    session_net += net
+                    bets_placed += count
+                elif choice == 3:
+                    net, _ = self._settle_all(session, ui)
+                    session_net += net
+                elif choice == 4:
+                    self._refresh_board(force=True)
+                    self._predictions.next_slate(self._events)
+                    ui.success(
+                        f"Next slate loaded — sports cursor {self._scenario_cursor}, "
+                        f"predictions cursor {self._predictions.scenario_cursor}."
+                    )
 
-        refunded = 0
-        if self._pending:
-            refunded += refund_slips(
-                session, self.info.id, [{"amount": s.amount} for s in self._pending],
-                reason="Sportsbook leave — open tickets returned",
-            )
-            self._pending = []
-        if self._predictions.positions:
-            refunded += refund_slips(
-                session,
-                self.info.id,
-                [{"amount": p["amount"]} for p in self._predictions.positions],
-                reason="Sportsbook leave — prediction stakes returned",
-            )
-            self._predictions.positions = []
-        if refunded:
-            ui.dim(f"Returned {refunded:,} chips from unsettled tickets.")
+        finally:
+            refunded = 0
+            if self._pending:
+                refunded += refund_slips(
+                    session, self.info.id, [{"amount": s.amount} for s in self._pending],
+                    reason="Sportsbook leave — open tickets returned",
+                )
+                self._pending = []
+            if self._predictions.positions:
+                refunded += refund_slips(
+                    session,
+                    self.info.id,
+                    [{"amount": p["amount"]} for p in self._predictions.positions],
+                    reason="Sportsbook leave — prediction stakes returned",
+                )
+                self._predictions.positions = []
+            if refunded:
+                ui.dim(f"Returned {refunded:,} chips from unsettled tickets.")
 
         session.record_result(self.info.id, session_net, bets=bets_placed)
         ui.pause()
@@ -304,6 +303,9 @@ class SportsbookActivity(Activity):
             return False
         idx = ui.prompt_int("Event number", 1, len(board), default=1) - 1
         event = board[idx]
+        if event.get("settled"):
+            ui.error("This event has already settled. Load the next slate.")
+            return False
         types = available_bet_types(event)
         labels = {
             "moneyline": "Moneyline",
@@ -388,8 +390,8 @@ class SportsbookActivity(Activity):
             prop_id=prop_id,
             prop_label=prop_label,
         )
-        ui.print(f"\nTicket placed: {amount:,} chips on {team} ({btype}, {self._fmt_odds(odds)})")
         self._pending.append(slip)
+        ui.print(f"\nTicket placed: {amount:,} chips on {team} ({btype}, {self._fmt_odds(odds)})")
         return True
 
     def _place_parlay(
@@ -399,7 +401,7 @@ class SportsbookActivity(Activity):
         wager_min: int,
         wager_max: int,
     ) -> bool:
-        games = [e for e in self._events if e.get("eventType", "game") == "game"]
+        games = [e for e in self._events if e.get("eventType", "game") == "game" and not e.get("settled")]
         if len(games) < 2:
             ui.error("Need at least two game events on the board for a parlay.")
             return False
@@ -472,6 +474,9 @@ class SportsbookActivity(Activity):
             return False
         idx = ui.prompt_int("Market number", 1, len(board), default=1) - 1
         market = board[idx]
+        if market.get("resolution") or (market.get("linkedEvent") or {}).get("settled"):
+            ui.error("This market is closed. Load the next slate.")
+            return False
         side_choice = ui.menu_choice(["YES", "NO"], title="Buy side:")
         if side_choice == 0:
             return False
@@ -511,7 +516,7 @@ class SportsbookActivity(Activity):
 
         if self._pending:
             ui.banner("FINAL SCORES")
-            for slip in self._pending:
+            for slip in list(self._pending):
                 events_to_sim = [leg.event for leg in slip.legs] if slip.bet_type == "parlay" else [slip.event]
                 for event in events_to_sim:
                     eid = event.get("eventId") or id(event)
@@ -525,32 +530,41 @@ class SportsbookActivity(Activity):
                 if won:
                     session.wallet.credit(payout, self.info.id, reason)
                     session_net += payout - slip.amount
+                    self._pending.remove(slip)
                     ui.success(f"  WIN: {reason} (+{payout - slip.amount:,} chips)")
                 else:
                     session_net -= slip.amount
+                    self._pending.remove(slip)
                     ui.error(f"  LOSE: {reason} (-{slip.amount:,} chips)")
                 count += 1
             self._pending = []
 
         if self._predictions.positions:
             ui.banner("PREDICTION MARKET RESULTS")
-            for position in self._predictions.positions:
-                market = next(
-                    (m for m in self._predictions.markets if m["marketId"] == position["marketId"]),
-                    None,
-                )
-                if not market:
+            held = {position["marketId"] for position in self._predictions.positions}
+            for market in self._predictions.markets:
+                if market["marketId"] not in held:
                     continue
-                resolution = resolve_market(market, self._events)
-                market["resolution"] = resolution
-                result = resolve_position(position, resolution)
+                event = next((e for e in self._events if e["eventId"] == market.get("linkedEventId")), None) or market.get("linkedEvent")
+                if event and not event.get("settled"):
+                    simulate_event_outcome(self._catalog, event)
+                if event:
+                    market["linkedEvent"] = event
+            results, _ = self._predictions.settle_all(self._events)
+            # Keep uncredited stakes refundable if terminal output is interrupted.
+            self._predictions.positions = [result["position"] for result in results]
+            for result in results:
+                position = result["position"]
+                resolution = result["resolution"]
                 ui.print(f"\n{position['question']}: {resolution.upper()}")
                 if result["won"]:
                     session.wallet.credit(result["payout"], self.info.id, result["reason"])
                     session_net += result["payout"] - position["amount"]
+                    self._predictions.positions.remove(position)
                     ui.success(f"  WIN: {result['reason']}")
                 else:
                     session_net -= position["amount"]
+                    self._predictions.positions.remove(position)
                     ui.error(f"  LOSE: {result['reason']} (-{position['amount']:,} chips)")
                 count += 1
             self._predictions.positions = []
@@ -565,16 +579,18 @@ class SportsbookActivity(Activity):
 
     def _resolve_slip(self, slip: BetSlip) -> tuple[bool, int, str]:
         if slip.bet_type == "parlay":
-            all_won = True
+            winning_odds = []
             for leg in slip.legs:
                 won, _, reason = self._resolve_slip(leg)
                 if not won:
-                    all_won = False
-                    break
-            if not all_won:
-                return False, 0, "Parlay lost — a leg missed"
-            profit = self._profit(slip.amount, slip.odds)
-            return True, slip.amount + profit, f"Parlay cashes ({len(slip.legs)} legs)"
+                    return False, 0, "Parlay lost — a leg missed"
+                if not reason.startswith("Push"):
+                    winning_odds.append(leg.odds)
+            if not winning_odds:
+                return True, slip.amount, "Push — stake returned"
+            odds = winning_odds[0] if len(winning_odds) == 1 else combine_american_odds(winning_odds)
+            profit = self._profit(slip.amount, odds)
+            return True, slip.amount + profit, f"Parlay cashes ({len(winning_odds)} legs)"
 
         event = slip.event
         if slip.bet_type == "moneyline":

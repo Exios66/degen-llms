@@ -66,14 +66,16 @@ def legal_actions(
 
     actions: set[Action] = {Action.HIT, Action.STAND}
 
-    if is_first_action and state.allow_surrender and not hand.is_from_split_aces:
+    if is_first_action and state.allow_surrender and hand.split_count == 0 and not hand.is_from_split_aces:
         actions.add(Action.SURRENDER)
 
-    can_double = len(hand.cards) == 2 and not hand.is_doubled
+    can_double = len(hand.cards) == 2 and not hand.is_doubled and (
+        hand.split_count == 0 or state.allow_double_after_split
+    )
     if can_double and player_bankroll >= hand.bet:
         actions.add(Action.DOUBLE)
 
-    if hand.can_split(MAX_SPLITS) and player_bankroll >= hand.bet:
+    if hand.can_split(MAX_SPLITS) and num_active_hands < MAX_SPLITS + 1 and player_bankroll >= hand.bet:
         actions.add(Action.SPLIT)
 
     if hand.is_from_split_aces and len(hand.cards) >= 2:

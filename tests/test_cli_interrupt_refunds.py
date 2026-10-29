@@ -232,21 +232,25 @@ def test_trading_interrupt_after_settlement_does_not_refund_paid_position(monkey
     ("equestrian", "DressageActivity"),
     ("equestrian", "JumperActivity"),
 ])
-def test_racing_interrupt_during_settlement_refunds_only_remaining_ticket(monkeypatch, module_name, class_name):
+def test_racing_interrupt_during_output_does_not_refund_simulated_results(monkeypatch, module_name, class_name):
+    """The standings output is interruptible; the tickets before it are not."""
     import importlib
     module = importlib.import_module(f"mandalay_bay.activities.{module_name}")
+    stat_id = {"HorseRacingActivity": "horse_racing", "DressageActivity": "dressage", "JumperActivity": "jumper"}[class_name]
     _set_stakes(monkeypatch, module)
     monkeypatch.setattr(module, "animate_countdown", lambda *args, **kwargs: None)
     session = PlayerSession()
-    # Place two tickets, then interrupt after the first payout/loss is committed.
+    # Place two tickets and interrupt inside the finish-order output, after
+    # the simulated race has settled every one of them.
     ui = InterruptUI([1, 1, 1, 1, 1, 1, 2], ("WIN #", "LOSE #"))
     with pytest.raises(KeyboardInterrupt):
         getattr(module, class_name)().run(session, ui)
     assert ui.interrupted
     refunds = [tx.amount for tx in session.wallet.transactions if tx.kind == TransactionKind.REFUND]
-    assert refunds == [10]
+    assert refunds == []  # a simulated outcome must never refund as an unsettled stake
     payout = sum(tx.amount for tx in session.wallet.transactions if tx.kind == TransactionKind.WIN)
-    assert session.wallet.balance == 990 + payout
+    assert session.wallet.balance == 980 + payout
+    assert session.activity_stats[stat_id].hands_or_bets == 1
 
 
 def test_trading_missing_underlying_quote_does_not_debit(monkeypatch):

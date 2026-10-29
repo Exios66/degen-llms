@@ -42,6 +42,38 @@ def test_blackjack_interrupted_round_preserves_only_settled_result(monkeypatch, 
     assert wallet.balance == expected
 
 
+def test_blackjack_activity_records_settled_stats_after_interrupt(monkeypatch):
+    import mandalay_bay.activities.blackjack as module
+
+    session = PlayerSession()
+
+    def interrupted_table(config, wallet, *, activity_id="blackjack", max_rounds=None):
+        # One settled hand reached the shared wallet inside the runner's own
+        # finally; the result print then interrupted the session.
+        wallet.credit(10, activity_id, "Settled hand")
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(module, "pick_stake_tier", lambda *args, **kwargs: SimpleNamespace(description="test"))
+    monkeypatch.setattr(module, "effective_table_stakes", lambda *args, **kwargs: (10, 1000))
+    monkeypatch.setattr("blackjack.runner.run_casino_blackjack", interrupted_table)
+
+    class QuickHandUI:
+        def banner(self, *_a, **_k): pass
+        def dim(self, *_args, **kwargs): pass
+        def error(self, message, **kwargs): assert False, message
+        def success(self, *_a, **_k): pass
+        def chip_line(self, *_a, **_k): pass
+        def pause(self, *_a, **_k): pass
+        def menu_choice(self, *_a, **_k): return 1
+
+    with pytest.raises(KeyboardInterrupt):
+        module.BlackjackActivity().run(session, QuickHandUI())
+    # The settled hand reached both the wallet and the stats ledger exactly once.
+    assert session.wallet.balance == 1010
+    stats = session.activity_stats["blackjack"]
+    assert stats.net_winnings == 10 and stats.hands_or_bets == 1
+
+
 class InterruptUI:
     def __init__(self, choices, interrupt_prefix):
         self.choices = iter(choices)

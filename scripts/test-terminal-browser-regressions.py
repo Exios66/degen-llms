@@ -32,6 +32,11 @@ def main():
         assert 'SAVE LIBRARY' in text().upper(), text()
         print('PASS bare save-create deep link lands on the save library')
 
+        go('floor&floor=Equestrian%20Arena')
+        page.wait_for_function('window.__casinoReady === true')
+        assert 'Equestrian Arena' in text(), text()
+        print('PASS non-default floor deep link renders the requested floor')
+
         go('roulette')
         inputs = page.locator('input[type=number]')
         wager, pick = inputs.nth(0), inputs.nth(1)
@@ -63,6 +68,19 @@ def main():
         page.keyboard.press('s')
         assert page.get_by_role('button', name='Stand (S)', exact=True).count() == 1
         page.get_by_role('button', name='Close', exact=True).click()
+        # Focused editable target: the document handler must ignore the key press.
+        page.evaluate("""() => {
+          const probe = document.createElement('input');
+          probe.id = 'keyboard-isolation-probe';
+          document.body.appendChild(probe);
+          probe.focus();
+        }""")
+        page.keyboard.press('s')
+        assert page.get_by_role('button', name='Stand (S)', exact=True).count() == 1
+        page.evaluate("() => document.getElementById('keyboard-isolation-probe').remove()")
+        # Modified shortcut: Control+s must not trigger the blackjack action either.
+        page.keyboard.press('Control+s')
+        assert page.get_by_role('button', name='Stand (S)', exact=True).count() == 1
         page.keyboard.press('s')
         page.get_by_role('button', name='Leave table', exact=True).wait_for()
         print('PASS blackjack ignores shortcuts while phone is open and settles after closing')

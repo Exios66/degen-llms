@@ -9,6 +9,8 @@ import {
   orderBarVenueDrink,
   settleBarRound,
 } from "../docs/js/bar.js";
+import { ensurePoolComplex, playRingToss } from "../docs/js/pool-complex.js";
+import { applyPhoneEffect } from "../docs/js/phone-contacts.js";
 
 const storage = new Map();
 globalThis.localStorage = {
@@ -97,6 +99,28 @@ test("bar stats survive a save reload", () => {
   assert.equal(bar.lifetimeDrinks, 1);
   assert.equal(bar.venueVisits.betty_bar, 1);
   assert.equal(bar.orders.length, 1);
+});
+
+test("positive phone gifts pay once per choice", () => {
+  const session = new PlayerSession({ chips: 1_000 });
+  session.rewards = {};
+  const before = session.wallet.balance;
+  applyPhoneEffect(session, { chips: 25 }, null, "call:host:loud");
+  applyPhoneEffect(session, { chips: 25 }, null, "call:host:loud");
+  assert.equal(session.wallet.balance, before + 25);
+  applyPhoneEffect(session, { chips: 15 }, null, "call:host:quiet");
+  assert.equal(session.wallet.balance, before + 40);
+  applyPhoneEffect(session, { chips: -10 }, null, "call:host:loud");
+  assert.equal(session.wallet.balance, before + 30);
+});
+
+test("a rejected ring toss does not grant wave-pool progress", () => {
+  const session = new PlayerSession({ chips: 0 });
+  assert.equal(playRingToss(session, 100, 0).ok, false);
+  assert.equal(ensurePoolComplex(session).visitedZones.includes("wave_pool"), false);
+  session.wallet.credit(1_000, "test", "stack");
+  assert.equal(playRingToss(session, 10, 0).ok, true);
+  assert.equal(ensurePoolComplex(session).visitedZones.includes("wave_pool"), true);
 });
 
 console.log(`${cases} resort economy regression cases passed.`);

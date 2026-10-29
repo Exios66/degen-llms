@@ -556,6 +556,18 @@ def ui_regressions(page, failures: list[str]) -> None:
       market.linkedEvent.settled = true;
       predictionPanel.querySelector('.primary').click();
       check('settled_linked_market_not_debited', session.wallet.balance === balanceBeforeRejectedTicket && !book.predictions.positions.length);
+      const [{buildAmenitiesRenderers}, barMod, amenityShell] = await Promise.all([
+        import('/js/casino-amenities-ui.js'), import('/js/bar.js'), import('/js/ui/shell.js'),
+      ]);
+      const bagCtx = { session, runtime: amenityShell.createRuntime(),
+        render() {}, persist() {}, pushView() {}, goBack() {}, navigateTo() {}, showStatus() {} };
+      Object.assign(bagCtx, amenityShell.createShell(bagCtx));
+      bagCtx.el = el;
+      const amenitiesUi = buildAmenitiesRenderers(bagCtx);
+      const barRound = barMod.createBarRound("betty_bar");
+      barMod.orderBarVenueDrink(session, "betty_bar", "betty_comp_marg", barRound);
+      const bagText = amenitiesUi["mall-bag"]().textContent;
+      check('bag_lists_generic_bar_order', bagText.includes("Comp Margarita") && bagText.includes("Betty's Bar"));
       const [{teardownHostedView}, {HoldemTable}, core] = await Promise.all([
         import('/js/activity-teardown.js'), import('/js/holdem/game.js'), import('/js/core.js'),
       ]);

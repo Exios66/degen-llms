@@ -218,11 +218,11 @@ export function playRingToss(session, bet, ringIndex) {
   const rings = ["Inner tube", "Lifeguard tower", "Cabana post"];
   if (!Number.isInteger(ringIndex) || ringIndex < 0 || ringIndex >= rings.length) return { ok: false, message: "Pick a target." };
   const pc = ensurePoolComplex(session);
-  visitZone(session, "wave_pool");
   if (bet < 10) return { ok: false, message: "Minimum $10 ring toss." };
   if (!session.wallet.debit(bet, "pool", "Ring toss")) {
     return { ok: false, message: `Need ${fmtChips(bet)} for rings.` };
   }
+  visitZone(session, "wave_pool");
   const pick = rings[ringIndex];
   const roll = secureRandomInt(1, 10);
   if (roll >= 8) {

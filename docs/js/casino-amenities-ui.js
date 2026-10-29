@@ -3,6 +3,7 @@ import {
   ensureAmenities, purchaseShopItem, listPurchasedItems,
   barForDrink, getStoreById,
 } from "./casino-amenities.js";
+import { getBarVenueById } from "./bar.js";
 import { fmtChips } from "./core.js";
 
 /**
@@ -184,8 +185,12 @@ export function buildAmenitiesRenderers(ctx) {
         el("p", { textContent: `• ${item.name} from ${store.name} — ${fmtChips(item.price)}` }))
       : [el("p", { className: "dim", textContent: "Your bag is empty — browse The Shoppes at Mandalay Place." })];
 
-    const barLines = amenities.barOrders.slice(-10).map((drinkId) => {
-      const bar = barForDrink(drinkId);
+    const recentBarOrders = [
+      ...amenities.barOrders.map((drinkId) => ({ drinkId, venueId: null })),
+      ...(session().bar?.orders ?? []).map((order) => ({ drinkId: order.drinkId, venueId: order.venueId })),
+    ].slice(-10);
+    const barLines = recentBarOrders.map(({ drinkId, venueId }) => {
+      const bar = (venueId ? getBarVenueById(venueId) : null) ?? barForDrink(drinkId);
       const drink = bar?.drinks.find((d) => d.id === drinkId);
       return drink && bar
         ? el("p", { textContent: `• ${drink.name} @ ${bar.name}` })

@@ -1,13 +1,16 @@
 """Arcade Alley catalog, tickets, CLI play, and floor registration."""
 
+from pathlib import Path
+
 from mandalay_bay.activities.registry import ACTIVITIES_BY_ID, FLOOR_ORDER
-from mandalay_bay.activities.arcade import ArcadeActivity, CABINETS
+from mandalay_bay.activities.arcade import ArcadeActivity, CABINETS, _apply_redeem_flag
 from mandalay_bay.arcade_catalog import (
     ARCADE_GAMES,
     payout_from_mult,
     tickets_from_score,
 )
 from mandalay_bay.arcade_state import ArcadeState, ensure_arcade
+from mandalay_bay.saves import SaveLibrary
 from mandalay_bay.session import PlayerSession
 
 
@@ -61,3 +64,24 @@ def test_arcade_redeem_chips() -> None:
     assert result["ok"] is True
     assert result["chips"] == 50
     assert state.tickets == 12
+
+
+def test_arcade_welcome_refill_updates_rewards_and_stays_loadable(tmp_path: Path) -> None:
+    library = SaveLibrary(save_dir=tmp_path / "saves")
+    session = library.create_session(1, player_name="Tester")
+    session.rewards.lifetime_wagered = 20_000
+    session.rewards.redeemed_comps.append("welcome_drink")
+
+    _apply_redeem_flag(session, "arcade_drink_refill")
+
+    assert "welcome_drink" in session.rewards.unlocked_comps
+    assert "welcome_drink" not in session.rewards.redeemed_comps
+    assert session.web_only_state["rpg"]["flags"]["has_welcome_drink_comp"] is True
+
+    library.save_slot(session)
+    loaded = library.load_slot(1)
+
+    assert loaded is not None
+    assert loaded.rewards.lifetime_wagered == 20_000
+    assert "welcome_drink" in loaded.rewards.unlocked_comps
+    assert loaded.web_only_state["rpg"]["flags"]["has_welcome_drink_comp"] is True

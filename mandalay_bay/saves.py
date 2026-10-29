@@ -324,7 +324,13 @@ def session_to_dict(session: PlayerSession) -> dict:
         payload["intoxication"] = asdict(session.intoxication)
     if hasattr(session, "dining") and session.dining is not None:
         payload["dining"] = asdict(session.dining)
-    payload.update(getattr(session, "web_only_state", None) or {})
+    # Web-only blobs are carried through untouched, but they must never replace
+    # a section the CLI models itself (see WEB_ONLY_SAVE_KEYS).
+    payload.update({
+        key: value
+        for key, value in (getattr(session, "web_only_state", None) or {}).items()
+        if key not in payload
+    })
     return payload
 
 

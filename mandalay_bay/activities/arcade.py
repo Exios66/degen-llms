@@ -25,15 +25,14 @@ def _apply_redeem_flag(session: PlayerSession, flag: str) -> None:
     flags = rpg.setdefault("flags", {})
     flags[flag] = True
     if flag == "arcade_drink_refill":
-        rewards = session.web_only_state.setdefault("rewards", {})
-        if isinstance(rewards, dict):
-            unlocked = rewards.setdefault("unlockedComps", [])
-            redeemed = rewards.setdefault("redeemedComps", [])
-            if "welcome_drink" not in unlocked:
-                unlocked.append("welcome_drink")
-            rewards["redeemedComps"] = [c for c in redeemed if c != "welcome_drink"]
-            flags["has_welcome_drink_comp"] = True
-            flags.pop("redeemed_welcome_drink", None)
+        from mandalay_bay.rewards import ensure_rewards
+
+        rewards = ensure_rewards(session)
+        if "welcome_drink" not in rewards.unlocked_comps:
+            rewards.unlocked_comps.append("welcome_drink")
+        rewards.redeemed_comps = [c for c in rewards.redeemed_comps if c != "welcome_drink"]
+        flags["has_welcome_drink_comp"] = True
+        flags.pop("redeemed_welcome_drink", None)
 
 
 class ArcadeActivity(Activity):

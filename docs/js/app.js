@@ -955,13 +955,24 @@ function render() {
 
 function applyDeepView(deepView) {
   if (!deepView) return;
+  const params = new URLSearchParams(window.location.search);
   const poolZone = POOL_LAUNCH_ZONES[deepView];
   if (poolZone) {
     if (openPoolComplexVisual(poolZone, { returnView: "hotel-lobby" })) return;
-    if (RENDERERS[deepView]) pushView(deepView);
+    if (RENDERERS[deepView]) {
+      pushView(deepView, deepView === "floor"
+        ? { floor: FLOOR_ORDER.includes(params.get("floor") ?? "") ? params.get("floor") : FLOOR_ORDER[0] }
+        : {});
+    }
     return;
   }
-  if (RENDERERS[deepView]) pushView(deepView);
+  if (RENDERERS[deepView]) {
+    // Data-backed views need their payload; a bare floor deep link must not
+    // render a menu of "undefined" entries.
+    pushView(deepView, deepView === "floor"
+      ? { floor: FLOOR_ORDER.includes(params.get("floor") ?? "") ? params.get("floor") : FLOOR_ORDER[0] }
+      : {});
+  }
 }
 
 function applyLaunchParams() {

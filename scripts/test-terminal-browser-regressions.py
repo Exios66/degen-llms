@@ -28,7 +28,7 @@ def main():
             page.get_by_role('button', name=label, exact=False).first.click()
 
         go('roulette')
-        inputs = page.locator('.action-bar input[type=number]')
+        inputs = page.locator('input[type=number]')
         wager, pick = inputs.nth(0), inputs.nth(1)
         for amount, number in [('5.5', '7'), ('5', '37'), ('5', '1.5'), ('5', '')]:
             wager.fill(amount)

@@ -15,7 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from smoke_test_helpers import free_port, serve  # noqa: E402
 
 TERMINAL_VIEWS = [
-    "hub", "cashier", "cashier-buy", "cashier-cashout", "cashier-ledger",
+    "hub", "floor", "cashier", "cashier-buy", "cashier-cashout", "cashier-ledger",
     "bank-account", "bank-deposit", "bank-expense", "bank-rename", "bank-ledger",
     "staff-manifest", "stats", "leave", "slots-menu", "sportsbook",
     "sportsbook-prediction", "sportsbook-settle", "high-limit-salon", "foundation-room",
@@ -74,6 +74,7 @@ TERMINAL_FLOW_EXPECTED = {
     "horse-racing": "button:has-text('Place ticket')",
     "cashier": "text=Purchased",
     "stake-tier": ".slot-machine-card",
+    "floor": ".menu-btn .num",
 }
 
 

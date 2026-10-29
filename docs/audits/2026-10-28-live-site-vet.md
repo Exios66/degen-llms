@@ -84,8 +84,8 @@ mirrored runtime data, ready on both pages, script-request ceilings).
 ## Recommendation
 
 Publish `main` through the manual Pages deploy (`gh-pages-deploy-loop`), then
-re-run the live audit. That ships the #158 fixes, including the Ledger Bar
+re-run the live audit. This was done on October 29, 2026. That ships the #158 fixes, including the Ledger Bar
 crash, and the bundling that cuts the module waterfall from ~100 requests per
-page to one. The open perf branch (#159) adds the combined stylesheet, save
-write-amplification and idle-autosave fixes, and this audit script; it should
-be merged and deployed in the same pass.
+page to one. The perf branch (#159) adds the combined stylesheet, save write-amplification
+and idle-autosave fixes, and this audit script; it was merged and deployed in
+the same pass as this report.

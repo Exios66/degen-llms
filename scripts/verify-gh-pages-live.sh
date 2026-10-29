@@ -59,7 +59,9 @@ curl_check() {
   return 0
 }
 
-curl_check "index" "index.html" "$GBP_DEBUG_VERIFY_INDEX" '<script type="module" src="js/app\.js' || true
+# Accept both layouts: the bundled deploy points at site/js/app.js, older
+# deploys at js/app.js.
+curl_check "index" "index.html" "$GBP_DEBUG_VERIFY_INDEX" '<script type="module" src="(site/)?js/app\.js' || true
 # app.js wires renderers; horse canvas helpers live in horse-sprites.js.
 curl_check "app_js" "js/app.js" "$GBP_DEBUG_VERIFY_APP_JS" 'buildRacingRenderers|createRuntime' || true
 curl_check "horse_sprites_js" "js/horse-sprites.js" "$GBP_DEBUG_VERIFY_HORSE_SPRITES" 'createHorseSpriteCanvas|HORSE_SPRITE_ROSTER' || true

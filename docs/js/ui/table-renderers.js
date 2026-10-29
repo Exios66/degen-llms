@@ -600,8 +600,8 @@ export function buildTableRenderers(ctx) {
       value: String(rememberedWager),
     });
     amountInput.oninput = () => {
-      const typed = parseInt(amountInput.value, 10);
-      if (Number.isFinite(typed) && typed > 0) runtime.roulette.lastWager = typed;
+      const typed = Number(amountInput.value);
+      if (Number.isSafeInteger(typed) && typed > 0) runtime.roulette.lastWager = typed;
     };
     const resultEl = el("p", {
       className: "dim",
@@ -635,10 +635,16 @@ export function buildTableRenderers(ctx) {
 
     function doSpin() {
       const bet = BET_TYPES[parseInt(betSelect.value, 10)];
-      const amount = parseInt(amountInput.value, 10);
-      if (amount < act.minBet) {
+      const amount = Number(amountInput.value);
+      if (!Number.isSafeInteger(amount) || amount < wagerStakes.minBet || amount > wagerStakes.maxBet) {
         resultEl.className = "error";
-        resultEl.textContent = `Minimum bet is ${act.minBet}.`;
+        resultEl.textContent = `Enter a whole-chip wager between ${wagerStakes.minBet} and ${wagerStakes.maxBet}.`;
+        return;
+      }
+      const straightPick = bet.kind === "straight" ? Number(straightInput.value) : null;
+      if (bet.kind === "straight" && (straightInput.value.trim() === "" || !Number.isInteger(straightPick) || straightPick < 0 || straightPick > 36)) {
+        resultEl.className = "error";
+        resultEl.textContent = "Choose a whole number from 0 to 36.";
         return;
       }
       if (!ctx.session.wallet.debit(amount, "roulette", `Roulette ${bet.kind}`)) {
@@ -651,7 +657,6 @@ export function buildTableRenderers(ctx) {
       resultEl.className = "dim";
       resultEl.textContent = `${dealer.name}: "${pickQuip(dealer, "deal")}"`;
       runtime.roulette.spinning = true;
-      const straightPick = bet.kind === "straight" ? parseInt(straightInput.value, 10) : null;
       runtime.roulette.pendingSpin = { bet, amount, straightPick, dealer };
       render();
 

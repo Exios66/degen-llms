@@ -1010,6 +1010,9 @@ if (!applyLaunchParams()) {
 }
 
 document.addEventListener("keydown", (e) => {
+  // Text entry and modified shortcuts belong to the focused control, not the casino.
+  if (e.target instanceof Element && (e.target.closest("input, textarea, select, [contenteditable]:not([contenteditable='false'])"))) return;
+  if (e.altKey || e.ctrlKey || e.metaKey || e.repeat) return;
   if (e.key === "p" || e.key === "P") {
     const inCasino = isInCasinoView();
     const blackjackNeedsP = viewStack.at(-1)?.name === "blackjack-play" && runtime.blackjackGame?.pendingAction;
@@ -1019,7 +1022,7 @@ document.addEventListener("keydown", (e) => {
       return;
     }
   }
-  if (!runtime.blackjackGame?.pendingAction) return;
+  if (viewStack.at(-1)?.name !== "blackjack-play" || rewardsPhone?.isOpen() || !runtime.blackjackGame?.pendingAction) return;
   const map = { h: Action.HIT, s: Action.STAND, d: Action.DOUBLE, p: Action.SPLIT, u: Action.SURRENDER };
   const act = map[e.key.toLowerCase()];
   if (act && runtime.blackjackGame.getCurrentLegalActions().has(act)) {

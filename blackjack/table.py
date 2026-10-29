@@ -271,10 +271,12 @@ class Table:
             if isinstance(player, HumanPlayer):
                 outcome.human_net += player_net
 
-        self.display.show_table(self.players, self.dealer, reveal_dealer=True)
-        self.display.show_round_results(outcome.result_lines)
+        # The bankroll has been settled; mark it before any result output,
+        # which can be interrupted by a terminal disconnect or Ctrl+C.
         self.phase = RoundPhase.COMPLETE
         self.shoe.finish_round()
+        self.display.show_table(self.players, self.dealer, reveal_dealer=True)
+        self.display.show_round_results(outcome.result_lines)
         return outcome
 
 

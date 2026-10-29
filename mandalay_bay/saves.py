@@ -505,7 +505,7 @@ def run_save_picker(
 
         name = ui.prompt(f"Player name [{default_name}]: ") or default_name
         label = ui.prompt(f"Save label [Slot {slot.slot_id}]: ") or f"Slot {slot.slot_id}"
-        chips = ui.prompt_int("Starting chips", 100, 1_000_000, default=default_chips)
+        chips = ui.prompt_int("Starting chips", 100, 1_000_000, default=min(1_000_000, max(100, default_chips)))
         session = library.create_session(
             slot.slot_id,
             player_name=name.strip() or default_name,

@@ -15,7 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from smoke_test_helpers import free_port, serve  # noqa: E402
 
 TERMINAL_VIEWS = [
-    "hub", "floor", "cashier", "cashier-buy", "cashier-cashout", "cashier-ledger",
+    "hub", "cashier", "cashier-buy", "cashier-cashout", "cashier-ledger",
     "bank-account", "bank-deposit", "bank-expense", "bank-rename", "bank-ledger",
     "staff-manifest", "stats", "leave", "slots-menu", "sportsbook",
     "sportsbook-prediction", "sportsbook-settle", "high-limit-salon", "foundation-room",
@@ -45,19 +45,58 @@ IGNORED = (
 TERMINAL_FLOWS = [
     ("slots", "slots-menu", [".slot-machine-card", ".slot-spin-btn, .btn.primary"]),
     ("blackjack", "blackjack-menu", [".menu-list li:nth-child(1) .menu-btn"]),
-    ("holdem", "holdem-menu", [".menu-list li:nth-child(1) .menu-btn"]),
-    ("roulette", "roulette", [".menu-list li:nth-child(1) .menu-btn"]),
+    ("holdem", "holdem-menu", [".action-bar .btn.primary"]),
+    ("roulette", "roulette", [".action-bar .btn.primary"]),
     ("craps", "craps", [".action-bar .btn.primary"]),
     ("lottery", "lottery", [".lottery-ticket-card", ".action-bar .btn.primary"]),
     ("sportsbook", "sportsbook", [".menu-list li:nth-child(1) .menu-btn"]),
     ("horse-racing", "horse-racing", [".menu-list li:nth-child(1) .menu-btn"]),
-    ("cashier", "cashier", [".menu-list li:nth-child(1) .menu-btn", ".btn.primary"]),
+    ("cashier", "cashier", [".menu-list li:nth-child(1) .menu-btn"]),
     ("hotel", "hotel-front-desk", [".menu-list li:nth-child(1) .menu-btn"]),
     ("pool", "pool-complex", ["#pool-overlay .pool-zone-card"]),
     ("amenities", "casino-floor", [".menu-list li:nth-child(1) .menu-btn"]),
     ("dining", "hotel-dining", [".dining-card .btn.primary, .menu-list li:nth-child(1) .menu-btn"]),
-    ("stake-tier", "floor", [".menu-list li:nth-child(1) .menu-btn", ".menu-list li:nth-child(2) .menu-btn"]),
+    ("stake-tier", "hub", [
+        '.menu-btn:has-text("Explore Slot Machines")',
+        '.menu-btn:has-text("Mandalay BaySlots")',
+        '.menu-btn:has-text("Penny & Low Limit")',
+    ]),
 ]
+
+
+TERMINAL_FLOW_EXPECTED = {
+    "slots": "p.dim:has-text('over 1 spin(s)')",
+    "blackjack": ".action-bar .btn.primary:has-text('DEAL')",
+    "holdem": ".action-bar .btn:has-text('FOLD')",
+    "roulette": ".machine-led:has-text('SPIN 1')",
+    "craps": ".machine-status:has-text('1 roll(s)')",
+    "sportsbook": "button:has-text('Place ticket')",
+    "horse-racing": "button:has-text('Place ticket')",
+    "cashier": "text=Purchased",
+    "stake-tier": ".slot-machine-card",
+}
+
+
+def walk_terminal_flow(page, name, selectors):
+    """Require every advertised interaction instead of passing when a selector is absent."""
+    dialogs = []
+    def on_dialog(dialog):
+        dialogs.append(dialog.message)
+        dialog.dismiss()
+    page.on("dialog", on_dialog)
+    try:
+        for selector in selectors:
+            node = page.locator(selector).first
+            node.wait_for(state="visible", timeout=10000)
+            node.click(timeout=5000)
+            page.wait_for_timeout(450)
+        expected = TERMINAL_FLOW_EXPECTED.get(name)
+        if expected:
+            page.locator(expected).first.wait_for(state="visible", timeout=10000)
+        if dialogs:
+            raise AssertionError(f"unexpected dialog: {dialogs}")
+    finally:
+        page.remove_listener("dialog", on_dialog)
 
 
 SEED_SLOT = """async ([slotId, chips]) => {
@@ -741,16 +780,16 @@ def main() -> int:
         if not args.rpg_only:
             for name, view, selectors in TERMINAL_FLOWS:
                 errors.clear()
+                failures_before = len(failures)
                 page.goto(f"{base}/index.html?guest=1&chips=250000&view={view}", wait_until="load")
                 page.wait_for_function("window.__casinoReady === true", timeout=15000)
-                for selector in selectors:
-                    node = page.query_selector(selector)
-                    if node:
-                        node.click()
-                        page.wait_for_timeout(400)
+                try:
+                    walk_terminal_flow(page, name, selectors)
+                except Exception as exc:  # noqa: BLE001
+                    failures.append(f"flow:{name}: interaction failed: {exc}")
                 for err in errors:
                     failures.append(f"flow:{name}: {err}")
-                print(f"  flow/{name:<30} {'FAIL' if errors else 'ok'}")
+                print(f"  flow/{name:<30} {'FAIL' if len(failures) > failures_before else 'ok'}")
 
         if not args.terminal_only:
             errors.clear()

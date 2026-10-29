@@ -66,7 +66,7 @@ def resolve_session(args: argparse.Namespace, ui: TerminalUI, library: SaveLibra
 
     if args.slot is not None:
         if args.new_save:
-            occupied = library.load_slot(args.slot) is not None
+            occupied = library.list_slots()[args.slot - 1].occupied
             if occupied and not ui.prompt_yes_no(f"Overwrite save in slot {args.slot}?", default=False):
                 return None
             # create_session's atomic save replaces the old file; deleting first
@@ -81,7 +81,10 @@ def resolve_session(args: argparse.Namespace, ui: TerminalUI, library: SaveLibra
             )
         loaded = library.load_slot(args.slot)
         if loaded is None:
-            ui.error(f"Slot {args.slot} is empty. Use --slot {args.slot} --new-save to create a save.")
+            if library.list_slots()[args.slot - 1].occupied:
+                ui.error(f"Could not load Slot {args.slot}; the save may be damaged.")
+            else:
+                ui.error(f"Slot {args.slot} is empty. Use --slot {args.slot} --new-save to create a save.")
             return None
         loaded.use_color = use_color
         loaded.use_unicode = use_unicode
@@ -109,7 +112,7 @@ def main(argv: list[str] | None = None) -> None:
     ui = TerminalUI(use_color=not args.no_color)
     try:
         session = resolve_session(args, ui, library)
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, EOFError):
         print(f"\n\nLeaving {CASINO_NAME}.")
         sys.exit(0)
     if session is None:
@@ -122,7 +125,7 @@ def main(argv: list[str] | None = None) -> None:
             library=library if not args.no_save else None,
             show_intro=not args.no_intro,
         )
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, EOFError):
         if session.has_save_slot and not args.no_save:
             library.save_slot(session)
             print(f"\n\nProgress saved to slot {session.slot_id}. Balance: ${session.wallet.balance:,}")

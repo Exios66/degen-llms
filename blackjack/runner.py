@@ -5,6 +5,7 @@ from blackjack.cards import Shoe
 from blackjack.config import GameConfig
 from blackjack.display import Display
 from blackjack.table import Table
+from blackjack.rules import RoundPhase
 
 
 def run_casino_blackjack(
@@ -37,9 +38,13 @@ def run_casino_blackjack(
 
         prev_remaining = shoe.remaining
         chips_before = human.bankroll
-        outcome = table.play_round()
-        chips_after = human.bankroll
-        _sync_wallet(wallet, chips_before, chips_after, activity_id)
+        try:
+            outcome = table.play_round()
+        finally:
+            # A settled hand must reach the shared wallet even if result
+            # output is interrupted. Unfinished hands remain uncommitted.
+            if table.phase == RoundPhase.COMPLETE:
+                _sync_wallet(wallet, chips_before, human.bankroll, activity_id)
 
         if shoe.remaining > prev_remaining and shoe.shuffle_count > 1:
             display.shuffle_notice(shoe.last_shuffle_id)

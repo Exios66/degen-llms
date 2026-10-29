@@ -24,6 +24,7 @@ const { HOSTED_ENCOUNTERS, TABLE_STAKE_ACTIVITIES } = await import(
 const { RPG_ITEMS } = await import(join(rpgRoot, "js/systems/Inventory.js"));
 const { DEX_REGISTRY, recordDex } = await import(join(rpgRoot, "js/systems/Dex.js"));
 const { QuestManager } = await import(join(rpgRoot, "js/systems/QuestManager.js"));
+const { DialogueManager } = await import(join(rpgRoot, "js/systems/DialogueManager.js"));
 const { ART_UNIT } = await import(join(rpgRoot, "js/systems/MapTiles.js"));
 const { findPath, nearestReachable } = await import(join(rpgRoot, "js/systems/Pathfinder.js"));
 const {
@@ -71,6 +72,24 @@ const failures = [];
 const fail = (msg) => failures.push(msg);
 let checks = 0;
 const check = (ok, msg) => { checks += 1; if (!ok) fail(msg); };
+
+// Effects on an opening challenge line must survive follow-up dialogue and
+// choices, and effects on a chosen encounter must be delivered exactly once.
+{
+  const manager = new DialogueManager({ hidden: true }, {});
+  manager.load({
+    challenge: { text: "Hello", reputation: { staff: 1 }, next: "choices" },
+    choices: { text: "Choose", choices: [{ label: "Play", reputation: { staff: 2 }, encounter: "craps" }] },
+  });
+  manager._renderNode = (node) => { manager._currentNode = node; };
+  manager.close = (result) => { manager._active = false; manager._resolve(result); };
+  const result = manager.start("challenge");
+  manager._advance(manager.dialogues.challenge);
+  manager._pickChoice(manager.dialogues.choices.choices[0]);
+  const outcome = await result;
+  check(outcome.encounter === "craps" && outcome.reputation?.staff === 3,
+    "dialogue lost or duplicated reputation across a challenge and encounter choice");
+}
 
 // Layers are expensive to build; do it once per map.
 const layers = new Map();

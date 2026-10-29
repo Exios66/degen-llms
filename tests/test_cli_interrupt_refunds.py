@@ -9,6 +9,39 @@ from mandalay_bay.chips import ChipWallet, TransactionKind
 from mandalay_bay.session import PlayerSession
 
 
+@pytest.mark.parametrize("error", [KeyboardInterrupt, EOFError])
+@pytest.mark.parametrize("when,expected", [("action", 1000), ("results", 1010)])
+def test_blackjack_interrupted_round_preserves_only_settled_result(monkeypatch, error, when, expected):
+    from blackjack.cards import Card, Rank, Shoe, Suit
+    from blackjack.config import GameConfig
+    from blackjack.display import Display
+    from blackjack.rules import Action
+    from blackjack.runner import run_casino_blackjack
+
+    shoe = Shoe(num_decks=1)
+    cards = [Rank.TEN, Rank.NINE, Rank.TEN, Rank.SIX, Rank.KING]
+    shoe._cards = [Card(rank, Suit.SPADES) for rank in reversed(cards)]
+    shoe._cut_index = 0
+    monkeypatch.setattr("blackjack.runner.Shoe", lambda **kwargs: shoe)
+    monkeypatch.setattr(Display, "prompt_bet", lambda *args: 10)
+
+    def prompt_action(*args):
+        if when == "action":
+            raise error()
+        return Action.STAND
+
+    def show_results(*args):
+        if when == "results":
+            raise error()
+
+    monkeypatch.setattr(Display, "prompt_action", prompt_action)
+    monkeypatch.setattr(Display, "show_round_results", show_results)
+    wallet = ChipWallet(1000)
+    with pytest.raises(error):
+        run_casino_blackjack(GameConfig(num_decks=1, use_color=False), wallet)
+    assert wallet.balance == expected
+
+
 class InterruptUI:
     def __init__(self, choices, interrupt_prefix):
         self.choices = iter(choices)
@@ -179,6 +212,42 @@ def test_holdem_interrupt_returns_table_stack(monkeypatch):
     assert session.wallet.transactions[-1].description == "Hold'em interrupted — table stack returned"
 
 
+def test_holdem_interrupt_returns_unresolved_blind(monkeypatch):
+    import mandalay_bay.activities.holdem as module
+
+    _set_stakes(monkeypatch, module)
+    original = module.HoldemTable.quick_table
+
+    def table_with_human_big_blind(*args, **kwargs):
+        table = original(*args, **kwargs)
+        table.dealer_index = 3
+        return table
+
+    monkeypatch.setattr(module.HoldemTable, "quick_table", table_with_human_big_blind)
+    session = PlayerSession()
+    ui = InterruptUI([], "Street:")
+    ui.prompt_int = lambda *args, **kwargs: 100
+    with pytest.raises(KeyboardInterrupt):
+        module.HoldemActivity().run(session, ui)
+    assert ui.interrupted
+    assert session.wallet.balance == 1000
+    assert session.activity_stats["holdem"].net_winnings == 0
+
+
+def test_holdem_table_creation_failure_does_not_debit(monkeypatch):
+    import mandalay_bay.activities.holdem as module
+
+    _set_stakes(monkeypatch, module)
+    monkeypatch.setattr(module.HoldemTable, "quick_table", lambda *args, **kwargs: (_ for _ in ()).throw(ValueError("shoe")))
+    session = PlayerSession()
+    ui = InterruptUI([], "never")
+    ui.prompt_int = lambda *args, **kwargs: 100
+    with pytest.raises(ValueError, match="shoe"):
+        module.HoldemActivity().run(session, ui)
+    assert session.wallet.balance == 1000
+    assert not session.wallet.transactions
+
+
 class CrapsInterruptUI(InterruptUI):
     """Places craps wagers, then Ctrl+C while later wagers are pending."""
 
@@ -268,6 +337,20 @@ def test_craps_leave_returns_working_hardways_without_interrupt(monkeypatch):
     descriptions = [tx.description for tx in session.wallet.transactions]
     assert "Craps leave — hard_4 returned" in descriptions
     assert session.activity_stats["craps"].hands_or_bets == 2
+
+
+def test_craps_interrupt_during_animation_settles_all_rolled_bets(monkeypatch):
+    module = _craps_activity(monkeypatch)
+    from mandalay_bay.craps import DiceRoll
+
+    monkeypatch.setattr(module.CrapsTable, "roll", lambda self: DiceRoll(3, 4))
+    monkeypatch.setattr(module, "animate_dice_roll", lambda *args: (_ for _ in ()).throw(KeyboardInterrupt))
+    session = PlayerSession()
+    with pytest.raises(KeyboardInterrupt):
+        module.CrapsActivity().run(session, CrapsInterruptUI(place_side=True))
+    # Pass line wins, Field and Hard 4 lose on seven; none remain working.
+    assert session.wallet.balance == 990
+    assert not any("returned" in tx.description for tx in session.wallet.transactions)
 
 
 def test_roulette_interrupt_during_animation_keeps_resolved_win(monkeypatch):

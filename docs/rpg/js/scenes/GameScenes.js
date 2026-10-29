@@ -1166,7 +1166,7 @@ export class OverworldScene extends Phaser.Scene {
 
     const result = await this.dialogue.start(dialogueId);
     this._applyReputation(result);
-    const encounterId = result.encounter || npc.encounter;
+    const encounterId = result.encounter;
     if (encounterId) {
       await this._runEncounter(encounterId, npc, dealer);
     }
@@ -1352,8 +1352,8 @@ export class OverworldScene extends Phaser.Scene {
     const result = await this.dialogue.start(dialogueId);
     this._applyReputation(result);
 
-    if (result.encounter || npc.encounter) {
-      const encounterId = result.encounter || npc.encounter;
+    if (result.encounter) {
+      const encounterId = result.encounter;
       const encounterNpc = activeDealer
         ? { ...npc, name: activeDealer.name, dealerId: activeDealer.id }
         : npc;

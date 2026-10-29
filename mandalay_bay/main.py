@@ -107,7 +107,11 @@ def main(argv: list[str] | None = None) -> None:
         sys.exit(0)
 
     ui = TerminalUI(use_color=not args.no_color)
-    session = resolve_session(args, ui, library)
+    try:
+        session = resolve_session(args, ui, library)
+    except KeyboardInterrupt:
+        print(f"\n\nLeaving {CASINO_NAME}.")
+        sys.exit(0)
     if session is None:
         sys.exit(0)
 

@@ -388,25 +388,28 @@ class SlotsActivity(Activity):
 
             last_bet = bet
             _contribute_to_progressive(session, machine, bet)
-            spin_pause(0.15)
             reels = _spin_reels(machine)
-            reel_displays = [_display_symbol(r, session.use_unicode) for r in reels]
-            symbol_pool = [_display_symbol(s, session.use_unicode) for s in machine.symbols]
-            animate_reel_tease(ui, symbol_pool, " | ".join(reel_displays))
-
             jackpot_amount = _try_jackpot(session, machine, reels, bet, max_bet)
             win, reason = _payout(reels, bet, machine, jackpot_amount=jackpot_amount, tier_boost=tier_boost)
             spins += 1
+            # Settle the spin before the reveal animation so an interruption
+            # cannot leave a paid spin without its result.
             if win > 0:
                 session.wallet.credit(win, self.info.id, reason)
                 session_net += win if used_voucher else win - bet
+            elif not used_voucher:
+                session_net -= bet
+
+            spin_pause(0.15)
+            reel_displays = [_display_symbol(r, session.use_unicode) for r in reels]
+            symbol_pool = [_display_symbol(s, session.use_unicode) for s in machine.symbols]
+            animate_reel_tease(ui, symbol_pool, " | ".join(reel_displays))
+            if win > 0:
                 if jackpot_amount is not None:
                     ui.success(f"🎰 {reason}")
                 else:
                     ui.success(f"{reason} — Won {win:,} chips!")
             else:
-                if not used_voucher:
-                    session_net -= bet
                 ui.dim("No win this spin.")
 
             if not ui.prompt_yes_no("Spin again?", default=True):

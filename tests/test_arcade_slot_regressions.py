@@ -1,3 +1,5 @@
+import pytest
+
 from mandalay_bay.arcade_games import play_high_roller_breakout, play_neon_invaders, play_strip_cross
 from mandalay_bay.arcade_state import consume_arcade_slot_voucher
 from mandalay_bay.chips import ChipWallet
@@ -118,3 +120,34 @@ def test_dining_gifts_are_included_in_recorded_session_net():
     assert session.activity_stats["dining"].net_winnings == session.wallet.balance - 1000 == 32
     settle_sitting(session, sitting, tip_percent=0)
     assert session.activity_stats["dining"].net_winnings == 32
+
+
+def test_cli_slots_interrupt_during_reveal_keeps_the_spin_outcome(monkeypatch):
+    """Ctrl+C while the reels are still animating must not void a settled spin."""
+    from mandalay_bay.activities import slots
+    from mandalay_bay.stakes import get_tier
+
+    class UI(ScriptUI):
+        def menu_choice(self, *args, **kwargs):
+            return 1
+
+        def prompt_int(self, *args, **kwargs):
+            return 5
+
+        def prompt_yes_no(self, *args, **kwargs):
+            return False
+
+    machine = slots.MACHINES["fortune"]
+    monkeypatch.setattr(slots, "pick_stake_tier", lambda *a, **k: get_tier("penny"))
+    monkeypatch.setattr(slots.SlotsActivity, "_pick_catalog", lambda *a: "main_floor")
+    monkeypatch.setattr(slots, "_spin_reels", lambda _: list(machine.symbols[:3]))
+    monkeypatch.setattr(slots, "_payout", lambda *a, **k: (50, "test win"))
+
+    def interrupted(*args, **kwargs):
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(slots, "animate_reel_tease", interrupted)
+    session = PlayerSession(wallet=ChipWallet(balance=100))
+    with pytest.raises(KeyboardInterrupt):
+        slots.SlotsActivity().run(session, UI())
+    assert session.wallet.balance == 145  # 100 - 5 stake + 50 win

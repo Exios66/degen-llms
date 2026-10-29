@@ -205,6 +205,9 @@ export class SportsbookState {
 
   async refreshBoardAsync(force = false) {
     await this.ensureCatalog();
+    // Load the prediction scenario DB before the board sync; otherwise the
+    // first slate sync runs without it and falls back to pulse-only markets.
+    await this.predictions.ensureCatalog();
     this.refreshBoard(force);
   }
 

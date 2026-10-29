@@ -185,9 +185,13 @@ class Display:
                 return action_map[raw]
             full = raw.upper()
             try:
-                return Action[full]
+                action = Action[full]
             except KeyError:
                 self.print("Invalid action.")
+                continue
+            if action in legal:
+                return action
+            self.print("That action is not available.")
 
     def announce_action(self, player_name: str, action: Action) -> None:
         self.print(f"{player_name} {action.name.lower()}s.")

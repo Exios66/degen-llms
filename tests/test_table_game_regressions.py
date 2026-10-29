@@ -228,6 +228,18 @@ def test_cli_arguments_are_validated_after_overrides():
         apply_args(GameConfig(), args)
 
 
+def test_cli_action_words_respect_legal_actions(monkeypatch):
+    from blackjack.display import Display
+
+    hand = Hand(cards=[card("10"), card("6")])
+    responses = iter(["double", "stand"])
+    monkeypatch.setattr("builtins.input", lambda *_: next(responses))
+    action = Display(GameConfig()).prompt_action(
+        hand, {Action.HIT, Action.STAND}, is_first_action=False
+    )
+    assert action == Action.STAND
+
+
 def test_short_big_blind_still_requires_full_blind_from_active_players():
     table = HoldemTable([HoldemPlayer("You", True, stack=100),
                          HoldemPlayer("SB", False, stack=100),

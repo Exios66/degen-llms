@@ -278,7 +278,9 @@ export function resolveMega(balls, mega, price = 5, { ticketId = "mega", tierId 
   const megaMax = meta.megaMax ?? MEGA_POWERBALL_MAX;
   const prizeMult = meta.prizeMult ?? 1;
   const draw = quickPickMega(ballMax, megaMax);
-  const matched = balls.filter((b) => draw.balls.includes(b)).length;
+  // Match unique picks only; duplicate numbers are rejected by validateMegaPicks
+  // and must not count as multiple hits (parity with the Python resolver).
+  const matched = [...new Set(balls)].filter((b) => draw.balls.includes(b)).length;
   const megaHit = mega === draw.mega;
   const baseWin = (BASE_MEGA_TABLE[`${matched}:${megaHit ? 1 : 0}`] ?? 0) * prizeMult;
   const win = scaleFixedPrize(baseWin, tierId);

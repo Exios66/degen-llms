@@ -7,7 +7,7 @@ import { TradingDeskState, entryCostChips, settlePosition, underlyingSpot } from
 import { eventFromScenario } from "../docs/js/sportSimulator.js";
 import { settleTicket } from "../docs/js/horse_racing.js";
 import { settleDressageTicket, settleJumperTicket } from "../docs/js/equestrian.js";
-import { resolvePick3, resolvePick4, validateMegaPicks, settlePendingLottery } from "../docs/js/lottery.js";
+import { resolvePick3, resolvePick4, resolveMega, validateMegaPicks, settlePendingLottery } from "../docs/js/lottery.js";
 import { PlayerSession } from "../docs/js/core.js";
 
 let cases = 0;
@@ -135,5 +135,39 @@ test("leaving mid-draw settles the pending lottery ticket once", () => {
   assert.equal(settlePendingLottery(session, state), null);
   assert.equal(session.wallet.balance, 1495);
 });
+
+test("duplicate mega picks count once instead of matching the jackpot", () => {
+  const realGetRandomValues = globalThis.crypto.getRandomValues;
+  const raw = [0, 1, 2, 3, 4, 6]; // balls 1-5, powerball 7
+  let index = 0;
+  globalThis.crypto.getRandomValues = (buf) => {
+    buf[0] = raw[index++ % raw.length];
+    return buf;
+  };
+  try {
+    assert.equal(resolveMega([1, 1, 1, 1, 1], 7, 5).win, 10);
+  } finally {
+    globalThis.crypto.getRandomValues = realGetRandomValues;
+  }
+});
+
+const realFetch = globalThis.fetch;
+globalThis.fetch = async (url) => {
+  const name = String(url).split("/").pop();
+  const path = new URL(`../docs/data/${name}`, import.meta.url);
+  if (!fs.existsSync(path)) return { ok: false, status: 404 };
+  return { ok: true, json: async () => json(path) };
+};
+let firstLoad;
+try {
+  firstLoad = new SportsbookState();
+  await firstLoad.refreshBoardAsync(false);
+} finally {
+  globalThis.fetch = realFetch;
+}
+assert(firstLoad.predictions.scenarioDb?.scenarios?.length);
+assert(firstLoad.predictions.markets.some((market) => market.scenarioId));
+cases++;
+console.log("PASS first prediction slate loads the stored scenario database");
 
 console.log(`${cases} market and wagering regression cases passed.`);

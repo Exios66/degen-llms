@@ -437,7 +437,7 @@ export class RewardsPhone {
       const row = document.createElement("button");
       row.type = "button";
       row.className = "rewards-contact-row";
-      row.innerHTML = `<span>${c.emoji ?? "📇"} ${c.resolveName(this.session)}</span>${unread ? `<span class="rewards-contact-unread">${unread}</span>` : ""}`;
+      row.innerHTML = `<span>${c.emoji ?? "📇"} ${escapeHtml(c.resolveName(this.session))}</span>${unread ? `<span class="rewards-contact-unread">${unread}</span>` : ""}`;
       row.onclick = () => {
         this._threadContactId = c.id;
         this._screen = "thread";

@@ -497,6 +497,16 @@ def ui_regressions(page, failures: list[str]) -> None:
       phone.destroy();
       check('phone_disposed', root.childElementCount === 0);
       root.remove();
+      const injSession = new PlayerSession();
+      injSession.staffOverrides = { dealers: {}, npcs: { chip_chandler: { name: '<img src=x onerror=1>' } } };
+      const injRoot = document.createElement('div');
+      document.body.append(injRoot);
+      const injPhone = new RewardsPhone(injRoot, injSession);
+      injPhone.open('connect');
+      const injRow = injRoot.querySelector('.rewards-contact-row');
+      check('contact_name_escaped', Boolean(injRow) && !injRow.querySelector('img') && injRow.textContent.includes('<img'));
+      injPhone.destroy();
+      injRoot.remove();
       const dialogueRoot = document.createElement('div');
       document.body.append(dialogueRoot);
       let items = 0, quests = 0;

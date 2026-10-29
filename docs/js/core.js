@@ -443,10 +443,7 @@ export function loadLibrary() {
     const raw = localStorage.getItem(LIBRARY_KEY);
     if (raw) {
       const lib = normalizeLibrary(JSON.parse(raw));
-      if (lib) {
-        mirrorLibraryToCache(lib);
-        return lib;
-      }
+      if (lib) return lib;
     }
   } catch {
     /* ignore corrupt data */
@@ -456,10 +453,7 @@ export function loadLibrary() {
     const raw = localStorage.getItem(LIBRARY_KEY);
     if (raw) {
       const lib = normalizeLibrary(JSON.parse(raw));
-      if (lib) {
-        mirrorLibraryToCache(lib);
-        return lib;
-      }
+      if (lib) return lib;
     }
   } catch {
     /* ignore */
@@ -495,12 +489,16 @@ function migrateLegacySession() {
 }
 
 function writeLibrary(lib) {
+  // Serialise once: the mirror cache holds the same payload, so re-stringifying
+  // it there would double the cost of every save.
+  let raw = null;
   try {
-    localStorage.setItem(LIBRARY_KEY, JSON.stringify(lib));
+    raw = JSON.stringify(lib);
+    localStorage.setItem(LIBRARY_KEY, raw);
   } catch {
     /* The independent cache can still succeed when the main key fails. */
   }
-  mirrorLibraryToCache(lib);
+  mirrorLibraryToCache(lib, raw);
 }
 
 function touchRecent(lib, slotId) {

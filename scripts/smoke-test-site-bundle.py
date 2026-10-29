@@ -52,8 +52,17 @@ def main() -> int:
         check("terminal-entry-rewired", 'src="site/js/app.js' in index)
         check("rpg-entry-rewired", 'src="../site/rpg/js/main.js' in rpg_index)
         check(
+            "stylesheets-combined",
+            'site/css/casino-combined.css' in index
+            and '<link rel="stylesheet" href="css/' not in index
+            and '../site/css/rpg-combined.css' in rpg_index
+            and '<link rel="stylesheet" href="../css/' not in rpg_index,
+        )
+        check(
             "runtime-data-mirrored",
             (staged / "docs" / "site" / "data" / "sports_scenarios.json").is_file()
+            and (staged / "docs" / "site" / "data" / "guest_directory.json").is_file()
+            and (staged / "docs" / "site" / "rpg" / "data" / "sports_catalog.json").is_file()
             and (staged / "docs" / "site" / "assets").is_dir(),
         )
 

@@ -31,13 +31,16 @@ npx --yes "esbuild@$ESBUILD_VERSION" \
   --legal-comments=none --log-level=error
 
 # Cart/quest/sports asset URLs inside the bundles are relative to the bundle
-# itself, so mirror the runtime data next to the outputs.
-rm -rf "$DOCS_DIR/site/data" "$DOCS_DIR/site/assets"
+# itself, so mirror the runtime data next to both outputs: `../data` from
+# site/js/ and site/rpg/js/ resolves to site/data and site/rpg/data.
+rm -rf "$DOCS_DIR/site/data" "$DOCS_DIR/site/assets" "$DOCS_DIR/site/rpg/data"
 cp -R "$DOCS_DIR/data" "$DOCS_DIR/site/data"
 cp -R "$DOCS_DIR/assets" "$DOCS_DIR/site/assets"
+cp -R "$DOCS_DIR/data" "$DOCS_DIR/site/rpg/data"
 
 python3 - "$DOCS_DIR" <<'PY'
 import pathlib
+import re
 import sys
 
 docs = pathlib.Path(sys.argv[1])
@@ -54,4 +57,39 @@ for html, old, new in rewrites:
         print(f"build-site-bundles: {html.name} already rewired")
     else:
         print(f"build-site-bundles: WARNING no entry script tag in {html.name}", file=sys.stderr)
+
+LINK_RE = re.compile(r'<link rel="stylesheet" href="([^"]+)"(?: crossorigin)?(?:\s*/)?>')
+
+
+def combine_stylesheets(html_path: pathlib.Path, out_name: str) -> None:
+    """Merge the render-blocking stylesheet <link>s into one ordered file."""
+    text = html_path.read_text()
+    links = list(LINK_RE.finditer(text))
+    if len(links) <= 1:
+        return
+    parts: list[str] = []
+    for match in links:
+        href = match.group(1)
+        if href.startswith(("http://", "https://", "/")):
+            return  # cross-origin or absolute: leave the original links alone
+        css_path = (html_path.parent / href.split("?")[0]).resolve()
+        try:
+            parts.append(css_path.read_text().rstrip() + "\n")
+        except OSError:
+            return  # unresolvable stylesheet: leave the original links alone
+    joined = "\n".join(parts)
+    out_dir = docs / "site" / "css"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    (out_dir / out_name).write_text(joined)
+    first, last = links[0].start(), links[-1].end()
+    html_path.write_text(
+        text[:first]
+        + f'<link rel="stylesheet" href="{"../site/css/" if html_path.parent.name == "rpg" else "site/css/"}{out_name}?v=__ASSET_SHA__">'
+        + text[last:]
+    )
+    print(f"build-site-bundles: combined {len(links)} stylesheets -> site/css/{out_name}")
+
+
+combine_stylesheets(docs / "index.html", "casino-combined.css")
+combine_stylesheets(docs / "rpg" / "index.html", "rpg-combined.css")
 PY

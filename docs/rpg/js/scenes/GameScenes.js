@@ -1464,7 +1464,8 @@ export class OverworldScene extends Phaser.Scene {
     if (this._saveTimer < 2000) return;
     this._saveTimer = 0;
     const { x: tx, y: ty } = this.playerTile();
-    this.saveAdapter.updatePosition(tx, ty, this.currentMapId);
-    this.saveAdapter.persist();
+    // Standing still writes nothing: SaveAdapter skips a save when the tile is
+    // unchanged, which is the common case between waypoints.
+    this.saveAdapter.persistPosition(tx, ty, this.currentMapId);
   }
 }

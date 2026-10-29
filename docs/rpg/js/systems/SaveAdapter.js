@@ -39,7 +39,27 @@ export class SaveAdapter {
   persist() {
     if (this.session.slotId != null) {
       saveSlot(this.session);
+      const rpg = this.rpg;
+      this._persistedPosition = `${rpg.mapId}:${rpg.x},${rpg.y}`;
     }
+  }
+
+  /**
+   * Autosave the player's tile, but only when it actually changed.
+   *
+   * The overworld autosaves every couple of seconds; a guest standing still has
+   * nothing new to write, and each save serialises the whole session.
+   * @returns {boolean} whether a write happened
+   */
+  persistPosition(x, y, mapId = "main_resort") {
+    const rpg = this.rpg;
+    const key = `${mapId}:${x},${y}`;
+    if (this._persistedPosition === key && rpg.x === x && rpg.y === y && rpg.mapId === mapId) {
+      return false;
+    }
+    this.updatePosition(x, y, mapId);
+    this.persist();
+    return true;
   }
 
   hudLines() {

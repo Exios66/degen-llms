@@ -265,6 +265,13 @@ export function buildGentlemansClubRenderers(ctx) {
       const start = () => {
         if (timer) return;
         timer = setInterval(() => {
+          // app.js render() replaces the whole view, orphaning this meter. Stop
+          // instead of ticking a detached node at 20 Hz forever.
+          if (!meterEl.isConnected) {
+            clearInterval(timer);
+            timer = null;
+            return;
+          }
           meter += dir * 0.04;
           if (meter >= 1) { meter = 1; dir = -1; }
           if (meter <= 0) { meter = 0; dir = 1; }

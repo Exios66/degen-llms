@@ -177,3 +177,94 @@ def test_holdem_interrupt_returns_table_stack(monkeypatch):
     assert ui.interrupted
     assert session.wallet.balance == 1000
     assert session.wallet.transactions[-1].description == "Hold'em interrupted — table stack returned"
+
+
+class CrapsInterruptUI(InterruptUI):
+    """Places craps wagers, then Ctrl+C while later wagers are pending."""
+
+    def __init__(self, *, place_side=False, interrupt_side_prompt=None, interrupt_hardway_prompt=None):
+        super().__init__([1], "never-matches")
+        self.place_side = place_side
+        self.side_prompts = 0
+        self.hardway_prompts = 0
+        self.interrupt_side_prompt = interrupt_side_prompt
+        self.interrupt_hardway_prompt = interrupt_hardway_prompt
+
+    def menu_choice(self, *args, **kwargs):
+        return 1  # Pass Line
+
+    def prompt_int(self, label, minimum, maximum, **kwargs):
+        if "Pass Line amount" in label:
+            return 10
+        if label.startswith("Field") or "Hard 4" in label:
+            return 10
+        return 0
+
+    def prompt_yes_no(self, prompt, default=True):
+        if "one-roll side bets" in prompt:
+            self.side_prompts += 1
+            if self.side_prompts == self.interrupt_side_prompt:
+                raise KeyboardInterrupt
+            return self.place_side
+        if "hardways" in prompt:
+            self.hardway_prompts += 1
+            if self.hardway_prompts == self.interrupt_hardway_prompt:
+                raise KeyboardInterrupt
+            return True
+        return default
+
+
+def _craps_activity(monkeypatch):
+    import mandalay_bay.activities.craps as module
+    from mandalay_bay.craps import DiceRoll
+
+    _set_stakes(monkeypatch, module)
+    # Come-out 6: the Pass Line point stays working and Hard 4 does not resolve.
+    monkeypatch.setattr(module.CrapsTable, "roll", lambda self: DiceRoll(3, 3))
+    monkeypatch.setattr(module, "animate_dice_roll", lambda *args, **kwargs: None)
+    return module
+
+
+def test_craps_interrupt_returns_working_line_and_hardways(monkeypatch):
+    module = _craps_activity(monkeypatch)
+    session = PlayerSession()
+    ui = CrapsInterruptUI(interrupt_side_prompt=2)
+    with pytest.raises(KeyboardInterrupt):
+        module.CrapsActivity().run(session, ui)
+    assert session.wallet.balance == 1000
+    descriptions = [tx.description for tx in session.wallet.transactions]
+    assert "Craps leave — line returned" in descriptions
+    assert "Craps leave — hard_4 returned" in descriptions
+
+
+def test_craps_interrupt_returns_unrolled_side_stakes(monkeypatch):
+    module = _craps_activity(monkeypatch)
+    session = PlayerSession()
+    ui = CrapsInterruptUI(place_side=True, interrupt_hardway_prompt=1)
+    with pytest.raises(KeyboardInterrupt):
+        module.CrapsActivity().run(session, ui)
+    assert session.wallet.balance == 1000
+    descriptions = [tx.description for tx in session.wallet.transactions]
+    assert "Craps leave — line returned" in descriptions
+    assert "Craps leave — field returned" in descriptions
+
+
+def test_craps_leave_returns_working_hardways_without_interrupt(monkeypatch):
+    module = _craps_activity(monkeypatch)
+    session = PlayerSession()
+
+    class LeaveUI(CrapsInterruptUI):
+        def __init__(self):
+            super().__init__()
+            self._choices = 0
+
+        def menu_choice(self, *args, **kwargs):
+            self._choices += 1
+            return 1 if self._choices == 1 else 4  # Pass Line, then leave
+
+    module.CrapsActivity().run(session, LeaveUI())
+    # 10 won on the Pass Line point plus the 10 back from the working hardway.
+    assert session.wallet.balance == 1010
+    descriptions = [tx.description for tx in session.wallet.transactions]
+    assert "Craps leave — hard_4 returned" in descriptions
+    assert session.activity_stats["craps"].hands_or_bets == 2

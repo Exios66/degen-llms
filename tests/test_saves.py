@@ -1,8 +1,12 @@
 from pathlib import Path
+from unittest.mock import Mock
+
+import pytest
 
 from mandalay_bay.bank_account import fund_bank_from_outside
 from mandalay_bay.chips import ChipWallet
-from mandalay_bay.saves import SaveLibrary
+from mandalay_bay.display import TerminalUI
+from mandalay_bay.saves import SaveLibrary, run_save_picker
 from mandalay_bay.session import PlayerSession
 from mandalay_bay.staff_manifest import update_staff_override
 
@@ -92,3 +96,41 @@ def test_web_only_state_cannot_override_modeled_save_sections() -> None:
     restored = session_from_dict(data)
     assert restored.rewards.lifetime_wagered == 12_345
     assert restored.web_only_state["rpg"] == {"mapId": "sky_bridge"}
+
+
+@pytest.mark.parametrize("requested,expected", [
+    (-1, 100), (99, 100), (100, 100), (500, 500),
+    (1_000_000, 1_000_000), (1_000_001, 1_000_000),
+])
+def test_save_picker_clamps_and_explains_starting_chip_default(tmp_path, requested, expected):
+    library = SaveLibrary(tmp_path)
+    ui = Mock(spec=TerminalUI)
+    ui.menu_choice.return_value = 1
+    ui.prompt.return_value = ""
+    ui.prompt_int.side_effect = lambda *args, **kwargs: kwargs["default"]
+
+    session = run_save_picker(ui, library, default_chips=requested)
+
+    ui.prompt_int.assert_called_once_with("Starting chips", 100, 1_000_000, default=expected)
+    assert session.wallet.balance == expected
+    assert library.load_slot(1).wallet.balance == expected
+    if requested != expected:
+        ui.dim.assert_called_once()
+        message = ui.dim.call_args.args[0]
+        assert f"--chips {requested:,}" in message
+        assert f"defaulting to {expected:,}" in message
+    else:
+        ui.dim.assert_not_called()
+
+
+def test_save_picker_allows_overriding_clamped_default(tmp_path):
+    ui = Mock(spec=TerminalUI)
+    ui.menu_choice.return_value = 1
+    ui.prompt.return_value = ""
+    ui.prompt_int.return_value = 250
+    library = SaveLibrary(tmp_path)
+
+    session = run_save_picker(ui, library, default_chips=2_000_000)
+
+    ui.prompt_int.assert_called_once_with("Starting chips", 100, 1_000_000, default=1_000_000)
+    assert session.wallet.balance == library.load_slot(1).wallet.balance == 250

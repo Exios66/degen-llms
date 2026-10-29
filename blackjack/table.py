@@ -92,9 +92,7 @@ class Table:
 
         if dealer_should_peek(dealer_up) and dealer_bj:
             self.dealer.reveal_hole()
-            self.display.print("Dealer has blackjack.")
-            self.display.show_table(self.players, self.dealer, reveal_dealer=True)
-            return self._settle(outcome, state)
+            return self._settle(outcome, state, announce_dealer_blackjack=True)
 
         if not dealer_bj:
             self.phase = RoundPhase.PLAYER_TURNS
@@ -231,9 +229,14 @@ class Table:
         self.display.banner("DEALER DRAWS")
         while dealer_should_hit(self.dealer.hand, self.config):
             self.dealer.receive(self.shoe.deal())
-        self.display.show_table(self.players, self.dealer, reveal_dealer=True)
 
-    def _settle(self, outcome: RoundOutcome, state: TableState) -> RoundOutcome:
+    def _settle(
+        self,
+        outcome: RoundOutcome,
+        state: TableState,
+        *,
+        announce_dealer_blackjack: bool = False,
+    ) -> RoundOutcome:
         self.phase = RoundPhase.SETTLEMENT
         dealer_bj = state.dealer_has_blackjack or self.dealer.hand.is_blackjack
         if not self.dealer.hole_revealed:
@@ -275,6 +278,8 @@ class Table:
         # which can be interrupted by a terminal disconnect or Ctrl+C.
         self.phase = RoundPhase.COMPLETE
         self.shoe.finish_round()
+        if announce_dealer_blackjack:
+            self.display.print("Dealer has blackjack.")
         self.display.show_table(self.players, self.dealer, reveal_dealer=True)
         self.display.show_round_results(outcome.result_lines)
         return outcome

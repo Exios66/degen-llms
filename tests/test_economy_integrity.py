@@ -163,3 +163,31 @@ def test_save_picker_routes_delete_then_exit(tmp_path, monkeypatch) -> None:
     library = SaveLibrary(tmp_path)
     assert run_save_picker(ui, library) is None
     delete_flow.assert_called_once_with(ui, library)
+
+
+def test_failed_slot_overwrite_preserves_the_previous_save(tmp_path, monkeypatch) -> None:
+    from mandalay_bay.main import build_parser, resolve_session
+
+    library = SaveLibrary(tmp_path)
+    library.create_session(1, player_name="Original", starting_chips=777)
+    args = build_parser().parse_args(["--slot", "1", "--new-save", "--save-dir", str(tmp_path)])
+    ui = Mock()
+    ui.prompt_yes_no.return_value = True
+
+    from mandalay_bay.saves import _atomic_write_json
+
+    def fail_slot_write(path, payload):
+        if path.name.startswith("slot_"):
+            raise OSError("disk error")
+        _atomic_write_json(path, payload)
+
+    with monkeypatch.context() as patch:
+        patch.setattr("mandalay_bay.saves._atomic_write_json", fail_slot_write)
+        with pytest.raises(OSError):
+            resolve_session(args, ui, library)
+
+    reopened = SaveLibrary(tmp_path)
+    survivor = reopened.load_slot(1)
+    assert survivor is not None
+    assert survivor.player_name == "Original"
+    assert survivor.wallet.balance == 777

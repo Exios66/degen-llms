@@ -15,6 +15,7 @@ export function createStripCross(canvas, api) {
   let player = { c: 4, r: ROWS - 1, dir: "up", anim: 0, hop: 0 };
   let hazards = [];
   let score = 0;
+  let bestRow = ROWS - 1;
   let lives = 3;
   let running = false;
   let raf = 0;
@@ -84,6 +85,7 @@ export function createStripCross(canvas, api) {
   }
 
   function end(cleared) {
+    if (!running) return;
     running = false;
     cancelAnimationFrame(raf);
     if (cleared) fx.confetti(W / 2, 40);
@@ -211,7 +213,7 @@ export function createStripCross(canvas, api) {
   }
 
   function onKey(e) {
-    if (!running || deadFlash > 0) return;
+    if (!running || deadFlash > 0 || player.hop > 0) return;
     const k = e.key;
     let moved = false;
     if (k === "ArrowLeft" || k === "a") {
@@ -228,7 +230,10 @@ export function createStripCross(canvas, api) {
       player.r = Math.max(0, player.r - 1);
       player.dir = "up";
       moved = true;
-      score += 10;
+      if (player.r < bestRow) {
+        score += (bestRow - player.r) * 10;
+        bestRow = player.r;
+      }
     }
     if (k === "ArrowDown" || k === "s") {
       player.r = Math.min(ROWS - 1, player.r + 1);
@@ -245,6 +250,7 @@ export function createStripCross(canvas, api) {
   return {
     start() {
       score = 0;
+      bestRow = ROWS - 1;
       lives = 3;
       won = false;
       time = 0;

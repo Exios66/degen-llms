@@ -35,6 +35,7 @@ export function createShowgirlBeat(canvas, api) {
   }
 
   function end(cleared) {
+    if (!running) return;
     running = false;
     cancelAnimationFrame(raf);
     if (cleared) fx.confetti(W / 2, H * 0.35);
@@ -205,6 +206,9 @@ export function createShowgirlBeat(canvas, api) {
   }
 
   function onKey(e) {
+    // Browsers repeat a held key. In a rhythm game that would fire the same
+    // pad many times a second and drain lives after one wrong hold.
+    if (e.repeat) return;
     if (KEYS[e.key] != null) {
       e.preventDefault();
       press(KEYS[e.key]);

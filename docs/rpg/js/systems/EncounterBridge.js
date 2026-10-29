@@ -6,8 +6,8 @@ import {
   HIGH_LIMIT_SALON_CHIP_MIN,
   canEnterFoundationRoom,
   canEnterHighLimitSalon,
-} from "../../../js/venues.js?v=f59ce31";
-import { canEnterGentlemansClub } from "../../../js/gentlemans-club.js?v=f59ce31";
+} from "../../../js/venues.js?v=fd94a65";
+import { canEnterGentlemansClub } from "../../../js/gentlemans-club.js?v=fd94a65";
 import { createCardSpriteRow } from "../../../js/ui/card-sprites.js";
 import { RouletteOverlay } from "./overlays/RouletteOverlay.js";
 import { HoldemOverlay } from "./overlays/HoldemOverlay.js";
@@ -34,6 +34,7 @@ export class BlackjackOverlay {
     this.dealerProfile = null;
     this.dealerName = "Dealer";
     this._settlementQuipShown = false;
+    this._natural21Shown = false;
   }
 
   isActive() {
@@ -47,6 +48,7 @@ export class BlackjackOverlay {
     this.dealerProfile = options.dealerProfile ?? null;
     this.dealerName = options.dealerName ?? this.dealerProfile?.name ?? "Dealer";
     this._settlementQuipShown = false;
+    this._natural21Shown = false;
     this.session.recordVisit("blackjack");
     this.root.hidden = false;
 
@@ -190,7 +192,10 @@ export class BlackjackOverlay {
       let suffix = "";
       if (row.blackjack) {
         suffix = " [BJ]";
-        this.hooks.onNatural21?.();
+        if (!this._natural21Shown) {
+          this._natural21Shown = true;
+          this.hooks.onNatural21?.();
+        }
       } else if (row.bust) suffix = " [BUST]";
       else if (row.surrendered) suffix = " [SURR]";
       const heading = document.createElement("div");
@@ -300,6 +305,7 @@ export class BlackjackOverlay {
           this.sessionNet += game.humanNet;
           game.beginRound();
           this._settlementQuipShown = false;
+          this._natural21Shown = false;
           this._injectDealerQuip("deal");
           this._render();
         };
@@ -409,7 +415,7 @@ export class EncounterBridge {
       ? await this._startHosted(encounterId, context)
       : await this._startBespoke(encounterId, context);
 
-    if (encounterId === "blackjack") {
+    if (encounterId === "blackjack" && !result?.cancelled) {
       this.questManager?.advance("dana_lucky_hand");
       this.session.ensureRpgState().flags.played_blackjack = true;
     }
@@ -459,6 +465,10 @@ export class EncounterBridge {
         resolve({ net });
       });
       this.diningOverlay.open(spec.venueId ?? null);
+      if (!this.diningOverlay.active) {
+        this.diningOverlay.onceClosed(null);
+        resolve({ net: 0 });
+      }
     });
   }
 
@@ -472,6 +482,10 @@ export class EncounterBridge {
         resolve({ net });
       });
       this.barOverlay.open(spec.venueId ?? null);
+      if (!this.barOverlay.active) {
+        this.barOverlay.onceClosed(null);
+        resolve({ net: 0 });
+      }
     });
   }
 
@@ -485,6 +499,10 @@ export class EncounterBridge {
         resolve({ net });
       });
       this.poolOverlay.open(spec.zoneId ?? "hub");
+      if (!this.poolOverlay.active) {
+        this.poolOverlay.onceClosed(null);
+        resolve({ net: 0 });
+      }
     });
   }
 
@@ -500,7 +518,7 @@ export class EncounterBridge {
     const stakeActivity = TABLE_STAKE_ACTIVITIES[encounterId];
     if (stakeActivity && this.terminalHost) {
       const tier = await this.terminalHost.pickStakeTier(stakeActivity);
-      if (!tier) return { net: 0 };
+      if (!tier) return { net: 0, cancelled: true };
       const stakes = effectiveTableStakes(tier, this.session.wallet.balance);
       openOpts.tier = tier;
       openOpts.minBet = stakes.minBet;

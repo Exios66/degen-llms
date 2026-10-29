@@ -14,7 +14,7 @@ export function el(tag, attrs = {}, children = []) {
     if (k === "className") node.className = v;
     else if (k === "textContent") node.textContent = v;
     else if (k === "innerHTML") node.innerHTML = v;
-    else if (k === "disabled") node.disabled = Boolean(v);
+    else if (k === "disabled" || k === "checked" || k === "selected") node[k] = Boolean(v);
     else if (k.startsWith("on")) node[k.toLowerCase()] = v;
     else node.setAttribute(k, v);
   }

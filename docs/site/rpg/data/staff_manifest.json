@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "npcs": [
+    {
+      "id": "chip_chandler",
+      "name": "Chip Chandler",
+      "role": "floor_host",
+      "context": "Lobby host who knows every pit rotation and where the action is tonight."
+    },
+    {
+      "id": "barkeep_betty",
+      "name": "Barkeep Betty",
+      "role": "bartender",
+      "context": "Runs Betty's Bar — comp drinks for tier members, gossip for everyone else."
+    },
+    {
+      "id": "pavilion_paula",
+      "name": "Pavilion Paula",
+      "role": "racing_host",
+      "context": "Racing pavilion greeter; knows the ponies and the paddock mood."
+    },
+    {
+      "id": "tourist_tina",
+      "name": "Tourist Tina",
+      "role": "guest",
+      "context": "First-timer on the floor, always asking who's dealing and where to eat."
+    }
+  ]
+}

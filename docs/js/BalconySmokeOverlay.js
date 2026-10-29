@@ -47,6 +47,7 @@ export class BalconySmokeOverlay {
     this.statusLine = "";
     this.exhaleBurst = 0;
     this._raf = 0;
+    this._steady = false;
     this._onKey = (e) => {
       if (e.key === "Escape" && this.active) {
         e.preventDefault();
@@ -86,6 +87,7 @@ export class BalconySmokeOverlay {
     this.sitting = createBalconySitting(this.session);
     this.statusLine = `${started.roomLabel} balcony · visit #${started.visits}`;
     this.exhaleBurst = 0;
+    this._steady = false;
     this.active = true;
     this.root.classList.add("balcony-smoke-overlay--open");
     this.root.setAttribute("aria-hidden", "false");
@@ -107,6 +109,7 @@ export class BalconySmokeOverlay {
     if (!this.active) return;
     this.active = false;
     this.sitting = null;
+    this._steady = false;
     this._stopMotion();
     this.root.classList.remove("balcony-smoke-overlay--open");
     this.root.setAttribute("aria-hidden", "true");
@@ -165,9 +168,11 @@ export class BalconySmokeOverlay {
     const done = hits >= BALCONY_HIT_MAX;
     const haze = Math.min(1, hits / BALCONY_HIT_MAX);
 
+    if (this._steady) this.root.classList.add("balcony-smoke-overlay--steady");
+    else this.root.classList.remove("balcony-smoke-overlay--steady");
     this.root.replaceChildren();
     this.root.appendChild(el("div", {
-      className: `balcony-smoke-overlay__stage balcony-smoke-overlay__stage--haze${haze.toFixed(2).replace(".", "")}`,
+      className: "balcony-smoke-overlay__stage",
       style: `--balcony-haze: ${haze}; --balcony-hits: ${hits}`,
     }, [
       this._buildSky(),
@@ -176,6 +181,7 @@ export class BalconySmokeOverlay {
       this._buildForeground(),
       this._buildHud(room, intox, hits, done),
     ]));
+    this._steady = true;
   }
 
   _buildSky() {

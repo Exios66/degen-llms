@@ -64,11 +64,11 @@ export function settleDressageTicket(slip, results) {
     const payout = payoutWin(slip.amount, slip.odds);
     return { won: true, payout, net: payout - slip.amount, reason: `Win — #${slip.entry} placed 1st` };
   }
-  if (slip.betType === "place" && pos <= 2) {
+  if (slip.betType === "place" && pos > 0 && pos <= 2) {
     const payout = slip.amount * 2;
     return { won: true, payout, net: payout - slip.amount, reason: `Place — #${slip.entry} placed ${pos}` };
   }
-  if (slip.betType === "show" && pos <= 3) {
+  if (slip.betType === "show" && pos > 0 && pos <= 3) {
     const payout = slip.amount * 2;
     return { won: true, payout, net: payout - slip.amount, reason: `Show — #${slip.entry} placed ${pos}` };
   }
@@ -139,11 +139,11 @@ export function settleJumperTicket(slip, results) {
     const payout = payoutWin(slip.amount, slip.odds);
     return { won: true, payout, net: payout - slip.amount, reason: `Win — #${slip.entry} finished 1st` };
   }
-  if (slip.betType === "place" && pos <= 2) {
+  if (slip.betType === "place" && pos > 0 && pos <= 2) {
     const payout = slip.amount * 2;
     return { won: true, payout, net: payout - slip.amount, reason: `Place — #${slip.entry} finished ${pos}` };
   }
-  if (slip.betType === "show" && pos <= 3) {
+  if (slip.betType === "show" && pos > 0 && pos <= 3) {
     const payout = slip.amount * 2;
     return { won: true, payout, net: payout - slip.amount, reason: `Show — #${slip.entry} finished ${pos}` };
   }

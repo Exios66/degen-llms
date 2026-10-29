@@ -1,3 +1,5 @@
+import { teardownHostedView } from "./activity-teardown.js";
+import { escapeHtml } from "./html.js";
 import {
   CASINO_NAME, ACTIVITIES, FLOOR_ORDER, fmtChips,
   saveSlot, loadSlot, createSlot, deleteSlot, listSlots, recentSlots, formatSaveTime,
@@ -78,6 +80,8 @@ const ctx = {
   persist,
   render,
   recordActivityVisit,
+  recordActivityVisitOnce,
+  clearActivityVisit,
   recordActivityResult,
   settingsBar,
 };
@@ -145,9 +149,21 @@ function recordActivityVisit(activity) {
   onActivityVisit(session, activity);
 }
 
+function recordActivityVisitOnce(activity) {
+  runtime._visitRecorded ??= new Set();
+  if (runtime._visitRecorded.has(activity)) return;
+  runtime._visitRecorded.add(activity);
+  recordActivityVisit(activity);
+}
+
+function clearActivityVisit(activity) {
+  runtime._visitRecorded?.delete(activity);
+}
+
 function recordActivityResult(activity, net, bets = 1) {
   session.recordResult(activity, net, bets);
   onSessionSwing(session, activity, net);
+  clearActivityVisit(activity);
 }
 
 function mountRewardsPhone() {
@@ -329,6 +345,7 @@ function enterCasino(nextSession) {
   session = nextSession;
   // A new sitting starts every table, machine, and counter from scratch; going
   // through createRuntime keeps this from drifting as buckets are added.
+  runtime._visitRecorded?.clear();
   Object.assign(runtime, createRuntime());
   resetSportsbookFromSession();
   views.reset([{ name: "hub", data: {} }]);
@@ -347,10 +364,15 @@ function enterCasino(nextSession) {
 }
 
 function returnToSavePicker() {
+  teardownHostedView(ctx, viewStack.at(-1)?.name, { clearSlotsSpinTimers });
+  clearSlotsSpinTimers();
+  runtime.marketTicker?.stop?.();
+  runtime.marketTicker = null;
   persist();
   stopCasinoClock();
   stopCasinoTimeTicker();
-  rewardsPhone?.close();
+  rewardsPhone?.destroy();
+  rewardsPhone = null;
   arcadeOverlay?.close();
   diningOverlay?.close();
   barOverlay?.close();
@@ -409,11 +431,13 @@ function settingsBar() {
         if (runtime.blackjackGame) {
           if (!confirm("Leave the blackjack table and return to the save library?")) return;
           finishBlackjack(true);
+          returnToSavePicker();
           return;
         }
         if (runtime.holdem) {
           if (!confirm("Leave the Hold'em table and return to the save library?")) return;
           finishHoldem(true);
+          returnToSavePicker();
           return;
         }
         returnToSavePicker();
@@ -459,7 +483,7 @@ function renderSavePicker() {
     menuList.appendChild(el("li", {}, [
       el("button", {
         className: "menu-btn",
-        innerHTML: `<span class="num">${i + 1})</span> ${label}`,
+        innerHTML: `<span class="num">${i + 1})</span> ${escapeHtml(label)}`,
         onclick: () => handleSlotChoice(slot),
       }),
     ]));
@@ -511,7 +535,7 @@ function renderSavePicker() {
       rpgList.appendChild(el("li", {}, [
         el("button", {
           className: "menu-btn",
-          innerHTML: `<span class="num">→</span> Slot ${slot.slotId} — ${slot.playerName} (${mode})`,
+          innerHTML: `<span class="num">→</span> Slot ${slot.slotId} — ${escapeHtml(slot.playerName)} (${mode})`,
           onclick: () => {
             persist();
             window.location.href = `./rpg/?slot=${slot.slotId}&skipIntro=1`;
@@ -587,7 +611,7 @@ function renderSaveDelete() {
     menuList.appendChild(el("li", {}, [
       el("button", {
         className: "menu-btn",
-        innerHTML: `<span class="num">${i + 1})</span> Slot ${slot.slotId} — ${slot.playerName} (${fmtChips(slot.balance)})`,
+        innerHTML: `<span class="num">${i + 1})</span> Slot ${slot.slotId} — ${escapeHtml(slot.playerName)} (${fmtChips(slot.balance)})`,
         onclick: () => {
           if (confirm(`Delete Slot ${slot.slotId}? This cannot be undone.`)) {
             deleteSlot(slot.slotId);
@@ -649,9 +673,10 @@ function renderHub() {
       el("p", { className: "subtitle", textContent: away ? `On the floor at ${dest.shortName}:` : "On the floor today:" }),
       ...FLOOR_ORDER.map((floor) => {
         const acts = Object.values(ACTIVITIES).filter((a) => a.floor === floor);
+        const names = acts.map((a) => getActivityBranding(session, a.id, a.name).name).join(", ");
         return el("div", {
           className: "hub-feature",
-          innerHTML: `<strong>${floor}</strong> — ${acts.map((a) => a.name).join(", ")}`,
+          innerHTML: `<strong>${floor}</strong> — ${names}`,
         });
       }),
       away ? el("p", { className: "dim", textContent: dest.floorBlurb }) : null,
@@ -793,9 +818,10 @@ function renderFloor({ floor }) {
 }
 
 function renderLeave() {
+  const property = casinoDisplayName(session);
   return el("div", { className: "panel" }, [
     banner("Leave Casino"),
-    el("p", { textContent: "Are you sure you want to leave The Mandalay Bay?" }),
+    el("p", { textContent: `Are you sure you want to leave ${property}?` }),
     chipLine(),
     el("div", { className: "action-bar" }, [
       el("button", {
@@ -803,7 +829,7 @@ function renderLeave() {
         textContent: "Leave",
         onclick: () => {
           persist();
-          showStatus(`Thanks for visiting ${CASINO_NAME}. Final balance: ${fmtChips(session.wallet.balance)}`);
+          showStatus(`Thanks for visiting ${property}. Final balance: ${fmtChips(session.wallet.balance)}`);
           returnToSavePicker();
         },
       }),
@@ -817,12 +843,13 @@ function renderLeave() {
 
 function renderNotFound({ requestedView } = {}) {
   const label = requestedView ? `"${requestedView}"` : "this screen";
+  const property = casinoDisplayName(session);
   return el("div", { className: "error-screen panel" }, [
-    banner(CASINO_NAME),
+    banner(property),
     el("pre", {
       className: "error-ascii",
       textContent: `╔══════════════════════════════════════╗
-║         THE MANDALAY BAY             ║
+║      ${property.toUpperCase().padStart(18).slice(0, 18).padEnd(18)}      ║
 ║      ░░░  WRONG FLOOR  ░░░           ║
 ╚══════════════════════════════════════╝`,
     }),
@@ -830,7 +857,7 @@ function renderNotFound({ requestedView } = {}) {
     el("p", { className: "error-slots", textContent: "🎰 7️⃣ ❓" }),
     el("p", {
       className: "error-message",
-      innerHTML: `This table isn't on the floor.<br>Screen ${label} is not available at The Mandalay Bay.`,
+      innerHTML: `This table isn't on the floor.<br>Screen ${label} is not available at ${property}.`,
     }),
     el("div", { className: "error-actions" }, [
       el("button", {
@@ -911,7 +938,8 @@ function render() {
   }
   const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
   const slotsSpinning = runtime.slots?.spinning === true;
-  if (!reduceMotion && !slotsSpinning) {
+  const rouletteSpinning = runtime.roulette?.spinning === true;
+  if (!reduceMotion && !slotsSpinning && !rouletteSpinning) {
     app.classList.remove("view-transition");
     void app.offsetWidth;
     app.classList.add("view-transition");

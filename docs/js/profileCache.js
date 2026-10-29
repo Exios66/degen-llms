@@ -12,14 +12,19 @@ export const PROFILE_CACHE_VERSION = 1;
 /**
  * Write a full snapshot of the save library to the profile cache.
  * @param {object} lib
+ * @param {string | null} [serialized] — `JSON.stringify(lib)` when the caller
+ *   already has it; the mirror is a wrapper around the same payload.
  */
-export function mirrorLibraryToCache(lib) {
+export function mirrorLibraryToCache(lib, serialized = null) {
   try {
-    localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify({
-      version: PROFILE_CACHE_VERSION,
-      savedAt: new Date().toISOString(),
-      library: lib,
-    }));
+    const payload = serialized
+      ? `{"version":${PROFILE_CACHE_VERSION},"savedAt":"${new Date().toISOString()}","library":${serialized}}`
+      : JSON.stringify({
+        version: PROFILE_CACHE_VERSION,
+        savedAt: new Date().toISOString(),
+        library: lib,
+      });
+    localStorage.setItem(PROFILE_CACHE_KEY, payload);
   } catch {
     /* quota / private mode */
   }

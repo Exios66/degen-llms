@@ -21,7 +21,10 @@ Playfields render at **720×840** (2× the CRT aspect) with procedural pixel spr
 
 - Play debit counts as a wager (MGM Rewards handle).
 - Skill payouts scale ~0–3× the play cost.
-- **Arcade tickets** from score (`score / 100`, +2 on clear) redeem for small chip packs, a free-spin voucher flag, or a welcome-drink refill.
+- **Arcade tickets** from score (`score / 100`, +2 on clear) redeem for:
+  - Small chip packs (+50 / +150)
+  - **Free-spin voucher** — next slot pull costs 0 chips
+  - **Welcome drink refill** — re-unlocks the Sapphire welcome cocktail on Rewards
 
 ## Persistence
 

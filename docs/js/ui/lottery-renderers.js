@@ -17,14 +17,16 @@ import {
   ticketKind,
   validateMegaPicks,
   classifyLotteryWin,
+  settlePendingLottery,
 } from "../lottery.js";
 import { applyTierSpeedCss, getActivityTiming } from "../rewards-perks.js";
 import { getTier, getTierPayoutBoost } from "../stakes.js";
+import { getActivityBranding } from "../strip-destinations.js";
 
 export function buildLotteryRenderers(ctx) {
   const {
     el, banner, chipLine, goBack, render, persist,
-    recordActivityVisit, recordActivityResult,
+    recordActivityVisitOnce, recordActivityResult,
   } = ctx;
   const runtime = ctx.runtime;
 
@@ -253,23 +255,9 @@ export function buildLotteryRenderers(ctx) {
 
   function finishPendingResult() {
     const L = ensureLotteryState();
-    const pending = L.pendingOutcome;
-    if (!pending) return;
-    const { result, price, winTier } = pending;
-    L.tickets += 1;
-    L.sessionNet -= price;
-    if (result.win > 0) {
-      ctx.session.wallet.credit(result.win, "lottery", result.reason);
-      L.sessionNet += result.win;
-    }
-    L.lastResult = result;
-    L.winTier = winTier;
-    L.pendingOutcome = null;
-    L.drawing = false;
-    L.scratching = false;
+    const result = settlePendingLottery(ctx.session, L);
+    if (!result) return;
     L.scratchRevealed = ticketKind(result.ticketId) === "scratch";
-    L.revealStep = result.draw?.length ?? 0;
-    L.displayDraw = result.draw ?? [];
     persist();
     render();
   }
@@ -407,7 +395,7 @@ export function buildLotteryRenderers(ctx) {
       ]);
     }
 
-    recordActivityVisit("lottery");
+    recordActivityVisitOnce("lottery");
     persist();
 
     const ticketId = L.lastTicketId || "pick3";
@@ -555,7 +543,7 @@ export function buildLotteryRenderers(ctx) {
 
     const boost = getTierPayoutBoost(tier?.id);
     return el("div", { className: "panel lottery-panel" }, [
-      banner("Lottery Counter — Mandalay Lottery"),
+      banner(`Lottery Counter — ${getActivityBranding(ctx.session, "lottery", "Lottery").name}`),
       lotteryCabinet({
         celebrate: L.winTier && L.lastResult?.win > 0 ? L.winTier : null,
         screenChildren: [

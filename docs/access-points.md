@@ -21,6 +21,8 @@ Every way to play or read about **The Mandalay Bay**.
 | Hotel lobby | `https://exios66.github.io/degen-llms/?view=hotel-lobby` |
 | Pixel RPG | `https://exios66.github.io/degen-llms/rpg/` |
 
+**Web-only highlights:** [Strip Ride](strip-ride.md) limo / Uber / Lyft to themed away casinos; Rewards Phone audio + Connect dial; dynamic viewport / safe-area chrome for overlays and the phone shell.
+
 ## CLI quick reference
 
 ```bash

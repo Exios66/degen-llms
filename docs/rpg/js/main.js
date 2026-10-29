@@ -11,7 +11,7 @@ import {
   HoldemOverlay,
   RhythmOverlay,
   VegasStripDriveOverlay,
-} from "./systems/EncounterBridge.js?v=f59ce31";
+} from "./systems/EncounterBridge.js?v=fd94a65";
 import { TerminalHostOverlay } from "./systems/TerminalHostOverlay.js";
 import { DiningOverlay } from "../../js/DiningOverlay.js";
 import { BarOverlay } from "../../js/BarOverlay.js";
@@ -298,6 +298,9 @@ async function startOverworld(activeSession) {
       default: "arcade",
       arcade: { gravity: { y: 0 }, debug: false },
     },
+    // Our AudioManager owns BGM/SFX; skip Phaser's own WebAudio manager so boot
+    // does not build (or block on) a second AudioContext before any gesture.
+    audio: { noAudio: true },
     // RESIZE, not FIT: the world is square and phones are not, so FIT letterboxed
     // the game into a band. The canvas takes the whole shell and the camera
     // decides how much of the property fits (see OverworldScene._fitCamera).
@@ -336,7 +339,7 @@ async function startOverworld(activeSession) {
     audio: audioManager,
     touchPad,
     onOpenMenu: (page) => menu?.open(page),
-    isMenuOpen: () => Boolean(menu?.isActive()),
+    isMenuOpen: () => Boolean(menu?.isActive() || rewardsPhone?.isOpen()),
     onMapBanner: (label, phaseLabel) => showMapBanner(label, phaseLabel),
     onEgg: (eggId) => {
       if (!discoverEgg(session, eggId)) return;

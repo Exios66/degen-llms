@@ -4,13 +4,20 @@ import {
   ASSET_CLASSES, INSTRUMENTS, entryCostChips, filterContracts,
 } from "../tradingDesk.js";
 import { effectiveTableStakes, formatStakeRange } from "../stakes.js";
+import { getActivityBranding } from "../strip-destinations.js";
+import { refundTradingPositions } from "../pendingRefunds.js";
 
 export function buildTradingDeskRenderers(ctx) {
   const {
     el, banner, chipLine, showStatus, menu, pushView, popView, goBack,
-    render, persist, recordActivityVisit, recordActivityResult,
+    render, persist, recordActivityVisitOnce, clearActivityVisit, recordActivityResult,
   } = ctx;
   const runtime = ctx.runtime;
+
+  function tradingBannerTitle() {
+    const brand = getActivityBranding(ctx.session, "trading_desk", "Trading Desk");
+    return `Trading Floor — ${brand.name}`;
+  }
 
   function stopTicker() {
     if (runtime.marketTicker?.stop) {
@@ -19,26 +26,45 @@ export function buildTradingDeskRenderers(ctx) {
     }
   }
 
+  function leaveTradingDesk() {
+    if (runtime.tradingDesk.positions.length) {
+      const refunded = refundTradingPositions(
+        ctx.session,
+        "trading_desk",
+        runtime.tradingDesk.positions,
+        "Trading leave — open positions refunded",
+      );
+      runtime.tradingDesk.positions = [];
+      if (refunded > 0) {
+        showStatus(`Returned ${refunded.toLocaleString()} chips from unsettled positions.`, "success");
+        persist();
+      }
+    }
+    stopTicker();
+    clearActivityVisit("trading_desk");
+    goBack();
+  }
+
   function renderTradingDesk() {
     const act = ACTIVITIES.trading_desk;
     const open = runtime.tradingDesk.positions.length;
     if (ctx.session.wallet.balance < act.minBet && open === 0) {
       stopTicker();
       return el("div", { className: "panel" }, [
-        banner("Trading Floor"),
+        banner(tradingBannerTitle()),
         el("p", { className: "error", textContent: `You need at least ${act.minBet} chips to trade.` }),
         el("div", { className: "action-bar" }, [
           el("button", { className: "btn", textContent: "Back", onclick: () => { stopTicker(); popView(); render(); } }),
         ]),
       ]);
     }
-    recordActivityVisit("trading_desk");
+    recordActivityVisitOnce("trading_desk");
     persist();
 
     if (!runtime.tradingDesk.catalog) {
       runtime.tradingDesk.ensureCatalog().then(() => render());
       return el("div", { className: "panel" }, [
-        banner("Trading Floor — Mandalay Markets"),
+        banner(tradingBannerTitle()),
         chipLine(),
         el("p", { className: "dim", textContent: "Loading contract book…" }),
       ]);
@@ -134,7 +160,7 @@ export function buildTradingDeskRenderers(ctx) {
       : `Tape & charts isolated to ${assetFilter.toUpperCase()} underlyings — review 1D/1W activity, then buy.`;
 
     return el("div", { className: "panel" }, [
-      banner("Trading Floor — Mandalay Markets"),
+      banner(tradingBannerTitle()),
       chipLine(),
       assetChips,
       el("p", { className: "dim market-ticker-scope-hint", textContent: scopeHint }),
@@ -149,7 +175,7 @@ export function buildTradingDeskRenderers(ctx) {
         ["Buy contract", "Settle / expire positions", "Next contract page"],
         "Trading Floor:",
         (choice) => {
-          if (choice === 0) { stopTicker(); goBack(); return; }
+          if (choice === 0) { leaveTradingDesk(); return; }
           if (choice === 1) { pushView("trading-buy"); }
           else if (choice === 2) { stopTicker(); pushView("trading-settle"); }
           else if (choice === 3) {
@@ -236,8 +262,11 @@ export function buildTradingDeskRenderers(ctx) {
           textContent: "Buy",
           onclick: () => {
             const c = selectedContract();
-            const qty = Math.max(1, parseInt(qtyInput.value, 10) || 1);
+            const qty = Number(qtyInput.value);
+            if (!c) { alert("Select an available contract."); return; }
+            if (!Number.isSafeInteger(qty) || qty < 1 || qty > 20) { alert("Quantity must be a whole number from 1 to 20."); return; }
             const cost = entryCostChips(c, qty);
+            if (cost < stakes.minBet) { alert(`Minimum trade cost is ${stakes.minBet} chips.`); return; }
             if (cost > stakes.maxBet) { alert(`Cost exceeds stake max (${stakes.maxBet}).`); return; }
             if (!ctx.session.wallet.debit(cost, "trading_desk", `Buy ${c.instrument} ${c.symbol}`)) {
               alert("Insufficient chips."); return;

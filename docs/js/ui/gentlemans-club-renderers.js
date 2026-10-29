@@ -138,10 +138,19 @@ export function buildGentlemansClubRenderers(ctx) {
 
   function renderBar() {
     if (ctx.barOverlay) {
-      ctx.barOverlay.setSession(session());
-      ctx.barOverlay.open("velvet_ledger");
+      const gate = canEnterGentlemansClub(session());
       return el("div", { className: "panel" }, [
-        el("p", { className: "dim", textContent: "Opening The Ledger Bar overlay…" }),
+        statusBanner(),
+        banner("The Ledger Bar"),
+        !gate.ok ? el("p", { className: "error", textContent: gate.reason }) : null,
+        el("button", {
+          className: "btn primary", textContent: "Open The Ledger Bar", disabled: !gate.ok,
+          onclick: () => {
+            ctx.barOverlay.setSession(session());
+            ctx.barOverlay.open("velvet_ledger");
+          },
+        }),
+        el("button", { className: "btn", textContent: "Back", onclick: () => goBack() }),
       ]);
     }
     const log = el("div", { className: "log-area" });
@@ -256,6 +265,13 @@ export function buildGentlemansClubRenderers(ctx) {
       const start = () => {
         if (timer) return;
         timer = setInterval(() => {
+          // app.js render() replaces the whole view, orphaning this meter. Stop
+          // instead of ticking a detached node at 20 Hz forever.
+          if (!meterEl.isConnected) {
+            clearInterval(timer);
+            timer = null;
+            return;
+          }
           meter += dir * 0.04;
           if (meter >= 1) { meter = 1; dir = -1; }
           if (meter <= 0) { meter = 0; dir = 1; }

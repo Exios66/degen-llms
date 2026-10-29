@@ -319,6 +319,7 @@ export function createSitting(venueId) {
   return {
     venueId,
     tab: 0,
+    encounterChips: 0,
     coursesCleared: 0,
     drinksThisSitting: 0,
     fullness: 0,
@@ -374,6 +375,7 @@ function applyEffect(session, sitting, effect = {}) {
   if (effect.chips) {
     if (effect.chips > 0) {
       session.wallet.credit(effect.chips, "dining", "Dining encounter tip");
+      sitting.encounterChips = (sitting.encounterChips ?? 0) + effect.chips;
       notes.push(`+${effect.chips} chips`);
     } else if (effect.chips < 0) {
       const cost = Math.abs(effect.chips);
@@ -421,6 +423,8 @@ export function orderAndConsume(session, sitting, itemId, pace = "pace", rng = M
   if (sitting.busted || sitting.closed) {
     return { ok: false, message: "This sitting is over — settle the tab." };
   }
+  if (sitting.pendingEncounter) return { ok: false, message: "Resolve the current encounter before ordering another course." };
+  if (!["pace", "clean_plate", "chase_shots"].includes(pace)) return { ok: false, message: "Choose a dining pace." };
   const gate = canEnterDining(session);
   if (!gate.ok) return gate;
 
@@ -516,10 +520,12 @@ export function orderAndConsume(session, sitting, itemId, pace = "pace", rng = M
 }
 
 export function resolveEncounter(session, sitting, choiceId) {
+  if (sitting.closed) return { ok: false, message: "This sitting is over." };
   const pending = sitting.pendingEncounter;
   if (!pending) return { ok: false, message: "No encounter in progress." };
   const enc = DINING_ENCOUNTERS.find((e) => e.id === pending.id);
-  const choice = enc?.choices.find((c) => c.id === choiceId) ?? pending.choices[0];
+  const choice = (enc?.choices ?? pending.choices).find((c) => c.id === choiceId);
+  if (!choice) return { ok: false, message: "Choose one of the encounter responses." };
   const notes = applyEffect(session, sitting, choice.effect);
   const dining = ensureDining(session);
   if (!dining.encountersSeen.includes(pending.id)) dining.encountersSeen.push(pending.id);
@@ -554,8 +560,9 @@ export function settleSitting(session, sitting, tipPercent = 18) {
   const prev = dining.venueHighScores[sitting.venueId] ?? 0;
   if (sitting.score > prev) dining.venueHighScores[sitting.venueId] = sitting.score;
   session.recordVisit("dining");
-  session.recordResult("dining", -sitting.tab, sitting.coursesCleared || 1);
+  session.recordResult("dining", (sitting.encounterChips ?? 0) - sitting.tab, sitting.coursesCleared || 1);
   sitting.closed = true;
+  sitting.pendingEncounter = null;
   const venue = getVenueById(sitting.venueId);
   return {
     ok: true,

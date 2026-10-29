@@ -1,6 +1,32 @@
 import { secureRandomInt } from "./core.js";
 import { getTierPayoutBoost } from "./stakes.js";
 
+/**
+ * Settle a ticket whose draw/scratch reveal was interrupted by leaving the
+ * table. Returns the pending result, or null when there is nothing to settle.
+ * The wallet is credited before the animation in normal play; this covers the
+ * teardown path where the reveal never finishes.
+ */
+export function settlePendingLottery(session, state) {
+  const pending = state?.pendingOutcome;
+  if (!pending) return null;
+  const { result, price, winTier } = pending;
+  state.tickets = (state.tickets ?? 0) + 1;
+  state.sessionNet = (state.sessionNet ?? 0) - price;
+  if (result.win > 0) {
+    session.wallet.credit(result.win, "lottery", result.reason);
+    state.sessionNet += result.win;
+  }
+  state.lastResult = result;
+  state.winTier = winTier;
+  state.pendingOutcome = null;
+  state.drawing = false;
+  state.scratching = false;
+  state.revealStep = result.draw?.length ?? 0;
+  state.displayDraw = result.draw ?? [];
+  return result;
+}
+
 /** Corrected Powerball-style ranges (docs / real lottery feel). */
 export const MEGA_BALLS = 5;
 export const MEGA_BALL_MAX = 70;
@@ -181,10 +207,10 @@ export function validateMegaPicks(
   if (!Array.isArray(balls) || balls.length !== count || new Set(balls).size !== count) {
     return `Need exactly ${count} unique lucky numbers from 1–${ballMax}.`;
   }
-  if (balls.some((b) => b < 1 || b > ballMax)) {
+  if (balls.some((b) => !Number.isInteger(b) || b < 1 || b > ballMax)) {
     return `Lucky numbers must be between 1 and ${ballMax}.`;
   }
-  if (!Number.isFinite(powerball) || powerball < 1 || powerball > megaMax) {
+  if (!Number.isInteger(powerball) || powerball < 1 || powerball > megaMax) {
     return `Powerball must be between 1 and ${megaMax}.`;
   }
   return null;
@@ -201,7 +227,7 @@ export function resolvePick3(picks, price = 2, { ticketId = "pick3" } = {}) {
   const draw = drawDigits(3);
   let win = 0;
   let reason;
-  if (picks.every((d, i) => d === draw[i])) {
+  if (picks.length === 3 && picks.every((d, i) => d === draw[i])) {
     win = price * 500;
     reason = `Straight hit ${draw.join(" ")} — ${win.toLocaleString()} chips!`;
   } else if ([...picks].sort().join() === [...draw].sort().join()) {
@@ -226,7 +252,7 @@ export function resolvePick4(picks, price = 2, { ticketId = "pick4" } = {}) {
   const draw = drawDigits(4);
   let win = 0;
   let reason;
-  if (picks.every((d, i) => d === draw[i])) {
+  if (picks.length === 4 && picks.every((d, i) => d === draw[i])) {
     win = price * 5000;
     reason = `Straight hit ${draw.join(" ")} — ${win.toLocaleString()} chips!`;
   } else if ([...picks].sort().join() === [...draw].sort().join()) {
@@ -252,7 +278,9 @@ export function resolveMega(balls, mega, price = 5, { ticketId = "mega", tierId 
   const megaMax = meta.megaMax ?? MEGA_POWERBALL_MAX;
   const prizeMult = meta.prizeMult ?? 1;
   const draw = quickPickMega(ballMax, megaMax);
-  const matched = balls.filter((b) => draw.balls.includes(b)).length;
+  // Match unique picks only; duplicate numbers are rejected by validateMegaPicks
+  // and must not count as multiple hits (parity with the Python resolver).
+  const matched = [...new Set(balls)].filter((b) => draw.balls.includes(b)).length;
   const megaHit = mega === draw.mega;
   const baseWin = (BASE_MEGA_TABLE[`${matched}:${megaHit ? 1 : 0}`] ?? 0) * prizeMult;
   const win = scaleFixedPrize(baseWin, tierId);
@@ -285,12 +313,11 @@ const SCRATCH_TIERS = {
   ],
 };
 
-function scratchPrize(tiers) {
-  const roll = secureRandomInt(0, 9999) / 10000;
+export function scratchPrize(tiers, roll = secureRandomInt(0, 9999) / 10000) {
   let acc = 0;
   for (const [weight, prize] of tiers) {
     acc += weight;
-    if (roll <= acc) return prize;
+    if (roll < acc) return prize;
   }
   return 0;
 }

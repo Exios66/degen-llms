@@ -37,6 +37,19 @@ Salon tiers (401K and No Limit) apply across **every** machine and table on the 
 
 Max bet is capped by your current chip balance. Progressive machines display the current jackpot in the machine picker.
 
+## Destination exclusives (Strip Ride)
+
+On the web terminal, **Strip Ride** limo / Uber / Lyft travel swaps you onto away-property floors. Each destination adds **five exclusive cabinets** (including a signature progressive) and hides `homeOnly` machines such as **Mandalay Fortune**:
+
+| Destination | Exclusives | Signature progressive |
+|-------------|------------|------------------------|
+| Luxor | Obelisk, Sphinx, Scarab Stampede, Nile Nights, Beam of Ra | Beam of Ra |
+| Excalibur | Castle Jackpot, Joust, Dragon Keep, Round Table, Holy Grail Spin | Holy Grail |
+| Bellagio | Fountain Fortune, Conservatory, Lake Lights, Glass Garden, Prima Fontana | Prima Fontana |
+| Circa | Neon Stadium, Fremont Flash, Vegas Vamp, Stadium Swipe, Downtown Drop | Downtown Drop |
+
+Away slot boards also use destination menu themes (`data-destination` CSS tokens). See [Strip Ride](strip-ride.md).
+
 ## Game flow
 
 ```
@@ -69,18 +82,18 @@ The flagship wide-area progressive at Mandalay Bay and across MGM properties:
 - **Bet range:** $1–$3 per spin (penny-slot style)
 - **Jackpot trigger:** Three Megabucks symbols (💵 💵 💵) on the payline
 - **Qualification:** Must bet the **maximum** ($3) to be eligible for the progressive
-- **Base pays:** Triple 7s (80x), BAR×3 (20x), and partial Megabuck matches
+- **Base pays:** Triple 7s (200x), BAR×3 (50x), and partial Megabuck matches
 
 ## Mandalay Fortune (classic paytable)
 
 | Result | Multiplier |
 |--------|------------|
-| 7 — 7 — 7 | 100x |
-| 💎 — 💎 — 💎 | 50x |
-| 🔔 — 🔔 — 🔔 | 25x |
-| BAR — BAR — BAR | 15x |
-| 🍒 — 🍒 — 🍒 | 10x |
-| 🍒 — 🍒 (first two) | 2x |
+| 7 — 7 — 7 | 200x |
+| 💎 — 💎 — 💎 | 100x |
+| 🔔 — 🔔 — 🔔 | 50x |
+| BAR — BAR — BAR | 30x |
+| 🍒 — 🍒 — 🍒 | 20x |
+| 🍒 — 🍒 (first two) | 4x |
 | 🍒 (first reel only) | 1x (bet returned) |
 
 Each machine has its own symbols, weights, and paytable. See the in-game paytable when you sit down at a machine.

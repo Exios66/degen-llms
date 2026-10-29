@@ -43,9 +43,10 @@ The project riffs on real Vegas mechanics:
 | Zone | Highlights |
 |------|------------|
 | **Casino floor** | Table games, slots, lottery, sports book, trading floor, arcade alley, racing, equestrian |
-| **Casino amenities** | Shoppes at Mandalay Place, three bars, intoxication tracking |
+| **Casino amenities** | Shoppes at Mandalay Place (16 stores / 81 SKUs), three bars, intoxication tracking |
 | **Resort dining** | Aureole, Border Grill, Stripsteak — eat/drink capacity minigame + encounters |
-| **Hotel tower** | Front desk, hallway mini-game, in-room TV/phone/minibar |
+| **Hotel tower** | Front desk, hallway mini-game, in-room TV/phone/minibar, suite balcony POV |
+| **Strip Ride** | Web-only limo / Uber travel to Luxor, Excalibur, Bellagio, Circa with themed menus |
 | **Pool complex** | Wave pool, hot tubs, cabanas, beach club, aquarium |
 | **VIP venues** | High Limit salon, Foundation Room, Gentleman's Club / Velvet Ledger (chip- and tier-gated) |
 
@@ -65,7 +66,8 @@ The project began as a digital blackjack CLI and grew into a multi-surface resor
 6. **Phase 6** — Trading Floor (Mandalay Markets), stored sports/prediction scenario DBs
 7. **Phase 7** — Resort dining overlays (capacity minigame, drink-scaled encounters) with CLI/RPG parity
 8. **Phase 8** — Arcade Alley CRT cabinets, Vegas Strip Drive, Gentleman's Club, suite balcony POV
-9. **Ongoing** — Art polish, new resort vignettes, and market catalog expansion
+9. **Phase 9** — Strip Ride destinations (Luxor / Excalibur / Bellagio / Circa), Rewards Phone audio, Shoppes expansion, destination menu themes
+10. **Ongoing** — Art polish, new resort vignettes, and market catalog expansion
 
 ## See also
 

@@ -331,6 +331,10 @@ export function paytableEntries(machine, tierBoost = 1.0) {
     if (bits.length === 3 && bits[0] === bits[1] && bits[1] === bits[2]) {
       const sym = machine.symbols.find((s) => s.name === bits[0]);
       label = sym ? `${sym.display} × 3` : `${bits[0]} × 3`;
+    } else if (bits.length === 3) {
+      label = bits
+        .map((name) => machine.symbols.find((s) => s.name === name)?.display ?? name)
+        .join(" / ");
     } else if (bits.length === 2) {
       const sym = machine.symbols.find((s) => s.name === bits[0]);
       label = sym ? `${sym.display} × 2` : `${bits[0]} × 2`;

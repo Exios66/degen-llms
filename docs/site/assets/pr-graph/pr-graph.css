@@ -1,0 +1,372 @@
+/* PR development graph — Quarto embed (Mandalay Bay / Posit docs) */
+
+.pr-graph-page #title-block-header {
+  margin-bottom: 0.75rem;
+}
+
+.pr-graph-shell {
+  --prg-bg: #eef0f3;
+  --prg-panel: #f7f8fa;
+  --prg-border: #d5d9e0;
+  --prg-ink: #1f2430;
+  --prg-muted: #5c6575;
+  --prg-accent: #c5050c;
+  --prg-edge: rgba(90, 130, 180, 0.35);
+  --prg-draft: #9aa3b2;
+  --prg-open: #2f6fed;
+  --prg-merged: #2f9e5d;
+  --prg-closed: #c0392b;
+  --prg-review: #7b5cff;
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+  color: var(--prg-ink);
+  background:
+    linear-gradient(180deg, #f4f6f8 0%, var(--prg-bg) 55%, #e6e9ee 100%);
+  border: 1px solid var(--prg-border);
+  border-radius: 0.35rem;
+  overflow: hidden;
+  margin: 0.5rem 0 1.5rem;
+  /* Fixed viewport so the node list scrolls instead of pushing the canvas off-screen */
+  height: min(78vh, 820px);
+  max-height: 820px;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  position: relative;
+  /* Isolate from Quarto page-columns grid placement */
+  grid-column: 1 / -1;
+  width: 100%;
+  contain: layout;
+}
+
+.pr-graph-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem 1rem;
+  padding: 0.65rem 0.9rem;
+  border-bottom: 1px solid var(--prg-border);
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(6px);
+}
+
+.pr-graph-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.pr-graph-brand .dot {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 50%;
+  background: var(--prg-accent);
+  box-shadow: 0 0 0 3px rgba(197, 5, 12, 0.15);
+}
+
+.pr-graph-brand .meta {
+  font-weight: 500;
+  color: var(--prg-muted);
+  font-size: 0.85rem;
+}
+
+.pr-graph-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-left: auto;
+}
+
+.pr-graph-filters button,
+.pr-graph-zoom button {
+  appearance: none;
+  border: 1px solid var(--prg-border);
+  background: #fff;
+  color: var(--prg-ink);
+  border-radius: 0.3rem;
+  padding: 0.28rem 0.65rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.pr-graph-filters button:hover,
+.pr-graph-zoom button:hover {
+  border-color: rgba(197, 5, 12, 0.45);
+  color: var(--prg-accent);
+}
+
+.pr-graph-filters button.active {
+  background: rgba(197, 5, 12, 0.08);
+  border-color: var(--prg-accent);
+  color: var(--prg-accent);
+}
+
+.pr-graph-body {
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.pr-graph-sidebar {
+  border-right: 1px solid var(--prg-border);
+  background: var(--prg-panel);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.pr-graph-sidebar header {
+  padding: 0.7rem 0.85rem 0.45rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--prg-muted);
+  text-transform: uppercase;
+}
+
+.pr-graph-search {
+  margin: 0 0.75rem 0.55rem;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid var(--prg-border);
+  border-radius: 0.3rem;
+  font-size: 0.85rem;
+  width: calc(100% - 1.5rem);
+  background: #fff;
+}
+
+.pr-graph-list {
+  overflow: auto;
+  flex: 1;
+  padding: 0 0.35rem 0.75rem;
+}
+
+.pr-graph-item {
+  display: grid;
+  grid-template-columns: 1rem 1fr;
+  gap: 0.45rem;
+  align-items: start;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  padding: 0.4rem 0.5rem;
+  border-radius: 0.3rem;
+  cursor: pointer;
+  color: inherit;
+}
+
+.pr-graph-item:hover,
+.pr-graph-item.active {
+  background: rgba(197, 5, 12, 0.07);
+}
+
+.pr-graph-item .status {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  margin-top: 0.28rem;
+  border: 2px solid transparent;
+  position: relative;
+}
+
+.pr-graph-item .status.MERGED {
+  background: var(--prg-merged);
+}
+.pr-graph-item .status.OPEN {
+  background: transparent;
+  border-color: var(--prg-open);
+}
+.pr-graph-item .status.DRAFT {
+  background: var(--prg-draft);
+}
+.pr-graph-item .status.CLOSED {
+  background: var(--prg-closed);
+}
+
+.pr-graph-item .id {
+  font-weight: 700;
+  font-size: 0.82rem;
+  color: var(--prg-accent);
+}
+
+.pr-graph-item .title {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--prg-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.pr-graph-canvas-wrap {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 50% 40%, rgba(255, 255, 255, 0.65), transparent 60%),
+    repeating-linear-gradient(
+      180deg,
+      transparent,
+      transparent 28px,
+      rgba(0, 0, 0, 0.015) 28px,
+      rgba(0, 0, 0, 0.015) 29px
+    );
+}
+
+.pr-graph-canvas-wrap canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  cursor: grab;
+  touch-action: none;
+}
+
+.pr-graph-canvas-wrap canvas.dragging {
+  cursor: grabbing;
+}
+
+.pr-graph-tooltip {
+  position: absolute;
+  z-index: 5;
+  pointer-events: none;
+  max-width: 280px;
+  padding: 0.55rem 0.7rem;
+  border-radius: 0.35rem;
+  background: rgba(28, 32, 40, 0.92);
+  color: #fff;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.12s ease, transform 0.12s ease;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.pr-graph-tooltip.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.pr-graph-tooltip strong {
+  display: block;
+  margin-bottom: 0.2rem;
+}
+
+.pr-graph-tooltip a {
+  color: #ffd0d2;
+  pointer-events: auto;
+}
+
+.pr-graph-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.1rem;
+  padding: 0.55rem 0.85rem;
+  border-top: 1px solid var(--prg-border);
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.pr-graph-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem 0.9rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--prg-muted);
+}
+
+.pr-graph-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.pr-graph-legend i {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.pr-graph-legend i.draft { background: var(--prg-draft); }
+.pr-graph-legend i.open {
+  background: transparent;
+  border: 2px solid var(--prg-open);
+  box-sizing: border-box;
+}
+.pr-graph-legend i.merged { background: var(--prg-merged); }
+.pr-graph-legend i.closed { background: var(--prg-closed); }
+
+.pr-graph-timeline {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex: 1;
+  min-width: 180px;
+}
+
+.pr-graph-timeline label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--prg-muted);
+  white-space: nowrap;
+}
+
+.pr-graph-timeline input[type="range"] {
+  flex: 1;
+  accent-color: var(--prg-accent);
+}
+
+.pr-graph-timeline .date {
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--prg-ink);
+  min-width: 5.5rem;
+}
+
+.pr-graph-zoom {
+  display: flex;
+  gap: 0.3rem;
+  margin-left: auto;
+}
+
+.pr-graph-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--prg-muted);
+  font-size: 0.95rem;
+  pointer-events: none;
+}
+
+@media (max-width: 820px) {
+  .pr-graph-body {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(160px, 32%) minmax(0, 1fr);
+  }
+
+  .pr-graph-sidebar {
+    border-right: 0;
+    border-bottom: 1px solid var(--prg-border);
+  }
+
+  .pr-graph-shell {
+    height: min(85vh, 720px);
+  }
+
+  .pr-graph-filters {
+    margin-left: 0;
+  }
+}

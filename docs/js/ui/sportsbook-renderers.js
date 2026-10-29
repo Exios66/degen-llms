@@ -7,6 +7,8 @@ import {
 } from "../sportsbook.js";
 import { effectiveTableStakes, formatStakeRange } from "../stakes.js";
 import { resolveActivityMin } from "../salon-exclusives.js";
+import { getActivityBranding } from "../strip-destinations.js";
+import { refundSportsbookOpen } from "../pendingRefunds.js";
 
 function eventCardLines(el, event, i) {
   const kids = [
@@ -42,28 +44,44 @@ function eventCardLines(el, event, i) {
 }
 
 export function buildSportsbookRenderers(ctx) {
-  const { el, banner, chipLine, showStatus, menu, pushView, popView, goBack, render, persist, recordActivityVisit, recordActivityResult } = ctx;
+  const { el, banner, chipLine, showStatus, menu, pushView, popView, goBack, render, persist, recordActivityVisitOnce, clearActivityVisit, recordActivityResult } = ctx;
   const runtime = ctx.runtime;
+
+  function sportsbookBannerTitle() {
+    if (runtime.sportsbook.salonDesk) return "Salon Sports Desk — Whale Lines";
+    const brand = getActivityBranding(ctx.session, "sportsbook", "Sports Book");
+    return `Sports Book — ${brand.name}`;
+  }
+
+  function leaveSportsbook() {
+    const refunded = refundSportsbookOpen(ctx.session, runtime.sportsbook);
+    if (refunded > 0) {
+      showStatus(`Returned ${refunded.toLocaleString()} chips from unsettled tickets.`, "success");
+      persist();
+    }
+    clearActivityVisit("sportsbook");
+    goBack();
+  }
 
   function renderSportsbook() {
     const act = ACTIVITIES.sportsbook;
     const openCount = runtime.sportsbook.getOpenPositionCount();
     if (ctx.session.wallet.balance < act.minBet && openCount === 0) {
       return el("div", { className: "panel" }, [
-        banner("Sports Book"),
+        banner(sportsbookBannerTitle()),
         el("p", { className: "error", textContent: `You need at least ${act.minBet} chips to wager.` }),
         el("div", { className: "action-bar" }, [
           el("button", { className: "btn", textContent: "Back", onclick: () => { popView(); render(); } }),
         ]),
       ]);
     }
-    recordActivityVisit("sportsbook");
+    recordActivityVisitOnce("sportsbook");
     persist();
 
     if (!runtime.sportsbook.events.length) {
       runtime.sportsbook.refreshBoardAsync(false).then(() => render());
       return el("div", { className: "panel" }, [
-        banner(runtime.sportsbook.salonDesk ? "Salon Sports Desk — Whale Lines" : "Sports Book — Mandalay Sports Book"),
+        banner(sportsbookBannerTitle()),
         chipLine(),
         el("p", { className: "dim", textContent: "Loading scenario board…" }),
         el("div", { className: "action-bar" }, [
@@ -189,7 +207,7 @@ export function buildSportsbookRenderers(ctx) {
       : ["Place prediction contract", "Refresh market prices", "Next prediction slate", "Settle all open positions"];
 
     return el("div", { className: "panel" }, [
-      banner(salonDesk ? "Salon Sports Desk — Whale Lines" : "Sports Book — Mandalay Sports Book"),
+      banner(sportsbookBannerTitle()),
       chipLine(),
       salonDesk
         ? el("p", {
@@ -203,7 +221,7 @@ export function buildSportsbookRenderers(ctx) {
       board,
       pendingEl,
       menu(menuItems, "Sports Book:", (choice) => {
-        if (choice === 0) { goBack(); return; }
+        if (choice === 0) { leaveSportsbook(); return; }
         if (runtime.sportsbook.activeTab === "sports") {
           if (choice === 1) pushView("sportsbook-wager");
           else if (choice === 2) pushView("sportsbook-parlay");
@@ -226,8 +244,23 @@ export function buildSportsbookRenderers(ctx) {
     ]);
   }
 
+  function closedBoard(title, message) {
+    return el("div", { className: "panel" }, [
+      banner(title),
+      el("p", { className: "error", textContent: message }),
+      el("button", { className: "btn", textContent: "Back", onclick: () => goBack() }),
+    ]);
+  }
+
+  function marketIsOpen(market) {
+    return market && !market.resolution && !market.linkedEvent?.settled && !runtime.sportsbook.events.some(
+      (event) => event.eventId === market.linkedEventId && event.settled,
+    );
+  }
+
   function renderSportsbookWager() {
-    if (!runtime.sportsbook.events.length) {
+    const openEvents = runtime.sportsbook.events.filter((event) => !event.settled);
+    if (!openEvents.length) {
       return el("div", { className: "panel" }, [
         banner("Place Wager"),
         el("p", { className: "error", textContent: "No events on the board. Go back and load the next slate." }),
@@ -241,8 +274,8 @@ export function buildSportsbookRenderers(ctx) {
     const wagerStakes = tier
       ? effectiveTableStakes(tier, ctx.session.wallet.balance, resolveActivityMin(runtime, act.minBet))
       : { minBet: resolveActivityMin(runtime, act.minBet), maxBet: ctx.session.wallet.balance };
-    const visible = filterEvents(runtime.sportsbook.events, runtime.sportsbook.sportFilter);
-    const eventPool = visible.length ? visible : runtime.sportsbook.events;
+    const visible = filterEvents(openEvents, runtime.sportsbook.sportFilter);
+    const eventPool = visible.length ? visible : openEvents;
     const eventSelect = el("select", {}, eventPool.map((e, i) =>
       el("option", { value: String(i), textContent: `${i + 1}) ${e.label}` })
     ));
@@ -332,9 +365,11 @@ export function buildSportsbookRenderers(ctx) {
           textContent: "Place ticket",
           onclick: () => {
             const event = eventPool[parseInt(eventSelect.value, 10)];
+            if (!event || event.settled) { showStatus("This event has settled. Return to the board and load the next slate.", "error"); return; }
             const betType = betTypeSelect.value;
             const pick = pickSelect.value;
-            const amount = parseInt(amountInput.value, 10);
+            const amount = Number(amountInput.value);
+            if (!Number.isSafeInteger(amount) || amount <= 0) { alert("Enter a positive whole number of chips."); return; }
             if (amount < wagerStakes.minBet) { alert(`Minimum wager is ${wagerStakes.minBet} chips.`); return; }
             if (amount > wagerStakes.maxBet) { alert(`Maximum wager is ${wagerStakes.maxBet} chips.`); return; }
             let propId = null;
@@ -344,7 +379,7 @@ export function buildSportsbookRenderers(ctx) {
               propLabel = event.props?.find((p) => p.id === propId)?.label ?? propId;
             }
             const odds = oddsForSelection(event, betType, pick, propId);
-            if (!ctx.session.wallet.debit(amount, "runtime.sportsbook", `${betType} on ${pick}`)) {
+            if (!ctx.session.wallet.debit(amount, "sportsbook", `${betType} on ${pick}`)) {
               alert("Insufficient chips."); return;
             }
             runtime.sportsbook.addTicket({ event, betType, pick, amount, odds, propId, propLabel });
@@ -360,7 +395,7 @@ export function buildSportsbookRenderers(ctx) {
   }
 
   function renderSportsbookParlay() {
-    const games = runtime.sportsbook.events.filter((e) => e.eventType === "game");
+    const games = runtime.sportsbook.events.filter((e) => e.eventType === "game" && !e.settled);
     if (games.length < 2) {
       return el("div", { className: "panel" }, [
         banner("Parlay Desk"),
@@ -449,12 +484,14 @@ export function buildSportsbookRenderers(ctx) {
           textContent: "Place parlay",
           onclick: () => {
             const legs = refreshOdds();
+            if (legs.some((leg) => leg.event.settled)) { showStatus("An event has settled. Return to the board and load the next slate.", "error"); return; }
             if (legs.length < 2) { alert("Need at least two distinct legs."); return; }
-            const amount = parseInt(amountInput.value, 10);
+            const amount = Number(amountInput.value);
+            if (!Number.isSafeInteger(amount) || amount <= 0) { alert("Enter a positive whole number of chips."); return; }
             if (amount < wagerStakes.minBet) { alert(`Minimum wager is ${wagerStakes.minBet} chips.`); return; }
             if (amount > wagerStakes.maxBet) { alert(`Maximum wager is ${wagerStakes.maxBet} chips.`); return; }
             const odds = combineAmericanOdds(legs.map((l) => l.odds));
-            if (!ctx.session.wallet.debit(amount, "runtime.sportsbook", `${legs.length}-leg parlay`)) {
+            if (!ctx.session.wallet.debit(amount, "sportsbook", `${legs.length}-leg parlay`)) {
               alert("Insufficient chips."); return;
             }
             runtime.sportsbook.addTicket({
@@ -491,11 +528,13 @@ export function buildSportsbookRenderers(ctx) {
       ? effectiveTableStakes(tier, ctx.session.wallet.balance, resolveActivityMin(runtime, act.minBet))
       : { minBet: resolveActivityMin(runtime, act.minBet), maxBet: ctx.session.wallet.balance };
 
+    const openMarkets = runtime.sportsbook.predictions.markets.filter(marketIsOpen);
+    if (!openMarkets.length) return closedBoard("Prediction Contract", "No open markets. Return to the board and load the next prediction slate.");
     const marketsForSelect = filterMarkets(
-      runtime.sportsbook.predictions.markets,
+      openMarkets,
       runtime.sportsbook.predictions.categoryFilter || "all",
     );
-    const marketPool = marketsForSelect.length ? marketsForSelect : runtime.sportsbook.predictions.markets;
+    const marketPool = marketsForSelect.length ? marketsForSelect : openMarkets;
     const marketSelect = el("select", {}, marketPool.map((m, i) =>
       el("option", { value: String(i), textContent: `${i + 1}) [${categoryLabel(m.category)}] ${m.question}` })
     ));
@@ -535,8 +574,10 @@ export function buildSportsbookRenderers(ctx) {
           textContent: "Buy contract",
           onclick: () => {
             const market = marketPool[parseInt(marketSelect.value, 10)];
+            if (!marketIsOpen(market)) { showStatus("This market has resolved. Return to the board and load the next prediction slate.", "error"); return; }
             const side = sideSelect.value;
-            const amount = parseInt(amountInput.value, 10);
+            const amount = Number(amountInput.value);
+            if (!Number.isSafeInteger(amount) || amount <= 0) { alert("Enter a positive whole number of chips."); return; }
             const priceCents = side === "yes" ? market.yesPrice : market.noPrice;
             if (amount < wagerStakes.minBet) { alert(`Minimum stake is ${wagerStakes.minBet} chips.`); return; }
             if (amount > wagerStakes.maxBet) { alert(`Maximum stake is ${wagerStakes.maxBet} chips.`); return; }
@@ -578,7 +619,7 @@ export function buildSportsbookRenderers(ctx) {
             : (r.event?.label ?? "Ticket");
           log.appendChild(el("div", { className: "line", innerHTML: `<strong>${label}:</strong> ${r.slip.betType === "parlay" ? "" : formatEventScore(r.event)}` }));
           if (r.won) {
-            ctx.session.wallet.credit(r.payout, "runtime.sportsbook", r.reason);
+            ctx.session.wallet.credit(r.payout, "sportsbook", r.reason);
             sessionNet += r.payout - r.slip.amount;
             log.appendChild(el("div", { className: "line success", textContent: `  WIN: ${r.reason} (+${(r.payout - r.slip.amount).toLocaleString()} chips)` }));
           } else {
@@ -593,9 +634,9 @@ export function buildSportsbookRenderers(ctx) {
         const predResult = runtime.sportsbook.settlePredictions();
         log.appendChild(el("p", { className: "subtitle", textContent: "PREDICTION MARKETS" }));
         for (const r of predResult.results) {
-          log.appendChild(el("div", { className: "line", innerHTML: `<strong>${r.market.question}</strong> → ${r.resolution.toUpperCase()}` }));
+          log.appendChild(el("div", { className: "line", innerHTML: `<strong>${r.market?.question ?? r.position.question ?? "Unavailable market"}</strong> → ${r.resolution.toUpperCase()}` }));
           if (r.won) {
-            ctx.session.wallet.credit(r.payout, "runtime.sportsbook", r.reason);
+            ctx.session.wallet.credit(r.payout, "sportsbook", r.reason);
             sessionNet += r.payout - r.position.amount;
             log.appendChild(el("div", { className: "line success", textContent: `  WIN: ${r.reason}` }));
           } else {
@@ -606,7 +647,7 @@ export function buildSportsbookRenderers(ctx) {
         count += predResult.count;
       }
 
-      recordActivityResult("runtime.sportsbook", sessionNet, count);
+      recordActivityResult("sportsbook", sessionNet, count);
       persist();
     }
 

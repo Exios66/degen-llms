@@ -1,0 +1,66 @@
+{
+  "title": "Mandalay Bay Guest Directory",
+  "subtitle": "Lobby guest book — every signature is preserved for future visitors.",
+  "guests": [
+    {
+      "name": "Chip Chandler",
+      "signedAt": "2025-03-15T18:00:00Z",
+      "note": "Guest services — first signature in the book."
+    },
+    {
+      "name": "Clerk Carmen",
+      "signedAt": "2025-03-16T09:30:00Z",
+      "note": "Front desk — welcome to the bay."
+    },
+    {
+      "name": "Barkeep Betty",
+      "signedAt": "2025-04-02T22:15:00Z",
+      "note": "Lobby bar, west side. Drinks on the house — eventually."
+    },
+    {
+      "name": "Pavilion Paula",
+      "signedAt": "2025-04-10T14:00:00Z",
+      "note": "Racing Pavilion northeast corner. Long shots welcome."
+    },
+    {
+      "name": "Tourist Tina",
+      "signedAt": "2025-04-18T03:45:00Z",
+      "note": "Slot aisle witness. The gold tiles near the plants hide stories."
+    },
+    {
+      "name": "Steve Harvey",
+      "signedAt": "2025-05-01T19:00:00Z",
+      "note": "Table 9 and the Pavilion. Survey says… enjoy your stay."
+    },
+    {
+      "name": "Dealer Meryl Screech",
+      "signedAt": "2025-05-12T21:30:00Z",
+      "note": "Table 7 — the felt remembers every hand."
+    },
+    {
+      "name": "Dealer Judi Bench",
+      "signedAt": "2025-05-20T20:00:00Z",
+      "note": "Hold'em pit. Read the room, respect the rake."
+    },
+    {
+      "name": "Dealer Jennifer Lawless",
+      "signedAt": "2025-06-01T23:00:00Z",
+      "note": "Rotates between blackjack, poker, and roulette."
+    },
+    {
+      "name": "Marcus Chen",
+      "signedAt": "2025-06-14T16:20:00Z",
+      "note": "Panorama Suite 4207 — here for the bay views."
+    },
+    {
+      "name": "Elena Vasquez",
+      "signedAt": "2025-06-22T11:00:00Z",
+      "note": "Chairman Penthouse 5101 — high roller, higher standards."
+    },
+    {
+      "name": "The Midnight Regular",
+      "signedAt": "2025-07-01T00:01:00Z",
+      "note": "Anonymous but unforgettable. See you on the floor."
+    }
+  ]
+}

@@ -91,10 +91,13 @@ export class BlackjackGame {
   }
 
   beginRound() {
+    if (!["idle", "complete"].includes(this.phase)) return this;
     this.messages = [];
     this.resultLines = [];
     this.humanNet = 0;
     this.roundOverEarly = false;
+    this.pendingAction = null;
+    this.pendingInsurance = false;
     this.resetDealer();
     for (const p of this.players) p.resetRound();
     this.phase = "betting";
@@ -103,8 +106,10 @@ export class BlackjackGame {
   }
 
   placeHumanBet(amount) {
+    if (this.phase !== "betting" || !this.pendingBet || !Number.isSafeInteger(amount)) return false;
     const human = this.human();
     if (amount === 0) {
+      this.pendingBet = false;
       this.roundOverEarly = true;
       this.phase = "complete";
       this.addMessage("Leaving table.", "dim");
@@ -134,11 +139,13 @@ export class BlackjackGame {
       player.roundState.hands = [createHand({ bet })];
     }
 
+    this.pendingBet = false;
     this._dealInitial();
     return this._afterDeal();
   }
 
   _dealInitial() {
+    this.shoe.beginRound();
     for (let i = 0; i < 2; i++) {
       for (const player of this.players) {
         if (player.roundState.hands.length) {
@@ -156,21 +163,21 @@ export class BlackjackGame {
     this.state = createTableState(up);
     this.state.dealerHasBlackjack = dealerBj;
 
+    // Insurance is chosen before the dealer checks the hole card.
+    if (up.isAce) {
+      const maxIns = Math.min(Math.floor((this.human().roundState.hands[0]?.bet ?? 0) / 2), this.human().bankroll);
+      if (maxIns > 0) {
+        this.state.insuranceOffered = true;
+        this.phase = "insurance";
+        this.pendingInsurance = true;
+        return this;
+      }
+    }
+
     if (dealerShouldPeek(up) && dealerBj) {
       this.dealer.holeRevealed = true;
       this.addMessage("Dealer has blackjack.", "error");
       return this._settle();
-    }
-
-    if (up.isAce) {
-      this.phase = "insurance";
-      this.pendingInsurance = true;
-      const maxIns = Math.floor((this.human().roundState.hands[0]?.bet ?? 0) / 2);
-      if (maxIns <= 0) {
-        this.pendingInsurance = false;
-        return this._startPlayerTurns();
-      }
-      return this;
     }
 
     if (!dealerBj) return this._startPlayerTurns();
@@ -182,7 +189,7 @@ export class BlackjackGame {
     this.pendingInsurance = false;
     const human = this.human();
     const hand = human.roundState.hands[0];
-    const maxIns = Math.floor(hand.bet / 2);
+    const maxIns = Math.min(Math.floor(hand.bet / 2), human.bankroll);
     if (take && maxIns > 0) {
       human.bankroll -= maxIns;
       human.roundState.insuranceBet = maxIns;
@@ -192,6 +199,11 @@ export class BlackjackGame {
       if (!p.isHuman && p.roundState.hands.length) {
         this.addMessage(`${p.name} declines insurance.`, "dim");
       }
+    }
+    if (this.state.dealerHasBlackjack) {
+      this.dealer.holeRevealed = true;
+      this.addMessage("Dealer has blackjack.", "error");
+      return this._settle();
     }
     return this._startPlayerTurns();
   }
@@ -230,7 +242,7 @@ export class BlackjackGame {
   _playBotHand(player, hand) {
     let isFirst = hand.cards.length === 2 && !hand.isDoubled;
     while (!hand.isFinished && !hand.isBust) {
-      const legal = legalActions(hand, this.state, this.config, isFirst, player.bankroll);
+      const legal = legalActions(hand, this.state, this.config, isFirst, player.bankroll, player.roundState.hands.length);
       const pairRank = hand.isPair ? hand.cards[0].rank : null;
       const action = basicStrategyAction(hand.value, this.state.dealerUpCard, {
         isSoft: hand.isSoft, isPair: hand.isPair, pairRank, legal,
@@ -248,7 +260,7 @@ export class BlackjackGame {
   playerAction(action) {
     if (!this.pendingAction) return;
     const { player, hand, isFirstAction } = this.pendingAction;
-    const legal = legalActions(hand, this.state, this.config, isFirstAction, player.bankroll);
+    const legal = legalActions(hand, this.state, this.config, isFirstAction, player.bankroll, player.roundState.hands.length);
     if (!legal.has(action)) return false;
 
     this._applyAction(player, hand, action);
@@ -297,6 +309,7 @@ export class BlackjackGame {
     }
     if (action === Action.SPLIT) {
       const second = hand.cloneForSplit();
+      hand.splitCount += 1;
       hand.cards = [hand.cards[0]];
       hand.isFromSplitAces = hand.cards[0].isAce;
       player.bankroll -= hand.bet;
@@ -326,6 +339,7 @@ export class BlackjackGame {
   }
 
   _settle() {
+    if (this.phase === "complete") return this;
     this.phase = "settlement";
     const dealerBj = this.state.dealerHasBlackjack || (this.dealer.holeRevealed && this.dealer.hand.isBlackjack);
     if (!this.dealer.holeRevealed) this.dealer.holeRevealed = true;
@@ -362,6 +376,7 @@ export class BlackjackGame {
     this.pendingBet = false;
     this.pendingAction = null;
     this.pendingInsurance = false;
+    this.shoe.finishRound();
 
     if (this.walletSync) {
       const human = this.human();
@@ -373,7 +388,7 @@ export class BlackjackGame {
   getCurrentLegalActions() {
     if (!this.pendingAction) return new Set();
     const { player, hand, isFirstAction } = this.pendingAction;
-    return legalActions(hand, this.state, this.config, isFirstAction, player.bankroll);
+    return legalActions(hand, this.state, this.config, isFirstAction, player.bankroll, player.roundState.hands.length);
   }
 
   getTableSnapshot(revealDealer = false, highlightSeat = null) {

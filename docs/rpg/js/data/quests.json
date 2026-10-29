@@ -33,11 +33,11 @@
     "label": "Meet the Pit",
     "hint": "Meet every dealer working the pits tonight.",
     "target": 7,
-    "giver": "pit_holdem",
+    "giver": "chip_chandler",
     "category": "collection",
     "reward": "Pit regular lanyard (cosmetic)",
     "rewardItem": "pit_lanyard",
-    "giverName": "Hold'em Pit"
+    "giverName": "Chip Chandler"
   },
   "jackpot_hunt": {
     "label": "Jackpot Hunt",

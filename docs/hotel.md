@@ -50,18 +50,9 @@ Unlock Strip dispatch either way:
 1. Room phone → **Call limo / private driver**
 2. MGM Rewards Phone → **Connect → Call Uber / Lyft** (rideshare contact + multi-turn voice tree)
 
-Both paths open the same chip-fare dispatch UI (**Strip Ride — Limo / Uber / Lyft**). Ride to:
+Both paths open the same chip-fare dispatch UI. Ride to **Luxor**, **Excalibur**, **Bellagio**, or **Circa** — each with five exclusive slots, destination-branded activities, and per-property menu themes. Return to Mandalay Bay is complimentary. Not available in the pixel RPG.
 
-| Destination | Vibe | Exclusive slots (5) | Signature progressive |
-|-------------|------|---------------------|------------------------|
-| **Luxor** | Black pyramid / Egyptian gold | Obelisk, Sphinx, Scarab Stampede, Nile Nights, Beam of Ra | Beam of Ra (`luxor_ra`) |
-| **Excalibur** | Castle crimson | Castle Jackpot, Joust, Dragon Keep, Round Table, Holy Grail Spin | Holy Grail (`excalibur_grail`) |
-| **Bellagio** | Fountain elegance | Fountain Fortune, Conservatory, Lake Lights, Glass Garden, Prima Fontana | Prima Fontana (`bellagio_fontana`) |
-| **Circa** | Downtown Fremont neon | Neon Stadium, Fremont Flash, Vegas Vamp, Stadium Swipe, Downtown Drop | Downtown Drop (`circa_downtown`) |
-
-Away floors use destination `activityBranding` (e.g. Sphinx Blackjack) plus table `gameFlavor` overlays. Select Mandalay cabinets (e.g. Fortune) are `homeOnly`. Each property restyles hub banners, tables, and slot cabinets via `data-destination` CSS themes. Return to Mandalay Bay is complimentary. Not available in the pixel RPG.
-
-→ Logic: `docs/js/strip-destinations.js` · UI: `docs/js/strip-limo-ui.js` · CSS: `docs/css/strip-destinations.css` · Phone: `rideshare_driver` in `phone-contacts.js` / `phone-call-trees.js`
+→ Full guide: [Strip Ride](strip-ride.md) · Logic: `docs/js/strip-destinations.js` · UI: `docs/js/strip-limo-ui.js` · CSS: `docs/css/strip-destinations.css`
 
 ### Suite balcony POV smoke break
 

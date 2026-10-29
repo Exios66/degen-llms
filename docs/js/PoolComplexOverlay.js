@@ -113,6 +113,8 @@ export class PoolComplexOverlay {
     this.lastOk = true;
     this.fxClass = null;
     this._fxTimer = null;
+    this._steady = false;
+    this._lastChipBalance = null;
     this._onKey = (e) => {
       if (e.key !== "Escape" || !this.active) return;
       // Nested bar FPV (beach club) owns Escape until it closes.
@@ -136,6 +138,8 @@ export class PoolComplexOverlay {
     this.zoneId = zoneId && ZONE_META[zoneId] ? zoneId : "hub";
     this.lastMessage = "";
     this.lastOk = true;
+    this._steady = false;
+    this._lastChipBalance = null;
     this._chipsAtOpen = this.session.wallet.balance;
     this.root.classList.add("pool-overlay--open");
     this.root.setAttribute("aria-hidden", "false");
@@ -173,6 +177,8 @@ export class PoolComplexOverlay {
     this.zoneId = "hub";
     this.lastMessage = "";
     this.fxClass = null;
+    this._steady = false;
+    this._lastChipBalance = null;
     if (this._fxTimer) clearTimeout(this._fxTimer);
     this.root.classList.remove("pool-overlay--open");
     this.root.setAttribute("aria-hidden", "true");
@@ -196,6 +202,8 @@ export class PoolComplexOverlay {
     if (!this.active || !this.session) return;
     const meta = ZONE_META[this.zoneId] ?? ZONE_META.hub;
     const pc = ensurePoolComplex(this.session);
+    if (this._steady) this.root.classList.add("pool-overlay--steady");
+    else this.root.classList.remove("pool-overlay--steady");
     this.root.replaceChildren();
 
     const backdrop = el("div", {
@@ -209,6 +217,8 @@ export class PoolComplexOverlay {
       this._shell(meta, pc),
     ]);
     this.root.appendChild(backdrop);
+    this._steady = true;
+    this._lastChipBalance = this.session.wallet.balance;
   }
 
   _atmosphere(motif) {
@@ -371,12 +381,17 @@ export class PoolComplexOverlay {
   _pulseChips() {
     const node = this.root.querySelector("[data-chip-balance]");
     if (!node || !this.session) return;
+    const previous = this._lastChipBalance ?? Number(node.dataset.chipBalance) ?? this.session.wallet.balance;
     const next = this.session.wallet.balance;
+    this._lastChipBalance = next;
     node.textContent = fmtChips(next);
     node.dataset.chipBalance = String(next);
     node.classList.remove("chip-pulse--up", "chip-pulse--down");
     void node.offsetWidth;
-    node.classList.add("chip-pulse", "chip-pulse--up");
+    node.classList.add(
+      "chip-pulse",
+      next > previous ? "chip-pulse--up" : next < previous ? "chip-pulse--down" : "chip-pulse--up",
+    );
   }
 
   _renderWave(pc) {
@@ -500,6 +515,10 @@ export class PoolComplexOverlay {
           this._run(enterBeachClub(this.session), { fx: "sun" });
         }, { primary: true }),
         this._actionBtn("Pool bar — first-person at the rail", () => {
+          if (!ensurePoolComplex(this.session).flags.beach_club_pass) {
+            this._run({ ok: false, message: "Pay cover at the door first ($75)." });
+            return;
+          }
           if (this.hooks.barOverlay) {
             this.hooks.barOverlay.setSession(this.session);
             this.hooks.barOverlay.open("pool_beach_club");
@@ -533,7 +552,7 @@ export class PoolComplexOverlay {
       el("div", { className: "pool-rave-pads" }, [
         this._actionBtn("Start dance sequence", () => {
           this._run(startRaveDance(this.session), { fx: "neon" });
-        }, { primary: true }),
+        }, { primary: true, disabled: moves.length > 0 && step < moves.length }),
         el("div", { className: "pool-action-row" }, [
           this._actionBtn("Fist pump", () => {
             const res = submitRaveMove(this.session, 0);

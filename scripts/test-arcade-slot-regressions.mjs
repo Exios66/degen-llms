@@ -8,6 +8,7 @@ import { ARCADE_GAMES } from "../docs/js/arcade/catalog.js";
 import { PlayerSession } from "../docs/js/core.js";
 import { createSitting, orderAndConsume, resolveEncounter, settleSitting } from "../docs/js/dining.js";
 import { MACHINES, formatPaytableText, calculatePayout, tryJackpot, contributeToProgressive } from "../docs/js/slots.js";
+import { paytableEntries } from "../docs/js/slots-ui.js";
 
 let cases = 0;
 const test = (name, run) => { run(); cases++; console.log(`PASS ${name}`); };
@@ -69,6 +70,11 @@ test("mixed slot payouts have accurate visible paytable labels", () => {
   const reels = ["tiger", "tiger", "dragon"].map((name) => machine.symbols.find((s) => s.name === name));
   assert.equal(calculatePayout(reels, 2, machine).win, 180);
   assert(formatPaytableText(machine).includes("tiger / tiger / dragon"));
+  const row = paytableEntries(machine).find((entry) => entry.key === "tiger|tiger|dragon");
+  const displays = ["tiger", "tiger", "dragon"]
+    .map((name) => machine.symbols.find((symbol) => symbol.name === name).display)
+    .join(" / ");
+  assert.equal(row?.label, displays);
 });
 test("linked progressive pools preserve ineligible jackpots and reset eligible ones", () => {
   const machine = MACHINES.find((m) => m.id === "monte_carlo");

@@ -559,6 +559,27 @@ def ui_regressions(page, failures: list[str]) -> None:
       const bridge = new EncounterBridge({session, overlays: {}, barOverlay: denied, diningOverlay: denied, onPersist() {}});
       const deniedResult = await Promise.race([bridge.start('bar_foundation'), new Promise(r => setTimeout(() => r(null), 100))]);
       check('denied_encounter_resolves', deniedResult?.net === 0 && denied.cb === null);
+      const queueRoot = document.createElement('div');
+      document.body.append(queueRoot);
+      const queued = new DialogueManager(queueRoot, {});
+      queued.showSystemMessage('first toast', { durationMs: 10000 });
+      queued.showSystemMessage('second toast', { durationMs: 10000 });
+      queued._dismissSystem();
+      check('system_message_queue', queueRoot.textContent.includes('second toast'));
+      queued._dismissSystem();
+      queueRoot.remove();
+      const cancelSession = new PlayerSession();
+      let questAdvances = 0;
+      const cancelBridge = new EncounterBridge({
+        session: cancelSession,
+        overlays: { blackjack: { open: async () => ({ net: 0 }) } },
+        terminalHost: { pickStakeTier: async () => null },
+        onPersist() {},
+        questManager: { advance() { questAdvances += 1; }, syncDerived() {} },
+      });
+      const cancelled = await cancelBridge.start('blackjack');
+      check('blackjack_cancel_not_played', cancelled?.cancelled === true && questAdvances === 0
+        && !cancelSession.rpg?.flags?.played_blackjack);
       const [{buildSportsbookRenderers}, {SportsbookState}, shell] = await Promise.all([
         import('/js/ui/sportsbook-renderers.js'), import('/js/sportsbook.js'), import('/js/ui/shell.js'),
       ]);

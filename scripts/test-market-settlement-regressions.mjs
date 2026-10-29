@@ -7,7 +7,7 @@ import { TradingDeskState, entryCostChips, settlePosition, underlyingSpot } from
 import { eventFromScenario } from "../docs/js/sportSimulator.js";
 import { settleTicket } from "../docs/js/horse_racing.js";
 import { settleDressageTicket, settleJumperTicket } from "../docs/js/equestrian.js";
-import { resolvePick3, resolvePick4, resolveMega, validateMegaPicks, settlePendingLottery } from "../docs/js/lottery.js";
+import { resolvePick3, resolvePick4, resolveMega, validateMegaPicks, settlePendingLottery, scratchPrize } from "../docs/js/lottery.js";
 import { PlayerSession } from "../docs/js/core.js";
 
 let cases = 0;
@@ -169,5 +169,13 @@ assert(firstLoad.predictions.scenarioDb?.scenarios?.length);
 assert(firstLoad.predictions.markets.some((market) => market.scenarioId));
 cases++;
 console.log("PASS first prediction slate loads the stored scenario database");
+
+test("scratch prize boundaries match the published weights", () => {
+  const tiers = [[0.55, 0], [0.45, 100]];
+  assert.equal(scratchPrize(tiers, 0), 0);
+  assert.equal(scratchPrize(tiers, 0.5499), 0);
+  assert.equal(scratchPrize(tiers, 0.55), 100);
+  assert.equal(scratchPrize(tiers, 0.9999), 100);
+});
 
 console.log(`${cases} market and wagering regression cases passed.`);

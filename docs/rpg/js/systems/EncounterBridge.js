@@ -415,7 +415,7 @@ export class EncounterBridge {
       ? await this._startHosted(encounterId, context)
       : await this._startBespoke(encounterId, context);
 
-    if (encounterId === "blackjack") {
+    if (encounterId === "blackjack" && !result?.cancelled) {
       this.questManager?.advance("dana_lucky_hand");
       this.session.ensureRpgState().flags.played_blackjack = true;
     }
@@ -518,7 +518,7 @@ export class EncounterBridge {
     const stakeActivity = TABLE_STAKE_ACTIVITIES[encounterId];
     if (stakeActivity && this.terminalHost) {
       const tier = await this.terminalHost.pickStakeTier(stakeActivity);
-      if (!tier) return { net: 0 };
+      if (!tier) return { net: 0, cancelled: true };
       const stakes = effectiveTableStakes(tier, this.session.wallet.balance);
       openOpts.tier = tier;
       openOpts.minBet = stakes.minBet;

@@ -313,12 +313,11 @@ const SCRATCH_TIERS = {
   ],
 };
 
-function scratchPrize(tiers) {
-  const roll = secureRandomInt(0, 9999) / 10000;
+export function scratchPrize(tiers, roll = secureRandomInt(0, 9999) / 10000) {
   let acc = 0;
   for (const [weight, prize] of tiers) {
     acc += weight;
-    if (roll <= acc) return prize;
+    if (roll < acc) return prize;
   }
   return 0;
 }

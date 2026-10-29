@@ -132,6 +132,9 @@ export class DialogueManager {
       this._active = false;
       this._systemOnly = false;
       this._dismissSystem = null;
+      // Drain any message queued behind this toast (showSystemMessage wraps
+      // onClose while a toast is visible).
+      this.hooks.onClose?.();
     };
     this._dismissSystem = dismiss;
     // Only the toast itself swallows the tap: the rest of the screen stays live

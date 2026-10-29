@@ -14,8 +14,14 @@ def run_casino_blackjack(
     *,
     activity_id: str = "blackjack",
     max_rounds: int | None = None,
+    round_counter: list[int] | None = None,
 ) -> int:
-    """Play blackjack using the shared chip wallet. Returns net chips won/lost."""
+    """Play blackjack using the shared chip wallet. Returns net chips won/lost.
+
+    `round_counter` (optional, single-element list) is incremented once in the
+    same finally that commits a settled hand, so callers can record hand counts
+    that survive an interruption of later output.
+    """
     starting_chips = wallet.balance
     config = _config_with_bankroll(config, starting_chips)
 
@@ -45,6 +51,8 @@ def run_casino_blackjack(
             # output is interrupted. Unfinished hands remain uncommitted.
             if table.phase == RoundPhase.COMPLETE:
                 _sync_wallet(wallet, chips_before, human.bankroll, activity_id)
+                if round_counter is not None:
+                    round_counter[0] += 1
 
         if shoe.remaining > prev_remaining and shoe.shuffle_count > 1:
             display.shuffle_notice(shoe.last_shuffle_id)

@@ -188,7 +188,10 @@ class CrapsActivity(Activity):
                 session.wallet.credit(amt, self.info.id, f"Craps leave — {bet_id} returned")
                 session_net += amt
             side_stakes.clear()
+            # The hand may end normally or via an interruption (the animation
+            # and prompts above are interruptible); stats record either way so
+            # credited winnings are never missing from the ledger.
+            session.record_result(self.info.id, session_net, bets=rolls)
 
-        session.record_result(self.info.id, session_net, bets=rolls)
         ui.print(f"\nCraps session: {'+' if session_net >= 0 else ''}{session_net:,} over {rolls} roll(s)")
         ui.pause()

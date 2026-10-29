@@ -147,7 +147,7 @@ export class DialogueManager {
 
   /**
    * Start a dialogue tree by id.
-   * @returns {Promise<{ action?: string, flag?: string, encounter?: string }>}
+   * @returns {Promise<{ action?: string, flag?: string, encounter?: string, reputation?: Record<string, number> }>}
    */
   start(dialogueId) {
     // A conversation outranks a toast that happens to still be on screen.

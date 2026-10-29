@@ -318,6 +318,27 @@ def test_craps_interrupt_returns_unrolled_side_stakes(monkeypatch):
     assert "Craps leave — field returned" in descriptions
 
 
+def test_craps_interrupt_during_output_records_settled_stats(monkeypatch):
+    module = _craps_activity(monkeypatch)
+    from mandalay_bay.craps import DiceRoll
+
+    # (2,2): the Pass Line point stays working while Hard 4 has already paid,
+    # then the animation output interrupts the run.
+    monkeypatch.setattr(module.CrapsTable, "roll", lambda self: DiceRoll(2, 2))
+
+    def dice_clatter(*args, **kwargs):
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(module, "animate_dice_roll", dice_clatter)
+    session = PlayerSession()
+    ui = CrapsInterruptUI(place_side=True)
+    with pytest.raises(KeyboardInterrupt):
+        module.CrapsActivity().run(session, ui)
+    # The settled roll reaches activity stats even though the run was cut off.
+    assert session.activity_stats["craps"].hands_or_bets == 1
+    assert any("hard_4" in tx.description for tx in session.wallet.transactions)
+
+
 def test_craps_leave_returns_working_hardways_without_interrupt(monkeypatch):
     module = _craps_activity(monkeypatch)
     session = PlayerSession()

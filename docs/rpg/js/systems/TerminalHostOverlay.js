@@ -3,6 +3,7 @@ import { onActivityVisit, onSessionSwing, syncContactIntros } from "../../../js/
 import { createRuntime, createShell, createViewStack } from "../../../js/ui/shell.js";
 import { buildStakesRenderers } from "../../../js/ui/stakes-ui.js";
 import { buildSlotsRenderers } from "../../../js/ui/slots-renderers.js";
+import { buildTableRenderers } from "../../../js/ui/table-renderers.js";
 import { buildSportsbookRenderers } from "../../../js/ui/sportsbook-renderers.js";
 import { buildCrapsRenderers } from "../../../js/ui/craps-renderers.js";
 import { buildLotteryRenderers } from "../../../js/ui/lottery-renderers.js";
@@ -62,6 +63,7 @@ export class TerminalHostOverlay {
       get barOverlay() { return hooks.barOverlay ?? null; },
       get poolOverlay() { return hooks.poolOverlay ?? null; },
       get balconySmokeOverlay() { return hooks.balconySmokeOverlay ?? null; },
+      hasView: (name) => this.hasView(name),
       ensurePoolOverlay: () => hooks.poolOverlay ?? null,
       openPoolComplexVisual: (zoneId = "hub", opts = {}) => {
         const overlay = hooks.poolOverlay;
@@ -116,12 +118,19 @@ export class TerminalHostOverlay {
     });
 
     const { clearSlotsSpinTimers, slotMachineCard, ...slotsRenderers } = buildSlotsRenderers(ctx);
+    const tableRenderers = buildTableRenderers(ctx);
+    // The factory also returns the table settle helpers; only its view
+    // renderers belong in the host's view map.
+    for (const helper of ["startBlackjack", "finishBlackjack", "finishHoldem"]) {
+      delete tableRenderers[helper];
+    }
     const { renderHorsePaddock, ...racingRenderers } = buildRacingRenderers(ctx);
     this.clearSlotsSpinTimers = clearSlotsSpinTimers;
 
     this.renderers = {
       ...buildStakesRenderers(ctx),
       ...slotsRenderers,
+      ...tableRenderers,
       ...buildSportsbookRenderers(ctx),
       ...buildCrapsRenderers(ctx),
       ...buildLotteryRenderers(ctx),

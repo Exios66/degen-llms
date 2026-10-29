@@ -120,6 +120,21 @@ export function teardownHostedView(ctx, viewName, helpers = {}) {
       clearActivityVisit?.("horse_racing");
       break;
     }
+    case "blackjack-play": {
+      // Leaving a hosted table mid-hand abandons the game object; settle the
+      // recorded net once and drop it so the next encounter starts clean.
+      const game = runtime.blackjackGame;
+      if (game) {
+        if (game.phase === "complete" && !game.roundOverEarly) {
+          runtime.blackjackSessionNet += game.humanNet;
+        }
+        recordActivityResult?.("blackjack", runtime.blackjackSessionNet, 1);
+        runtime.blackjackGame = null;
+        runtime.blackjackSessionNet = 0;
+      }
+      clearActivityVisit?.("blackjack");
+      break;
+    }
     case "holdem-play": {
       // The table stack lives outside the wallet between hands, so a host close
       // must cash it out or the guest loses every chip still on the felt.

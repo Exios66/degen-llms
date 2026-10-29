@@ -575,10 +575,15 @@ function renderSaveCreate({ slotId }) {
         className: "btn primary",
         textContent: "Create & enter casino",
         onclick: () => {
+          const chips = Number(chipsInput.value);
+          if (!Number.isSafeInteger(chips) || chips < 100 || chips > 1_000_000) {
+            alert("Starting chips must be a whole number between 100 and 1,000,000.");
+            return;
+          }
           session = createSlot(slotId, {
             playerName: nameInput.value.trim() || "Guest",
             label: labelInput.value.trim() || `Slot ${slotId}`,
-            chips: parseInt(chipsInput.value, 10) || 1000,
+            chips,
             useColor: session.useColor,
             useUnicode: session.useUnicode,
           });

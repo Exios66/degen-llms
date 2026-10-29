@@ -1,3 +1,4 @@
+import { escapeHtml } from "../html.js";
 // Extracted from app.js — shared by the web terminal and the pixel RPG.
 import { ACTIVITIES, formatPlayTimeSummary, getCasinoTimeMs } from "../core.js";
 import { clearStaffOverride, editableStaffEntries, setStaffOverrides, updateStaffOverride } from "../staff-manifest.js";
@@ -17,9 +18,9 @@ export function buildMetaRenderers(ctx) {
         el("button", {
           className: "menu-btn",
           innerHTML: [
-            `<span class="num">${i + 1})</span> ${entry.name}`,
+            `<span class="num">${i + 1})</span> ${escapeHtml(entry.name)}`,
             entry.customized ? ' <span class="staff-custom-badge">custom</span>' : "",
-            `<br><span class="dim" style="padding-left:1.75rem;font-size:0.85rem;">${roleLabel}</span>`,
+            `<br><span class="dim" style="padding-left:1.75rem;font-size:0.85rem;">${escapeHtml(roleLabel)}</span>`,
           ].join(""),
           onclick: () => pushView("staff-manifest-edit", { staffId: entry.id, category: entry.category }),
         }),

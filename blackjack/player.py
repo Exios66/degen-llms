@@ -87,7 +87,7 @@ class HumanPlayer(Player):
             return amount
 
     def decide_insurance(self, config: GameConfig) -> bool:
-        max_insurance = self.round_state.hands[0].bet // 2 if self.round_state.hands else 0
+        max_insurance = min(self.round_state.hands[0].bet // 2, self.bankroll) if self.round_state.hands else 0
         return self._prompt_insurance(max_insurance)
 
     def decide_action(

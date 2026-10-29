@@ -233,9 +233,11 @@ export function buildAmenitiesRenderers(ctx) {
   }
 
   function renderBarMenu({ barId }) {
-    openBar(barId);
     return el("div", { className: "panel" }, [
-      el("p", { className: "dim", textContent: "Opening bar overlay…" }),
+      statusBanner(),
+      banner("Resort Bar"),
+      el("button", { className: "btn primary", textContent: "Open bar", onclick: () => openBar(barId) }),
+      el("button", { className: "btn", textContent: "Back", onclick: () => goBack() }),
     ]);
   }
 

@@ -465,6 +465,10 @@ export class EncounterBridge {
         resolve({ net });
       });
       this.diningOverlay.open(spec.venueId ?? null);
+      if (!this.diningOverlay.active) {
+        this.diningOverlay.onceClosed(null);
+        resolve({ net: 0 });
+      }
     });
   }
 
@@ -478,6 +482,10 @@ export class EncounterBridge {
         resolve({ net });
       });
       this.barOverlay.open(spec.venueId ?? null);
+      if (!this.barOverlay.active) {
+        this.barOverlay.onceClosed(null);
+        resolve({ net: 0 });
+      }
     });
   }
 
@@ -491,6 +499,10 @@ export class EncounterBridge {
         resolve({ net });
       });
       this.poolOverlay.open(spec.zoneId ?? "hub");
+      if (!this.poolOverlay.active) {
+        this.poolOverlay.onceClosed(null);
+        resolve({ net: 0 });
+      }
     });
   }
 

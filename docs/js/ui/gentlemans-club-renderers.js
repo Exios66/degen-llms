@@ -138,10 +138,19 @@ export function buildGentlemansClubRenderers(ctx) {
 
   function renderBar() {
     if (ctx.barOverlay) {
-      ctx.barOverlay.setSession(session());
-      ctx.barOverlay.open("velvet_ledger");
+      const gate = canEnterGentlemansClub(session());
       return el("div", { className: "panel" }, [
-        el("p", { className: "dim", textContent: "Opening The Ledger Bar overlay…" }),
+        statusBanner(),
+        banner("The Ledger Bar"),
+        !gate.ok ? el("p", { className: "error", textContent: gate.reason }) : null,
+        el("button", {
+          className: "btn primary", textContent: "Open The Ledger Bar", disabled: !gate.ok,
+          onclick: () => {
+            ctx.barOverlay.setSession(session());
+            ctx.barOverlay.open("velvet_ledger");
+          },
+        }),
+        el("button", { className: "btn", textContent: "Back", onclick: () => goBack() }),
       ]);
     }
     const log = el("div", { className: "log-area" });

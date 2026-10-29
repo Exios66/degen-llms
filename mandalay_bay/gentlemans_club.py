@@ -195,6 +195,9 @@ def order_club_drink(session, drink_id: str) -> dict[str, Any]:
         return {"ok": False, "message": f"Need ${drink['price']:,} chips."}
     club = ensure_club(session)
     club.drinks.append(drink_id)
+    from mandalay_bay.intoxication import record_consumption
+
+    record_consumption(session, drink_id, source="gentlemans_club")
     egg = None
     if drink_id == "gc_bottle_louis_xiii":
         egg = _discover_egg(session, "egg_louis_toast")
@@ -266,6 +269,9 @@ def play_tip_cascade(session, stop_at: float) -> dict[str, Any]:
 
 
 def play_bottle_memory(session, sequence: list[str], guess: list[str]) -> dict[str, Any]:
+    labels = {"Dom", "Cristal", "Ace", "Paradis", "Macallan"}
+    if not isinstance(sequence, list) or not isinstance(guess, list) or len(sequence) != 3 or len(guess) != 3 or any(value not in labels for value in sequence + guess):
+        return {"ok": False, "message": "Match three bottle labels."}
     ante = 150
     if not session.wallet.debit(ante, "gentlemans_club", "Bottle Memory ante"):
         return {"ok": False, "message": f"Need ${ante} to play Bottle Memory."}

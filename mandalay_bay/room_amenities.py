@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import dataclass, field
 
 from mandalay_bay.hotel import RoomAmenitiesState, ensure_hotel, fmt_chips, is_net_positive
@@ -271,7 +272,7 @@ def ensure_room_amenities(hotel) -> RoomAmenitiesState:
 
 
 def _has_all(haystack: list[str], needles: list[str]) -> bool:
-    return all(n in haystack for n in needles)
+    return not (Counter(needles) - Counter(haystack))
 
 
 def _amenity_allowed(session: PlayerSession, hotel, item: dict) -> bool:

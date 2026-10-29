@@ -154,6 +154,8 @@ export class DialogueManager {
     if (!node) return Promise.resolve({});
 
     this._active = true;
+    this._appliedEffects = new WeakSet();
+    this._pendingReputation = null;
     this.root.hidden = false;
     return new Promise((resolve) => {
       this._resolve = resolve;
@@ -186,6 +188,10 @@ export class DialogueManager {
   }
 
   close(result = {}) {
+    this._cleanupKeys?.();
+    this._cleanupKeys = null;
+    this._systemOnly = false;
+    this.root.classList.remove("dialogue-overlay--toast");
     if (this._systemTimer) {
       clearTimeout(this._systemTimer);
       this._systemTimer = null;
@@ -200,7 +206,10 @@ export class DialogueManager {
   }
 
   _renderNode(node) {
+    this._cleanupKeys?.();
+    this._cleanupKeys = null;
     this.root.innerHTML = "";
+    this._currentNode = node;
 
     const { box, textEl, advanceHint, content } = this._buildBox({
       speaker: node.speaker ?? "",
@@ -210,13 +219,15 @@ export class DialogueManager {
     const fullText = node.text ?? "";
     let idx = 0;
     let typing = true;
+    let typeTimer = null;
 
     const typeTick = () => {
+      if (!typing || !this._active) return;
       if (idx <= fullText.length) {
         textEl.textContent = fullText.slice(0, idx);
         idx += 1;
         if (idx <= fullText.length) {
-          setTimeout(typeTick, this._typeDelayMs);
+          typeTimer = setTimeout(typeTick, this._typeDelayMs);
         } else {
           typing = false;
           this._afterText(node, box, advanceHint, content);
@@ -226,6 +237,7 @@ export class DialogueManager {
 
     const skipType = () => {
       if (typing) {
+        clearTimeout(typeTimer);
         typing = false;
         textEl.textContent = fullText;
         this._afterText(node, box, advanceHint, content);
@@ -236,11 +248,12 @@ export class DialogueManager {
       if (!this._active) return;
       if (["Enter", " ", "e", "E"].includes(e.key)) {
         e.preventDefault();
+        e.stopImmediatePropagation();
         if (typing) skipType();
         else this._advance(node);
       }
     };
-    window.addEventListener("keydown", this._keyHandler);
+    window.addEventListener("keydown", this._keyHandler, true);
 
     // The overlay covers the screen, so a tap anywhere reads the next line —
     // a thumb should not have to find the box.
@@ -253,8 +266,11 @@ export class DialogueManager {
     };
     this.root.addEventListener("pointerdown", onPointer);
 
+    const keyHandler = this._keyHandler;
     this._cleanupKeys = () => {
-      window.removeEventListener("keydown", this._keyHandler);
+      typing = false;
+      clearTimeout(typeTimer);
+      window.removeEventListener("keydown", keyHandler, true);
       this.root.removeEventListener("pointerdown", onPointer);
     };
     typeTick();
@@ -292,12 +308,8 @@ export class DialogueManager {
   }
 
   _pickChoice(choice) {
-    if (choice.setFlag) {
-      this.flags[choice.setFlag] = true;
-      this.hooks.onFlag?.(choice.setFlag);
-    }
-    if (choice.giveItem) this.hooks.onItem?.(choice.giveItem);
-    if (choice.startQuest) this.questManager?.start(choice.startQuest);
+    this._applyNodeEffects(this._currentNode);
+    this._applyNodeEffects(choice);
     const reputation = choice.reputation ?? null;
     if (choice.encounter) {
       this._cleanupKeys?.();
@@ -316,20 +328,22 @@ export class DialogueManager {
         this._pendingReputation = reputation;
         this._renderNode(next);
       } else {
-        this._finish({ ...choice, reputation });
+        this._finish(choice);
       }
     } else {
-      this._finish({ ...choice, reputation });
+      this._finish(choice);
     }
   }
 
   _advance(node) {
     if (node.choices?.length) return;
     if (node.next) {
+      this._applyNodeEffects(node);
       const next = this._resolveNode(node.next);
       if (next) this._renderNode(next);
       else this._finish(node);
     } else if (node.encounter) {
+      this._applyNodeEffects(node);
       this._cleanupKeys?.();
       this.close({ action: "encounter", encounter: node.encounter });
       this.hooks.onEncounter?.(node.encounter);
@@ -338,13 +352,19 @@ export class DialogueManager {
     }
   }
 
-  _finish(node) {
+  _applyNodeEffects(node) {
+    if (!node || this._appliedEffects?.has(node)) return;
+    this._appliedEffects?.add(node);
     if (node.setFlag) {
       this.flags[node.setFlag] = true;
       this.hooks.onFlag?.(node.setFlag);
     }
     if (node.giveItem) this.hooks.onItem?.(node.giveItem);
     if (node.startQuest) this.questManager?.start(node.startQuest);
+  }
+
+  _finish(node) {
+    this._applyNodeEffects(node);
     const reputation = node.reputation ?? this._pendingReputation ?? null;
     this._pendingReputation = null;
     this._cleanupKeys?.();

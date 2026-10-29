@@ -85,3 +85,13 @@ def ensure_arcade(session) -> ArcadeState:
 
 def persist_arcade(session, state: ArcadeState) -> None:
     session.arcade = state
+
+
+def consume_arcade_slot_voucher(session) -> bool:
+    """Consume the ticket-shop voucher stored with the portable RPG flags."""
+    rpg = (getattr(session, "web_only_state", None) or {}).get("rpg", {})
+    flags = rpg.get("flags", {}) if isinstance(rpg, dict) else {}
+    if not isinstance(flags, dict) or not flags.get("arcade_slot_voucher"):
+        return False
+    del flags["arcade_slot_voucher"]
+    return True

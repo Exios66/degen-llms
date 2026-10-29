@@ -1,9 +1,9 @@
 /** Refund open wagers when leaving an activity without settling (CLI parity). */
 
 export function refundAmounts(session, activityId, amounts, reason) {
-  const total = amounts.reduce((sum, n) => sum + Math.max(0, Number(n) || 0), 0);
+  const total = amounts.reduce((sum, n) => sum + (Number.isFinite(n) && n > 0 ? n : 0), 0);
   if (total <= 0) return 0;
-  session.wallet.credit(total, activityId, reason);
+  session.wallet.credit(total, activityId, reason, "refund");
   return total;
 }
 
@@ -11,7 +11,7 @@ export function refundSlips(session, activityId, slips, reason) {
   return refundAmounts(
     session,
     activityId,
-    slips.map((s) => s.amount),
+    slips.map((s) => s?.amount),
     reason,
   );
 }
@@ -20,7 +20,7 @@ export function refundTradingPositions(session, activityId, positions, reason) {
   return refundAmounts(
     session,
     activityId,
-    positions.map((p) => p.cost),
+    positions.map((p) => p?.cost),
     reason,
   );
 }

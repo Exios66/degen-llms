@@ -5,6 +5,8 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import TYPE_CHECKING, Any
 
+from mandalay_bay.chips import is_finite_amount
+
 if TYPE_CHECKING:
     from mandalay_bay.session import PlayerSession
 
@@ -173,7 +175,7 @@ class BankAccount:
     resort_perks: dict[str, bool] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
-        if self.balance < 0:
+        if not is_finite_amount(self.balance) or self.balance < 0:
             raise ValueError("Bank balance cannot be negative")
 
     def _record(
@@ -195,7 +197,7 @@ class BankAccount:
         )
 
     def can_afford(self, amount: int) -> bool:
-        return amount > 0 and self.balance >= amount
+        return is_finite_amount(amount) and amount > 0 and self.balance >= amount
 
     def has_perk(self, perk_id: str) -> bool:
         return bool(self.resort_perks.get(perk_id))
@@ -210,8 +212,8 @@ class BankAccount:
         return True
 
     def deposit(self, amount: int, category: str, description: str) -> None:
-        if amount <= 0:
-            raise ValueError("Deposit must be positive")
+        if not is_finite_amount(amount) or amount <= 0 or not is_finite_amount(self.balance + amount):
+            raise ValueError("Deposit must be positive and finite")
         self.balance += amount
         self._record(BankTransactionKind.DEPOSIT, amount, category, description)
 
@@ -251,7 +253,7 @@ def cash_out_to_bank(session: PlayerSession, amount: int) -> bool:
     """Move floor chips to the private offshore bank account."""
     from mandalay_bay.chip_limits import CASHOUT_TO_BANK_MAX
 
-    if amount <= 0 or amount > session.wallet.balance:
+    if not is_finite_amount(amount) or amount <= 0 or amount > session.wallet.balance:
         return False
     if amount > CASHOUT_TO_BANK_MAX:
         return False
@@ -269,8 +271,8 @@ def buy_in_for_session(session: PlayerSession, amount: int, *, use_outside_funds
     """Buy chips for the floor wallet. Returns outcome token."""
     from mandalay_bay.chip_limits import BUY_CHIPS_MAX, bank_withdraw_max_for_session
 
-    if amount <= 0:
-        raise ValueError("Buy-in must be positive")
+    if not is_finite_amount(amount) or amount <= 0:
+        raise ValueError("Buy-in must be positive and finite")
     if amount > BUY_CHIPS_MAX:
         return "over_buy_limit"
 
@@ -294,7 +296,7 @@ def pay_bank_expense(session: PlayerSession, amount: int, category: str, descrip
     """Pay an outside expense, capped by MGM Rewards tier withdraw limit."""
     from mandalay_bay.chip_limits import bank_withdraw_max_for_session
 
-    if amount <= 0:
+    if not is_finite_amount(amount) or amount <= 0:
         return "invalid"
     if not is_known_expense_category(category):
         return "invalid_category"

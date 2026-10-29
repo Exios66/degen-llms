@@ -39,7 +39,8 @@ export function teardownHostedView(ctx, viewName, helpers = {}) {
   const baseView = viewName.startsWith("horse-racing") ? "horse-racing"
     : viewName.startsWith("dressage") ? "dressage"
       : viewName.startsWith("jumper") ? "jumper"
-        : viewName.startsWith("trading-") ? "trading-desk"
+        : viewName.startsWith("sportsbook-") ? "sportsbook"
+          : viewName.startsWith("trading-") ? "trading-desk"
           : viewName;
   const { session, runtime, recordActivityResult, clearActivityVisit, persist } = ctx;
   const { clearSlotsSpinTimers } = helpers;
@@ -116,6 +117,23 @@ export function teardownHostedView(ctx, viewName, helpers = {}) {
       runtime.horseRacing.cachedResults = null;
       runtime.horseRacing.settleCompleted = false;
       clearActivityVisit?.("horse_racing");
+      break;
+    }
+    case "holdem-play": {
+      // The table stack lives outside the wallet between hands, so a host close
+      // must cash it out or the guest loses every chip still on the felt.
+      const holdem = runtime.holdem;
+      if (holdem?.table) {
+        const cash = holdem.table.human.stack;
+        if (cash > 0) {
+          session.wallet.credit(cash, "holdem", "Hold'em leave — table stack returned");
+        }
+        holdem.sessionNet = cash - holdem.buyIn;
+        recordActivityResult?.("holdem", holdem.sessionNet, holdem.hands ?? 0);
+        runtime.holdem = null;
+      }
+      session.holdemEscrow = 0;
+      clearActivityVisit?.("holdem");
       break;
     }
     case "dressage": {

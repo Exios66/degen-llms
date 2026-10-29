@@ -45,6 +45,7 @@ class HoldemPlayer:
     folded: bool = False
     all_in: bool = False
     has_acted: bool = False
+    last_action_bet: int | None = None
 
     def reset_for_hand(self) -> None:
         self.hole = []
@@ -53,6 +54,7 @@ class HoldemPlayer:
         self.folded = False
         self.all_in = False
         self.has_acted = False
+        self.last_action_bet = None
 
 
 @dataclass
@@ -125,6 +127,7 @@ class HoldemTable:
 
         for p in self.players:
             p.reset_for_hand()
+            p.folded = p.stack <= 0
 
         eligible = [p for p in self.players if p.stack > 0]
         if len(eligible) < 2:
@@ -133,6 +136,8 @@ class HoldemTable:
             return
 
         n = len(self.players)
+        # Hold'em uses a fresh, complete deck for every hand.
+        self.shoe.reshuffle()
         if n == 2:
             sb_idx = self.dealer_index
             bb_idx = (self.dealer_index + 1) % n
@@ -143,6 +148,8 @@ class HoldemTable:
         self._post_blind(sb_idx, self.small_blind)
         self._post_blind(bb_idx, self.big_blind)
         self.current_bet = max(p.bet_this_street for p in self.players)
+        if len(self._active_actors()) > 1:
+            self.current_bet = max(self.big_blind, self.current_bet)
 
         for p in self.players:
             if not p.folded and p.stack >= 0:
@@ -153,6 +160,8 @@ class HoldemTable:
         self._seek_actor()
         self.last_message = "Cards dealt — pre-flop betting."
         self.action_log.append(self.last_message)
+        if self._round_complete():
+            self._advance_street()
 
     def _post_blind(self, idx: int, amount: int) -> None:
         player = self.players[idx]
@@ -193,7 +202,8 @@ class HoldemTable:
         elif player.stack > 0:
             # Short all-in calls are allowed in no-limit.
             actions.add(BettingAction.CALL)
-        if player.stack > to_call:
+        can_reopen = player.last_action_bet is None or self.current_bet - player.last_action_bet >= self.min_raise
+        if player.stack > to_call and can_reopen and len(self._active_actors()) > 1:
             actions.add(BettingAction.RAISE)
         return actions
 
@@ -205,6 +215,8 @@ class HoldemTable:
     ) -> str:
         if self.hand_over:
             return "Hand is over."
+        if player is not self.players[self.action_index]:
+            raise ValueError("It is not this player's turn")
         legal = self.legal_actions(player)
         if action not in legal:
             raise ValueError(f"{player.name} cannot {action.value} now")
@@ -235,9 +247,11 @@ class HoldemTable:
             max_total = self.max_raise_to(player)
             min_total = self.min_raise_to(player)
             target = raise_to if raise_to is not None else min_total
+            if isinstance(target, bool) or isinstance(target, float) and not target.is_integer():
+                raise ValueError("Raise amount must be an integer")
             try:
                 target = int(target)
-            except (TypeError, ValueError) as exc:
+            except (TypeError, ValueError, OverflowError) as exc:
                 raise ValueError("Raise amount must be an integer") from exc
 
             # No-limit: any size from min full raise up to all-in.
@@ -274,6 +288,7 @@ class HoldemTable:
             raise ValueError(f"Unknown action {action}")
 
         player.has_acted = True
+        player.last_action_bet = None if action == BettingAction.CHECK else self.current_bet
         if raised:
             for other in self.players:
                 if other is not player and not other.folded and not other.all_in:
@@ -301,6 +316,8 @@ class HoldemTable:
         active = self._active_actors()
         if not active:
             return True
+        if len(active) == 1 and active[0].bet_this_street >= self.current_bet:
+            return True
         return all(p.has_acted and p.bet_this_street == self.current_bet for p in active)
 
     def _advance_street(self) -> None:
@@ -311,6 +328,7 @@ class HoldemTable:
         for p in self.players:
             p.bet_this_street = 0
             p.has_acted = False
+            p.last_action_bet = None
         self.current_bet = 0
         self.min_raise = self.big_blind
 
@@ -347,13 +365,28 @@ class HoldemTable:
         for p in live:
             score, _ = best_hand_from_cards(p.hole + self.community)
             scored.append((p, score))
-        best = scored[0][1]
-        for _, s in scored[1:]:
-            if compare_scores(s, best) > 0:
-                best = s
-        winner_names = [p.name for p, s in scored if compare_scores(s, best) == 0]
         self.showdown_scores = [(p.name, s) for p, s in scored]
-        self._split_pot(winner_names)
+        # Each contribution tier is a separate pot. Folded chips stay in the
+        # pot, but a short all-in can win only the tiers it contributed to.
+        winner_names: list[str] = []
+        previous = 0
+        levels = sorted({p.total_in_hand for p in self.players if p.total_in_hand > 0})
+        for level in levels:
+            contributors = [p for p in self.players if p.total_in_hand >= level]
+            amount = (level - previous) * len(contributors)
+            eligible = [(p, s) for p, s in scored if p.total_in_hand >= level]
+            if eligible:
+                best = max(s.as_tuple() for _, s in eligible)
+                winners = [p for p, s in eligible if s.as_tuple() == best]
+                # The first seat left of the button gets any odd chip.
+                winners.sort(key=lambda p: (self.players.index(p) - self.dealer_index - 1) % len(self.players))
+                share, remainder = divmod(amount, len(winners))
+                for i, p in enumerate(winners):
+                    p.stack += share + (i < remainder)
+                    if p.name not in winner_names:
+                        winner_names.append(p.name)
+            previous = level
+        self._finish_hand(winner_names)
         self.last_message = "Showdown complete."
         self.action_log.append(self.last_message)
 
@@ -373,6 +406,9 @@ class HoldemTable:
             for p in self.players:
                 if p.name == name:
                     p.stack += payout
+        self._finish_hand(winner_names)
+
+    def _finish_hand(self, winner_names: list[str]) -> None:
         self.winners = winner_names
         self.hand_over = True
         self.dealer_index = (self.dealer_index + 1) % len(self.players)

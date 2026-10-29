@@ -106,6 +106,8 @@ def evaluate_five_cards(cards: Sequence[Card]) -> HandScore:
     is_flush = len(set(suits)) == 1
     straight_high = _straight_high(ranks)
     is_straight = straight_high is not None
+    # UCI encodes aces as 1; poker comparisons rank them above kings.
+    ranks = sorted((14 if r == 1 else r for r in ranks), reverse=True)
 
     counts: dict[int, int] = {}
     for r in ranks:
@@ -113,7 +115,7 @@ def evaluate_five_cards(cards: Sequence[Card]) -> HandScore:
     by_count = sorted(((cnt, r) for r, cnt in counts.items()), reverse=True)
 
     if is_straight and is_flush:
-        if set(ranks) == {1, 10, 11, 12, 13}:
+        if straight_high == 14:
             return HandScore(9, (14,))
         return HandScore(8, (straight_high,))
 

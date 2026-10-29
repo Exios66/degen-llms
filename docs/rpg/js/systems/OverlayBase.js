@@ -43,6 +43,7 @@ export class OverlayBase {
   }
 
   close() {
+    if (!this._active) return;
     this.session.recordResult(this.activityId, this.sessionNet);
     this.root.hidden = true;
     this.root.innerHTML = "";

@@ -199,14 +199,14 @@ export function syncWorldCycle(session) {
     const messages = [];
 
     if (state.dayIndex > wc.processedDay) {
-      for (let d = wc.processedDay; d < state.dayIndex; d++) {
+      for (let d = wc.processedDay + 1; d <= state.dayIndex; d++) {
         messages.push(applyDayRollover(session, d));
       }
       wc.processedDay = state.dayIndex;
       wc.lastRolloverMessages = messages.slice(-3);
     }
 
-    return { ...state, advanced: messages.length > 0, messages };
+    return { ...getWorldCycleState(session), advanced: messages.length > 0, messages };
   } finally {
     session._worldCycleSyncing = false;
   }

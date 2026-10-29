@@ -1,3 +1,5 @@
+import { teardownHostedView } from "./activity-teardown.js";
+import { escapeHtml } from "./html.js";
 import {
   CASINO_NAME, ACTIVITIES, FLOOR_ORDER, fmtChips,
   saveSlot, loadSlot, createSlot, deleteSlot, listSlots, recentSlots, formatSaveTime,
@@ -343,6 +345,7 @@ function enterCasino(nextSession) {
   session = nextSession;
   // A new sitting starts every table, machine, and counter from scratch; going
   // through createRuntime keeps this from drifting as buckets are added.
+  runtime._visitRecorded?.clear();
   Object.assign(runtime, createRuntime());
   resetSportsbookFromSession();
   views.reset([{ name: "hub", data: {} }]);
@@ -361,10 +364,15 @@ function enterCasino(nextSession) {
 }
 
 function returnToSavePicker() {
+  teardownHostedView(ctx, viewStack.at(-1)?.name, { clearSlotsSpinTimers });
+  clearSlotsSpinTimers();
+  runtime.marketTicker?.stop?.();
+  runtime.marketTicker = null;
   persist();
   stopCasinoClock();
   stopCasinoTimeTicker();
-  rewardsPhone?.close();
+  rewardsPhone?.destroy();
+  rewardsPhone = null;
   arcadeOverlay?.close();
   diningOverlay?.close();
   barOverlay?.close();
@@ -475,7 +483,7 @@ function renderSavePicker() {
     menuList.appendChild(el("li", {}, [
       el("button", {
         className: "menu-btn",
-        innerHTML: `<span class="num">${i + 1})</span> ${label}`,
+        innerHTML: `<span class="num">${i + 1})</span> ${escapeHtml(label)}`,
         onclick: () => handleSlotChoice(slot),
       }),
     ]));
@@ -527,7 +535,7 @@ function renderSavePicker() {
       rpgList.appendChild(el("li", {}, [
         el("button", {
           className: "menu-btn",
-          innerHTML: `<span class="num">→</span> Slot ${slot.slotId} — ${slot.playerName} (${mode})`,
+          innerHTML: `<span class="num">→</span> Slot ${slot.slotId} — ${escapeHtml(slot.playerName)} (${mode})`,
           onclick: () => {
             persist();
             window.location.href = `./rpg/?slot=${slot.slotId}&skipIntro=1`;
@@ -603,7 +611,7 @@ function renderSaveDelete() {
     menuList.appendChild(el("li", {}, [
       el("button", {
         className: "menu-btn",
-        innerHTML: `<span class="num">${i + 1})</span> Slot ${slot.slotId} — ${slot.playerName} (${fmtChips(slot.balance)})`,
+        innerHTML: `<span class="num">${i + 1})</span> Slot ${slot.slotId} — ${escapeHtml(slot.playerName)} (${fmtChips(slot.balance)})`,
         onclick: () => {
           if (confirm(`Delete Slot ${slot.slotId}? This cannot be undone.`)) {
             deleteSlot(slot.slotId);

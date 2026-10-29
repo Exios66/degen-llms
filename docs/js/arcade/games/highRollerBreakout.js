@@ -53,6 +53,7 @@ export function createHighRollerBreakout(canvas, api) {
   }
 
   function end(cleared) {
+    if (!running) return;
     running = false;
     cancelAnimationFrame(raf);
     if (cleared) fx.confetti(W / 2, H / 3);

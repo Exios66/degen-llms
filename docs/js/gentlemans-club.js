@@ -325,6 +325,9 @@ export function startBottleMemory() {
 }
 
 export function resolveBottleMemory(session, sequence, guess) {
+  if (!Array.isArray(sequence) || !Array.isArray(guess) || sequence.length !== 3 || guess.length !== 3 || [...sequence, ...guess].some((value) => !BOTTLE_LABELS.includes(value))) {
+    return { ok: false, message: "Match three bottle labels." };
+  }
   const ante = CLUB_MINIGAMES.find((g) => g.id === "bottle_memory").ante;
   if (!session.wallet.debit(ante, "gentlemans_club", "Bottle Memory ante")) {
     return { ok: false, message: `Need $${ante} to play Bottle Memory.` };

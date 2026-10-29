@@ -148,10 +148,7 @@ def _sports_pulse_markets(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
     for event in events[:4]:
         if event.get("eventType") != "game":
             continue
-        fav = event["home"] if event["homeOdds"] < event["awayOdds"] else event["away"]
-        cover_side = (
-            f"{event['home']} {event['spread']:+.1f}" if event["spread"] != 0 else fav
-        )
+        cover_side = f"{event['home']} {event['spread']:+.1f}"
         yes_base = 58 if event["homeOdds"] <= -130 else 42 if event["homeOdds"] >= 130 else 50
         markets.append({
             "marketId": _make_market_id("sp"),
@@ -161,6 +158,7 @@ def _sports_pulse_markets(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
             "noPrice": 100 - yes_base,
             "volume": SECURE_RANDOM.randint(800, 12000),
             "linkedEventId": event["eventId"],
+            "linkedEvent": event,
             "resolution": None,
             "fixedResolution": None,
             "blurb": None,
@@ -174,6 +172,7 @@ def _sports_pulse_markets(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
             "noPrice": 100 - yes,
             "volume": SECURE_RANDOM.randint(500, 9000),
             "linkedEventId": event["eventId"],
+            "linkedEvent": event,
             "resolution": None,
             "fixedResolution": None,
             "blurb": None,
@@ -345,11 +344,12 @@ def resolve_market(market: dict[str, Any], events: list[dict[str, Any]] | None =
     yes_prob = market["yesPrice"] / 100
 
     if market.get("linkedEventId"):
-        event = next((e for e in events if e["eventId"] == market["linkedEventId"]), None)
+        event = next((e for e in events if e["eventId"] == market["linkedEventId"]), None) or market.get("linkedEvent")
         if event and event.get("settled"):
             if "covers" in market["question"]:
                 margin = event["homeScore"] - event["awayScore"]
-                return "yes" if margin + event["spread"] > 0 else "no"
+                adjusted = margin + event["spread"]
+                return "yes" if adjusted > 0 else "push" if adjusted == 0 else "no"
             if "over" in market["question"]:
                 combined = event["homeScore"] + event["awayScore"]
                 if combined > event["total"]:
@@ -357,6 +357,7 @@ def resolve_market(market: dict[str, Any], events: list[dict[str, Any]] | None =
                 if combined == event["total"]:
                     return "push"
                 return "no"
+        return "push"
 
     threshold = round(yes_prob * 100)
     roll = SECURE_RANDOM.randint(1, 100)
@@ -397,28 +398,34 @@ class PredictionMarketsState:
     category_filter: str = "all"
     scenario_cursor: int = 0
 
+    def _replace_markets(self, markets: list[dict[str, Any]]) -> None:
+        held = {position["marketId"] for position in self.positions}
+        ids = {market["marketId"] for market in markets}
+        self.markets = [*markets, *(market for market in self.markets if market["marketId"] in held and market["marketId"] not in ids)]
+
     def sync_markets(self, events: list[dict[str, Any]], force: bool = False) -> None:
         if not self.markets or force:
             db = load_prediction_scenarios()
             if db.get("scenarios"):
-                self.markets, next_cursor = page_from_scenarios(
+                markets, next_cursor = page_from_scenarios(
                     db, self.scenario_cursor, db.get("pageSize") or 20, events,
                 )
-                if force:
-                    self.scenario_cursor = next_cursor
+                self._replace_markets(markets)
+                self.scenario_cursor = next_cursor
             else:
-                self.markets = generate_markets(events)
+                self._replace_markets(generate_markets(events))
 
     def next_slate(self, events: list[dict[str, Any]] | None = None) -> None:
         """Advance the scenario cursor and load the next prediction page."""
         events = events or []
         db = load_prediction_scenarios()
         if db.get("scenarios"):
-            self.markets, self.scenario_cursor = page_from_scenarios(
+            markets, self.scenario_cursor = page_from_scenarios(
                 db, self.scenario_cursor, db.get("pageSize") or 20, events,
             )
+            self._replace_markets(markets)
         else:
-            self.markets = generate_markets(events)
+            self._replace_markets(generate_markets(events))
 
     def settle_all(self, events: list[dict[str, Any]] | None = None) -> tuple[list[dict[str, Any]], int]:
         events = events or []
@@ -426,6 +433,7 @@ class PredictionMarketsState:
         for position in self.positions:
             market = next((m for m in self.markets if m["marketId"] == position["marketId"]), None)
             if not market:
+                results.append({"position": position, "market": None, "resolution": "push", **resolve_position(position, "push")})
                 continue
             resolution = resolve_market(market, events)
             market["resolution"] = resolution

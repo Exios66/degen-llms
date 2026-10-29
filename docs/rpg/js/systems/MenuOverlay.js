@@ -1,3 +1,4 @@
+import { escapeHtml } from "../../../js/html.js";
 import { fmtChips } from "../../../js/core.js";
 import { getResortCompletion } from "../../../js/resort-completion.js";
 import { getWorldCycleSummary } from "../../../js/world-cycle.js";
@@ -48,6 +49,9 @@ export class MenuOverlay {
     if (!this._active) return;
     const buttons = [...this.root.querySelectorAll(".menu-panel-list button")];
     const key = ev.key;
+    if (["Escape", "Backspace", "x", "X", "ArrowDown", "s", "S", "ArrowUp", "w", "W", "Enter", " ", "e", "E"].includes(key) || /^[1-9]$/.test(key)) {
+      ev.stopImmediatePropagation();
+    }
     if (key === "Escape" || key === "Backspace" || key === "x" || key === "X") {
       ev.preventDefault();
       this.back();
@@ -239,8 +243,8 @@ export class MenuOverlay {
     const cycle = getWorldCycleSummary(this.session);
     const completion = getResortCompletion(this.session);
     body.innerHTML = `
-      <h3>${this.session.playerName}</h3>
-      <p class="dim">${rpg.archetype ?? "guest"} · ${this.session.slotLabel || (this.session.slotId ? `Slot ${this.session.slotId}` : "Guest visit")}</p>
+      <h3>${escapeHtml(this.session.playerName)}</h3>
+      <p class="dim">${rpg.archetype ?? "guest"} · ${escapeHtml(this.session.slotLabel || (this.session.slotId ? `Slot ${this.session.slotId}` : "Guest visit"))}</p>
       <p>Chips: ${fmtChips(this.session.wallet.balance)}</p>
       <p>Reputation — whales ${rep.whales ?? 0} · staff ${rep.staff ?? 0} · tourists ${rep.tourists ?? 0}</p>
       <p>Rooms explored: ${Object.keys(rpg.mapVisits ?? {}).length}</p>

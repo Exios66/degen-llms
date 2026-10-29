@@ -194,6 +194,7 @@ def test_short_all_in_call_allowed() -> None:
     human.stack = 15
     table.current_bet = 100
     human.bet_this_street = 0
+    table.action_index = table.players.index(human)
     legal = table.legal_actions(human)
     assert BettingAction.CALL in legal
     table.apply_action(human, BettingAction.CALL)

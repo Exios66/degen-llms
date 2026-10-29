@@ -181,10 +181,10 @@ export function validateMegaPicks(
   if (!Array.isArray(balls) || balls.length !== count || new Set(balls).size !== count) {
     return `Need exactly ${count} unique lucky numbers from 1–${ballMax}.`;
   }
-  if (balls.some((b) => b < 1 || b > ballMax)) {
+  if (balls.some((b) => !Number.isInteger(b) || b < 1 || b > ballMax)) {
     return `Lucky numbers must be between 1 and ${ballMax}.`;
   }
-  if (!Number.isFinite(powerball) || powerball < 1 || powerball > megaMax) {
+  if (!Number.isInteger(powerball) || powerball < 1 || powerball > megaMax) {
     return `Powerball must be between 1 and ${megaMax}.`;
   }
   return null;
@@ -201,7 +201,7 @@ export function resolvePick3(picks, price = 2, { ticketId = "pick3" } = {}) {
   const draw = drawDigits(3);
   let win = 0;
   let reason;
-  if (picks.every((d, i) => d === draw[i])) {
+  if (picks.length === 3 && picks.every((d, i) => d === draw[i])) {
     win = price * 500;
     reason = `Straight hit ${draw.join(" ")} — ${win.toLocaleString()} chips!`;
   } else if ([...picks].sort().join() === [...draw].sort().join()) {
@@ -226,7 +226,7 @@ export function resolvePick4(picks, price = 2, { ticketId = "pick4" } = {}) {
   const draw = drawDigits(4);
   let win = 0;
   let reason;
-  if (picks.every((d, i) => d === draw[i])) {
+  if (picks.length === 4 && picks.every((d, i) => d === draw[i])) {
     win = price * 5000;
     reason = `Straight hit ${draw.join(" ")} — ${win.toLocaleString()} chips!`;
   } else if ([...picks].sort().join() === [...draw].sort().join()) {

@@ -64,7 +64,7 @@ include-package-data = true
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["mandalay_bay*", "blackjack*"]
+include = ["mandalay_bay*", "blackjack*", "poker*"]
 
 [tool.setuptools.package-data]
 mandalay_bay = ["data/*.json", "data/*.csv"]

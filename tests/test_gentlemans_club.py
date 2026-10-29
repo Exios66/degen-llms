@@ -56,7 +56,8 @@ def test_phone_line_opens_rope() -> None:
     assert can_enter_gentlemans_club(locked)["ok"] is True
 
 
-def test_make_it_rain_and_bar() -> None:
+def test_make_it_rain_and_bar(monkeypatch) -> None:
+    monkeypatch.setattr("mandalay_bay.gentlemans_club.random.random", lambda: 1.0)
     session = _session(gold=True)
     before = session.wallet.balance
     rain = make_it_rain(session, "shower")

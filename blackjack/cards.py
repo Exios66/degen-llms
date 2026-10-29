@@ -110,6 +110,7 @@ class Shoe:
         self._cut_index = int(self._initial_size * self.CUT_CARD_FRACTION)
         self.last_shuffle_id: str | None = None
         self.shuffle_count = 0
+        self._round_active = False
         self.reshuffle()
 
     def reshuffle(self) -> None:
@@ -123,10 +124,19 @@ class Shoe:
             self.reshuffle()
 
     def deal(self) -> Card:
-        self._maybe_reshuffle()
+        if not self._round_active or not self._cards:
+            self._maybe_reshuffle()
         if not self._cards:
             raise RuntimeError("Shoe is empty after reshuffle")
         return self._cards.pop()
+
+    def begin_round(self) -> None:
+        """Honor the cut card between rounds, keeping live cards out of a reshuffle."""
+        self._maybe_reshuffle()
+        self._round_active = True
+
+    def finish_round(self) -> None:
+        self._round_active = False
 
     @property
     def remaining(self) -> int:

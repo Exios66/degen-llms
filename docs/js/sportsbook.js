@@ -37,22 +37,20 @@ export function resolveSlip(slip) {
   const event = slip.event;
 
   if (slip.betType === "parlay") {
-    let allWon = true;
-    let anyPush = false;
+    const winningOdds = [];
     for (const leg of slip.legs ?? []) {
       const resolved = resolveSlip(leg);
       if (!resolved.won) {
-        allWon = false;
-        break;
+        return { won: false, payout: 0, reason: "Parlay lost — a leg missed" };
       }
-      if (resolved.reason?.startsWith("Push")) anyPush = true;
+      if (!resolved.reason?.startsWith("Push")) winningOdds.push(leg.odds);
     }
-    if (!allWon) return { won: false, payout: 0, reason: "Parlay lost — a leg missed" };
-    if (anyPush && (slip.legs?.length ?? 0) <= 1) {
+    if (!winningOdds.length) {
       return { won: true, payout: slip.amount, reason: "Push — stake returned" };
     }
-    const p = profit(slip.amount, slip.odds);
-    return { won: true, payout: slip.amount + p, reason: `Parlay cashes (${slip.legs.length} legs)` };
+    const odds = winningOdds.length === 1 ? winningOdds[0] : combineAmericanOdds(winningOdds);
+    const p = profit(slip.amount, odds);
+    return { won: true, payout: slip.amount + p, reason: `Parlay cashes (${winningOdds.length} legs)` };
   }
 
   if (slip.betType === "moneyline") {
@@ -211,6 +209,8 @@ export class SportsbookState {
   }
 
   addTicket(slip) {
+    const events = slip.betType === "parlay" ? (slip.legs ?? []).map((leg) => leg.event) : [slip.event];
+    if (events.some((event) => event?.settled)) throw new Error("This event has already settled. Load the next slate.");
     this.pending.push(slip);
   }
 
@@ -219,30 +219,42 @@ export class SportsbookState {
   }
 
   settlePredictions() {
+    const markets = this.predictions.markets.filter((market) =>
+      this.predictions.positions.some((position) => position.marketId === market.marketId));
+    this._settleEvents(markets.map((market) =>
+      this.events.find((event) => event.eventId === market.linkedEventId) ?? market.linkedEvent).filter(Boolean));
     return this.predictions.settleAll(this.events);
   }
 
+  _settleEvents(events) {
+    // JSON saves contain separate copies of the same event on every ticket.
+    const allEvents = [...this.events, ...this.pending.flatMap((slip) =>
+      slip.betType === "parlay" ? (slip.legs ?? []).map((leg) => leg.event) : [slip.event]),
+    ...this.predictions.markets.map((market) => market.linkedEvent).filter(Boolean), ...events];
+    const outcomes = new Map();
+    for (const event of allEvents) {
+      if (event.settled) outcomes.set(event.eventId ?? event, event);
+    }
+    for (const event of events) {
+      const key = event.eventId ?? event;
+      if (!outcomes.has(key)) {
+        simulateEventOutcome(this.catalog, event);
+        outcomes.set(key, event);
+      }
+    }
+    for (const event of allEvents) {
+      const outcome = outcomes.get(event.eventId ?? event);
+      if (outcome && outcome !== event) Object.assign(event, outcome);
+    }
+  }
+
   settleAll(catalog) {
-    const cat = catalog ?? this.catalog;
-    const simulated = new Set();
+    if (catalog) this.catalog = catalog;
+    this._settleEvents(this.pending.flatMap((slip) =>
+      slip.betType === "parlay" ? (slip.legs ?? []).map((leg) => leg.event) : [slip.event]));
     const results = [];
 
     for (const slip of this.pending) {
-      if (slip.betType === "parlay") {
-        for (const leg of slip.legs ?? []) {
-          const event = leg.event;
-          if (!event.settled && !simulated.has(event.eventId)) {
-            simulateEventOutcome(cat, event);
-            simulated.add(event.eventId);
-          }
-        }
-      } else {
-        const event = slip.event;
-        if (!event.settled && !simulated.has(event.eventId)) {
-          simulateEventOutcome(cat, event);
-          simulated.add(event.eventId);
-        }
-      }
       const resolved = resolveSlip(slip);
       results.push({ slip, event: slip.event ?? slip.legs?.[0]?.event, ...resolved });
     }

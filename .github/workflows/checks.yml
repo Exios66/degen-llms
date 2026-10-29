@@ -21,6 +21,16 @@ jobs:
       - run: python -m pip install --upgrade pip pytest
       - run: python -m pytest -q
 
+  packages:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install build setuptools
+      - run: python scripts/smoke-test-packages.py
+
   web:
     runs-on: ubuntu-latest
     steps:
@@ -32,20 +42,14 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: RPG world data integrity
-        run: node scripts/smoke-test-rpg.mjs
-
       - name: Validate docs/js imports
         run: node scripts/validate-docs-imports.mjs
 
-      - name: Node smoke tests (terminal wiring)
+      - name: Node game, world, and terminal regression checks
         run: |
-          node scripts/smoke-test-pool-overlay.mjs
-          node scripts/smoke-test-carmen-desk.mjs
-          node scripts/smoke-test-rewards-phone.mjs
-          node scripts/smoke-test-hotel-salon.mjs
-          node scripts/smoke-test-balcony-smoke.mjs
-          node scripts/smoke-test-lounge-shops.mjs
+          for script in scripts/smoke-test-*.mjs scripts/test-*-regressions.mjs; do
+            node "$script"
+          done
 
       - name: Install Playwright
         run: |

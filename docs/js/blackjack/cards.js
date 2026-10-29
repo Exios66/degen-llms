@@ -49,6 +49,7 @@ export class Shoe {
     this._initialSize = numDecks * 52;
     this._cutIndex = Math.floor(this._initialSize * 0.25);
     this.shuffleCount = 0;
+    this._roundActive = false;
     this.reshuffle();
   }
 
@@ -66,9 +67,18 @@ export class Shoe {
   }
 
   deal() {
-    this._maybeReshuffle();
+    if (!this._roundActive || !this._cards.length) this._maybeReshuffle();
     if (!this._cards.length) throw new Error("Shoe is empty");
     return this._cards.pop();
+  }
+
+  beginRound() {
+    this._maybeReshuffle();
+    this._roundActive = true;
+  }
+
+  finishRound() {
+    this._roundActive = false;
   }
 
   get remaining() { return this._cards.length; }

@@ -1,3 +1,4 @@
+import { escapeHtml } from "./html.js";
 import { fmtChips } from "./core.js";
 import {
   COMP_CATALOG, RewardsTracker, TIERS, tierForWagered,
@@ -146,6 +147,12 @@ export class RewardsPhone {
     this._open = false;
     this._phoneEl.hidden = true;
     this.root?.classList.remove("is-open");
+  }
+
+  destroy() {
+    this.close();
+    clearTimeout(this._toastTimer);
+    this.root.replaceChildren();
   }
 
   isOpen() {
@@ -753,7 +760,7 @@ export class RewardsPhone {
     card.innerHTML = `
       <div class="rewards-tier">${tier.label.toUpperCase()}</div>
       <div class="rewards-member-id">${rewards.memberId}</div>
-      <div class="rewards-member-name">${this.session.playerName}</div>
+      <div class="rewards-member-name">${escapeHtml(this.session.playerName)}</div>
       <div class="rewards-member-wager">${fmtChips(rewards.lifetimeWagered)} lifetime</div>
       <div class="rewards-member-cost">${exp.monthlyAmortizedCost}</div>
       <div class="rewards-member-room">${room.label} · Room ${hotel.roomNumber}</div>

@@ -204,6 +204,7 @@ class DiningState:
 class DiningSitting:
     venue_id: str
     tab: int = 0
+    encounter_chips: int = 0
     courses_cleared: int = 0
     drinks_this_sitting: int = 0
     fullness: int = 0
@@ -301,6 +302,7 @@ def _apply_effect(session: PlayerSession, sitting: DiningSitting, effect: dict[s
     if chips:
         if chips > 0:
             session.wallet.credit(chips, "dining", "Dining encounter tip")
+            sitting.encounter_chips += chips
             notes.append(f"+{chips} chips")
         else:
             cost = abs(int(chips))
@@ -347,6 +349,10 @@ def order_and_consume(
     rng = rng or random.random
     if sitting.busted or sitting.closed:
         return DiningResult(ok=False, message="This sitting is over — settle the tab.")
+    if sitting.pending_encounter:
+        return DiningResult(ok=False, message="Resolve the current encounter before ordering another course.")
+    if pace not in ("pace", "clean_plate", "chase_shots"):
+        return DiningResult(ok=False, message="Choose a dining pace.")
     gate = can_enter_dining(session)
     if not gate.ok:
         return gate
@@ -428,12 +434,16 @@ def order_and_consume(
 
 
 def resolve_encounter(session: PlayerSession, sitting: DiningSitting, choice_id: str) -> DiningResult:
+    if sitting.closed:
+        return DiningResult(ok=False, message="This sitting is over.")
     pending = sitting.pending_encounter
     if not pending:
         return DiningResult(ok=False, message="No encounter in progress.")
     enc = next((e for e in DINING_ENCOUNTERS if e["id"] == pending["id"]), None)
     choices = enc["choices"] if enc else pending["choices"]
-    choice = next((c for c in choices if c["id"] == choice_id), choices[0])
+    choice = next((c for c in choices if c["id"] == choice_id), None)
+    if choice is None:
+        return DiningResult(ok=False, message="Choose one of the encounter responses.")
     notes = _apply_effect(session, sitting, choice.get("effect", {}))
     dining = ensure_dining(session)
     if pending["id"] not in dining.encounters_seen:
@@ -458,8 +468,9 @@ def settle_sitting(session: PlayerSession, sitting: DiningSitting, tip_percent: 
     if sitting.score > prev:
         dining.venue_high_scores[sitting.venue_id] = sitting.score
     session.record_visit("dining")
-    session.record_result("dining", -sitting.tab, max(1, sitting.courses_cleared))
+    session.record_result("dining", sitting.encounter_chips - sitting.tab, max(1, sitting.courses_cleared))
     sitting.closed = True
+    sitting.pending_encounter = None
     venue = get_venue(sitting.venue_id)
     name = venue["name"] if venue else "the restaurant"
     return DiningResult(

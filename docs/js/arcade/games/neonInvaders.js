@@ -53,6 +53,7 @@ export function createNeonInvaders(canvas, api) {
   }
 
   function end(cleared) {
+    if (!running) return;
     running = false;
     cancelAnimationFrame(raf);
     if (cleared) fx.confetti(W / 2, H / 3);
@@ -178,6 +179,8 @@ export function createNeonInvaders(canvas, api) {
       }
       return b.y < H;
     });
+
+    if (!running) return;
 
     if (aliens.some((a) => a.y + a.h >= H - 100)) {
       end(false);

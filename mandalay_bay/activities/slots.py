@@ -6,6 +6,7 @@ from pathlib import Path
 
 from blackjack.rng import SECURE_RANDOM
 from mandalay_bay.activities.base import Activity, ActivityInfo
+from mandalay_bay.arcade_state import consume_arcade_slot_voucher
 from mandalay_bay.session import PlayerSession
 from mandalay_bay.stakes import (
     effective_slot_stakes,
@@ -211,7 +212,8 @@ def _payout(
         return bet * effective, f"{label} {effective}x{boost_tag}"
 
     if line in machine.paytable:
-        return _apply(machine.paytable[line], f"Three {reels[0].display}!")
+        label = f"Three {reels[0].display}!" if keys[0] == keys[1] == keys[2] else f"{''.join(r.display for r in reels)} combo!"
+        return _apply(machine.paytable[line], label)
 
     if machine.cherry_rules:
         if keys[0] == keys[1] == "cherry" and "cherry|cherry" in machine.paytable:
@@ -270,6 +272,8 @@ def format_paytable(machine: SlotMachine, *, tier_boost: float = 1.0) -> str:
                 lines.append(f"  {parts[0]} x3  {effective:,}x bet")
             elif len(parts) == 2:
                 lines.append(f"  {parts[0]} x2  {effective:,}x bet")
+            else:
+                lines.append(f"  {' / '.join(parts)}  {effective:,}x bet")
         else:
             lines.append(f"  {key} (1st reel)  {effective:,}x bet")
     if machine.progressive and machine.jackpot_key:
@@ -377,7 +381,8 @@ class SlotsActivity(Activity):
             if bet < min_bet:
                 ui.error(f"Minimum spin is {min_bet}.")
                 continue
-            if not session.wallet.debit(bet, self.info.id, f"{machine.name} spin ${bet}"):
+            used_voucher = consume_arcade_slot_voucher(session)
+            if not used_voucher and not session.wallet.debit(bet, self.info.id, f"{machine.name} spin ${bet}"):
                 ui.error("Insufficient chips.")
                 continue
 
@@ -394,13 +399,14 @@ class SlotsActivity(Activity):
             spins += 1
             if win > 0:
                 session.wallet.credit(win, self.info.id, reason)
-                session_net += win - bet
+                session_net += win if used_voucher else win - bet
                 if jackpot_amount is not None:
                     ui.success(f"🎰 {reason}")
                 else:
                     ui.success(f"{reason} — Won {win:,} chips!")
             else:
-                session_net -= bet
+                if not used_voucher:
+                    session_net -= bet
                 ui.dim("No win this spin.")
 
             if not ui.prompt_yes_no("Spin again?", default=True):

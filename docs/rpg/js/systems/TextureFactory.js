@@ -221,11 +221,16 @@ function groutGrid(w, grout, step = 8) {
 }
 
 function makeTex(scene, key, draw, w = TILE_SIZE, h = TILE_SIZE) {
-  if (scene.textures.exists(key)) scene.textures.remove(key);
-  const g = scene.make.graphics({ x: 0, y: 0, add: false });
-  draw(g);
-  g.generateTexture(key, w, h);
-  g.destroy();
+  if (scene.textures.exists(key)) return;
+  // These drawers support Canvas already (art previews use it). Baking them
+  // directly avoids uploading thousands of tiny Graphics commands per tile,
+  // which stalls boot on software WebGL and on lower-powered phones.
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  canvas.getContext("2d").imageSmoothingEnabled = false;
+  draw(canvas);
+  scene.textures.addCanvas(key, canvas);
 }
 
 // ─── Ground tiles ──────────────────────────────────────────────────────────
@@ -1688,7 +1693,7 @@ function createPlayerAnims(scene, base) {
 
 /** Bake a character frame via canvas so portraits and overworld share pixels. */
 function bakeCharacterTexture(scene, key, palette, dir, frame) {
-  if (scene.textures.exists(key)) scene.textures.remove(key);
+  if (scene.textures.exists(key)) return;
   const canvas = document.createElement("canvas");
   drawCharacterToCanvas(canvas, palette, dir, frame, CHAR_SCALE);
   scene.textures.addCanvas(key, canvas);

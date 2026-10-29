@@ -152,10 +152,11 @@ def sync_world_cycle(session: PlayerSession) -> dict:
         messages: list[str] = []
         day_index = state["day_index"]
         if day_index > wc.processed_day:
-            for d in range(wc.processed_day, day_index):
+            for d in range(wc.processed_day + 1, day_index + 1):
                 messages.append(_apply_day_rollover(session, d))
             wc.processed_day = day_index
             wc.last_rollover_messages = messages[-3:]
+        state = get_world_cycle_state(session)
         state["advanced"] = bool(messages)
         state["messages"] = messages
         return state
@@ -229,7 +230,7 @@ def grant_room_key_if_reservation_ready(session: PlayerSession) -> bool:
     from mandalay_bay.hotel import ensure_hotel
 
     sync_world_cycle(session)
-    if not reservation_access_met(session):
+    if not can_access_hotel_room(session):
         return False
     hotel = ensure_hotel(session)
     hotel.room_key_active = True

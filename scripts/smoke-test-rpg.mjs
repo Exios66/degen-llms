@@ -308,7 +308,12 @@ const MENU_ONLY_ENCOUNTERS = new Set(["stats", "staff_manifest"]);
     }
   }
   for (const id of ENCOUNTER_IDS) {
-    check(offered.has(id) || MENU_ONLY_ENCOUNTERS.has(id),
+    const spec = HOSTED_ENCOUNTERS[id];
+    const viaVenuePicker = spec?.venueId && (
+      (spec.activityId === "dining" && offered.has("hotel_dining")) ||
+      (spec.activityId === "bar" && offered.has("bar"))
+    );
+    check(offered.has(id) || viaVenuePicker || MENU_ONLY_ENCOUNTERS.has(id),
       `encounter "${id}": routable but no NPC or dialogue branch opens it`);
   }
 }

@@ -40,6 +40,7 @@ export class ArcadeCabinetOverlay {
     this.game = null;
     this.gameId = null;
     this.active = false;
+    this.settled = false;
     this._onKey = (e) => {
       if (e.key === "Escape" && this.active) {
         e.preventDefault();
@@ -70,6 +71,7 @@ export class ArcadeCabinetOverlay {
 
     this.closeGameOnly();
     this.gameId = gameId;
+    this.settled = false;
     this.active = true;
     this.root.classList.add("arcade-overlay--open");
     this.root.setAttribute("aria-hidden", "false");
@@ -201,7 +203,8 @@ export class ArcadeCabinetOverlay {
   }
 
   _settle(def, result, hud) {
-    if (!this.session || !this.active) return;
+    if (!this.session || !this.active || this.settled) return;
+    this.settled = true;
     const payout = payoutFromMult(def.cost, result.payoutMult);
     const tickets = ticketsFromScore(result.score, { cleared: !!result.cleared });
     if (payout > 0) {

@@ -356,13 +356,14 @@ export function useRoomKeyToDoor(session) {
 
 /** @returns {{ ok: boolean, message: string }} */
 export function extendStay(session, nights = 1, rewardsTracker) {
+  if (!Number.isSafeInteger(nights) || nights <= 0) return { ok: false, message: "Nights must be a positive whole number." };
   const hotel = ensureHotel(session);
   const rewards = resolveRewards(session, rewardsTracker);
   const hasRoomComp = rewards.unlockedComps.includes("room_night") &&
     !rewards.redeemedComps.includes("room_night");
   const netPositive = isNetPositive(session);
 
-  if (hasRoomComp) {
+  if (hasRoomComp && nights === 1) {
     redeemRoomComp(session, rewardsTracker, "room_night");
     hotel.nightsRemaining += nights;
     return { ok: true, message: `Comp night applied! ${hotel.nightsRemaining} night(s) remaining.` };
@@ -476,7 +477,7 @@ const WAKE_UP_ALARMS = [
 /** @returns {{ ok: boolean, message: string }} */
 export function triggerWakeUpCall(session) {
   const hotel = ensureHotel(session);
-  const ra = hotel.roomAmenities ?? {};
+  const ra = hotel.roomAmenities ??= {};
   const msg = WAKE_UP_ALARMS[secureRandomInt(0, WAKE_UP_ALARMS.length - 1)];
   if (ra.wakeUpScheduled !== undefined) ra.wakeUpScheduled = false;
   return { ok: true, message: msg };
@@ -485,7 +486,7 @@ export function triggerWakeUpCall(session) {
 /** @returns {{ ok: boolean, message: string }} */
 export function checkoutStay(session) {
   const hotel = ensureHotel(session);
-  const ra = hotel.roomAmenities ?? {};
+  const ra = hotel.roomAmenities ??= {};
   if (ra.checkedOut) {
     return { ok: false, message: "You already checked out. The carpet misses you." };
   }
@@ -508,7 +509,7 @@ export function checkoutStay(session) {
 export function expressCheckout(session) {
   const tierIdx = getSessionTierIndex(session);
   const hotel = ensureHotel(session);
-  const ra = hotel.roomAmenities ?? {};
+  const ra = hotel.roomAmenities ??= {};
   if (ra.checkedOut) {
     return { ok: false, message: "Already checked out." };
   }

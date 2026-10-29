@@ -41,10 +41,7 @@ function sportsPulseMarkets(events) {
   const markets = [];
   for (const event of events.slice(0, 4)) {
     if (event.eventType !== "game") continue;
-    const fav = event.homeOdds < event.awayOdds ? event.home : event.away;
-    const coverSide = event.spread !== 0
-      ? `${event.home} ${event.spread >= 0 ? "+" : ""}${event.spread}`
-      : fav;
+    const coverSide = `${event.home} ${event.spread >= 0 ? "+" : ""}${event.spread}`;
     const yesBase = event.homeOdds <= -130 ? 58 : event.homeOdds >= 130 ? 42 : 50;
     markets.push({
       marketId: makeMarketId("sp"),
@@ -55,6 +52,7 @@ function sportsPulseMarkets(events) {
       noPrice: 100 - yesBase,
       volume: secureRandomInt(800, 12000),
       linkedEventId: event.eventId,
+      linkedEvent: event,
       resolution: null,
       fixedResolution: null,
       blurb: null,
@@ -69,6 +67,7 @@ function sportsPulseMarkets(events) {
       noPrice: 100 - yes,
       volume: secureRandomInt(500, 9000),
       linkedEventId: event.eventId,
+      linkedEvent: event,
       resolution: null,
       fixedResolution: null,
       blurb: null,
@@ -138,17 +137,20 @@ export function resolveMarket(market, events = []) {
 
   const yesProb = market.yesPrice / 100;
   if (market.linkedEventId) {
-    const event = events.find((e) => e.eventId === market.linkedEventId);
+    const event = events.find((e) => e.eventId === market.linkedEventId) ?? market.linkedEvent;
     if (event?.settled) {
       if (market.question.includes("covers")) {
         const margin = event.homeScore - event.awayScore;
-        return margin + event.spread > 0 ? "yes" : "no";
+        const adjusted = margin + event.spread;
+        return adjusted > 0 ? "yes" : adjusted === 0 ? "push" : "no";
       }
       if (market.question.includes("over")) {
         const combined = event.homeScore + event.awayScore;
         return combined > event.total ? "yes" : combined === event.total ? "push" : "no";
       }
     }
+    // A linked sports contract cannot be resolved by an unrelated coin flip.
+    return "push";
   }
 
   const roll = secureRandomInt(1, 100);
@@ -204,23 +206,23 @@ export class PredictionMarketsState {
         const { markets, nextCursor } = pageFromScenarios(
           this.scenarioDb, this.scenarioCursor, this.scenarioDb.pageSize ?? 20, events,
         );
-        this.markets = markets;
-        if (force) this.scenarioCursor = nextCursor;
+        this._replaceMarkets(markets);
+        this.scenarioCursor = nextCursor;
       } else {
-        this.markets = generateMarkets(events);
+        this._replaceMarkets(generateMarkets(events));
       }
     }
   }
 
   nextSlate(events = []) {
     if (!this.scenarioDb?.scenarios?.length) {
-      this.markets = generateMarkets(events);
+      this._replaceMarkets(generateMarkets(events));
       return;
     }
     const { markets, nextCursor } = pageFromScenarios(
       this.scenarioDb, this.scenarioCursor, this.scenarioDb.pageSize ?? 20, events,
     );
-    this.markets = markets;
+    this._replaceMarkets(markets);
     this.scenarioCursor = nextCursor;
   }
 
@@ -229,14 +231,27 @@ export class PredictionMarketsState {
   }
 
   addPosition(position) {
+    const market = this.markets.find((m) => m.marketId === position.marketId);
+    if (!market || market.resolution || market.linkedEvent?.settled) {
+      throw new Error("This market is closed. Load the next slate.");
+    }
     this.positions.push(position);
+  }
+
+  _replaceMarkets(markets) {
+    const held = new Set(this.positions.map((position) => position.marketId));
+    const ids = new Set(markets.map((market) => market.marketId));
+    this.markets = [...markets, ...this.markets.filter((market) => held.has(market.marketId) && !ids.has(market.marketId))];
   }
 
   settleAll(events = []) {
     const results = [];
     for (const position of this.positions) {
       const market = this.markets.find((m) => m.marketId === position.marketId);
-      if (!market) continue;
+      if (!market) {
+        results.push({ position, market: null, resolution: "push", ...resolvePosition(position, "push") });
+        continue;
+      }
       const resolution = resolveMarket(market, events);
       market.resolution = resolution;
       const resolved = resolvePosition(position, resolution);

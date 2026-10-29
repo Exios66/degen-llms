@@ -8,6 +8,23 @@ python3 -m pytest tests/test_casino_chips.py -v
 python3 -m pytest -k navigation -v
 ```
 
+Browser engine, wiring, and RPG data regressions run without a browser:
+
+```bash
+for script in scripts/smoke-test-*.mjs scripts/test-*-regressions.mjs; do
+  node "$script" || exit 1
+done
+node scripts/validate-docs-imports.mjs
+```
+
+For the complete terminal/RPG journey and mobile checks, install Playwright and
+its Chromium browser, then run `python3 scripts/smoke-test-web.py`. To verify
+both distributable wheels, install `build` and `setuptools`, then run
+`python3 scripts/smoke-test-packages.py`.
+
+The [October 2026 audit](audits/2026-10-28-bug-sweep.md) lists the defects covered
+by the new regression suites.
+
 ## Test structure
 
 | File | Coverage |

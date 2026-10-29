@@ -336,7 +336,7 @@ async function startOverworld(activeSession) {
     audio: audioManager,
     touchPad,
     onOpenMenu: (page) => menu?.open(page),
-    isMenuOpen: () => Boolean(menu?.isActive()),
+    isMenuOpen: () => Boolean(menu?.isActive() || rewardsPhone?.isOpen()),
     onMapBanner: (label, phaseLabel) => showMapBanner(label, phaseLabel),
     onEgg: (eggId) => {
       if (!discoverEgg(session, eggId)) return;

@@ -1163,6 +1163,7 @@ export function formatPaytableText(machine, tierBoost = 1.0) {
       return `${bits[0]}×3 = ${effective.toLocaleString()}x`;
     }
     if (bits.length === 2) return `${bits[0]}×2 = ${effective.toLocaleString()}x`;
+    if (bits.length === 3) return `${bits.join(" / ")} = ${effective.toLocaleString()}x`;
     return `${key} (1st) = ${effective.toLocaleString()}x`;
   });
   if (machine.progressive && machine.jackpotKey) {

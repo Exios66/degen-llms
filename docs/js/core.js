@@ -186,7 +186,8 @@ export function fisherYatesShuffle(arr) {
 
 export class ChipWallet {
   constructor(balance = 1000) {
-    this.balance = Math.max(0, balance);
+    if (!Number.isFinite(balance) || balance < 0) throw new Error("Chip balance must be finite and nonnegative");
+    this.balance = balance;
     this.transactions = [];
   }
 
@@ -202,7 +203,7 @@ export class ChipWallet {
   }
 
   canAfford(amount) {
-    return amount > 0 && this.balance >= amount;
+    return Number.isFinite(amount) && amount > 0 && this.balance >= amount;
   }
 
   debit(amount, activity, description) {
@@ -213,25 +214,27 @@ export class ChipWallet {
   }
 
   credit(amount, activity, description, kind = TransactionKind.WIN) {
+    if (!Number.isFinite(amount) || !Number.isFinite(this.balance + amount)) throw new Error("Credit must be finite");
     if (amount <= 0) return;
     this.balance += amount;
     this._record(kind, amount, activity, description);
   }
 
   buyIn(amount) {
-    if (amount <= 0) throw new Error("Buy-in must be positive");
+    if (!Number.isFinite(amount) || amount <= 0 || !Number.isFinite(this.balance + amount)) throw new Error("Buy-in must be positive and finite");
     this.balance += amount;
     this._record(TransactionKind.BUY_IN, amount, "cashier", `Purchased ${fmtChips(amount)} in chips`);
   }
 
   cashOut(amount) {
-    if (amount <= 0 || amount > this.balance) return false;
+    if (!this.canAfford(amount)) return false;
     this.balance -= amount;
     this._record(TransactionKind.CASH_OUT, -amount, "cashier", `Cashed out ${fmtChips(amount)} in chips`);
     return true;
   }
 
   syncBalance(newBalance, activity, description) {
+    if (!Number.isFinite(newBalance) || newBalance < 0) throw new Error("Chip balance must be finite and nonnegative");
     const delta = newBalance - this.balance;
     if (delta > 0) {
       this.credit(delta, activity, description);
@@ -308,6 +311,9 @@ export class PlayerSession {
     this.bank = null;
     this.staffOverrides = null;
     this.casinoTimeMs = 0;
+    // Chips parked on a live Hold'em table. Persisted so a reload/crash can
+    // return the remaining stack instead of losing every chip on the felt.
+    this.holdemEscrow = 0;
   }
 
   statFor(activity) {
@@ -352,6 +358,7 @@ export class PlayerSession {
       bank: this.bank?.toJSON?.() ?? null,
       staffOverrides: this.staffOverrides ?? null,
       casinoTimeMs: this.casinoTimeMs ?? 0,
+      holdemEscrow: this.holdemEscrow ?? 0,
     };
     if (this.rpg) payload.rpg = this.rpg;
     if (this.rewards) payload.rewards = this.rewards;
@@ -400,6 +407,8 @@ export class PlayerSession {
     attachBalconySmokeToSession(s, data);
     attachStripTravelToSession(s, data);
     s.casinoTimeMs = data.casinoTimeMs ?? 0;
+    const escrow = Number(data.holdemEscrow);
+    s.holdemEscrow = Number.isFinite(escrow) && escrow > 0 ? Math.floor(escrow) : 0;
     return s;
   }
 }
@@ -411,13 +420,32 @@ function emptyLibrary() {
   return { recent: [], summaries: {}, slots: {} };
 }
 
+function normalizeLibrary(data) {
+  if (!data || typeof data !== "object" || Array.isArray(data)) return null;
+  for (const key of ["slots", "summaries"]) {
+    if (key in data && (!data[key] || typeof data[key] !== "object" || Array.isArray(data[key]))) return null;
+  }
+  if ("recent" in data && !Array.isArray(data.recent)) return null;
+  const lib = { ...emptyLibrary(), ...data };
+  lib.slots = Object.fromEntries(Object.entries(data.slots ?? {}).filter(
+    ([key, value]) => /^[1-5]$/.test(key) && value && typeof value === "object" && !Array.isArray(value),
+  ));
+  lib.summaries = Object.fromEntries(Object.entries(data.summaries ?? {}).filter(
+    ([key, value]) => /^[1-5]$/.test(key) && value && typeof value === "object" && !Array.isArray(value),
+  ));
+  lib.recent = [...new Set((data.recent ?? []).filter((id) => Number.isInteger(id) && id >= 1 && id <= MAX_SLOTS))];
+  return lib;
+}
+
 export function loadLibrary() {
   try {
     const raw = localStorage.getItem(LIBRARY_KEY);
     if (raw) {
-      const lib = { ...emptyLibrary(), ...JSON.parse(raw) };
-      mirrorLibraryToCache(lib);
-      return lib;
+      const lib = normalizeLibrary(JSON.parse(raw));
+      if (lib) {
+        mirrorLibraryToCache(lib);
+        return lib;
+      }
     }
   } catch {
     /* ignore corrupt data */
@@ -426,16 +454,17 @@ export function loadLibrary() {
   try {
     const raw = localStorage.getItem(LIBRARY_KEY);
     if (raw) {
-      const lib = { ...emptyLibrary(), ...JSON.parse(raw) };
-      mirrorLibraryToCache(lib);
-      return lib;
+      const lib = normalizeLibrary(JSON.parse(raw));
+      if (lib) {
+        mirrorLibraryToCache(lib);
+        return lib;
+      }
     }
   } catch {
     /* ignore */
   }
-  const cached = readCacheLibrary();
-  if (cached) {
-    const lib = { ...emptyLibrary(), ...cached };
+  const lib = normalizeLibrary(readCacheLibrary());
+  if (lib) {
     writeLibrary(lib);
     return lib;
   }
@@ -444,9 +473,9 @@ export function loadLibrary() {
 
 function migrateLegacySession() {
   const LEGACY = "mandalay-bay-session";
-  const raw = localStorage.getItem(LEGACY);
-  if (!raw) return;
   try {
+    const raw = localStorage.getItem(LEGACY);
+    if (!raw) return;
     const data = JSON.parse(raw);
     const lib = emptyLibrary();
     lib.slots["1"] = { ...data, slotId: 1, slotLabel: data.slotLabel ?? "Slot 1" };
@@ -467,10 +496,10 @@ function migrateLegacySession() {
 function writeLibrary(lib) {
   try {
     localStorage.setItem(LIBRARY_KEY, JSON.stringify(lib));
-    mirrorLibraryToCache(lib);
   } catch {
-    /* ignore quota errors */
+    /* The independent cache can still succeed when the main key fails. */
   }
+  mirrorLibraryToCache(lib);
 }
 
 function touchRecent(lib, slotId) {
@@ -525,12 +554,30 @@ export function recentSlots() {
   return ordered;
 }
 
+function validateSlotId(slotId) {
+  if (!Number.isInteger(slotId) || slotId < 1 || slotId > MAX_SLOTS) throw new Error(`slotId must be between 1 and ${MAX_SLOTS}`);
+}
+
 export function loadSlot(slotId) {
+  validateSlotId(slotId);
   const lib = loadLibrary();
   const raw = lib.slots[String(slotId)];
   if (!raw) return null;
-  const session = PlayerSession.fromJSON(raw);
+  let session;
+  try {
+    session = PlayerSession.fromJSON(raw);
+  } catch {
+    return null;
+  }
   session.slotId = slotId;
+  // A saved table stack means the tab closed mid-session. The table itself is
+  // not persisted, so return the last known stack and clear the marker in the
+  // stored slot in the same pass (idempotent across repeated loads).
+  if (session.holdemEscrow > 0) {
+    session.wallet.credit(session.holdemEscrow, "holdem", "Hold'em table stack recovered");
+    session.holdemEscrow = 0;
+    lib.slots[String(slotId)] = session.toJSON();
+  }
   touchRecent(lib, slotId);
   writeLibrary(lib);
   setActiveSlotId(slotId);
@@ -539,6 +586,7 @@ export function loadSlot(slotId) {
 
 export function saveSlot(session) {
   if (session.slotId == null) return;
+  validateSlotId(session.slotId);
   flushCasinoTime(session);
   const lib = loadLibrary();
   lib.slots[String(session.slotId)] = session.toJSON();
@@ -549,6 +597,7 @@ export function saveSlot(session) {
 }
 
 export function deleteSlot(slotId) {
+  validateSlotId(slotId);
   const lib = loadLibrary();
   delete lib.slots[String(slotId)];
   delete lib.summaries[String(slotId)];
@@ -568,7 +617,10 @@ export function loadActiveProfile() {
     if (session) return session;
   }
   const recent = recentSlots();
-  if (recent.length) return loadSlot(recent[0].slotId);
+  for (const slot of recent) {
+    const session = loadSlot(slot.slotId);
+    if (session) return session;
+  }
   return null;
 }
 

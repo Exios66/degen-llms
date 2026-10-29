@@ -66,7 +66,9 @@ def apply_args(config: GameConfig, args: argparse.Namespace) -> GameConfig:
     config.use_color = not args.no_color
     config.use_unicode = not args.ascii
     config.verbose_shuffle = args.verbose_shuffle
-    return config
+    from dataclasses import replace
+
+    return replace(config)
 
 
 def prompt_int(prompt: str, low: int, high: int, default: int) -> int:
@@ -189,7 +191,10 @@ def main_menu(args: argparse.Namespace) -> GameConfig | None:
 def main(argv: list[str] | None = None) -> None:
     parser = build_parser()
     args = parser.parse_args(argv)
-    config = main_menu(args)
+    try:
+        config = main_menu(args)
+    except ValueError as exc:
+        parser.error(str(exc))
     if config is None:
         sys.exit(0)
     try:

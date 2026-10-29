@@ -77,6 +77,7 @@ class Table:
             return outcome
 
         self.phase = RoundPhase.DEAL
+        self.shoe.begin_round()
         self._deal_initial_cards()
         self.display.show_table(self.players, self.dealer)
 
@@ -85,15 +86,15 @@ class Table:
         dealer_bj = self.dealer.peek_blackjack()
         state = TableState(dealer_up_card=dealer_up, dealer_has_blackjack=dealer_bj)
 
+        if dealer_up.is_ace:
+            self.phase = RoundPhase.INSURANCE
+            self._offer_insurance(state)
+
         if dealer_should_peek(dealer_up) and dealer_bj:
             self.dealer.reveal_hole()
             self.display.print("Dealer has blackjack.")
             self.display.show_table(self.players, self.dealer, reveal_dealer=True)
             return self._settle(outcome, state)
-
-        if dealer_up.is_ace:
-            self.phase = RoundPhase.INSURANCE
-            self._offer_insurance(state)
 
         if not dealer_bj:
             self.phase = RoundPhase.PLAYER_TURNS
@@ -108,6 +109,10 @@ class Table:
         for player in self.players:
             bet = player.place_bet(self.config)
             if isinstance(player, HumanPlayer) and bet == 0:
+                for seated in self.players:
+                    for hand in seated.round_state.hands:
+                        seated.bankroll += hand.bet
+                    seated.round_state.hands = []
                 return False
             if bet <= 0:
                 outcome.result_lines.append(f"{player.name}: sitting out (no funds)")
@@ -130,7 +135,7 @@ class Table:
             if not player.round_state.hands:
                 continue
             hand = player.round_state.hands[0]
-            max_ins = hand.bet // 2
+            max_ins = min(hand.bet // 2, player.bankroll)
             if max_ins <= 0:
                 continue
             if isinstance(player, HumanPlayer):
@@ -199,6 +204,7 @@ class Table:
             return
         if action == Action.SPLIT:
             second = hand.clone_for_split()
+            hand.split_count += 1
             hand.cards = [hand.cards[0]]
             hand.is_from_split_aces = hand.cards[0].is_ace
             second.is_from_split_aces = second.is_from_split_aces
@@ -268,6 +274,7 @@ class Table:
         self.display.show_table(self.players, self.dealer, reveal_dealer=True)
         self.display.show_round_results(outcome.result_lines)
         self.phase = RoundPhase.COMPLETE
+        self.shoe.finish_round()
         return outcome
 
 

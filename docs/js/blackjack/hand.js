@@ -18,8 +18,10 @@ export function createHand(overrides = {}) {
       return total;
     },
     get isSoft() {
-      const total = this.cards.reduce((s, c) => s + c.value, 0);
-      return this.cards.some((c) => c.isAce) && total <= 21;
+      let total = this.cards.reduce((s, c) => s + c.value, 0);
+      let aces = this.cards.filter((c) => c.isAce).length;
+      while (total > 21 && aces > 0) { total -= 10; aces -= 1; }
+      return aces > 0 && total <= 21;
     },
     get isBust() { return this.value > 21; },
     get isBlackjack() {

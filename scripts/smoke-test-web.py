@@ -524,6 +524,37 @@ def ui_regressions(page, failures: list[str]) -> None:
       check('choice_effect_once', items === 2);
       check('dialogue_disposed', !d.isActive() && dialogueRoot.childElementCount === 0);
       dialogueRoot.remove();
+      const nodeEncounterRoot = document.createElement('div');
+      document.body.append(nodeEncounterRoot);
+      const nd = new DialogueManager(nodeEncounterRoot, {});
+      nd.load({go: {text: 'Go', reputation: {staff: 1}, encounter: 'slots'}});
+      const nodeEncounterPromise = nd.start('go');
+      nd._keyHandler(new KeyboardEvent('keydown', {key: 'Enter'}));
+      nd._keyHandler(new KeyboardEvent('keydown', {key: 'Enter'}));
+      const nodeEncounterResult = await nodeEncounterPromise;
+      check('node_encounter_reputation',
+        nodeEncounterResult?.encounter === 'slots' && nodeEncounterResult?.reputation?.staff === 1);
+      nodeEncounterRoot.remove();
+      const bouncerRoot = document.createElement('div');
+      document.body.append(bouncerRoot);
+      const bouncer = new DialogueManager(bouncerRoot, {});
+      bouncer.load(await (await fetch('/rpg/js/data/dialogues.json')).json());
+      const bouncerPromise = bouncer.start('hob_bouncer_greet');
+      bouncer._keyHandler(new KeyboardEvent('keydown', {key: 'Enter'}));
+      const backstageChoice = [...bouncerRoot.querySelectorAll('button')]
+        .find((b) => b.textContent.includes("I'm with the headliner"));
+      check('backstage_choice', Boolean(backstageChoice));
+      if (backstageChoice) {
+        backstageChoice.click();
+        for (let i = 0; i < 4; i++) {
+          bouncer._keyHandler(new KeyboardEvent('keydown', {key: 'Enter'}));
+        }
+        await bouncerPromise;
+      } else {
+        bouncer.close();
+      }
+      check('backstage_flag', bouncer.flags.hob_backstage === true);
+      bouncerRoot.remove();
       const denied = {active: false, setSession() {}, open() {}, onceClosed(cb) {this.cb = cb;}};
       const bridge = new EncounterBridge({session, overlays: {}, barOverlay: denied, diningOverlay: denied, onPersist() {}});
       const deniedResult = await Promise.race([bridge.start('bar_foundation'), new Promise(r => setTimeout(() => r(null), 100))]);
@@ -591,9 +622,40 @@ def ui_regressions(page, failures: list[str]) -> None:
       check('holdem_escrow_recovered', recovered?.wallet.balance === 1040 && recovered.holdemEscrow === 0);
       check('holdem_escrow_idempotent', core.loadSlot(5)?.wallet.balance === 1040);
       core.deleteSlot(5);
+      const {HoldemOverlay} = await import('/rpg/js/systems/overlays/HoldemOverlay.js');
+      const rpgHoldemSession = core.createSlot(5, {playerName: 'RPG Escrow', chips: 1000});
+      const rpgHoldemRoot = document.createElement('div');
+      document.body.append(rpgHoldemRoot);
+      const rpgHoldem = new HoldemOverlay(rpgHoldemRoot, rpgHoldemSession, {});
+      rpgHoldem.open({minBet: 100, maxBet: 1000});
+      rpgHoldemRoot.querySelector('input').value = '200';
+      rpgHoldemRoot.querySelector('.primary').click();
+      const feltStack = rpgHoldem.table?.human?.stack ?? -1;
+      check('rpg_holdem_escrow', feltStack > 0 && rpgHoldemSession.holdemEscrow === feltStack);
+      core.saveSlot(rpgHoldemSession);
+      const recoveredRpgHoldem = core.loadSlot(5);
+      check('rpg_holdem_escrow_recovered',
+        recoveredRpgHoldem?.wallet.balance === 800 + feltStack && recoveredRpgHoldem.holdemEscrow === 0);
+      rpgHoldem.close();
+      check('rpg_holdem_cashout',
+        rpgHoldemSession.wallet.balance === 800 + feltStack && rpgHoldemSession.holdemEscrow === 0);
+      rpgHoldemRoot.remove();
+      core.deleteSlot(5);
       const s = window.__rpg.scene;
       s._autosavePosition(2000);
       check('autosave_preserves_map', s.saveAdapter.rpg.mapId === s.currentMapId);
+      if (window.__rpg.dialogue.isActive()) window.__rpg.dialogue.close();
+      const staffBeforeChallenge = s.saveAdapter.rpg.reputation?.staff ?? 0;
+      const realDialogueStart = s.dialogue.start;
+      try {
+        s.dialogue.start = async () => ({reputation: {staff: 2}});
+        await s._runChallenge({id: 'regression_challenger', name: 'Regression',
+          x: s.playerTile().x, y: s.playerTile().y});
+      } finally {
+        s.dialogue.start = realDialogueStart;
+      }
+      check('challenge_reputation',
+        (s.saveAdapter.rpg.reputation?.staff ?? 0) === staffBeforeChallenge + 2);
       window.__rpg.rewardsPhone.open();
       check('phone_owns_world_input', s.isMenuOpen());
       window.__rpg.rewardsPhone.close();

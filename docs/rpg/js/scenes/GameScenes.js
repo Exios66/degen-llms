@@ -1165,6 +1165,7 @@ export class OverworldScene extends Phaser.Scene {
       .find((id) => id && this.dialogues[id]) ?? npc.dialogueId;
 
     const result = await this.dialogue.start(dialogueId);
+    this._applyReputation(result);
     const encounterId = result.encounter || npc.encounter;
     if (encounterId) {
       await this._runEncounter(encounterId, npc, dealer);
@@ -1172,6 +1173,16 @@ export class OverworldScene extends Phaser.Scene {
     this._challengeRunning = false;
     this.canMove = true;
     this.onHudUpdate?.();
+  }
+
+  /** Add a dialogue result's reputation to the trainer card totals. */
+  _applyReputation(result) {
+    if (!result?.reputation) return;
+    const rep = this.saveAdapter.rpg.reputation ?? { whales: 0, staff: 0, tourists: 0 };
+    for (const [key, value] of Object.entries(result.reputation)) {
+      rep[key] = (rep[key] ?? 0) + value;
+    }
+    this.saveAdapter.rpg.reputation = rep;
   }
 
   /** Called by main.js when the START menu closes. */
@@ -1339,14 +1350,7 @@ export class OverworldScene extends Phaser.Scene {
     this.player.body.setVelocity(0, 0);
 
     const result = await this.dialogue.start(dialogueId);
-
-    if (result.reputation) {
-      const rep = this.saveAdapter.rpg.reputation ?? { whales: 0, staff: 0, tourists: 0 };
-      for (const [k, v] of Object.entries(result.reputation)) {
-        rep[k] = (rep[k] ?? 0) + v;
-      }
-      this.saveAdapter.rpg.reputation = rep;
-    }
+    this._applyReputation(result);
 
     if (result.encounter || npc.encounter) {
       const encounterId = result.encounter || npc.encounter;

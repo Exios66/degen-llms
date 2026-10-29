@@ -2275,10 +2275,20 @@
         "next": "hob_bouncer_who"
       },
       {
+        "label": "I'm with the headliner.",
+        "next": "hob_bouncer_backstage"
+      },
+      {
         "label": "I'll watch from the floor.",
         "next": "hob_bouncer_bye"
       }
     ]
+  },
+  "hob_bouncer_backstage": {
+    "speaker": "HOB Bouncer",
+    "text": "You're on the list. Green room's through the stage door \u2014 and the rider bowl is not a snack.",
+    "setFlag": "hob_backstage",
+    "next": "hob_bouncer_bye"
   },
   "hob_bouncer_list": {
     "speaker": "HOB Bouncer",

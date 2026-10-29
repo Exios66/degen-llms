@@ -22,7 +22,8 @@ const {
 const { HOSTED_ENCOUNTERS, TABLE_STAKE_ACTIVITIES } = await import(
   join(rpgRoot, "js/systems/HostedEncounters.js"));
 const { RPG_ITEMS } = await import(join(rpgRoot, "js/systems/Inventory.js"));
-const { DEX_REGISTRY } = await import(join(rpgRoot, "js/systems/Dex.js"));
+const { DEX_REGISTRY, recordDex } = await import(join(rpgRoot, "js/systems/Dex.js"));
+const { QuestManager } = await import(join(rpgRoot, "js/systems/QuestManager.js"));
 const { ART_UNIT } = await import(join(rpgRoot, "js/systems/MapTiles.js"));
 const { findPath, nearestReachable } = await import(join(rpgRoot, "js/systems/Pathfinder.js"));
 const {
@@ -154,12 +155,27 @@ for (const door of doors) {
   }
 }
 
-// Every non-hub map needs a way back out.
+// Every map needs a way out, and the door graph must reach it from the hub.
 for (const mapId of MAP_IDS) {
   const exits = doors.filter((d) => d.mapId === mapId);
   const entries = doors.filter((d) => d.targetMap === mapId);
   check(exits.length > 0, `${mapId}: has no exit door`);
   check(entries.length > 0, `${mapId}: is unreachable — no door targets it`);
+}
+{
+  const reachable = new Set([DEFAULT_MAP_ID]);
+  const queue = [DEFAULT_MAP_ID];
+  while (queue.length) {
+    for (const door of doorsForMap(queue.pop())) {
+      if (reachable.has(door.targetMap)) continue;
+      reachable.add(door.targetMap);
+      queue.push(door.targetMap);
+    }
+  }
+  for (const mapId of MAP_IDS) {
+    check(reachable.has(mapId),
+      `${mapId}: no door path from ${DEFAULT_MAP_ID} — disconnected content`);
+  }
 }
 
 // ── Triggers ──────────────────────────────────────────────────────────────
@@ -200,6 +216,14 @@ for (const node of Object.values(dialogues)) {
   for (const choice of node.choices ?? []) {
     if (choice.setFlag) flagSetters.add(choice.setFlag);
   }
+}
+
+// A flag-gated door is only a door if the world can ever set the flag.
+for (const door of doors) {
+  if (!door.requiresFlag) continue;
+  check(flagSetters.has(door.requiresFlag),
+    `door ${door.mapId}(${door.x},${door.y}): requiresFlag "${door.requiresFlag}" ` +
+    "is never set — the room behind it is unreachable");
 }
 
 // ── NPCs ──────────────────────────────────────────────────────────────────
@@ -347,6 +371,66 @@ for (const id of startedByDialogue) {
 for (const [id, def] of Object.entries(quests)) {
   check(def.autoStart === true || startedByDialogue.has(id),
     `quest ${id}: no dialogue offers it and it does not autoStart`);
+}
+
+// The quest log's "ask X" line must point at an NPC who can actually hand the
+// quest out, otherwise the only way to find it is to talk to everyone.
+const questStarters = new Map();
+const startsReachedFrom = (rootId) => {
+  const found = new Set();
+  const seen = new Set();
+  const queue = [rootId];
+  while (queue.length) {
+    const nodeId = queue.pop();
+    const node = dialogues[nodeId];
+    if (!node || seen.has(nodeId)) continue;
+    seen.add(nodeId);
+    if (node.startQuest) found.add(node.startQuest);
+    for (const key of ["next", "elseNext"]) if (node[key]) queue.push(node[key]);
+    for (const choice of node.choices ?? []) {
+      if (choice.startQuest) found.add(choice.startQuest);
+      if (choice.next) queue.push(choice.next);
+    }
+  }
+  return found;
+};
+for (const mapId of MAP_IDS) {
+  for (const npc of getNpcsForMap(mapId)) {
+    const ids = new Set(startsReachedFrom(npc.dialogueId));
+    if (npc.challengeDialogueId) {
+      for (const id of startsReachedFrom(npc.challengeDialogueId)) ids.add(id);
+    }
+    for (const id of ids) {
+      if (!questStarters.has(id)) questStarters.set(id, new Set());
+      questStarters.get(id).add(npc.id);
+    }
+  }
+}
+for (const [id, def] of Object.entries(quests)) {
+  if (def.autoStart || !def.giver) continue;
+  check(questStarters.get(id)?.has(def.giver),
+    `quest ${id}: giver "${def.giver}" does not offer it — the quest log sends ` +
+    "players to the wrong NPC");
+}
+
+// The pit quest counts the seven rotating dealers, not every resort staff
+// entry in the staff dex.
+{
+  const session = new PlayerSession({ chips: 1000 });
+  const qm = new QuestManager(session);
+  qm.loadRegistry(quests);
+  qm.start("dealer_meet_and_greet");
+  for (const id of [
+    "chip_chandler", "barkeep_betty", "cashier_carmen", "clerk_carmen",
+    "security_sam", "lifeguard_lou", "reef_docent",
+  ]) recordDex(session, "staff", id);
+  qm.syncDerived();
+  check(qm.stage("dealer_meet_and_greet") === 0 && !qm.isComplete("dealer_meet_and_greet"),
+    "dealer quest advanced from non-dealer staff");
+  for (const dealer of DEALER_ROSTER) recordDex(session, "staff", dealer.id);
+  qm.syncDerived();
+  check(qm.isComplete("dealer_meet_and_greet"),
+    "dealer quest did not complete after meeting all seven dealers");
 }
 
 // ── Easter eggs ───────────────────────────────────────────────────────────

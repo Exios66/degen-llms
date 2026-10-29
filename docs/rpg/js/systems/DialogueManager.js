@@ -344,8 +344,10 @@ export class DialogueManager {
       else this._finish(node);
     } else if (node.encounter) {
       this._applyNodeEffects(node);
+      const reputation = node.reputation ?? this._pendingReputation ?? null;
+      this._pendingReputation = null;
       this._cleanupKeys?.();
-      this.close({ action: "encounter", encounter: node.encounter });
+      this.close({ action: "encounter", encounter: node.encounter, reputation });
       this.hooks.onEncounter?.(node.encounter);
     } else {
       this._finish(node);

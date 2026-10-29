@@ -135,6 +135,11 @@ class LotteryActivity(Activity):
             assert result is not None
             tickets += 1
             session_net -= price
+            # Settle before the draw/scratch output: Ctrl+C during the reveal
+            # must not void a ticket whose result is already determined.
+            if result.win > 0:
+                session.wallet.credit(result.win, self.info.id, result.reason)
+                session_net += result.win
             if result.draw:
                 draw = list(result.draw)
                 if kind == "mega" and len(draw) >= 6:
@@ -144,7 +149,7 @@ class LotteryActivity(Activity):
                         ui.print(f"    Ball {i + 1}: {ball}")
                     spin_pause(0.2)
                     ui.print(f"    Powerball: {draw[-1]}")
-                elif kind in {"pick3", "pick4"}:
+                elif kind == "pick":
                     ui.print("  Drawing…")
                     for i, digit in enumerate(draw):
                         spin_pause(0.12)
@@ -156,8 +161,6 @@ class LotteryActivity(Activity):
             if result.draw and kind == "scratch" and result.symbols:
                 ui.dim(f"  Symbols: {' '.join(result.symbols)}")
             if result.win > 0:
-                session.wallet.credit(result.win, self.info.id, result.reason)
-                session_net += result.win
                 ui.success(f"Ticket pays {result.win:,} chips!")
             else:
                 ui.dim("Better luck on the next ticket.")

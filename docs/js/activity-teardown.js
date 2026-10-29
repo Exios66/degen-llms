@@ -1,6 +1,7 @@
 /** Shared leave/settle cleanup for hosted casino screens (web terminal + RPG host). */
 import { refundSportsbookOpen, refundSlips, refundTradingPositions } from "./pendingRefunds.js";
 import { spinWheel, resolveBet } from "./roulette.js";
+import { settlePendingLottery } from "./lottery.js";
 
 function finalizeSlotsSpin(ctx, clearSlotsSpinTimers) {
   const { session, runtime, persist } = ctx;
@@ -173,6 +174,7 @@ export function teardownHostedView(ctx, viewName, helpers = {}) {
     }
     case "lottery": {
       const L = runtime.lottery;
+      if (L) settlePendingLottery(session, L);
       if (L?.tickets > 0 || L?.sessionNet) {
         recordActivityResult?.("lottery", L.sessionNet, L.tickets || 1);
         L.sessionNet = 0;

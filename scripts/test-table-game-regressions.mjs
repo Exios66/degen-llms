@@ -46,6 +46,20 @@ test("cut card is honored between rounds", () => {
   shoe.beginRound();
   assert.equal(shoe.shuffleCount, before + 1);
 });
+test("a single-deck round never repeats a card when the shoe runs dry", () => {
+  const shoe = new Shoe(1);
+  shoe.beginRound();
+  const seen = new Set();
+  for (let i = 0; i < 52; i += 1) {
+    const card = shoe.deal();
+    assert(!seen.has(card.key()));
+    seen.add(card.key());
+  }
+  assert.throws(() => shoe.deal(), /empty/i);
+  shoe.finishRound();
+  shoe.beginRound();
+  assert.equal(shoe.remaining, 52);
+});
 const blackjack = (balance, ranks) => {
   const game = new BlackjackGame(defaultConfig(balance));
   game.shoe._cards = ranks.map((r) => c(r)).reverse();

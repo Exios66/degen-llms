@@ -135,23 +135,28 @@ class RouletteActivity(Activity):
                 continue
 
             last_wager = amount
-            spin_pause(0.2)
-            animate_countdown(ui, "Wheel spinning", ticks=3)
+            # Resolve and settle before the cosmetic animation: Ctrl+C during
+            # the reveal must not void a determined win or replay the wager.
             number = spin_wheel()
-            ui.dim(f'  {dealer.name}: "{pick_quip(dealer, "deal")}"')
             win, reason = resolve_bet(bet_type, amount, number, straight_pick)
             spins += 1
             color = wheel_color(number)
             history = append_spin_history(history, number, limit=18)
-            ui.print(f"\n  🎡 The ball lands on {number} ({color})")
-            ui.dim("  History: " + " · ".join(f"{n}({c[0]})" for n, c in history[:12]))
             if win > 0:
                 session.wallet.credit(win, self.info.id, reason)
                 session_net += win - amount
+            else:
+                session_net -= amount
+
+            spin_pause(0.2)
+            animate_countdown(ui, "Wheel spinning", ticks=3)
+            ui.dim(f'  {dealer.name}: "{pick_quip(dealer, "deal")}"')
+            ui.print(f"\n  🎡 The ball lands on {number} ({color})")
+            ui.dim("  History: " + " · ".join(f"{n}({c[0]})" for n, c in history[:12]))
+            if win > 0:
                 ui.success(f"{reason} — Won {win:,} chips!")
                 ui.dim(f'  {dealer.name}: "{pick_quip(dealer, "win")}"')
             else:
-                session_net -= amount
                 ui.dim(reason)
                 ui.dim(f'  {dealer.name}: "{pick_quip(dealer, "lose")}"')
 

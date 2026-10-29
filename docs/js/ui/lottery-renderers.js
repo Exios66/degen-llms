@@ -17,6 +17,7 @@ import {
   ticketKind,
   validateMegaPicks,
   classifyLotteryWin,
+  settlePendingLottery,
 } from "../lottery.js";
 import { applyTierSpeedCss, getActivityTiming } from "../rewards-perks.js";
 import { getTier, getTierPayoutBoost } from "../stakes.js";
@@ -254,23 +255,9 @@ export function buildLotteryRenderers(ctx) {
 
   function finishPendingResult() {
     const L = ensureLotteryState();
-    const pending = L.pendingOutcome;
-    if (!pending) return;
-    const { result, price, winTier } = pending;
-    L.tickets += 1;
-    L.sessionNet -= price;
-    if (result.win > 0) {
-      ctx.session.wallet.credit(result.win, "lottery", result.reason);
-      L.sessionNet += result.win;
-    }
-    L.lastResult = result;
-    L.winTier = winTier;
-    L.pendingOutcome = null;
-    L.drawing = false;
-    L.scratching = false;
+    const result = settlePendingLottery(ctx.session, L);
+    if (!result) return;
     L.scratchRevealed = ticketKind(result.ticketId) === "scratch";
-    L.revealStep = result.draw?.length ?? 0;
-    L.displayDraw = result.draw ?? [];
     persist();
     render();
   }

@@ -7,7 +7,8 @@ import { TradingDeskState, entryCostChips, settlePosition, underlyingSpot } from
 import { eventFromScenario } from "../docs/js/sportSimulator.js";
 import { settleTicket } from "../docs/js/horse_racing.js";
 import { settleDressageTicket, settleJumperTicket } from "../docs/js/equestrian.js";
-import { resolvePick3, resolvePick4, validateMegaPicks } from "../docs/js/lottery.js";
+import { resolvePick3, resolvePick4, validateMegaPicks, settlePendingLottery } from "../docs/js/lottery.js";
+import { PlayerSession } from "../docs/js/core.js";
 
 let cases = 0;
 const test = (name, run) => { run(); cases++; console.log(`PASS ${name}`); };
@@ -118,6 +119,21 @@ test("incomplete lottery picks cannot automatically match", () => {
   assert.equal(resolvePick4([]).win, 0);
   assert(validateMegaPicks([1, 2, 3, 4, NaN], 1));
   assert(validateMegaPicks([1, 2, 3, 4, 5], 1.5));
+});
+
+test("leaving mid-draw settles the pending lottery ticket once", () => {
+  const session = new PlayerSession({ chips: 995 });
+  const state = { tickets: 0, sessionNet: 0, drawing: true,
+    pendingOutcome: { result: { ticketId: "pick3", win: 500, reason: "hit", draw: [1, 2, 3] },
+      price: 5, winTier: "small" } };
+  const result = settlePendingLottery(session, state);
+  assert.equal(result.win, 500);
+  assert.equal(session.wallet.balance, 1495);
+  assert.equal(state.tickets, 1);
+  assert.equal(state.sessionNet, 495);
+  assert.equal(state.pendingOutcome, null);
+  assert.equal(settlePendingLottery(session, state), null);
+  assert.equal(session.wallet.balance, 1495);
 });
 
 console.log(`${cases} market and wagering regression cases passed.`);

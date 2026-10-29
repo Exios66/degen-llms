@@ -268,3 +268,52 @@ def test_craps_leave_returns_working_hardways_without_interrupt(monkeypatch):
     descriptions = [tx.description for tx in session.wallet.transactions]
     assert "Craps leave — hard_4 returned" in descriptions
     assert session.activity_stats["craps"].hands_or_bets == 2
+
+
+def test_roulette_interrupt_during_animation_keeps_resolved_win(monkeypatch):
+    """Ctrl+C during the wheel animation must not void a determined payout."""
+    import mandalay_bay.activities.roulette as module
+
+    class RouletteUI(InterruptUI):
+        def menu_choice(self, *args, **kwargs):
+            return 2  # Red (1:1)
+
+        def prompt_int(self, label, minimum, maximum, **kwargs):
+            return 10
+
+    _set_stakes(monkeypatch, module)
+    monkeypatch.setattr(module, "spin_wheel", lambda: 7)
+    monkeypatch.setattr(module, "animate_countdown", lambda *args, **kwargs: (_ for _ in ()).throw(KeyboardInterrupt))
+    session = PlayerSession()
+    with pytest.raises(KeyboardInterrupt):
+        module.RouletteActivity().run(session, RouletteUI([], "never"))
+    assert session.wallet.balance == 1010
+
+
+def test_lottery_interrupt_during_draw_keeps_resolved_win(monkeypatch):
+    """Ctrl+C while drawing balls must not void a winning ticket."""
+    import mandalay_bay.activities.lottery as module
+    from mandalay_bay.lottery import TicketResult
+
+    class LotteryUI(InterruptUI):
+        def menu_choice(self, *args, **kwargs):
+            return 1  # Pick 3, then Quick Pick
+
+    monkeypatch.setattr(
+        module,
+        "pick_stake_tier",
+        lambda *args, **kwargs: SimpleNamespace(id="standard", name="Standard", description="test"),
+    )
+    monkeypatch.setattr(
+        module,
+        "resolve_pick3",
+        lambda picks, price, ticket_id="pick3": TicketResult(
+            "pick3", "Strip Pick 3", price, list(picks), [1, 2, 3], 1000, "Straight hit",
+        ),
+    )
+    monkeypatch.setattr(module, "spin_pause", lambda *args, **kwargs: (_ for _ in ()).throw(KeyboardInterrupt))
+    session = PlayerSession()
+    with pytest.raises(KeyboardInterrupt):
+        module.LotteryActivity().run(session, LotteryUI([], "never"))
+    # Standard tier prices the $2 Pick 3 at $4; the winning credit is 1000.
+    assert session.wallet.balance == 1996

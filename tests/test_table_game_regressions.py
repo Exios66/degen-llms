@@ -48,6 +48,21 @@ def test_cut_card_waits_until_round_finishes():
     assert shoe.shuffle_count == shuffles + 1
 
 
+def test_single_deck_round_never_repeats_cards_when_shoe_runs_dry():
+    shoe = Shoe(1)
+    shoe.begin_round()
+    seen = set()
+    for _ in range(52):
+        card = shoe.deal()
+        assert card.key() not in seen
+        seen.add(card.key())
+    with pytest.raises(RuntimeError):
+        shoe.deal()
+    shoe.finish_round()
+    shoe.begin_round()
+    assert shoe.remaining == 52
+
+
 class QuietDisplay:
     def __getattr__(self, name):
         return lambda *args, **kwargs: None

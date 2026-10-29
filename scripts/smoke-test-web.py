@@ -641,6 +641,18 @@ def ui_regressions(page, failures: list[str]) -> None:
         rpgHoldemSession.wallet.balance === 800 + feltStack && rpgHoldemSession.holdemEscrow === 0);
       rpgHoldemRoot.remove();
       core.deleteSlot(5);
+      const lotterySession = new PlayerSession({ chips: 1000 });
+      const lotteryRuntime = { lottery: { sessionNet: 0, tickets: 0, drawing: true,
+        pendingOutcome: { result: { ticketId: "pick3", win: 500, reason: "Straight hit", draw: [1, 2, 3] },
+          price: 2, winTier: "small" } } };
+      let lotteryRecord = null;
+      const lotteryCtx = { session: lotterySession, runtime: lotteryRuntime,
+        recordActivityResult(activity, net, bets) { lotteryRecord = { activity, net, bets }; },
+        clearActivityVisit() {}, persist() {} };
+      teardownHostedView(lotteryCtx, "lottery");
+      check('lottery_pending_settled', lotterySession.wallet.balance === 1500
+        && lotteryRuntime.lottery.pendingOutcome === null
+        && lotteryRecord?.net === 498 && lotteryRecord?.bets === 1);
       const s = window.__rpg.scene;
       s._autosavePosition(2000);
       check('autosave_preserves_map', s.saveAdapter.rpg.mapId === s.currentMapId);

@@ -1,6 +1,32 @@
 import { secureRandomInt } from "./core.js";
 import { getTierPayoutBoost } from "./stakes.js";
 
+/**
+ * Settle a ticket whose draw/scratch reveal was interrupted by leaving the
+ * table. Returns the pending result, or null when there is nothing to settle.
+ * The wallet is credited before the animation in normal play; this covers the
+ * teardown path where the reveal never finishes.
+ */
+export function settlePendingLottery(session, state) {
+  const pending = state?.pendingOutcome;
+  if (!pending) return null;
+  const { result, price, winTier } = pending;
+  state.tickets = (state.tickets ?? 0) + 1;
+  state.sessionNet = (state.sessionNet ?? 0) - price;
+  if (result.win > 0) {
+    session.wallet.credit(result.win, "lottery", result.reason);
+    state.sessionNet += result.win;
+  }
+  state.lastResult = result;
+  state.winTier = winTier;
+  state.pendingOutcome = null;
+  state.drawing = false;
+  state.scratching = false;
+  state.revealStep = result.draw?.length ?? 0;
+  state.displayDraw = result.draw ?? [];
+  return result;
+}
+
 /** Corrected Powerball-style ranges (docs / real lottery feel). */
 export const MEGA_BALLS = 5;
 export const MEGA_BALL_MAX = 70;

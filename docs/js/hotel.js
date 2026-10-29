@@ -262,6 +262,8 @@ export function currentHallwayBeat(session) {
   return HALLWAY_BEATS[hotel.hallwayProgress] ?? null;
 }
 
+const ROOM_RANK = { standard: 0, suite: 1, penthouse: 2 };
+
 /** @returns {{ ok: boolean, message: string }} */
 export function upgradeRoom(session, targetType, rewardsTracker) {
   const hotel = ensureHotel(session);
@@ -274,6 +276,14 @@ export function upgradeRoom(session, targetType, rewardsTracker) {
 
   if (targetType === "standard") {
     return { ok: false, message: "You're already at baseline luxury." };
+  }
+  if ((ROOM_RANK[targetType] ?? 0) <= (ROOM_RANK[hotel.roomType] ?? 0)) {
+    return {
+      ok: false,
+      message: hotel.roomType === targetType
+        ? `You're already in the ${target.label} — no upgrade needed.`
+        : `The ${target.label} is below your current room — upgrades don't move you down.`,
+    };
   }
   if (hasComp) {
     redeemRoomComp(session, rewardsTracker, target.compId);
@@ -409,10 +419,12 @@ export function buildFolioLines(session) {
     runningTotal += ra.minibarTab;
   }
 
+  const alreadyOnFolio = (needle) =>
+    ra.folioCharges?.some((e) => e.label?.toLowerCase().includes(needle)) ?? false;
   let serviceTotal = 0;
-  if (ra.decisions?.includes("room_service")) serviceTotal += 35;
-  if (ra.decisions?.includes("tip_maid")) serviceTotal += 25;
-  if (serviceTotal > 0 && !ra.folioCharges?.some((e) => e.label?.includes("room service") || e.label?.includes("maid"))) {
+  if (ra.decisions?.includes("room_service") && !alreadyOnFolio("room service")) serviceTotal += 35;
+  if (ra.decisions?.includes("tip_maid") && !alreadyOnFolio("housekeeping")) serviceTotal += 25;
+  if (serviceTotal > 0) {
     lines.push(`In-room services: ${fmtChips(serviceTotal)}`);
     runningTotal += serviceTotal;
   }

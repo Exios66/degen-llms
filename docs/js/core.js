@@ -369,6 +369,7 @@ export class PlayerSession {
     if (this.worldCycle) payload.worldCycle = this.worldCycle;
     if (this.intoxication) payload.intoxication = this.intoxication;
     if (this.dining) payload.dining = this.dining;
+    if (this.bar) payload.bar = this.bar;
     if (this.balconySmoke) payload.balconySmoke = this.balconySmoke;
     if (this.stripTravel) payload.stripTravel = this.stripTravel;
     return payload;

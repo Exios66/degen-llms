@@ -303,7 +303,6 @@ export function orderBarVenueDrink(session, venueId, drinkId, round) {
     if (!session.wallet.debit(drink.price, "bar", `${drink.name} @ ${venue.name}`)) {
       return { ok: false, message: `Insufficient chips — ${drink.name} is $${drink.price.toLocaleString()}.` };
     }
-    ensureBar(session).orders.push({ venueId, drinkId, ts: Date.now() });
     session.recordVisit("bar");
     if (drinkId !== "foundation_edible") {
       recordConsumption(session, drinkId, { source: venue.source });

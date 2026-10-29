@@ -103,7 +103,11 @@ def resolve_session(args: argparse.Namespace, ui: TerminalUI, library: SaveLibra
 def main(argv: list[str] | None = None) -> None:
     parser = build_parser()
     args = parser.parse_args(argv)
-    library = SaveLibrary(save_dir=resolve_save_dir(args))
+    save_dir = resolve_save_dir(args)
+    try:
+        library = SaveLibrary(save_dir=save_dir)
+    except OSError as exc:
+        parser.error(f"Cannot use save directory {save_dir}: {exc}")
 
     if args.list_saves:
         print(format_save_library(library))

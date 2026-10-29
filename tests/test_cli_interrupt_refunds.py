@@ -73,6 +73,41 @@ def test_blackjack_activity_records_settled_stats_after_interrupt(monkeypatch):
     stats = session.activity_stats["blackjack"]
     assert stats.net_winnings == 10 and stats.hands_or_bets == 1
 
+@pytest.mark.parametrize("error", [KeyboardInterrupt, EOFError])
+@pytest.mark.parametrize("ranks,expected", [
+    # Dealer draws out to a bust: the player's win must be banked before the reveal.
+    (["TEN", "NINE", "TEN", "SIX", "KING"], 1010),
+    # Dealer blackjack: the announced loss must be banked before the reveal.
+    (["TEN", "ACE", "NINE", "KING"], 990),
+])
+def test_blackjack_interrupt_at_dealer_reveal_still_settles(monkeypatch, error, ranks, expected):
+    """Ctrl+C when the dealer's final hand appears must not void a determined hand."""
+    from blackjack.cards import Card, Rank, Shoe, Suit
+    from blackjack.config import GameConfig
+    from blackjack.display import Display
+    from blackjack.rules import Action
+    from blackjack.runner import run_casino_blackjack
+
+    shoe = Shoe(num_decks=1)
+    shoe._cards = [Card(Rank[rank], Suit.SPADES) for rank in reversed(ranks)]
+    shoe._cut_index = 0
+    monkeypatch.setattr("blackjack.runner.Shoe", lambda **kwargs: shoe)
+    monkeypatch.setattr(Display, "prompt_bet", lambda *args: 10)
+    monkeypatch.setattr(Display, "prompt_insurance", lambda *args: False)
+    monkeypatch.setattr(Display, "prompt_action", lambda *args: Action.STAND)
+    monkeypatch.setattr(Display, "prompt_continue", lambda *args: False)
+    monkeypatch.setattr(Display, "show_round_results", lambda *args: None)
+
+    def show_table(*args, **kwargs):
+        if kwargs.get("reveal_dealer"):
+            raise error()
+
+    monkeypatch.setattr(Display, "show_table", show_table)
+    wallet = ChipWallet(1000)
+    with pytest.raises(error):
+        run_casino_blackjack(GameConfig(num_decks=1, use_color=False), wallet)
+    assert wallet.balance == expected
+
 
 class InterruptUI:
     def __init__(self, choices, interrupt_prefix):
@@ -453,3 +488,62 @@ def test_lottery_interrupt_during_draw_keeps_resolved_win(monkeypatch):
         module.LotteryActivity().run(session, LotteryUI([], "never"))
     # Standard tier prices the $2 Pick 3 at $4; the winning credit is 1000.
     assert session.wallet.balance == 1996
+
+
+def test_sportsbook_interrupt_at_settled_score_does_not_refund_losing_ticket(monkeypatch):
+    """Ctrl+C on a final-score line must not return a determined losing stake."""
+    import mandalay_bay.activities.sportsbook as module
+
+    _set_stakes(monkeypatch, module)
+    activity = module.SportsbookActivity()
+    activity._events = [dict(eventId="test", eventType="game", home="H", away="A", homeOdds=100,
+                             awayOdds=100, spread=0, spreadHomeOdds=100, spreadAwayOdds=100,
+                             total=40, totalOverOdds=100, totalUnderOdds=100, label="A at H", sport="test")]
+
+    def simulate(catalog, event):
+        event.update(settled=True, homeScore=3, awayScore=10)
+
+    monkeypatch.setattr(module, "simulate_event_outcome", simulate)
+    session = PlayerSession()
+    # Board -> place wager -> moneyline -> home (loses) -> back -> settle all.
+    ui = InterruptUI([1, 1, 1, 2, 3, 3], "A at H:")
+    with pytest.raises(KeyboardInterrupt):
+        activity.run(session, ui)
+    assert ui.interrupted
+    assert session.wallet.balance == 990
+    assert not any(tx.kind == TransactionKind.REFUND for tx in session.wallet.transactions)
+    assert not activity._pending
+
+
+def test_sportsbook_interrupt_at_prediction_reveal_does_not_refund_losing_contract(monkeypatch):
+    """Ctrl+C on a resolved market line must not return a determined losing stake."""
+    import mandalay_bay.activities.sportsbook as module
+
+    _set_stakes(monkeypatch, module)
+    activity = module.SportsbookActivity()
+    activity._predictions.markets = [
+        dict(marketId="win", question="Win market?", yesPrice=50, noPrice=50, category="history",
+             volume=1, fixedResolution="yes", resolution=None),
+        dict(marketId="lose", question="Lose market?", yesPrice=50, noPrice=50, category="history",
+             volume=1, fixedResolution="yes", resolution=None),
+    ]
+
+    class PredictionUI(InterruptUI):
+        def __init__(self):
+            super().__init__([2, 1, 1, 1, 2, 5, 3], "Lose market?")
+            self._markets = iter([1, 2])
+
+        def prompt_int(self, label, minimum, maximum, **kwargs):
+            if label.startswith("Market number"):
+                return next(self._markets)
+            return minimum
+
+    session = PlayerSession()
+    ui = PredictionUI()
+    with pytest.raises(KeyboardInterrupt):
+        activity.run(session, ui)
+    assert ui.interrupted
+    # YES on the win market pays 20; the NO contract on the lose market forfeits 10.
+    assert session.wallet.balance == 1000
+    assert not any(tx.kind == TransactionKind.REFUND for tx in session.wallet.transactions)
+    assert not activity._predictions.positions

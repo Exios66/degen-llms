@@ -967,11 +967,20 @@ function applyDeepView(deepView) {
     return;
   }
   if (RENDERERS[deepView]) {
-    // Data-backed views need their payload; a bare floor deep link must not
-    // render a menu of "undefined" entries.
-    pushView(deepView, deepView === "floor"
-      ? { floor: FLOOR_ORDER.includes(params.get("floor") ?? "") ? params.get("floor") : FLOOR_ORDER[0] }
-      : {});
+    // Data-backed views need their payload. The floor list defaults to the
+    // first floor; a bare save-create deep link must not render a form for
+    // "Slot undefined" — that target slot is the payload, so land on the
+    // picker where the flow starts.
+    if (deepView === "floor") {
+      const floor = params.get("floor") ?? "";
+      pushView("floor", { floor: FLOOR_ORDER.includes(floor) ? floor : FLOOR_ORDER[0] });
+      return;
+    }
+    if (deepView === "save-create") {
+      pushView("save-picker");
+      return;
+    }
+    pushView(deepView, {});
   }
 }
 

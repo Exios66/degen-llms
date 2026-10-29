@@ -27,6 +27,11 @@ def main():
         def click(label):
             page.get_by_role('button', name=label, exact=False).first.click()
 
+        go('save-create')
+        assert 'Slot undefined' not in text(), text()
+        assert 'SAVE LIBRARY' in text().upper(), text()
+        print('PASS bare save-create deep link lands on the save library')
+
         go('roulette')
         inputs = page.locator('input[type=number]')
         wager, pick = inputs.nth(0), inputs.nth(1)

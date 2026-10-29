@@ -19,6 +19,13 @@ CONTEXT_ONLY="${GBP_VERIFY_CONTEXT_ONLY:-0}"
 DEBUG_CODES=()
 VERIFY_FAILED=0
 
+# GNU date supports %3N; BSD date (macOS) prints a literal "N", which broke the
+# latency arithmetic and skipped every check after the status code. Python is
+# already required by the sync (import-map generation), so use it here.
+now_ms() {
+  python3 -c 'import time; print(int(time.time() * 1000))'
+}
+
 curl_check() {
   local label="$1"
   local path="$2"
@@ -32,9 +39,9 @@ curl_check() {
   local latency_ms
 
   local start end
-  start="$(date +%s%3N)"
+  start="$(now_ms)"
   http_code="$(curl -sS -L --max-time "$TIMEOUT" -o "$tmp" -w "%{http_code}" "$url" || echo "000")"
-  end="$(date +%s%3N)"
+  end="$(now_ms)"
   latency_ms=$((end - start))
 
   gh_pages_build_log_set "http_${label}" "$http_code"
@@ -61,10 +68,24 @@ curl_check() {
 
 # Accept both layouts: the bundled deploy points at site/js/app.js, older
 # deploys at js/app.js.
+# Pages publishes asynchronously after the branch push. Wait for the bundled
+# entry point so the checks below inspect the new tree, not the cached one.
+BUNDLE_DEADLINE=$((SECONDS + 180))
+while (( SECONDS < BUNDLE_DEADLINE )); do
+  if [[ "$(curl -sS -L --max-time "$TIMEOUT" -o /dev/null -w "%{http_code}" "${BASE}site/js/app.js" || echo 000)" == "200" ]]; then
+    break
+  fi
+  sleep 10
+done
+
 curl_check "index" "index.html" "$GBP_DEBUG_VERIFY_INDEX" '<script type="module" src="(site/)?js/app\.js' || true
 # app.js wires renderers; horse canvas helpers live in horse-sprites.js.
 curl_check "app_js" "js/app.js" "$GBP_DEBUG_VERIFY_APP_JS" 'buildRacingRenderers|createRuntime' || true
 curl_check "horse_sprites_js" "js/horse-sprites.js" "$GBP_DEBUG_VERIFY_HORSE_SPRITES" 'createHorseSpriteCanvas|HORSE_SPRITE_ROSTER' || true
+curl_check "app_bundle" "site/js/app.js" "$GBP_DEBUG_VERIFY_APP_JS" '__casinoReady' || true
+curl_check "rpg_bundle" "site/rpg/js/main.js" "$GBP_DEBUG_VERIFY_APP_JS" '__rpgReady' || true
+curl_check "bundle_data" "site/rpg/data/sports_catalog.json" "$GBP_DEBUG_VERIFY_APP_JS" '[\[{]' || true
+curl_check "combined_css" "site/css/casino-combined.css" "$GBP_DEBUG_VERIFY_CSS" 'horse-sprite-canvas' || true
 curl_check "casino_css" "css/casino.css" "$GBP_DEBUG_VERIFY_CSS" 'horse-sprite-canvas' || true
 
 tmp_index="$(mktemp)"

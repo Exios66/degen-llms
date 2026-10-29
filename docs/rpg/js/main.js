@@ -298,6 +298,9 @@ async function startOverworld(activeSession) {
       default: "arcade",
       arcade: { gravity: { y: 0 }, debug: false },
     },
+    // Our AudioManager owns BGM/SFX; skip Phaser's own WebAudio manager so boot
+    // does not build (or block on) a second AudioContext before any gesture.
+    audio: { noAudio: true },
     // RESIZE, not FIT: the world is square and phones are not, so FIT letterboxed
     // the game into a band. The canvas takes the whole shell and the camera
     // decides how much of the property fits (see OverworldScene._fitCamera).

@@ -61,6 +61,8 @@ def main() -> int:
         check(
             "runtime-data-mirrored",
             (staged / "docs" / "site" / "data" / "sports_scenarios.json").is_file()
+            and (staged / "docs" / "site" / "data" / "guest_directory.json").is_file()
+            and (staged / "docs" / "site" / "rpg" / "data" / "sports_catalog.json").is_file()
             and (staged / "docs" / "site" / "assets").is_dir(),
         )
 

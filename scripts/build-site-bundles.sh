@@ -31,10 +31,12 @@ npx --yes "esbuild@$ESBUILD_VERSION" \
   --legal-comments=none --log-level=error
 
 # Cart/quest/sports asset URLs inside the bundles are relative to the bundle
-# itself, so mirror the runtime data next to the outputs.
-rm -rf "$DOCS_DIR/site/data" "$DOCS_DIR/site/assets"
+# itself, so mirror the runtime data next to both outputs: `../data` from
+# site/js/ and site/rpg/js/ resolves to site/data and site/rpg/data.
+rm -rf "$DOCS_DIR/site/data" "$DOCS_DIR/site/assets" "$DOCS_DIR/site/rpg/data"
 cp -R "$DOCS_DIR/data" "$DOCS_DIR/site/data"
 cp -R "$DOCS_DIR/assets" "$DOCS_DIR/site/assets"
+cp -R "$DOCS_DIR/data" "$DOCS_DIR/site/rpg/data"
 
 python3 - "$DOCS_DIR" <<'PY'
 import pathlib

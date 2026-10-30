@@ -1,11 +1,15 @@
 import random
+from unittest.mock import Mock
+
+import pytest
 
 from blackjack.cards import Card, Rank, Shoe, Suit
 from blackjack.config import GameConfig
 from blackjack.display import Display
 from blackjack.hand import Hand
 from blackjack.player import SimulatedPlayer
-from blackjack.table import Table
+from blackjack.rules import RoundPhase, TableState
+from blackjack.table import RoundOutcome, Table
 
 
 class SeededRandom:
@@ -90,3 +94,31 @@ def test_simulated_player_bets_within_limits() -> None:
     bot = SimulatedPlayer("Alex", 1, 500)
     bet = bot.place_bet(config)
     assert 10 <= bet <= 100
+
+
+@pytest.mark.parametrize("output", ["show_table", "show_round_results"])
+@pytest.mark.parametrize("error", [KeyboardInterrupt, EOFError])
+def test_settlement_completes_round_and_releases_shoe_before_output(monkeypatch, output, error):
+    config = GameConfig(starting_bankroll=500, num_decks=1)
+    display = Display(config)
+    shoe = ScriptedShoe([c(Rank.TWO)])
+    table = Table.from_config(config, display, shoe)
+    table.human().bankroll = 490
+    table.human().round_state.hands = [Hand(cards=[c(Rank.TEN), c(Rank.KING)], bet=10)]
+    table.dealer.hand = Hand(cards=[c(Rank.TEN), c(Rank.NINE)])
+    outcome = RoundOutcome()
+    shoe.begin_round()
+
+    def interrupted_output(*args, **kwargs):
+        assert table.phase == RoundPhase.COMPLETE
+        assert not shoe._round_active
+        assert table.human().bankroll == 510
+        raise error
+
+    monkeypatch.setattr(display, "show_table", Mock())
+    monkeypatch.setattr(display, output, interrupted_output)
+    with pytest.raises(error):
+        table._settle(outcome, TableState(dealer_up_card=c(Rank.TEN)))
+    assert outcome.human_net == 10
+    assert table.phase == RoundPhase.COMPLETE
+    assert not shoe._round_active

@@ -42,7 +42,9 @@ def test_blackjack_interrupted_round_preserves_only_settled_result(monkeypatch, 
     assert wallet.balance == expected
 
 
-def test_blackjack_activity_records_settled_stats_after_interrupt(monkeypatch):
+@pytest.mark.parametrize("error", [KeyboardInterrupt, EOFError])
+@pytest.mark.parametrize("delta", [-10, 0, 10])
+def test_blackjack_activity_records_settled_stats_after_interrupt(monkeypatch, error, delta):
     import mandalay_bay.activities.blackjack as module
 
     session = PlayerSession()
@@ -52,19 +54,86 @@ def test_blackjack_activity_records_settled_stats_after_interrupt(monkeypatch):
         # finally; the result print then interrupted the session.
         if round_counter is not None:
             round_counter[0] += 1
-        wallet.credit(10, activity_id, "Settled hand")
-        raise KeyboardInterrupt
+        wallet.apply_delta(delta, activity_id, "Settled hand")
+        raise error
 
     monkeypatch.setattr(module, "pick_stake_tier", lambda *args, **kwargs: SimpleNamespace(description="test"))
     monkeypatch.setattr(module, "effective_table_stakes", lambda *args, **kwargs: (10, 1000))
     monkeypatch.setattr("blackjack.runner.run_casino_blackjack", interrupted_table)
 
-    with pytest.raises(KeyboardInterrupt):
+    with pytest.raises(error):
         module.BlackjackActivity().run(session, QuickHandUI())
     # The settled hand reached both the wallet and the stats ledger exactly once.
-    assert session.wallet.balance == 1010
+    assert session.wallet.balance == 1000 + delta
     stats = session.activity_stats["blackjack"]
-    assert stats.net_winnings == 10 and stats.hands_or_bets == 1
+    assert stats.net_winnings == delta and stats.hands_or_bets == 1
+
+
+@pytest.mark.parametrize("error", [KeyboardInterrupt, EOFError])
+@pytest.mark.parametrize("ranks,action,expected", [
+    (["10", "10", "7", "9"], "stand", 990),
+    (["10", "10", "8", "8"], "stand", 1000),
+    (["A", "9", "K", "7", "4"], "stand", 1015),
+    (["5", "9", "6", "7", "10", "K"], "double", 1020),
+])
+def test_blackjack_result_interruption_keeps_loss_push_natural_and_double(
+    monkeypatch, error, ranks, action, expected,
+):
+    from blackjack.cards import Card, Rank, Shoe, Suit
+    from blackjack.config import GameConfig
+    from blackjack.display import Display
+    from blackjack.rules import Action
+    from blackjack.runner import run_casino_blackjack
+
+    shoe = Shoe(num_decks=1)
+    shoe._cards = [Card(Rank(rank), Suit.SPADES) for rank in reversed(ranks)]
+    shoe._cut_index = 0
+    monkeypatch.setattr("blackjack.runner.Shoe", lambda **kwargs: shoe)
+    monkeypatch.setattr(Display, "prompt_bet", lambda *args: 10)
+    monkeypatch.setattr(Display, "prompt_action", lambda *args: Action[action.upper()])
+
+    def interrupt(*args):
+        raise error
+
+    monkeypatch.setattr(Display, "show_round_results", interrupt)
+    wallet = ChipWallet(1000)
+    with pytest.raises(error):
+        run_casino_blackjack(GameConfig(num_decks=1, use_color=False), wallet, activity_id="test-table")
+    assert wallet.balance == expected
+    assert sum(tx.amount for tx in wallet.transactions) == expected - 1000
+    assert len(wallet.transactions) == (0 if expected == 1000 else 1)
+    assert all(tx.activity == "test-table" for tx in wallet.transactions)
+
+
+def test_blackjack_unfinished_second_round_preserves_first_round_only(monkeypatch):
+    from blackjack.cards import Card, Rank, Shoe, Suit
+    from blackjack.config import GameConfig
+    from blackjack.display import Display
+    from blackjack.rules import Action
+    from blackjack.runner import run_casino_blackjack
+
+    shoe = Shoe(num_decks=1)
+    ranks = [Rank.TEN, Rank.NINE, Rank.TEN, Rank.SIX, Rank.KING,
+             Rank.TEN, Rank.NINE, Rank.EIGHT, Rank.EIGHT]
+    shoe._cards = [Card(rank, Suit.SPADES) for rank in reversed(ranks)]
+    shoe._cut_index = 0
+    monkeypatch.setattr("blackjack.runner.Shoe", lambda **kwargs: shoe)
+    monkeypatch.setattr(Display, "prompt_bet", lambda *args: 10)
+    monkeypatch.setattr(Display, "prompt_continue", lambda *args: True)
+    actions = iter([Action.STAND])
+
+    def action(*args):
+        result = next(actions, None)
+        if result is None:
+            raise EOFError
+        return result
+
+    monkeypatch.setattr(Display, "prompt_action", action)
+    wallet = ChipWallet(1000)
+    with pytest.raises(EOFError):
+        run_casino_blackjack(GameConfig(num_decks=1, use_color=False), wallet)
+    assert wallet.balance == 1010
+    assert [tx.amount for tx in wallet.transactions] == [10]
 
 
 class QuickHandUI:
@@ -341,6 +410,38 @@ def test_holdem_table_creation_failure_does_not_debit(monkeypatch):
     assert not session.wallet.transactions
 
 
+@pytest.mark.parametrize("error", [KeyboardInterrupt, EOFError])
+@pytest.mark.parametrize("stack,committed,folded,hand_over,expected", [
+    (70, 30, False, False, 1000),  # All live contributions are unresolved.
+    (0, 100, False, False, 1000),  # An all-in stake must also be recoverable.
+    (70, 30, True, False, 970),  # Folding has already lost the contribution.
+    (130, 30, False, True, 1030),  # Settled winnings already include the pot.
+])
+def test_holdem_interruption_refunds_only_live_unsettled_contributions(
+    monkeypatch, error, stack, committed, folded, hand_over, expected,
+):
+    import mandalay_bay.activities.holdem as module
+
+    _set_stakes(monkeypatch, module)
+
+    def interrupted_hand(table):
+        table.human.stack = stack
+        table.human.total_in_hand = committed
+        table.human.folded = folded
+        table.hand_over = hand_over
+        raise error
+
+    monkeypatch.setattr(module.HoldemTable, "start_hand", interrupted_hand)
+    ui = InterruptUI([], "never")
+    ui.prompt_int = lambda *args, **kwargs: 100
+    session = PlayerSession()
+    with pytest.raises(error):
+        module.HoldemActivity().run(session, ui)
+    assert session.wallet.balance == expected
+    assert [tx.amount for tx in session.wallet.transactions] == [-100, expected - 900]
+    assert session.activity_stats["holdem"].net_winnings == expected - 1000
+
+
 class CrapsInterruptUI(InterruptUI):
     """Places craps wagers, then Ctrl+C while later wagers are pending."""
 
@@ -356,7 +457,7 @@ class CrapsInterruptUI(InterruptUI):
         return 1  # Pass Line
 
     def prompt_int(self, label, minimum, maximum, **kwargs):
-        if "Pass Line amount" in label:
+        if "Pass Line amount" in label or "Don't Pass amount" in label:
             return 10
         if label.startswith("Field") or "Hard 4" in label:
             return 10
@@ -453,18 +554,41 @@ def test_craps_leave_returns_working_hardways_without_interrupt(monkeypatch):
     assert session.activity_stats["craps"].hands_or_bets == 2
 
 
-def test_craps_interrupt_during_animation_settles_all_rolled_bets(monkeypatch):
+@pytest.mark.parametrize("error", [KeyboardInterrupt, EOFError])
+@pytest.mark.parametrize("line,dice,expected,returned", [
+    (1, (3, 4), 990, []),
+    (1, (2, 2), 1080, ["line"]),
+    (1, (1, 3), 1000, ["line"]),
+    (1, (3, 3), 990, ["line", "hard_4"]),
+    (1, (1, 1), 1010, ["hard_4"]),
+    (2, (6, 6), 1020, ["hard_4"]),
+    (2, (1, 2), 1020, ["hard_4"]),
+    (2, (3, 4), 970, []),
+])
+def test_craps_interrupt_during_animation_settles_all_rolled_bets(
+    monkeypatch, error, line, dice, expected, returned,
+):
     module = _craps_activity(monkeypatch)
     from mandalay_bay.craps import DiceRoll
 
-    monkeypatch.setattr(module.CrapsTable, "roll", lambda self: DiceRoll(3, 4))
-    monkeypatch.setattr(module, "animate_dice_roll", lambda *args: (_ for _ in ()).throw(KeyboardInterrupt))
+    monkeypatch.setattr(module.CrapsTable, "roll", lambda self: DiceRoll(*dice))
+
+    def interrupt(*args):
+        raise error
+
+    monkeypatch.setattr(module, "animate_dice_roll", interrupt)
     session = PlayerSession()
-    with pytest.raises(KeyboardInterrupt):
-        module.CrapsActivity().run(session, CrapsInterruptUI(place_side=True))
-    # Pass line wins, Field and Hard 4 lose on seven; none remain working.
-    assert session.wallet.balance == 990
-    assert not any("returned" in tx.description for tx in session.wallet.transactions)
+    ui = CrapsInterruptUI(place_side=True)
+    ui.menu_choice = lambda *args, **kwargs: line
+    with pytest.raises(error):
+        module.CrapsActivity().run(session, ui)
+    assert session.wallet.balance == expected
+    assert session.activity_stats["craps"].net_winnings == expected - 1000
+    assert session.activity_stats["craps"].hands_or_bets == 1
+    assert sum(tx.amount for tx in session.wallet.transactions) == expected - 1000
+    assert [tx.description for tx in session.wallet.transactions if "returned" in tx.description] == [
+        f"Craps leave — {bet} returned" for bet in returned
+    ]
 
 
 def test_roulette_interrupt_during_animation_keeps_resolved_win(monkeypatch):

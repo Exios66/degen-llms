@@ -152,3 +152,63 @@ def test_custom_blackjack_max_default_stays_within_limits(monkeypatch, bankroll,
     config = blackjack_main.custom_game_wizard()
     assert config.max_bet == maximum
     assert config.min_bet <= config.max_bet <= config.starting_bankroll
+
+
+class StrictTerminalUI(casino_main.TerminalUI):
+    """A real TerminalUI with scripted answers: unknown methods raise."""
+
+    def __init__(self, choices):
+        super().__init__(use_color=False)
+        self._choices = iter(choices)
+
+    def prompt(self, text):
+        return str(next(self._choices))
+
+    def prompt_int(self, prompt, low, high, default=None):
+        return low
+
+    def menu_choice(self, options, title=None, **kwargs):
+        return next(self._choices)
+
+    def pause(self):
+        pass
+
+
+def test_trading_desk_menu_paths_render_with_the_real_terminal_ui(monkeypatch, capsys):
+    """The floor must not call UI helpers TerminalUI does not implement."""
+    from mandalay_bay.activities import trading_desk as module
+    from mandalay_bay.chips import ChipWallet
+    from mandalay_bay.session import PlayerSession
+
+    monkeypatch.setattr(module, "entry_cost_chips", lambda *args, **kwargs: 100)
+    monkeypatch.setattr(module, "underlying_spot", lambda *args, **kwargs: 10.0)
+    monkeypatch.setattr(
+        module,
+        "settle_position",
+        lambda *args, **kwargs: {"payout": 125, "pnl": 25, "reason": "settled"},
+    )
+    session = PlayerSession(wallet=ChipWallet(1000))
+    # Browse & buy, settle positions, show underlying quotes, leave.
+    ui = StrictTerminalUI([1, 1, 2, 6, 0])
+
+    module.TradingDeskActivity().run(session, ui)
+
+    out = capsys.readouterr().out
+    assert "— 100 chips ·" in out
+    assert "settled (+25)" in out
+    assert "Underlying spots" in out
+    assert session.wallet.balance == 1025
+    assert session.activity_stats["trading_desk"].net_winnings == 25
+
+
+def test_save_dir_pointing_at_a_file_exits_with_a_message(tmp_path, capsys):
+    target = tmp_path / "not-a-dir"
+    target.write_text("x")
+
+    with pytest.raises(SystemExit) as result:
+        casino_main.main(["--list-saves", "--save-dir", str(target)])
+
+    captured = capsys.readouterr()
+    assert result.value.code == 2
+    assert "Cannot use save directory" in captured.err
+    assert "Traceback" not in captured.err

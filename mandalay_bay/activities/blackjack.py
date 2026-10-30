@@ -65,14 +65,25 @@ class BlackjackActivity(Activity):
             use_unicode=session.use_unicode,
         )
 
+        settled_rounds = [0]
         chips_before_table = session.wallet.balance
         try:
-            net = run_casino_blackjack(config, session.wallet, activity_id=self.info.id)
+            net = run_casino_blackjack(
+                config,
+                session.wallet,
+                activity_id=self.info.id,
+                round_counter=settled_rounds,
+            )
         finally:
-            # Stats ride the same settle path as the wallet: the runner's
-            # finally commits settled hands, and an interrupted result print
-            # must not omit hands the wallet already kept.
-            session.record_result(self.info.id, session.wallet.balance - chips_before_table)
+            # Stats ride the same settle path as the wallet: only hands the
+            # runner actually committed count, so an interrupt at the first
+            # bet prompt leaves no phantom hand behind.
+            if settled_rounds[0]:
+                session.record_result(
+                    self.info.id,
+                    session.wallet.balance - chips_before_table,
+                    bets=settled_rounds[0],
+                )
         ui.success(f"Leaving table. Session net: {'+' if net >= 0 else ''}{net:,} chips")
         ui.chip_line(session.wallet.balance)
         ui.pause()

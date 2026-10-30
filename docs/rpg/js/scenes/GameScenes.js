@@ -317,6 +317,7 @@ export class OverworldScene extends Phaser.Scene {
     this.events.once("shutdown", () => {
       window.removeEventListener("keydown", this._onKeyDownMove);
       window.removeEventListener("keyup", this._onKeyUpMove);
+      window.removeEventListener("keydown", this._onKonamiKey);
       window.removeEventListener("blur", clearHeldKeys);
     });
 
@@ -404,7 +405,11 @@ export class OverworldScene extends Phaser.Scene {
       });
     }
 
-    this.input.keyboard.on("keydown", (ev) => this._trackKonami(ev));
+    // Read the Konami code off the window event instead of Phaser's keyboard
+    // plugin: the plugin drops keydowns whose DOM event was default-prevented,
+    // which is every arrow key because the cursor keys above are captured.
+    this._onKonamiKey = (ev) => this._trackKonami(ev);
+    window.addEventListener("keydown", this._onKonamiKey);
 
     this._worldClock = this.time.addEvent({
       delay: 4000,

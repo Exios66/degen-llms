@@ -505,7 +505,10 @@ def run_save_picker(
 
         name = ui.prompt(f"Player name [{default_name}]: ") or default_name
         label = ui.prompt(f"Save label [Slot {slot.slot_id}]: ") or f"Slot {slot.slot_id}"
-        chips = ui.prompt_int("Starting chips", 100, 1_000_000, default=default_chips)
+        chip_default = min(1_000_000, max(100, default_chips))
+        if chip_default != default_chips:
+            ui.dim(f"--chips {default_chips:,} is outside {100:,}-{1_000_000:,}; defaulting to {chip_default:,} (enter a value to override).")
+        chips = ui.prompt_int("Starting chips", 100, 1_000_000, default=chip_default)
         session = library.create_session(
             slot.slot_id,
             player_name=name.strip() or default_name,

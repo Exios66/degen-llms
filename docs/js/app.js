@@ -575,10 +575,15 @@ function renderSaveCreate({ slotId }) {
         className: "btn primary",
         textContent: "Create & enter casino",
         onclick: () => {
+          const chips = Number(chipsInput.value);
+          if (!Number.isSafeInteger(chips) || chips < 100 || chips > 1_000_000) {
+            alert("Starting chips must be a whole number between 100 and 1,000,000.");
+            return;
+          }
           session = createSlot(slotId, {
             playerName: nameInput.value.trim() || "Guest",
             label: labelInput.value.trim() || `Slot ${slotId}`,
-            chips: parseInt(chipsInput.value, 10) || 1000,
+            chips,
             useColor: session.useColor,
             useUnicode: session.useUnicode,
           });
@@ -955,13 +960,33 @@ function render() {
 
 function applyDeepView(deepView) {
   if (!deepView) return;
+  const params = new URLSearchParams(window.location.search);
   const poolZone = POOL_LAUNCH_ZONES[deepView];
   if (poolZone) {
     if (openPoolComplexVisual(poolZone, { returnView: "hotel-lobby" })) return;
-    if (RENDERERS[deepView]) pushView(deepView);
+    if (RENDERERS[deepView]) {
+      pushView(deepView, deepView === "floor"
+        ? { floor: FLOOR_ORDER.includes(params.get("floor") ?? "") ? params.get("floor") : FLOOR_ORDER[0] }
+        : {});
+    }
     return;
   }
-  if (RENDERERS[deepView]) pushView(deepView);
+  if (RENDERERS[deepView]) {
+    // Data-backed views need their payload. The floor list defaults to the
+    // first floor; a bare save-create deep link must not render a form for
+    // "Slot undefined" — that target slot is the payload, so land on the
+    // picker where the flow starts.
+    if (deepView === "floor") {
+      const floor = params.get("floor") ?? "";
+      pushView("floor", { floor: FLOOR_ORDER.includes(floor) ? floor : FLOOR_ORDER[0] });
+      return;
+    }
+    if (deepView === "save-create") {
+      pushView("save-picker");
+      return;
+    }
+    pushView(deepView, {});
+  }
 }
 
 function applyLaunchParams() {
@@ -1010,6 +1035,9 @@ if (!applyLaunchParams()) {
 }
 
 document.addEventListener("keydown", (e) => {
+  // Text entry and modified shortcuts belong to the focused control, not the casino.
+  if (e.target instanceof Element && (e.target.closest("input, textarea, select, [contenteditable]:not([contenteditable='false'])"))) return;
+  if (e.altKey || e.ctrlKey || e.metaKey || e.repeat) return;
   if (e.key === "p" || e.key === "P") {
     const inCasino = isInCasinoView();
     const blackjackNeedsP = viewStack.at(-1)?.name === "blackjack-play" && runtime.blackjackGame?.pendingAction;
@@ -1019,7 +1047,7 @@ document.addEventListener("keydown", (e) => {
       return;
     }
   }
-  if (!runtime.blackjackGame?.pendingAction) return;
+  if (viewStack.at(-1)?.name !== "blackjack-play" || rewardsPhone?.isOpen() || !runtime.blackjackGame?.pendingAction) return;
   const map = { h: Action.HIT, s: Action.STAND, d: Action.DOUBLE, p: Action.SPLIT, u: Action.SURRENDER };
   const act = map[e.key.toLowerCase()];
   if (act && runtime.blackjackGame.getCurrentLegalActions().has(act)) {

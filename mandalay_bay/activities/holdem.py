@@ -44,23 +44,26 @@ class HoldemActivity(Activity):
         )
         if buy_in == 0 or buy_in < buy_in_min:
             return
+        table = HoldemTable.quick_table(buy_in, num_bots=4)
         if not session.wallet.debit(buy_in, self.info.id, f"Hold'em buy-in ${buy_in}"):
             ui.error("Insufficient chips.")
             ui.pause()
             return
 
-        table = HoldemTable.quick_table(buy_in, num_bots=4)
         hands = 0
 
         settled = False
 
-        def cash_out(reason: str) -> None:
+        def cash_out(reason: str, *, refund_unresolved: bool = False) -> None:
             nonlocal settled
             if settled:
                 return
             settled = True
-            session.wallet.credit(table.human.stack, self.info.id, reason)
-            session.record_result(self.info.id, table.human.stack - buy_in, bets=hands)
+            returned = table.human.stack
+            if refund_unresolved and not table.hand_over and not table.human.folded:
+                returned += table.human.total_in_hand
+            session.wallet.credit(returned, self.info.id, reason)
+            session.record_result(self.info.id, returned - buy_in, bets=hands)
 
         try:
             ui.print("\nNo-limit Hold'em · 5-handed (you + 4 bots).")
@@ -182,4 +185,4 @@ class HoldemActivity(Activity):
             ui.pause()
         finally:
             if not settled:
-                cash_out("Hold'em interrupted — table stack returned")
+                cash_out("Hold'em interrupted — table stack returned", refund_unresolved=True)

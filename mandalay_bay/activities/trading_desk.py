@@ -84,7 +84,7 @@ class TradingDeskActivity(Activity):
                     page = [filtered[(start + i) % len(filtered)] for i in range(min(page_size, len(filtered)))]
                     for i, c in enumerate(page, 1):
                         strike = f" K{c['strike']}" if c.get("strike") is not None else ""
-                        ui.info(
+                        ui.print(
                             f"{i}) {c['instrument'].upper()} {c['symbol']}{strike} {c['expiry']} "
                             f"— {entry_cost_chips(c)} chips · {c['underlying']}"
                         )
@@ -121,7 +121,7 @@ class TradingDeskActivity(Activity):
                             session.wallet.credit(result["payout"], self.info.id, result["reason"])
                         session_net += result["pnl"]
                         positions.remove(pos)
-                        ui.info(f"{pos['contract']['symbol']}: {result['reason']} ({result['pnl']:+d})")
+                        ui.print(f"{pos['contract']['symbol']}: {result['reason']} ({result['pnl']:+d})")
                     positions = []
                     ui.pause()
                 elif choice == 3:
@@ -144,7 +144,7 @@ class TradingDeskActivity(Activity):
                     ui.print(f"\n--- Underlying spots [{scope}] (1D / 1W performance) ---")
                     for q in underlyings_from_catalog(catalog, asset_class=asset_filter):
                         drifted = drift_spot(float(q["spot"]))
-                        ui.info(
+                        ui.print(
                             f"{q['symbol']:6} {q['assetClass']:12} "
                             f"{drifted:>12.4g}  1D {q.get('perf1dPct', 0):+6.2f}%  "
                             f"1W {q.get('perf1wPct', 0):+6.2f}%  — {q['underlying']}"

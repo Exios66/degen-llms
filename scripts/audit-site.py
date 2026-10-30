@@ -217,11 +217,7 @@ def terminal_flows(browser, base: str) -> None:
         try:
             page.goto(f"{base}/index.html?{BASE_QUERY}&view={view}", wait_until="load")
             page.wait_for_function("window.__casinoReady === true", timeout=30000)
-            for selector in selectors:
-                node = page.query_selector(selector)
-                if node:
-                    node.click()
-                    page.wait_for_timeout(450)
+            smoke.walk_terminal_flow(page, name, selectors)
             body = page.inner_text("#app")
             check(f"flow/{name}", len(body.strip()) >= 20, "empty screen after clicks")
         except Exception as exc:  # noqa: BLE001

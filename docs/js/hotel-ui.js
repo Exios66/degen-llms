@@ -748,6 +748,18 @@ export function buildHotelRenderers(ctx) {
     const log = el("div", { className: "log-area hotel-log" });
     const calls = filterPhoneCalls(session(), hotel);
 
+    // The overworld host has no Strip dispatch screen; keep the guest in the
+    // room with a visible note instead of navigating to a missing view.
+    function openStripLimoDispatch() {
+      if (typeof ctx.hasView === "function" && !ctx.hasView("strip-limo")) {
+        showStatus("Private driver on file. Strip rides are booked from the web terminal.", "success");
+        persist();
+        return;
+      }
+      showStatus("Private driver standing by — opening Strip limo dispatch.", "success");
+      pushView("strip-limo");
+    }
+
     const callButtons = calls.map((call) =>
       menuBtn(call.label, () => {
         const res = makePhoneCall(session(), call.id);
@@ -756,8 +768,7 @@ export function buildHotelRenderers(ctx) {
         tracker()?.pushNotification("Room Phone", call.destination);
         persist();
         if (res.openLimoDispatch) {
-          showStatus("Private driver standing by — opening Strip limo dispatch.", "success");
-          pushView("strip-limo");
+          openStripLimoDispatch();
         }
         if (res.openGentlemansClub) {
           showStatus("Velvet rope noted — opening The Velvet Ledger.", "success");
@@ -770,6 +781,7 @@ export function buildHotelRenderers(ctx) {
       banner("Room Phone"),
       chipLine(),
       el("div", { className: "panel hotel-panel hotel-room-view" }, [
+        statusBanner(),
         el("p", { className: "subtitle", textContent: "Unlimited foreign calls — Mandalay Bay absorbs the guilt" }),
         el("p", { className: "dim", textContent: "House of Blues, spa, Foundation Room, Delano, limo desk, Velvet Ledger — dial the Strip." }),
         ra.phoneCalls.length
@@ -779,7 +791,7 @@ export function buildHotelRenderers(ctx) {
         el("ul", { className: "menu-list" }, [
           ...callButtons,
           ra.phoneCalls.includes("limo_service")
-            ? menuBtn("Open Strip limo dispatch", () => pushView("strip-limo"))
+            ? menuBtn("Open Strip limo dispatch", () => openStripLimoDispatch())
             : null,
           ra.phoneCalls.includes("gentlemans_club")
             ? menuBtn("Enter Gentleman's Club — Velvet Ledger", () => pushView("gentlemans-club"))

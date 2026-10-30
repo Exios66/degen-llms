@@ -123,38 +123,30 @@ class CrapsActivity(Activity):
                 point_before = table.point
                 roll = table.roll()
                 rolls += 1
-                animate_dice_roll(ui, roll.label())
-                ui.dim(f'  {dealer.name}: "{pick_quip(dealer, "deal")}"')
-
+                # Resolve every stake before displaying the roll. An interrupted
+                # animation must not return bets whose outcome is already known.
+                line_result = None
                 if line_bet:
                     if line_bet["kind"] == "pass":
-                        result = table.resolve_pass_line(line_bet["amount"], roll)
+                        line_result = table.resolve_pass_line(line_bet["amount"], roll)
                     else:
-                        result = table.resolve_dont_pass(line_bet["amount"], roll, point_before)
-                    payout = result.payout
-                    # Settle the wallet before any output so an interrupt cannot
-                    # both pay and refund the same wager.
-                    if not result.working:
+                        line_result = table.resolve_dont_pass(line_bet["amount"], roll, point_before)
+                    if not line_result.working:
                         line_bet = None
-                        if payout > 0:
-                            session.wallet.credit(payout, self.info.id, result.message)
-                            session_net += payout
-                    ui.print(result.message)
-                    if not result.working:
-                        if payout > 0:
-                            ui.success(f"Paid {payout:,}")
-                            ui.dim(f'  {dealer.name}: "{pick_quip(dealer, "win")}"')
-                        else:
-                            ui.dim(f'  {dealer.name}: "{pick_quip(dealer, "lose")}"')
+                        if line_result.payout > 0:
+                            session.wallet.credit(line_result.payout, self.info.id, line_result.message)
+                            session_net += line_result.payout
 
+                side_results = []
                 for bet_id, amt in list(side_stakes.items()):
                     result = table.resolve_side_bet(bet_id, amt, roll)
                     side_stakes.pop(bet_id, None)
                     if result.payout > 0:
                         session.wallet.credit(result.payout, self.info.id, result.message)
                         session_net += result.payout
-                    ui.dim(result.message)
+                    side_results.append(result)
 
+                hardway_results = []
                 for bet_id, amt in list(hardways.items()):
                     result = table.resolve_side_bet(bet_id, amt, roll)
                     if not result.working:
@@ -162,6 +154,19 @@ class CrapsActivity(Activity):
                         if result.payout > 0:
                             session.wallet.credit(result.payout, self.info.id, result.message)
                             session_net += result.payout
+                    hardway_results.append(result)
+
+                animate_dice_roll(ui, roll.label())
+                ui.dim(f'  {dealer.name}: "{pick_quip(dealer, "deal")}"')
+                if line_result:
+                    ui.print(line_result.message)
+                    if not line_result.working:
+                        if line_result.payout > 0:
+                            ui.success(f"Paid {line_result.payout:,}")
+                            ui.dim(f'  {dealer.name}: "{pick_quip(dealer, "win")}"')
+                        else:
+                            ui.dim(f'  {dealer.name}: "{pick_quip(dealer, "lose")}"')
+                for result in side_results + hardway_results:
                     ui.dim(result.message)
 
                 # seven-out clears hardways already via resolve; if line cleared and no hardways, offer leave
@@ -183,7 +188,10 @@ class CrapsActivity(Activity):
                 session.wallet.credit(amt, self.info.id, f"Craps leave — {bet_id} returned")
                 session_net += amt
             side_stakes.clear()
+            # The hand may end normally or via an interruption (the animation
+            # and prompts above are interruptible); stats record either way so
+            # credited winnings are never missing from the ledger.
+            session.record_result(self.info.id, session_net, bets=rolls)
 
-        session.record_result(self.info.id, session_net, bets=rolls)
         ui.print(f"\nCraps session: {'+' if session_net >= 0 else ''}{session_net:,} over {rolls} roll(s)")
         ui.pause()

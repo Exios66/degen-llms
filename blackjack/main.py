@@ -101,7 +101,7 @@ def custom_game_wizard() -> GameConfig:
 
     bankroll = prompt_int("Starting bankroll", 50, 1_000_000, 500)
     min_bet = prompt_int("Minimum bet", 1, bankroll, 10)
-    max_bet = prompt_int("Maximum bet", min_bet, bankroll, min(100, bankroll))
+    max_bet = prompt_int("Maximum bet", min_bet, bankroll, max(min_bet, min(100, bankroll)))
     num_decks = prompt_int("Number of decks (1-8)", 1, 8, 6)
     dealer = input("Dealer rule: (1) H17  (2) S17 [1]: ").strip() or "1"
 
@@ -183,6 +183,7 @@ def main_menu(args: argparse.Namespace) -> GameConfig | None:
             return apply_args(config, args)
         if choice == "3":
             print(RULES_TEXT)
+            continue
         if choice in {"4", "q", "quit"}:
             return None
         print("Invalid choice.")
@@ -192,14 +193,16 @@ def main(argv: list[str] | None = None) -> None:
     parser = build_parser()
     args = parser.parse_args(argv)
     try:
-        config = main_menu(args)
-    except ValueError as exc:
-        parser.error(str(exc))
-    if config is None:
-        sys.exit(0)
-    try:
+        if args.rounds is not None and args.rounds < 1:
+            parser.error("--rounds must be positive")
+        try:
+            config = main_menu(args)
+        except ValueError as exc:
+            parser.error(str(exc))
+        if config is None:
+            sys.exit(0)
         run_game(config, max_rounds=args.rounds)
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, EOFError):
         print("\nInterrupted. Goodbye!")
         sys.exit(0)
 

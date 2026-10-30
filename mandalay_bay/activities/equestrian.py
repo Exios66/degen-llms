@@ -192,16 +192,9 @@ class DressageActivity(Activity):
                         ui.error("No open tickets.")
                         continue
                     card.results = _simulate_dressage(card)
-                    ui.dim(f'  {dealer.name}: "{pick_quip(dealer, "deal")}"')
-                    animate_countdown(ui, "Judges scoring", ticks=3)
-                    if card.movements_shown:
-                        ui.dim("  Highlights: " + ", ".join(card.movements_shown[:4]))
-                    ui.print("\nFINAL STANDINGS:")
-                    for pos, num in enumerate(card.results, 1):
-                        entry = next(e for e in card.entries if e.number == num)
-                        ui.print(f"  {pos}. #{num} {entry.rider} / {entry.horse}")
+                    settled = []
                     events += 1
-                    for slip in list(pending):
+                    for slip in pending:
                         pos = card.results.index(slip["entry"]) + 1
                         won = False
                         payout = 0
@@ -217,15 +210,28 @@ class DressageActivity(Activity):
                         if won:
                             session.wallet.credit(payout, self.info.id, f"{slip['bet_type']} #{slip['entry']}")
                             session_net += payout - slip["amount"]
-                            pending.remove(slip)
-                            ui.success(f"  WIN #{slip['entry']} {slip['bet_type']}: +{payout - slip['amount']:,}")
-                            ui.dim(f'  {dealer.name}: "{pick_quip(dealer, "win")}"')
+                            delta = payout - slip["amount"]
                         else:
                             session_net -= slip["amount"]
-                            pending.remove(slip)
-                            ui.dim(f"  LOSE #{slip['entry']} {slip['bet_type']}: -{slip['amount']:,}")
+                            delta = -slip["amount"]
+                        settled.append((slip, won, delta))
+                    pending = []
+
+                    ui.dim(f'  {dealer.name}: "{pick_quip(dealer, "deal")}"')
+                    animate_countdown(ui, "Judges scoring", ticks=3)
+                    if card.movements_shown:
+                        ui.dim("  Highlights: " + ", ".join(card.movements_shown[:4]))
+                    ui.print("\nFINAL STANDINGS:")
+                    for pos, num in enumerate(card.results, 1):
+                        entry = next(e for e in card.entries if e.number == num)
+                        ui.print(f"  {pos}. #{num} {entry.rider} / {entry.horse}")
+                    for slip, won, delta in settled:
+                        if won:
+                            ui.success(f"  WIN #{slip['entry']} {slip['bet_type']}: +{delta:,}")
+                            ui.dim(f'  {dealer.name}: "{pick_quip(dealer, "win")}"')
+                        else:
+                            ui.dim(f"  LOSE #{slip['entry']} {slip['bet_type']}: {delta:,}")
                             ui.dim(f'  {dealer.name}: "{pick_quip(dealer, "lose")}"')
-                    pending.clear()
                 elif choice == 3:
                     if pending:
                         ui.error("Settle open tickets before changing the entry list.")
@@ -240,8 +246,9 @@ class DressageActivity(Activity):
                 )
                 pending.clear()
                 ui.dim(f"Returned {returned:,} chips from unsettled tickets.")
+            # Interrupts land here too: settled events still count toward stats.
+            session.record_result(self.info.id, session_net, bets=events)
 
-        session.record_result(self.info.id, session_net, bets=events)
         ui.print(f"\nDressage session: {'+' if session_net >= 0 else ''}{session_net:,} over {events} event(s)")
         ui.pause()
 
@@ -422,16 +429,10 @@ class JumperActivity(Activity):
                         ui.error("No open tickets.")
                         continue
                     card.results = _simulate_jumper(card)
-                    ui.dim(f'  {dealer.name}: "{pick_quip(dealer, "deal")}"')
-                    animate_countdown(ui, "Course running", ticks=3)
-                    ui.print("\nFINAL STANDINGS:")
-                    for pos, r in enumerate(card.results, 1):
-                        entry = next(e for e in card.entries if e.number == r.entry_number)
-                        fault_str = "Clear" if r.faults == 0 else f"{r.faults} faults"
-                        ui.print(f"  {pos}. #{r.entry_number} {entry.rider} / {entry.horse}  {fault_str}  {r.time_seconds}s")
+                    settled = []
                     events += 1
                     ordered_nums = [r.entry_number for r in card.results]
-                    for slip in list(pending):
+                    for slip in pending:
                         pos = ordered_nums.index(slip["entry"]) + 1
                         result = next(r for r in card.results if r.entry_number == slip["entry"])
                         won = False
@@ -452,15 +453,28 @@ class JumperActivity(Activity):
                         if won:
                             session.wallet.credit(payout, self.info.id, f"{bt} #{slip['entry']}")
                             session_net += payout - slip["amount"]
-                            pending.remove(slip)
-                            ui.success(f"  WIN #{slip['entry']} {bt}: +{payout - slip['amount']:,}")
-                            ui.dim(f'  {dealer.name}: "{pick_quip(dealer, "win")}"')
+                            delta = payout - slip["amount"]
                         else:
                             session_net -= slip["amount"]
-                            pending.remove(slip)
-                            ui.dim(f"  LOSE #{slip['entry']} {bt}: -{slip['amount']:,}")
+                            delta = -slip["amount"]
+                        settled.append((slip, won, delta, result))
+                    pending = []
+
+                    ui.dim(f'  {dealer.name}: "{pick_quip(dealer, "deal")}"')
+                    animate_countdown(ui, "Course running", ticks=3)
+                    ui.print("\nFINAL STANDINGS:")
+                    for pos, r in enumerate(card.results, 1):
+                        entry = next(e for e in card.entries if e.number == r.entry_number)
+                        fault_str = "Clear" if r.faults == 0 else f"{r.faults} faults"
+                        ui.print(f"  {pos}. #{r.entry_number} {entry.rider} / {entry.horse}  {fault_str}  {r.time_seconds}s")
+                    for slip, won, delta, result in settled:
+                        bt = slip["bet_type"]
+                        if won:
+                            ui.success(f"  WIN #{slip['entry']} {bt}: +{delta:,}")
+                            ui.dim(f'  {dealer.name}: "{pick_quip(dealer, "win")}"')
+                        else:
+                            ui.dim(f"  LOSE #{slip['entry']} {bt}: {delta:,}")
                             ui.dim(f'  {dealer.name}: "{pick_quip(dealer, "lose")}"')
-                    pending.clear()
                 elif choice == 3:
                     if pending:
                         ui.error("Settle open tickets before changing the entry list.")
@@ -475,7 +489,8 @@ class JumperActivity(Activity):
                 )
                 pending.clear()
                 ui.dim(f"Returned {returned:,} chips from unsettled tickets.")
+            # Interrupts land here too: settled events still count toward stats.
+            session.record_result(self.info.id, session_net, bets=events)
 
-        session.record_result(self.info.id, session_net, bets=events)
         ui.print(f"\nJumper session: {'+' if session_net >= 0 else ''}{session_net:,} over {events} event(s)")
         ui.pause()

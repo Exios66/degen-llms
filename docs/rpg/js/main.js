@@ -1,7 +1,7 @@
 import Phaser from "phaser";
-import { OverworldScene } from "./scenes/GameScenes.js?v=tuxedo-pixel-1";
+import { OverworldScene } from "./scenes/GameScenes.js?v=__ASSET_SHA__";
 import { TitleScreen, renderHud, renderTrainerCard } from "./scenes/TitleScreen.js?v=tuxedo-pixel-1";
-import { DialogueManager } from "./systems/DialogueManager.js";
+import { DialogueManager } from "./systems/DialogueManager.js?v=__ASSET_SHA__";
 import { SaveAdapter } from "./systems/SaveAdapter.js";
 import { defaultAppearance } from "./systems/CharacterAppearance.js";
 import {

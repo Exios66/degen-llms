@@ -516,6 +516,7 @@ class SportsbookActivity(Activity):
 
         if self._pending:
             ui.banner("FINAL SCORES")
+            settled_slips: list[tuple[BetSlip, list[dict[str, Any]], bool, int, str]] = []
             for slip in list(self._pending):
                 events_to_sim = [leg.event for leg in slip.legs] if slip.bet_type == "parlay" else [slip.event]
                 for event in events_to_sim:
@@ -523,20 +524,27 @@ class SportsbookActivity(Activity):
                     if eid not in simulated and not event.get("settled"):
                         simulate_event_outcome(self._catalog, event)
                         simulated.add(eid)
-                    if slip.bet_type != "parlay":
-                        ui.print(f"\n{event['label']}: {self._score_line(event)}")
 
+                # Settle before any score output: an interruption during the
+                # reveal must not refund a ticket whose outcome is determined.
                 won, payout, reason = self._resolve_slip(slip)
                 if won:
                     session.wallet.credit(payout, self.info.id, reason)
                     session_net += payout - slip.amount
-                    self._pending.remove(slip)
-                    ui.success(f"  WIN: {reason} (+{payout - slip.amount:,} chips)")
                 else:
                     session_net -= slip.amount
-                    self._pending.remove(slip)
-                    ui.error(f"  LOSE: {reason} (-{slip.amount:,} chips)")
+                self._pending.remove(slip)
+                settled_slips.append((slip, events_to_sim, won, payout, reason))
                 count += 1
+
+            for slip, events_to_sim, won, payout, reason in settled_slips:
+                if slip.bet_type != "parlay":
+                    for event in events_to_sim:
+                        ui.print(f"\n{event['label']}: {self._score_line(event)}")
+                if won:
+                    ui.success(f"  WIN: {reason} (+{payout - slip.amount:,} chips)")
+                else:
+                    ui.error(f"  LOSE: {reason} (-{slip.amount:,} chips)")
             self._pending = []
 
         if self._predictions.positions:
@@ -551,23 +559,24 @@ class SportsbookActivity(Activity):
                 if event:
                     market["linkedEvent"] = event
             results, _ = self._predictions.settle_all(self._events)
-            # Keep uncredited stakes refundable if terminal output is interrupted.
-            self._predictions.positions = [result["position"] for result in results]
+            # Settle every contract before its reveal: an interruption during
+            # the result output must not refund a determined stake.
+            for result in results:
+                position = result["position"]
+                if result["won"]:
+                    session.wallet.credit(result["payout"], self.info.id, result["reason"])
+                    session_net += result["payout"] - position["amount"]
+                else:
+                    session_net -= position["amount"]
+                count += 1
             for result in results:
                 position = result["position"]
                 resolution = result["resolution"]
                 ui.print(f"\n{position['question']}: {resolution.upper()}")
                 if result["won"]:
-                    session.wallet.credit(result["payout"], self.info.id, result["reason"])
-                    session_net += result["payout"] - position["amount"]
-                    self._predictions.positions.remove(position)
                     ui.success(f"  WIN: {result['reason']}")
                 else:
-                    session_net -= position["amount"]
-                    self._predictions.positions.remove(position)
                     ui.error(f"  LOSE: {result['reason']} (-{position['amount']:,} chips)")
-                count += 1
-            self._predictions.positions = []
 
         ui.chip_line(session.wallet.balance)
         return session_net, count

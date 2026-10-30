@@ -147,7 +147,7 @@ export class DialogueManager {
 
   /**
    * Start a dialogue tree by id.
-   * @returns {Promise<{ action?: string, flag?: string, encounter?: string }>}
+   * @returns {Promise<{ action?: string, flag?: string, encounter?: string, reputation?: Record<string, number> }>}
    */
   start(dialogueId) {
     // A conversation outranks a toast that happens to still be on screen.
@@ -313,14 +313,13 @@ export class DialogueManager {
   _pickChoice(choice) {
     this._applyNodeEffects(this._currentNode);
     this._applyNodeEffects(choice);
-    const reputation = choice.reputation ?? null;
     if (choice.encounter) {
       this._cleanupKeys?.();
       this.close({
         action: "encounter",
         encounter: choice.encounter,
         flag: choice.setFlag,
-        reputation,
+        reputation: this._takeReputation(),
       });
       this.hooks.onEncounter?.(choice.encounter);
       return;
@@ -328,7 +327,6 @@ export class DialogueManager {
     if (choice.next) {
       const next = this._resolveNode(choice.next);
       if (next) {
-        this._pendingReputation = reputation;
         this._renderNode(next);
       } else {
         this._finish(choice);
@@ -347,8 +345,7 @@ export class DialogueManager {
       else this._finish(node);
     } else if (node.encounter) {
       this._applyNodeEffects(node);
-      const reputation = node.reputation ?? this._pendingReputation ?? null;
-      this._pendingReputation = null;
+      const reputation = this._takeReputation();
       this._cleanupKeys?.();
       this.close({ action: "encounter", encounter: node.encounter, reputation });
       this.hooks.onEncounter?.(node.encounter);
@@ -366,12 +363,23 @@ export class DialogueManager {
     }
     if (node.giveItem) this.hooks.onItem?.(node.giveItem);
     if (node.startQuest) this.questManager?.start(node.startQuest);
+    if (node.reputation) {
+      this._pendingReputation ??= {};
+      for (const [key, value] of Object.entries(node.reputation)) {
+        this._pendingReputation[key] = (this._pendingReputation[key] ?? 0) + value;
+      }
+    }
+  }
+
+  _takeReputation() {
+    const reputation = this._pendingReputation;
+    this._pendingReputation = null;
+    return reputation;
   }
 
   _finish(node) {
     this._applyNodeEffects(node);
-    const reputation = node.reputation ?? this._pendingReputation ?? null;
-    this._pendingReputation = null;
+    const reputation = this._takeReputation();
     this._cleanupKeys?.();
     this.close({ action: "close", flag: node.setFlag, reputation });
   }

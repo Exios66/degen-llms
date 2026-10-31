@@ -116,6 +116,24 @@ try {
     assert.equal(h.runtime.roulette.pendingSpin.straightPick, null);
   });
 
+  test("correcting invalid inputs starts exactly one spin and clears the error", () => {
+    const h = rouletteHarness();
+    h.wager.value = "24";
+    h.spin();
+    assert.match(h.errors()[0].textContent, /whole-chip wager/);
+    h.wager.value = "25";
+    h.pick.value = "37";
+    h.spin();
+    assert.match(h.errors()[0].textContent, /whole number from 0 to 36/);
+    assert.equal(h.session.wallet.transactions.length, 0);
+    h.pick.value = "0";
+    h.spin();
+    assert.equal(h.errors().length, 0);
+    assert.deepEqual(h.session.wallet.transactions.map((tx) => tx.amount), [-25]);
+    assert.equal(h.runtime.roulette.pendingSpin.straightPick, 0);
+    assert.equal(h.timers.length, 1);
+  });
+
   test("salon minimum applies even without a selected tier", () => {
     const h = rouletteHarness({ tier: null, salonMin: 100 });
     h.wager.value = "99";

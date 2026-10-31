@@ -123,4 +123,33 @@ await test("attempting another start while active preserves the current chain's 
   assert.deepEqual((await result).reputation, { staff: 3 });
 });
 
+await test("gated next node uses its visible alternate without applying blocked effects", async () => {
+  const nodes = {
+    opening: { reputation: { staff: 2 }, next: "restricted" },
+    restricted: { requiresFlag: "member", reputation: { staff: 100 }, setFlag: "restricted_seen", elseNext: "alternate" },
+    alternate: { reputation: { staff: -1, locals: 3 }, setFlag: "alternate_seen" },
+  };
+  const h = dialogueHarness(nodes);
+  const result = h.manager.start("opening");
+  h.manager._advance(nodes.opening);
+  assert.equal(h.manager._currentNode, nodes.alternate);
+  h.manager._advance(nodes.alternate);
+  assert.deepEqual((await result).reputation, { staff: 1, locals: 3 });
+  assert.deepEqual(h.flags, ["alternate_seen"]);
+});
+
+await test("advancing a choice node waits for a selection before applying effects", async () => {
+  const choice = { reputation: { staff: 3 }, setFlag: "chosen" };
+  const nodes = { opening: { reputation: { staff: 2 }, choices: [choice] } };
+  const h = dialogueHarness(nodes);
+  const result = h.manager.start("opening");
+  h.manager._advance(nodes.opening);
+  assert.equal(h.manager.isActive(), true);
+  assert.deepEqual(h.flags, []);
+  assert.equal(h.closes(), 0);
+  h.manager._pickChoice(choice);
+  assert.deepEqual((await result).reputation, { staff: 5 });
+  assert.deepEqual(h.flags, ["chosen"]);
+});
+
 console.log(`${cases} dialogue reputation regression cases passed.`);

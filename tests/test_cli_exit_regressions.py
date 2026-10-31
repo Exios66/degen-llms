@@ -92,6 +92,26 @@ def test_confirmed_corrupt_slot_overwrite_creates_requested_session(tmp_path, mo
     assert (tmp_path / "slot_1.json").read_bytes() == untouched
 
 
+@pytest.mark.parametrize("error", [OSError, KeyboardInterrupt, EOFError])
+def test_failed_confirmed_overwrite_preserves_original_slot(tmp_path, monkeypatch, error):
+    library = SaveLibrary(tmp_path)
+    library.create_session(1, player_name="Original", starting_chips=777)
+    path = tmp_path / "slot_1.json"
+    original = path.read_bytes()
+    original_files = {p.name for p in tmp_path.iterdir()}
+    monkeypatch.setattr("builtins.input", lambda _prompt: "y")
+
+    def fail_replace(source, destination):
+        raise error
+
+    monkeypatch.setattr("mandalay_bay.saves.os.replace", fail_replace)
+    args = casino_main.build_parser().parse_args(["--slot", "1", "--new-save", "--name", "Replacement"])
+    with pytest.raises(error):
+        casino_main.resolve_session(args, casino_main.TerminalUI(use_color=False), library)
+    assert path.read_bytes() == original
+    assert {p.name for p in tmp_path.iterdir()} == original_files
+
+
 @pytest.mark.parametrize("occupied,expected", [(False, "is empty"), (True, "may be damaged")])
 def test_unloadable_slot_reports_empty_or_damaged(tmp_path, occupied, expected, capsys):
     path = tmp_path / "slot_1.json"

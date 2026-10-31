@@ -70,7 +70,7 @@ class Element {
   }
 }
 
-function keyboardHarness({ view = "blackjack-play", phoneOpen = false, pending = true, legal = Object.values(Action) } = {}) {
+function keyboardHarness({ view = "blackjack-play", phoneOpen = false, pending = true, legal = Object.values(Action), inCasino = true } = {}) {
   const actions = [];
   let handler, renders = 0, toggles = 0;
   runInNewContext(keyboardSource, {
@@ -83,7 +83,7 @@ function keyboardHarness({ view = "blackjack-play", phoneOpen = false, pending =
       playerAction: (action) => actions.push(action),
     } },
     rewardsPhone: { isOpen: () => phoneOpen, toggle() { toggles++; } },
-    isInCasinoView: () => true,
+    isInCasinoView: () => inCasino,
     render() { renders++; },
   });
   return {
@@ -161,6 +161,17 @@ test("plain P opens the phone when blackjack does not need Split", () => {
   assert.equal(h.key("P"), true);
   assert.equal(h.toggles(), 1);
   assert.deepEqual(h.actions, []);
+});
+
+test("P does not open the phone outside the casino or when Split is illegal", () => {
+  const outside = keyboardHarness({ view: "floor", inCasino: false });
+  assert.equal(outside.key("p"), false);
+  assert.equal(outside.toggles(), 0);
+  const table = keyboardHarness({ legal: [Action.STAND] });
+  assert.equal(table.key("p"), false);
+  assert.equal(table.toggles(), 0);
+  assert.deepEqual(table.actions, []);
+  assert.equal(table.renders(), 0);
 });
 
 console.log(`${cases} terminal navigation regression cases passed.`);
